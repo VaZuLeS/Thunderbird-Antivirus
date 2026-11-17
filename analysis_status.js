@@ -493,7 +493,7 @@ const ThundyAnalysis = (() => {
         if (sourceDataIncomplete) card.append(n('p',t('analysisStoredDataIncomplete'),'warning'));
         const persistenceReason = ['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes','storage_failed'].includes(data.sourcePersistenceReason) ? data.sourcePersistenceReason : null;
         const persistenceMessage = [t('analysisPersistenceFailed'),persistenceReason ? t('analysisPersistence_'+persistenceReason) : ''].filter(Boolean).join(' ');
-        if (data.sourcePersistenceFailed) card.append(n('p',persistenceMessage,'warning'));
+        if (data.sourcePersistenceFailed) {const code=['QuotaExceededError','InvalidStateError','AbortError','UnknownError','DataCloneError','NotFoundError','TransactionInactiveError','SecurityError'].includes(data.sourcePersistenceError)?data.sourcePersistenceError:null;card.append(n('p',persistenceMessage+(code?' ('+code+')':''),'warning'));}
         if (data.reportArchiveBlocked) card.append(n('p',t('analysisReportArchiveBlocked'),'warning'));
         card.append(n('p', t('analysisLimit'), 'muted'));
         const announcement = [mode, localLabel, sourceDataIncomplete ? t('analysisStoredDataIncomplete') : '', rows.length ? phase : '', data.sourceHistory?.rows?.length ? t('analysisHistoryTitle') : '', historicalWarning ? t('analysisHistoryFlagged') : '', data.sourcePersistenceFailed ? persistenceMessage : '', data.reportArchiveBlocked ? t('analysisReportArchiveBlocked') : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');

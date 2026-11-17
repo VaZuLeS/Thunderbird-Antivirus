@@ -1029,3 +1029,27 @@ test('authorized cache clearing uses the same cancellation and notification path
  await new Promise(setImmediate);assert.equal(result.success,true);assert.equal(cancellation.clear,true);assert.equal(cancellation.silent,true);
  assert.equal(context.disposed,true);assert.ok(notifications.some(value=>value.action==='memoryCachesCleared'));
 });
+
+test('a stalled provider cannot indefinitely block explicit opening with default policy; late verdicts do not rewrite decisions',async()=>{
+ const s=setup();await s.context.configure();let finish;const timers=new Map();let timerId=0;
+ const realTimer=s.context.setTimeout;s.context.setTimeout=(fn,ms)=>{if(ms===5000){timers.set(++timerId,fn);return timerId;}return realTimer(fn,ms);};s.context.clearTimeout=id=>timers.delete(id);
+ s.context.handleCheckLinkState=(_request,_sender,resolve)=>{finish=resolve;};
+ const request=auditRequest(),checking=s.context.handleAuditedLinkCheck(request,auditSender);
+ while(!finish)await new Promise(setImmediate);for(const fn of [...timers.values()])fn();
+ const result=await checking;assert.equal(result.status,'UNKNOWN');assert.equal(result.check.errorCode,'LINK_CHECK_TIMEOUT');assert.equal(result.check.observedAt,null);
+ let opened=0;s.context.browser.windows.openDefaultBrowser=async()=>{opened++;};
+ assert.equal((await s.context.handleOpenAuditedLink(request,auditSender)).success,true);
+ finish({status:'MALICIOUS',provider:'late provider'});await new Promise(setImmediate);
+ const record=(await s.context.readLinkAudit()).records[0];assert.equal(record.outcome,'OPENED');assert.equal(record.verdictAtDecision,'UNKNOWN');assert.equal(opened,1);
+});
+test('unavailable providers with default settings remain unknown and can be explicitly confirmed',async()=>{
+ const s=setup();await s.context.configure();s.context.handleCheckLinkState=(_request,_sender,resolve)=>resolve({status:'UNKNOWN',check:{origin:'none',outcome:'missing_key',observedAt:null}});
+ const request=auditRequest(),result=await s.context.handleAuditedLinkCheck(request,auditSender);assert.equal(result.status,'UNKNOWN');assert.notEqual(result.protection?.required,true);
+ assert.equal((await s.context.handleOpenAuditedLink(request,auditSender)).success,true);assert.equal((await s.context.readLinkAudit()).records[0].verdictAtDecision,'UNKNOWN');
+});
+test('source storage failures expose only a fixed safe exception name and clear it after recovery',async()=>{
+ const s=setup({},true);await s.context.configure();sourceRecords(s,{links:[]});const ctx=await s.context.getMessageAnalysisContext(s.message);
+ const save=s.context.updateStore;s.context.updateStore=async()=>{throw Object.assign(new Error('PRIVATE_PATH_CANARY'),{name:'QuotaExceededError'});};
+ await ctx.flush();let snapshot=await ctx.snapshot();assert.equal(snapshot.sourcePersistenceReason,'storage_failed');assert.equal(snapshot.sourcePersistenceError,'QuotaExceededError');assert.ok(!JSON.stringify(snapshot).includes('PRIVATE_PATH_CANARY'));
+ s.context.updateStore=save;await ctx.flush();snapshot=await ctx.snapshot();assert.equal(snapshot.sourcePersistenceError,null);ctx.dispose();
+});

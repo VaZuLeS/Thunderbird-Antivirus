@@ -260,7 +260,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     }
                     const security = typeof ThundySecurity !== 'undefined' ? await ThundySecurity.read() : null;
                     const protection = security ? ThundySecurity.decision({...ThundySecurity.defaults,...security.policy},{score:model.data.local.score,coverage:model.data.local.state,verdict:model.data.rows.some(row=>row.verdict==='malicious')?'MALICIOUS':model.data.rows.length && model.data.rows.every(row=>['none','suspicious'].includes(row.verdict)&&row.state==='checked')?model.data.rows.some(row=>row.verdict==='suspicious')?'SUSPICIOUS':'CLEAN':'UNKNOWN'}) : null;
-                    return { ...JSON.parse(JSON.stringify(model.data)), displayPreferences, hybridReports, hybridReportsTruncated, scanJob:context.scanJob || {state:'idle',migration:(await browser.storage.local.get('scanMode')).scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, sourcePersistenceFailed:context.persistenceFailed, sourcePersistenceReason:context.persistenceReason || null, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
+                    return { ...JSON.parse(JSON.stringify(model.data)), displayPreferences, hybridReports, hybridReportsTruncated, scanJob:context.scanJob || {state:'idle',migration:(await browser.storage.local.get('scanMode')).scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, sourcePersistenceFailed:context.persistenceFailed, sourcePersistenceReason:context.persistenceReason || null, sourcePersistenceError:context.persistenceError || null, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
                 },
                 async flush() {
                     if (context.disposed) return;
@@ -284,9 +284,9 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                             return {...(old || {messageHeader:key}),analysisSourceSnapshots:snapshots,updatedAt:Date.now()};
                         });
                         snapshotCreated = true;
-                        context.persistenceFailed = false; context.persistenceReason = null;
+                        context.persistenceFailed = false; context.persistenceReason = null; context.persistenceError = null;
                       }
-                      catch (error) { context.persistenceFailed = true; context.persistenceReason = ['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes'].includes(error?.code) ? error.code : 'storage_failed'; Logger.warn('Analysis source metadata could not be persisted'); }
+                      catch (error) { context.persistenceError=['QuotaExceededError','InvalidStateError','AbortError','UnknownError','DataCloneError','NotFoundError','TransactionInactiveError','SecurityError'].includes(error?.name)?error.name:null; context.persistenceFailed = true; context.persistenceReason = ['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes'].includes(error?.code) ? error.code : 'storage_failed'; Logger.warn('Analysis source metadata could not be persisted'); }
                     });
                     await persistenceQueue;
                     const snapshot = await context.snapshot();

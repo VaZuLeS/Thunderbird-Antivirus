@@ -579,3 +579,11 @@ describe('db.js module', () => {
         }
     });
 });
+
+it('preserves the original synchronous storage failure and aborts without replacing the old record',async()=>{
+ const original={count:1};const failure=Object.assign(new Error('private storage detail'),{name:'DataCloneError'});let aborted=false;
+ const tx={objectStore:()=>({get:()=>{const request={result:original};queueMicrotask(()=>request.onsuccess());return request;},put:()=>{throw failure;}}),abort(){aborted=true;this.onabort?.();}};
+ const c=vm.createContext({});vm.runInContext(fs.readFileSync(path.join(__dirname,'db.js'),'utf8'),c);
+ await assert.rejects(c.updateStore({transaction:()=>tx},'hybridanalysis','key',record=>({...record,count:2})),error=>error===failure);
+ assert.equal(aborted,true);assert.equal(original.count,1);
+});

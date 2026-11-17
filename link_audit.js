@@ -71,12 +71,17 @@ async function handleAuditedLinkCheck(request, sender) {
     })();
     try {
         const message = await session.ready;
+        // Provider availability is not a prerequisite for an explicit warning
+        // confirmation. Keep the click dialog bounded; background scans may continue.
+        const bounded=(work,fallback)=>{let timer;return Promise.race([work,new Promise(resolve=>{timer=setTimeout(()=>resolve(fallback),5000);})]).finally(()=>clearTimeout(timer));};
+        let localActive=true;
         const localCheck = (async () => {
             try {
                 const fullMessage = await readFullForAnalysis(message);
                 const messageText = extractTextFromParts(fullMessage.parts || fullMessage);
                 const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls: [request.url], messageText, allowExternal: false });
                 const threat = calculateThreatScore(message.author, [request.url], options);
+                if(!localActive)return;
                 session.score = Number.isFinite(threat.score) ? Math.max(0, Math.min(100, threat.score)) : null;
                 session.scoredAt = Date.now();
                 session.reasons = copyAuditValue((threat.reasons || []).slice(0, 20));
@@ -85,13 +90,15 @@ async function handleAuditedLinkCheck(request, sender) {
                     const saved = await updateLinkAudit(session.record.id, { score: session.score, scoredAt: session.scoredAt, reasons: (threat.reasons || []).slice(0, 20), reasonDetails: (threat.reasonDetails || []).slice(0, 20) });
                     if (!saved) session.auditSaved = false;
                 } catch (error) { session.auditSaved = false; reportLinkAuditFailure(); }
-            } catch (error) { session.score = null; }
+            } catch (error) { if(localActive)session.score = null; }
         })();
-        const verdict = await new Promise(resolve => handleCheckLinkState(request, sender, resolve));
+        const localReady=bounded(localCheck,null).finally(()=>{localActive=false;});
+        const unavailable={status:'UNKNOWN',provider:'none',check:{origin:'none',outcome:'no_result',errorCode:'LINK_CHECK_TIMEOUT',attemptedAt:clickedAt,observedAt:null}};
+        const verdict = await bounded(new Promise(resolve => {Promise.resolve().then(()=>handleCheckLinkState(request,sender,resolve)).catch(()=>resolve(unavailable));}),unavailable);
         session.providerReasons = copyAuditValue((verdict.reasons || []).slice(0, 20));
         session.check = verdict.check || null;
         session.verdict = verdict.status || 'UNKNOWN'; session.provider = verdict.provider || 'none'; session.checked = true; session.providerCheckedAt = Date.now();
-        await localCheck;
+        await localReady;
         let saved = false;
         try { saved = await updateLinkAudit(session.record.id, {
             verdict: session.verdict,

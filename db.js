@@ -122,7 +122,9 @@ class DatabaseDAO {
                 }
                 catch (error) { if (preservationNeeded || error?.code === 'REPORT_ARCHIVE_BLOCKED') noteReportArchiveBlocked(key); reject(error); transaction.abort(); return; }
                 if (!updatedRecord) { reject(new Error('Cannot update a missing record')); transaction.abort(); return; }
-                const putRequest = store.put(updatedRecord);
+                let putRequest;
+                try { putRequest = store.put(updatedRecord); }
+                catch(error) { if(preservationNeeded)noteReportArchiveBlocked(key);reject(error);transaction.abort();return; }
 
                 putRequest.onsuccess = function() {
                     result = putRequest.result;
