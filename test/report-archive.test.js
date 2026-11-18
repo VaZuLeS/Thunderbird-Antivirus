@@ -106,13 +106,15 @@ test('actual batch writers keep an offline report and archive changed content an
 
 test('manual URL and file paths preserve protocols and never repeat an accepted submission after a refused write',async()=>{
  for(const name of ['handleUrlScan','handleManualUpload'])for(const full of [false,true]){
-  const original={messageHeader:'mail',attachments:[item()],links:[{url:'https://old.invalid/',state:'KNOWN',report:{state:'COMPLETE',verdict:'malicious'}}]};
+  const hash=require('node:crypto').createHash('sha256').update('bytes').digest('hex');
+  const attachment=item();attachment.hybrid_sha256=hash;
+  const original={messageHeader:'mail',attachments:[attachment],links:[{url:'https://old.invalid/',state:'KNOWN',report:{state:'COMPLETE',verdict:'malicious'}}]};
   if(full)original.analysisReportArchive={schemaVersion:1,entries:Array.from({length:128},(_,i)=>({id:String(i),kind:'attachment',slot:0,resource:item('previous-'+i)}))};
   const s=setup(original);let requests=0;
-  Object.assign(s.c,{getSharedDB:async()=>s.db,Logger:{error(){}},URLSearchParams,File,FormData,apikey_hybridanalysis:'key',assertExternalAnalysisAllowed(){},tierAtLeast:()=>true,requireHostPermissionFor:async()=>true,requireHostPermission:async()=>{},getHybridAnalysisOptions:()=>({}),getMessageAnalysisContext:async()=>null,browser:{messages:{get:async()=>({id:7}),getAttachmentFile:async()=>new File(['bytes'],'same.bin')}},apiGateway:{fetchWithTimeout:async()=>{requests++;return {status:201,json:async()=>({job_id:'new-job',submission_id:'new-submission',sha256:'b'.repeat(64)})};}}});
+  Object.assign(s.c,{getSharedDB:async()=>s.db,Logger:{error(){}},URLSearchParams,File,FormData,apikey_hybridanalysis:'key',assertExternalAnalysisAllowed(){},tierAtLeast:()=>true,requireHostPermissionFor:async()=>true,requireHostPermission:async()=>{},getHybridAnalysisOptions:()=>({}),getMessageAnalysisContext:async()=>null,get_sha256_hash:async()=>hash,browser:{messages:{get:async()=>({id:7,headerMessageId:'mail'}),getAttachmentFile:async()=>new File(['bytes'],'same.bin')}},apiGateway:{fetchWithTimeout:async()=>{requests++;return {status:201,json:async()=>({job_id:'new-job',submission_id:'new-submission',sha256:name==='handleManualUpload'?hash:'b'.repeat(64)})};}}});
   loadBackgroundFunction(s.c,name);
   const before=JSON.stringify(s.records.get('mail'));
-  if(name==='handleUrlScan')await s.c.handleUrlScan('https://old.invalid/','mail');else await s.c.handleManualUpload(7,'1.2','same.bin','a'.repeat(64),'mail');
+  if(name==='handleUrlScan')await s.c.handleUrlScan('https://old.invalid/','mail');else await s.c.handleManualUpload(7,'1.2','same.bin',hash,'mail');
   assert.equal(requests,1,name);
   if(full){assert.equal(JSON.stringify(s.records.get('mail')),before);assert.equal(s.c.wasReportArchiveBlocked('mail'),true);}
   else {const entries=s.records.get('mail').analysisReportArchive.entries;assert.equal(entries.length,1);assert.equal(entries[0].resource.report.verdict,'malicious');}

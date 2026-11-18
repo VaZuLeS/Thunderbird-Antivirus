@@ -2737,5 +2737,11 @@
   },
   "localScoreIndicators": {
     "message": "Des indices suspects ont été détectés localement. Examinez les motifs avant d’ouvrir le lien."
+  },
+  "uploadSentLabel": {
+    "message": "Fichier envoyé"
+  },
+  "uploadSentUnassigned": {
+    "message": "Le fichier a été envoyé, mais son résultat n’a pas pu être associé à cette pièce jointe. Fermez puis rouvrez la fenêtre avant un nouvel envoi."
   }
 }

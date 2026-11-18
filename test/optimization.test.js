@@ -1247,3 +1247,80 @@ test('provider timeout does not invent an admin requirement, while unavailable p
   assert.equal(result.status,'UNKNOWN');assert.equal(result.protection?.required===true,stalledPolicy);
  }
 });
+
+async function manualUploadFixture(){
+ const s=setup({apikey:'synthetic-key',externalAnalysisConsent:true,privacyTier:'balanced'});await s.context.configure();
+ const digest=await s.context.get_sha256_hash(await new File(['test'],'actual.txt').arrayBuffer());
+ const records=sourceRecords(s,{messageHeader:s.message.headerMessageId,attachments:[{partName:'1',attachment_name:'actual.txt',hybrid_sha256:digest,hybrid_job_id:'old-job',report:{verdict:'malicious'},report_fetched_at:'2026-10-01T00:00:00Z'}]});
+ s.context.browser.messages.getAttachmentFile=async()=>new File(['test'],'actual.txt');
+ const posts=[];s.context.fetch=async(url,options)=>{posts.push({url,options});return {status:201,ok:true,json:async()=>({id:'accepted-quick-scan',sha256:digest})};};
+ return {...s,digest,records,posts,upload:(hash=digest,key=s.message.headerMessageId)=>s.context.handleManualUpload(7,'1','untrusted-name.txt',hash,key)};
+}
+
+test('manual uploads reject foreign storage keys, wrong hashes, changed bytes and ambiguous slots before POST',async()=>{
+ for(const problem of ['key','hash','bytes','missing','duplicate']){
+  const s=await manualUploadFixture();const record=s.records.get(s.message.headerMessageId);
+  if(problem==='bytes')s.context.browser.messages.getAttachmentFile=async()=>new File(['changed'],'actual.txt');
+  if(problem==='missing')s.records.clear();if(problem==='duplicate')record.attachments.push({...record.attachments[0]});
+  const before=JSON.stringify([...s.records]);
+  await assert.rejects(s.upload(problem==='hash'?'a'.repeat(64):s.digest,problem==='key'?'unrelated-record':undefined),{code:'MESSAGE_CONTEXT_CHANGED'});
+  assert.equal(s.posts.length,0,problem);assert.equal(JSON.stringify([...s.records]),before,problem);
+ }
+});
+
+test('manual uploads transmit verified bytes and Thunderbird filename, accepting a missing or uppercase response hash',async()=>{
+ for(const hashKind of ['missing','uppercase']){
+  const s=await manualUploadFixture();s.context.fetch=async(url,options)=>{s.posts.push({url,options});return {status:201,ok:true,json:async()=>({id:'accepted',...(hashKind==='uppercase'?{sha256:s.digest.toUpperCase()}: {})})};};
+  const result=await s.upload(s.digest.toUpperCase());assert.equal(result.sha256,s.digest);assert.equal(s.posts.length,1);
+  const file=s.posts[0].options.body.get('file');assert.equal(file.name,'actual.txt');assert.equal(await file.text(),'test');
+  assert.equal(s.records.get(s.message.headerMessageId).attachments[0].hybrid_quick_scan_id,'accepted');
+ }
+});
+
+test('a foreign provider hash is not assigned and the response records that the upload was sent',async()=>{
+ const s=await manualUploadFixture(),before=JSON.stringify([...s.records]);
+ s.context.fetch=async()=>{s.posts.push('POST');return {status:201,ok:true,json:async()=>({id:'foreign-job',sha256:'b'.repeat(64)})};};
+ await assert.rejects(s.upload(),error=>error.code==='RESOURCE_MISMATCH'&&error.uploadSent===true);
+ assert.equal(s.posts.length,1);assert.equal(JSON.stringify([...s.records]),before);
+});
+
+test('a late manual response cannot overwrite another resource or a later submission',async()=>{
+ for(const change of ['bytes','reference','deleted']){
+  const s=await manualUploadFixture();let release;
+  s.context.fetch=async()=>{s.posts.push('POST');return await new Promise(resolve=>{release=()=>resolve({status:201,ok:true,json:async()=>({id:'late-job',sha256:s.digest})});});};
+  const upload=s.upload();while(!release)await new Promise(setImmediate);
+  const record=s.records.get(s.message.headerMessageId);
+  if(change==='bytes')record.attachments[0].hybrid_sha256='b'.repeat(64);
+  if(change==='reference')record.attachments[0].hybrid_quick_scan_id='newer-accepted-job';
+  if(change==='deleted')s.records.clear();
+  const before=JSON.stringify([...s.records]);release();await assert.rejects(upload,error=>error.code==='RESOURCE_MISMATCH'&&error.uploadSent===true);
+  assert.equal(JSON.stringify([...s.records]),before);assert.equal(s.posts.length,1);
+ }
+});
+
+test('consent withdrawal during manual file hashing prevents the POST',async()=>{
+ const s=await manualUploadFixture(),hash=s.context.get_sha256_hash;let release;
+ s.context.get_sha256_hash=async bytes=>{await new Promise(resolve=>{release=resolve;});return hash(bytes);};
+ const upload=s.upload();while(!release)await new Promise(setImmediate);vm.runInContext('externalAnalysisConsent=false;',s.context);release();
+ await assert.rejects(upload,{code:'EXTERNAL_ANALYSIS_DISABLED'});assert.equal(s.posts.length,0);
+});
+
+test('the upload RPC preserves the sent-but-unassigned distinction for the popup',async()=>{
+ const s=await manualUploadFixture();s.context.fetch=async()=>({status:201,ok:true,json:async()=>({id:'foreign',sha256:'b'.repeat(64)})});
+ const result=await new Promise(resolve=>s.listeners.at(-1)({action:'uploadAttachment',messageId:7,partName:'1',attachmentName:'untrusted-name.txt',hash:s.digest,headerMessageId:s.message.headerMessageId},{id:'test',url:'popup.html'},resolve));
+ assert.equal(result.status,'error');assert.equal(result.code,'RESOURCE_MISMATCH');assert.equal(result.uploadSent,true);
+});
+
+test('oversized manual attachments are rejected before allocating their bytes',async()=>{
+ const s=await manualUploadFixture();let reads=0;
+ s.context.browser.messages.getAttachmentFile=async()=>({size:26*1024*1024,arrayBuffer:async()=>{reads++;throw Error('must not allocate');}});
+ await assert.rejects(s.upload(),error=>error.code==='RESOURCE_MISMATCH'&&!error.uploadSent);assert.equal(reads,0);assert.equal(s.posts.length,0);
+});
+
+test('a newer resource reference during manual hashing prevents the POST',async()=>{
+ const s=await manualUploadFixture(),hash=s.context.get_sha256_hash;let release;
+ s.context.get_sha256_hash=async bytes=>{await new Promise(resolve=>{release=resolve;});return hash(bytes);};
+ const upload=s.upload();while(!release)await new Promise(setImmediate);
+ s.records.get(s.message.headerMessageId).attachments[0].hybrid_quick_scan_id='newer-before-send';release();
+ await assert.rejects(upload,{code:'MESSAGE_CONTEXT_CHANGED'});assert.equal(s.posts.length,0);
+});

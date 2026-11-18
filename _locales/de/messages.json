@@ -2740,5 +2740,11 @@
   },
   "localScoreIndicators": {
     "message": "Lokale Auffälligkeiten gefunden. Prüfe vor dem Öffnen die Gründe."
+  },
+  "uploadSentLabel": {
+    "message": "Upload gesendet"
+  },
+  "uploadSentUnassigned": {
+    "message": "Der Upload wurde gesendet, aber sein Ergebnis konnte diesem Anhang nicht zugeordnet werden. Schließen und öffnen Sie das Popup, bevor Sie erneut eine Übertragung starten."
   }
 }

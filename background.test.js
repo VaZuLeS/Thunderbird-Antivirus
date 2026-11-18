@@ -592,68 +592,28 @@ describe('background.js', () => {
         assert.strictEqual(savedResults[0].attachmentName, 'unknown.exe');
     });
 
-    it('handleManualUpload successfully uploads and updates DB', async () => {
-        context.set_apikey('test-key');
-        context.set_privacyTier('balanced');
-
-        let fetchCalledWith = null;
-        context.fetch = async (url, options) => {
-            fetchCalledWith = options;
-            return {
-                status: 200,
-                json: async () => ({ submission_id: 'sub-upload', job_id: 'job-upload' })
-            };
-        };
-
-        let dbUpdated = false;
-        context.indexedDB.open = () => ({
-            onsuccess: function() {
-                this.result = {
-                    transaction: () => ({
-                        objectStore: () => ({
-                            get: () => ({
-                                onsuccess: function() {
-                                    this.result = {
-                                        attachments: [{ partName: 'part1', state: 'UNKNOWN' }]
-                                    };
-                                    this.onsuccess();
-                                }
-                            }),
-                            put: (data) => {
-                                if (data.attachments[0].state === 'UPLOADED') dbUpdated = true;
-                            }
-                        })
-                    })
-                };
-                this.onsuccess({ target: { result: this.result } });
-            }
-        });
-
-        const res = await context.handleManualUpload(1, 'part1', 'file.exe', 'hash123', 'header123');
-
-        assert.ok(fetchCalledWith);
-        assert.strictEqual(fetchCalledWith.method, 'POST');
-        assert.strictEqual(res.submission_id, 'sub-upload');
+    async function manualFixture() {
+        context.set_apikey('test-key'); context.set_privacyTier('balanced');
+        context.FormData=globalThis.FormData;context.File=globalThis.File;
+        const file=new File(['verified bytes'],'actual.txt');
+        const hash=await context.get_sha256_hash(await file.arrayBuffer());
+        const record={messageHeader:'test-msg-id',attachments:[{partName:'part1',hybrid_sha256:hash,state:'UNKNOWN'}]};
+        context.getSharedDB=async()=>({}); context.getFromStore=async()=>record;
+        context.updateStore=async(_db,_store,_key,edit)=>edit(record);
+        context.browser.messages.getAttachmentFile=async()=>file;
+        return {file,hash,record};
+    }
+    it('handleManualUpload successfully uploads verified bytes and updates the matching record', async () => {
+        const f=await manualFixture();let sent;
+        context.fetch=async(_url,options)=>{sent=options;return {status:201,json:async()=>({submission_id:'sub-upload',job_id:'job-upload',sha256:f.hash})};};
+        const result=await context.handleManualUpload(1,'part1','untrusted-name.exe',f.hash,'test-msg-id');
+        assert.strictEqual(sent.method,'POST');assert.strictEqual(sent.body.get('file').name,'actual.txt');
+        assert.strictEqual(result.submission_id,'sub-upload');assert.strictEqual(f.record.attachments[0].state,'UPLOADED');
     });
-
-    it('handleManualUpload throws error on failed upload', async () => {
-        context.set_apikey('test-key');
-        context.set_privacyTier('balanced');
-
-        context.fetch = async () => ({
-            status: 500,
-            json: async () => ({ error: 'Internal Error' })
-        });
-
-        await assert.rejects(
-            async () => {
-                await context.handleManualUpload(1, 'part1', 'file.exe', 'hash123', 'header123');
-            },
-            (err) => {
-                assert.strictEqual(err.message, 'Fehler beim Upload: 500');
-                return true;
-            }
-        );
+    it('handleManualUpload throws the HTTP error for an otherwise valid resource',async()=>{
+        const f=await manualFixture();context.fetch=async()=>({status:500,json:async()=>({error:'Internal Error'})});
+        await assert.rejects(context.handleManualUpload(1,'part1','actual.txt',f.hash,'test-msg-id'),/Fehler beim Upload: 500/);
+        assert.strictEqual(f.record.attachments[0].state,'UNKNOWN');
     });
 
     it('runtime.onMessage listener processes uploadAttachment action', async () => {

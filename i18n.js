@@ -2742,6 +2742,12 @@ const ThundyI18n = (() => {
   },
   "localScoreIndicators": {
     "message": "Local warning indicators found. Review the reasons before opening."
+  },
+  "uploadSentLabel": {
+    "message": "Upload sent"
+  },
+  "uploadSentUnassigned": {
+    "message": "The upload was sent, but its result could not be assigned to this attachment. Close and reopen the popup before submitting again."
   }
 };
     function get(key, params = []) {

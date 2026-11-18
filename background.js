@@ -2207,7 +2207,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case "uploadAttachment":
             handleManualUpload(request.messageId, request.partName, request.attachmentName, request.hash, request.headerMessageId)
                 .then(res => sendResponse({status: 'success', data: res}))
-                .catch(err => sendResponse({status: 'error', message: err.message, code: err.code}));
+                .catch(err => sendResponse({status:'error',message:err.message,code:err.code,...(err.uploadSent?{uploadSent:true}:{} )}));
             return true;
 
         case "scanUrl":
@@ -2378,69 +2378,73 @@ async function handleUrlScan(url, headerMessageId, analysisContext = null) {
 }
 
 async function handleManualUpload(messageId, partName, attachmentName, hash, headerMessageId) {
-    const messageContext = await getMessageAnalysisContext(await browser.messages.get(messageId));
-    const analysisContext = messageContext?.forAttachment ? messageContext.forAttachment(partName) : messageContext;
-    if (!apikey_hybridanalysis) throw new Error(uiText("ui_086", "API-Key fehlt."));
+    if (!apikey_hybridanalysis) throw new Error(uiText('ui_086', 'API-Key fehlt.'));
     assertExternalAnalysisAllowed();
-    // Uploading the full file is only allowed from "balanced" upwards; the tier
-    // applies to manual actions as well (see docs/privacy_policy.md §3.3/§5).
-    if (!tierAtLeast('balanced')) {
-        throw typedError(TIER_BLOCKS_UPLOAD, msg('errorTierUploadBlocked'));
-    }
+    if (!tierAtLeast('balanced')) throw typedError(TIER_BLOCKS_UPLOAD, msg('errorTierUploadBlocked'));
     await requireHostPermission('https://hybrid-analysis.com/api/v2/quick-scan/file');
 
-    let file = await browser.messages.getAttachmentFile(messageId, partName);
-    const content_of_atachment = file.slice();
-    const file_to_submit = new File([content_of_atachment], attachmentName, { type: file.type || 'application/octet-stream' });
+    const changed = () => typedError('MESSAGE_CONTEXT_CHANGED', msg('analysisContextChanged'));
+    if (!Number.isInteger(messageId) || typeof partName !== 'string' || !partName || typeof hash !== 'string' || !/^[a-f0-9]{64}$/i.test(hash)) throw changed();
+    const message = await browser.messages.get(messageId);
+    if (!message || message.id !== messageId) throw changed();
+    const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id;
+    if (!key || key !== headerMessageId) throw changed();
+    const digest = hash.toLowerCase();
+    const matching = record => (Array.isArray(record?.attachments) ? record.attachments : []).filter(item => item && typeof item === 'object' && !Array.isArray(item) && item.partName === partName && typeof item.hybrid_sha256 === 'string' && item.hybrid_sha256.toLowerCase() === digest);
+    const reference = item => JSON.stringify([item.hybrid_quick_scan_id || null, item.hybrid_submission_id || null, item.hybrid_job_id || null]);
+    const db = await getSharedDB();
+    const candidates = matching(await getFromStore(db, 'hybridanalysis', key));
+    if (candidates.length !== 1) throw changed();
+    const originalReference = reference(candidates[0]);
+    const file = await browser.messages.getAttachmentFile(messageId, partName);
+    if (file.size > 25 * 1024 * 1024) throw typedError('RESOURCE_MISMATCH', msg('scanCoverage_size_limit'));
+    const bytes = await file.arrayBuffer();
+    if (await get_sha256_hash(bytes) !== digest) throw changed();
 
+    const messageContext = await getMessageAnalysisContext(message);
+    const analysisContext = messageContext?.forAttachment ? messageContext.forAttachment(partName, file.name, digest) : messageContext;
+    const unassigned = () => Object.assign(typedError('RESOURCE_MISMATCH', msg('uploadSentUnassigned')), {uploadSent:true});
+    const validateResponse = data => {
+        if (data?.sha256 != null && (typeof data.sha256 !== 'string' || data.sha256.toLowerCase() !== digest)) throw unassigned();
+    };
     const formData = new FormData();
     formData.append('scan_type', 'all');
-    formData.append('file', file_to_submit);
-
+    // Send exactly the bytes whose hash was checked, with Thunderbird's actual filename.
+    formData.append('file', new File([bytes], file.name || attachmentName, {type:file.type || 'application/octet-stream'}));
     const options = getHybridAnalysisOptions('POST', formData);
-    options.analysisContext = analysisContext;
+    options.analysisContext = {...analysisContext, validateResponse};
     options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
-
+    assertExternalAnalysisAllowed();
+    if (!tierAtLeast('balanced')) throw typedError(TIER_BLOCKS_UPLOAD, msg('errorTierUploadBlocked'));
+    await requireHostPermission(options.url);
+    const beforeSend = matching(await getFromStore(db, 'hybridanalysis', key));
+    if (messageContext?.disposed || beforeSend.length !== 1 || reference(beforeSend[0]) !== originalReference) throw changed();
     const response = await apiGateway.fetchWithTimeout(options.url, options, 60000);
-    const json_data = await response.json();
-
-    if (response.status === 200 || response.status === 201) {
-        // Update DB record
-        try {
-            const db = await getSharedDB();
-            await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
-                if (existingRecord && existingRecord.attachments) {
-                    // ⚡ Bolt Optimization: Replace .findIndex() with for loop to avoid callback overhead
-                    let attIndex = -1;
-                    const attachments = existingRecord.attachments;
-                    const len = attachments.length;
-                    for (let i = 0; i < len; i++) {
-                        if (attachments[i].partName === partName) {
-                            attIndex = i;
-                            break;
-                        }
-                    }
-                    if (attIndex > -1) {
-                        existingRecord.attachments[attIndex].hybrid_quick_scan_id = typeof json_data.id==='string'?json_data.id:null;
-                        existingRecord.attachments[attIndex].hybrid_submission_id = json_data.submission_id || json_data.id;
-                        existingRecord.attachments[attIndex].hybrid_job_id = json_data.job_id || (Array.isArray(json_data.reports) && json_data.reports[0]) || json_data.id;
-                        if (json_data.sha256) existingRecord.attachments[attIndex].hybrid_sha256 = json_data.sha256;
-                        existingRecord.attachments[attIndex].state = 'UPLOADED';
-                        // Keep the immediate quick-scan payload (scanner states) instead of discarding it.
-                        const quickReport = typeof quickScanReport === 'function' ? quickScanReport(json_data) : null;
-                        existingRecord.attachments[attIndex].report = quickReport;
-                        existingRecord.attachments[attIndex].report_fetched_at = quickReport ? new Date().toISOString() : null;
-                    }
-                }
-                return existingRecord;
-            }, {preserveReports:true});
-        } catch (dbError) {
-            Logger.error('Fehler beim Aktualisieren des DB Records:', dbError);
-        }
-        return json_data;
-    } else {
-        throw new Error(uiText("ui_060", "Fehler beim Upload: ") + String(response.status));
+    const data = await response.json();
+    if (response.status !== 200 && response.status !== 201) throw new Error(uiText('ui_060', 'Fehler beim Upload: ') + String(response.status));
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw unassigned();
+    validateResponse(data);
+    try {
+        await updateStore(db, 'hybridanalysis', key, record => {
+            const current = matching(record);
+            // A later submission or another message's part must not inherit this response.
+            if (messageContext?.disposed || current.length !== 1 || reference(current[0]) !== originalReference) throw unassigned();
+            const target = current[0];
+            target.hybrid_quick_scan_id = typeof data.id === 'string' ? data.id : null;
+            target.hybrid_submission_id = data.submission_id || data.id;
+            target.hybrid_job_id = data.job_id || (Array.isArray(data.reports) && data.reports[0]) || data.id;
+            target.hybrid_sha256 = digest;
+            target.state = 'UPLOADED';
+            const quickReport = typeof quickScanReport === 'function' ? quickScanReport(data) : null;
+            target.report = quickReport;
+            target.report_fetched_at = quickReport ? new Date().toISOString() : null;
+            return record;
+        }, {preserveReports:true});
+    } catch (error) {
+        if (error.uploadSent) throw error;
+        Logger.error('Fehler beim Aktualisieren des DB Records:', error);
     }
+    return {...data, sha256:digest};
 }
 
 // Prune expired audit records when the extension starts as well as on access/write.

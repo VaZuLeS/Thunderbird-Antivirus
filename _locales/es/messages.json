@@ -2737,5 +2737,11 @@
   },
   "localScoreIndicators": {
     "message": "Se han encontrado indicios sospechosos locales. Revisa los motivos antes de abrir el enlace."
+  },
+  "uploadSentLabel": {
+    "message": "Archivo enviado"
+  },
+  "uploadSentUnassigned": {
+    "message": "El archivo se ha enviado, pero no se ha podido asociar el resultado a este adjunto. Cierre y vuelva a abrir la ventana antes de enviarlo de nuevo."
   }
 }

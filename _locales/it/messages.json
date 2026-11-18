@@ -2737,5 +2737,11 @@
   },
   "localScoreIndicators": {
     "message": "Sono stati rilevati indizi sospetti locali. Controlla i motivi prima di aprire il link."
+  },
+  "uploadSentLabel": {
+    "message": "File inviato"
+  },
+  "uploadSentUnassigned": {
+    "message": "Il file è stato inviato, ma non è stato possibile associare il risultato a questo allegato. Chiudi e riapri la finestra prima di inviarlo di nuovo."
   }
 }

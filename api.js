@@ -1077,9 +1077,9 @@ function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, he
                     }, 2000);
                 } else {
                     statusEl.textContent = uiText("ui_045", "Fehler beim Rescan: ") + (res ? res.message : uiText("ui_046", "Unbekannter Fehler"));
-                    btn.disabled = false;
+                    btn.disabled = res?.uploadSent === true;
                     btn.removeAttribute('aria-busy');
-                    btn.textContent = uiText("ui_047", "Erneut versuchen");
+                    btn.textContent = res?.uploadSent ? uiText('uploadSentLabel','Upload sent') : uiText("ui_047", "Erneut versuchen");
                 }
             }).catch(err => {
                 if (hybridReportDisposed) return;
@@ -1521,9 +1521,9 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
                 }, 3000);
             } else {
                 if (statusEl) statusEl.innerText = uiText("ui_060", "Fehler beim Upload: ") + (response ? response.message : uiText("ui_046", "Unbekannter Fehler"));
-                btn.disabled = false;
+                btn.disabled = response?.uploadSent === true;
                 btn.removeAttribute('aria-busy');
-                btn.innerText = uiText("ui_047", "Erneut versuchen");
+                btn.innerText = response?.uploadSent ? uiText('uploadSentLabel','Upload sent') : uiText("ui_047", "Erneut versuchen");
             }
         }).catch(err => {
             if (statusEl) statusEl.innerText = uiText("ui_048", "Kommunikationsfehler: ") + err;

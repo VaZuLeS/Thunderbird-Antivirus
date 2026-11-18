@@ -2737,5 +2737,11 @@
   },
   "localScoreIndicators": {
     "message": "Znaleziono lokalne oznaki zagrożenia. Przed otwarciem sprawdź przyczyny."
+  },
+  "uploadSentLabel": {
+    "message": "Plik wysłany"
+  },
+  "uploadSentUnassigned": {
+    "message": "Plik został wysłany, ale nie można było przypisać wyniku do tego załącznika. Zamknij i ponownie otwórz okno przed kolejnym wysłaniem."
   }
 }

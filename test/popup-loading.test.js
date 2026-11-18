@@ -239,3 +239,18 @@ test('a timed-out local request cannot reappear through the source event channel
  try{expire();await new Promise(setImmediate);const card=f.dom.window.document.querySelector('.local-risk');assert.equal(card.dataset.state,'failed');source=localSource(0,1,'runtime-a',{requestId:request.requestId});await f.notify();assert.equal(card.dataset.state,'failed');source=localSource(100,2);await f.notify();assert.equal(card.querySelector('progress').value,100);}
  finally{f.close();}
 });
+
+test('sent but unassigned uploads remain explicit and cannot be retried by either button in all six languages',async()=>{
+ for(const lang of ['en','de','fr','es','it','pl'])for(const kind of ['rescan','upload']){
+  let calls=0;
+  const record={attachments:[{partName:'1.2',attachment_name:'file.html',hybrid_sha256:'a'.repeat(64),state:'KNOWN',report:{state:'COMPLETE',verdict:'clean'}}]};
+  const f=await popup(record,lang,{uploadAttachment:async()=>{calls++;return {status:'error',code:'RESOURCE_MISMATCH',uploadSent:true,message:'Controlled sent but unassigned'};}});
+  try{let button;
+   if(kind==='rescan')button=[...f.dom.window.document.querySelectorAll('#hybrid_analysis_api_content button')].find(b=>b.textContent===f.catalog.ui_034.message);
+   else{const doc=f.dom.window.document;button=doc.createElement('button');const status=doc.createElement('p');status.id='upload-status-manual-fixture';doc.body.append(button,status);button.addEventListener('click',f.context.handleUploadClick({hash:'a'.repeat(64),safeHash:'manual-fixture',attachmentName:'file.html',messageId:7,partName:'1.2',headerMessageId:'fixture'}));}
+   assert.ok(button);button.click();await new Promise(setImmediate);assert.equal(calls,1);assert.equal(button.disabled,true);
+   assert.equal(kind==='rescan'?button.textContent:button.innerText,f.catalog.uploadSentLabel.message);
+   button.click();await new Promise(setImmediate);assert.equal(calls,1);assert.equal(f.requests.length,0);
+  }finally{f.close();}
+ }
+});

@@ -22,10 +22,12 @@
 | L10 | Vollständige URL-Ziele unabhängig von Anbieterfiltern; exakte Befundzuordnung | OK | test/optimization.test.js, tatsächliche Parser und simulierte Thunderbird-APIs |
 | L11 | Anhangabgleich liest nur relevante Teile und prüft tatsächliche Bytes | OK | test/optimization.test.js, Dateiaufrufe gezählt und Bytes geändert |
 | L12 | Auditwartezeiten begrenzt, reale Schreibreihenfolge und PENDING erhalten | OK | test/optimization.test.js, virtuelle Zeit und verspätete Commits |
+| M01 | Manuelle Anhangprüfung weist falsche Bindungen vor POST ab und schützt spätere Referenzen | OK | test/optimization.test.js; tatsächliche Produktfunktionen mit simulierten API-/Speichergrenzen |
+| M02 | Gesendeter, nicht zuordenbarer Upload verhindert direkte Wiederholung in sechs Sprachen | OK | test/popup-loading.test.js; beide echten Popuphandler im simulierten DOM |
 | S01 | Unbekannte Antworten und erhaltene gespeicherte Berichte in getrennten Nachrichten | OK | Echte lokale Prüfungen auf Thunderbird 140.12.0 und 153.7.0 ESR; [Vertrag und Grenzen](QUELLENABNAHME_1_25_9.md) |
 | L08 | Scorezeile und Fehlerzustand in beiden Ansichten, sechs Sprachen | OK | test/analysis-sources.test.js, simulierter DOM |
 
-**Summe:** 18 OK / 0 FAIL / 0 N/A / 4 OFFEN
+**Summe:** 20 OK / 0 FAIL / 0 N/A / 4 OFFEN
 
 API-Antworten sind synthetisch. Der konkrete Speicherfehler im Nutzerprofil ist noch nicht diagnostiziert. Keine Neuinterpretation historischer Entscheidungen und keine automatische Datenlöschung.
 
