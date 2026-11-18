@@ -296,7 +296,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     for (const tab of context.tabs) {
                         try {
                             const active = await getFirstDisplayedMessage(tab, { throwOnError: true });
-                            if (!context.disposed && active?.id === message.id) await injectIntoMessageDisplay(tab, ThundyAnalysis.render, [snapshot, labels, theme?.css || '']);
+                            if (!context.disposed && active?.id === message.id) await injectIntoMessageDisplay(tab, ThundyAnalysis.render, [snapshot, labels, theme?.css || '', {surface:'message'}]);
                             else if (active?.id !== message.id) context.tabs.delete(tab);
                         } catch (_) { /* closed or changed message */ }
                     }
@@ -314,6 +314,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
     return context;
 }
 function clearAnalysisMemory() {
+    hybridReportBroker?.clear();
     if(typeof ThundyScans !== 'undefined')ThundyScans.invalidate({silent:true,clear:true});
     if(typeof clearReportArchiveWarnings === 'function')clearReportArchiveWarnings();
     apiGateway?.clearBackoffs?.();
@@ -2082,6 +2083,20 @@ async function handleRequestScan(request, sender) {
     }
 }
 
+// Viewer snapshots never accept a caller-supplied database key or provider request.
+var hybridReportBroker = typeof ThundyHybridReport === 'undefined' ? null : ThundyHybridReport.broker(browser, async request => {
+    const context = await getMessageAnalysisContext(await browser.messages.get(request.messageId));
+    if (!context || context.disposed || context.snapshotId !== request.contextToken) throw Error('REPORT_UNAVAILABLE');
+    const snapshot = await context.snapshot();
+    if (snapshot.displayPreferences?.hybridDetails === false) throw Error('REPORT_UNAVAILABLE');
+    const record = await context.resourceRecord();
+    const candidates = request.resourceRef.startsWith('attachment:')
+        ? (record?.attachments || []).filter(item => 'attachment:'+item.partName === request.resourceRef)
+        : (record?.links || []).filter(item => item.analysisResourceRef === request.resourceRef);
+    if (context.disposed || !context.isCached() || candidates.length !== 1 || !candidates[0].report) throw Error('REPORT_UNAVAILABLE');
+    return ThundyHybridReport.project(candidates[0], request.resourceRef, snapshot.local);
+});
+
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Harden the message boundary: only our own extension contexts may drive the
     // background script (P3-25 in docs/PROBLEMANALYSE_STORE_READINESS.md).
@@ -2123,6 +2138,9 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({success:true,status:'success'});
         }).catch(()=>sendResponse({success:false,code:'ADMIN_LOCKED'}));
         return true;
+    }
+    if (['openHybridReport','readHybridReport'].includes(request.action) && hybridReportBroker) {
+        hybridReportBroker.command(request,sender).then(sendResponse).catch(()=>sendResponse({success:false,code:'REPORT_UNAVAILABLE'}));return true;
     }
     if(request.action==='openApiDebug'&&sender?.id===browser.runtime.id){const run=Number.isSafeInteger(request.runId)&&request.runId>0?'#run='+request.runId:'';browser.tabs.create({url:browser.runtime.getURL('api_debug.html')+run}).then(()=>sendResponse({success:true})).catch(()=>sendResponse({success:false}));return true;}
     if (request.action === 'openScanSettings') { browser.runtime.openOptionsPage().then(()=>sendResponse({success:true})).catch(()=>sendResponse({success:false}));return true; }

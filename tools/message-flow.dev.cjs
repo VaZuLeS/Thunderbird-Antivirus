@@ -7,9 +7,9 @@ const fs = require("node:fs"),
   design = require("../design_system.js");
 const messageHtml =
   '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Synthetic message</title><style>body{font:16px/1.5 system-ui;background:#e2e8f0;color:#17243a;padding:16px;margin:0}a{color:#075985}button,section,header,footer{font-size:4px!important;color:#e2e8f0!important;background:#e2e8f0!important}h1{font-size:22px}</style></head><body><main><h1>Synthetic message</h1><p><a id="message-link" href="https://destination.example.invalid/path?test=1">destination.example.invalid</a></p><button id="outside">Outside</button></main></body></html>';
-async function injection(catalog, scheme) {
+async function injection(catalog, scheme, density) {
   let captured;
-  const resolved = design.resolve({}, {}, scheme === "dark"),
+  const resolved = design.resolve({thundyDensity:density}, {}, scheme === "dark"),
     theme = {
       scheme,
       css:
@@ -40,7 +40,7 @@ async function injection(catalog, scheme) {
   return JSON.parse(JSON.stringify(captured));
 }
 async function prepareMessage(page, c, catalog) {
-  const payload = await injection(catalog, c.scheme);
+  const payload = await injection(catalog, c.scheme, c.density);
   const context = vm.createContext({URL, Date});
   vm.runInContext(fs.readFileSync(path.join(__dirname,"../provider_results.js"),"utf8")+"\n"+fs.readFileSync(path.join(__dirname,"../analysis_status.js"),"utf8") + "\nglobalThis.analysis=ThundyAnalysis;", context);
   await page.evaluate(({source, labels, theme}) => {
@@ -52,8 +52,8 @@ async function prepareMessage(page, c, catalog) {
       {provider:"abuseipdb",resource:"message",scope:"ip",state:"failed",verdict:"malicious",source:"stored",responses:1,failures:1},
       {provider:"urlscan",resource:"link:1",scope:"url",responses:1,state:"submitted",verdict:"unknown",source:"remote"}
     ];
-    (0,eval)("("+source+")")({messageId:42,scanJob:{id:"synthetic-job",state:"completed",completed:2,total:2,manualAllowed:true},local:{state:"checked"},rows,resourceLabels:{"attachment:1.2":"same.txt (1.2)","attachment:1.3":"same.txt (1.3)","link:0":"https://first.invalid/path","link:1":"https://second.invalid/path"}},labels,theme);
-  }, {source:context.analysis.render.toString(),labels:context.analysis.labels(key=>catalog[key]?.message||key),theme:Object.entries(design.resolve({}, {}, c.scheme === "dark").colors).map(([k,v])=>k+":"+v).join(";")+";"});
+    (0,eval)("("+source+")")({messageId:42,scanJob:{id:"synthetic-job",state:"completed",completed:2,total:2,manualAllowed:true},local:{state:"checked"},rows,resourceLabels:{"attachment:1.2":"same.txt (1.2)","attachment:1.3":"same.txt (1.3)","link:0":"https://first.invalid/path","link:1":"https://second.invalid/path"}},labels,theme,{surface:"message"});
+  }, {source:context.analysis.render.toString(),labels:context.analysis.labels(key=>catalog[key]?.message||key),theme:Object.entries(design.resolve({thundyDensity:c.density}, {}, c.scheme === "dark").colors).map(([k,v])=>k+":"+v).join(";")+";"});
 
   await page.evaluate(
     ({ source, args, lang }) => {

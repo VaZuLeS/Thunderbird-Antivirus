@@ -2704,6 +2704,7 @@ def main():
                         check_hybrid_popup(m,base,out,report,display,args.hybrid_popup_baseline,args.report_actions_check,args.report_actions_baseline)
                         if args.report_actions_check and not args.report_actions_baseline:
                             runpy.run_path(str(ROOT/'tools/manual-upload-binding.dev.py'))['check'](m,base,out,report,wait_for,open_page)
+                            runpy.run_path(str(ROOT/'tools/hybrid-report-view.dev.py'))['check'](m,base,out,report,wait_for,open_page)
                         if args.stored_source_check:
                             check_stored_sources(m,base,out,report,display,args.stored_source_baseline)
                             if tuple(map(int, report['extensionVersion'].split('.'))) >= (1,25,6) and not args.stored_source_baseline:

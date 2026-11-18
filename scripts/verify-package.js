@@ -52,6 +52,9 @@ const ALLOWED_FILES = [
   'security.html',
   'security.css',
   'analysis_status.js',
+  'hybrid_report.js',
+  'hybrid_report.html',
+  'hybrid_report.css',
   'source_export.js',
   'source_export.html',
   'options.html',
@@ -110,6 +113,9 @@ const REQUIRED_FILES = [
   'security.html',
   'security.css',
   'analysis_status.js',
+  'hybrid_report.js',
+  'hybrid_report.html',
+  'hybrid_report.css',
   'source_export.js',
   'source_export.html',
   'options.html',
@@ -147,7 +153,7 @@ const FORBIDDEN = [
 // 1.24.6 ships 47 allowlisted files including analysis_status, source_export and remote provider parsers.
 // Generator sources stay excluded; retain a small, explicit size budget.
 // Includes the dedicated diagnostic viewer and six-language flow labels.
-const MAX_UNCOMPRESSED_BYTES = 1480 * 1024;
+const MAX_UNCOMPRESSED_BYTES = 1560 * 1024;
 
 /**
  * Picks the artifact to check. `web-ext` writes one ZIP per version into the

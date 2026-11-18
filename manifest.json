@@ -67,6 +67,7 @@
       "link_audit.js",
       "security_links.js",
       "scan_jobs.js",
+      "hybrid_report.js",
       "background.js"
     ]
   },

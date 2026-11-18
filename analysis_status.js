@@ -286,7 +286,8 @@ const ThundyAnalysis = (() => {
         return result;
     }
     // Self-contained renderer: serialized into the message's isolated world too.
-    function render(data, labels, theme = '') {
+    function render(data, labels, theme = '', presentation = {}) {
+        const inline = presentation.surface === 'message';
         const document = globalThis.document;
         if (document.documentElement.dataset.thundyAnalysisMessage && document.documentElement.dataset.thundyAnalysisMessage !== String(data.messageId)) return null;
         let host = document.getElementById('thundy-analysis-status');
@@ -297,6 +298,7 @@ const ThundyAnalysis = (() => {
         const t = key => labels[key] || labels.analysisUnknown;
         if (!host) { host = document.createElement('section'); host.id = 'thundy-analysis-status'; host.attachShadow({mode:'open'}); }
         host.setAttribute('aria-label', labels.analysisTitle); host.style.cssText = 'all:initial!important;display:block!important;visibility:visible!important;opacity:1!important;margin:12px!important;' + theme.split(';').filter(Boolean).map(rule => rule + '!important').join(';');
+        host.dataset.surface = inline ? 'message' : 'popup';
         const root = host.shadowRoot;
         let live = root.querySelector('.live');
         if (!live) { live = n('div','','live'); live.setAttribute('role','status'); live.setAttribute('aria-live','polite'); live.setAttribute('aria-atomic','true'); }
@@ -398,6 +400,17 @@ const ThundyAnalysis = (() => {
         for(const [ref,report] of Object.entries(data.hybridReports||{})){
             if(data.displayPreferences?.hybridDetails===false)break;
             if(!(typeof ref==='string'&&ref.length<=80&&/^(?:attachment:[0-9]+(?:\.[0-9]+)*|link:[0-9]{1,6})$/.test(ref))||report?.schemaVersion!==1||!Array.isArray(report.sections))continue;
+            if (inline) {
+                const row=n('div','','hybrid-report-link'),button=n('button',t('hybridReportOpen'));
+                button.type='button';button.dataset.focusKey='hybrid-report:'+ref;
+                const status=n('span','');status.setAttribute('role','status');
+                row.append(n('span','Hybrid Analysis · '+resourceName({resource:ref})),button,status);
+                button.addEventListener('click',async()=>{
+                    if(button.disabled)return;button.disabled=true;
+                    try {const result=await browser.runtime.sendMessage({action:'openHybridReport',messageId:data.messageId,contextToken:data.contextToken,resourceRef:ref});if(!result?.success)throw Error('report');status.textContent='';}
+                    catch(_){status.textContent=t('hybridReportUnavailable');}finally{button.disabled=false;}
+                });card.append(row);continue;
+            }
             const panel=details('hybrid:'+ref,'Hybrid Analysis · '+t('hybridExpertTitle')+' · '+resourceName({resource:ref}));
             panel.className='hybrid-expert';
             panel.append(n('p',t('hybridExpertScope'),'muted'),n('p',t('analysisObserved')+': '+date(report.observedAt)));
@@ -501,14 +514,16 @@ const ThundyAnalysis = (() => {
         card.append(n('p', t('analysisLimit'), 'muted'));
         const announcement = [mode, localLabel, localScoreText, sourceDataIncomplete ? t('analysisStoredDataIncomplete') : '', rows.length ? phase : '', data.sourceHistory?.rows?.length ? t('analysisHistoryTitle') : '', historicalWarning ? t('analysisHistoryFlagged') : '', data.sourcePersistenceFailed ? persistenceMessage : '', data.reportArchiveBlocked ? t('analysisReportArchiveBlocked') : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
         const changed = host.dataset.announcement !== announcement;
+        const technicalDetails = inline ? details('provider-technical',t('hybridReportTechnical')) : card;
         for(const row of rows) {
             const technical=['httpStatus','providerVerdict','providerScore','reportCount','maliciousCount','suspiciousCount','totalCount','retryAfter','errorCode','quotaAction','quotaScope','quotaWindow','quotaLimit','quotaRemaining'].filter(key=>row[key]!=null).map(key=>key+': '+row[key]);
-            if(technical.length)card.append(n('p',(brands[row.provider]||row.provider)+' · '+(row.resource||'message')+' · '+technical.join(' · ')));
-            if(row.quotaResetAt)card.append(n('p',t('analysisQuotaReset')+': '+date(row.quotaResetAt)));
-            if(row.retryAt)card.append(n('p',t('analysisRetryAt')+': '+date(row.retryAt)));
-            if(row.localBackoff)card.append(n('p',t('analysisLocalBackoff'),'muted'));
+            if(technical.length)technicalDetails.append(n('p',(brands[row.provider]||row.provider)+' · '+(row.resource||'message')+' · '+technical.join(' · ')));
+            if(row.quotaResetAt)technicalDetails.append(n('p',t('analysisQuotaReset')+': '+date(row.quotaResetAt)));
+            if(row.retryAt)technicalDetails.append(n('p',t('analysisRetryAt')+': '+date(row.retryAt)));
+            if(row.localBackoff)technicalDetails.append(n('p',t('analysisLocalBackoff'),'muted'));
         }
-        for(const [id,access] of Object.entries(data.providerAccess||{})){card.append(n('p',(brands[id]||id)+' · '+t(access.configured?'analysisProviderConfigured':'analysisProviderNoKey')+' · '+t('analysisReason_'+(data.availability?.[id]||'unrecorded'))+' · '+(access.testStatus||'—')+' · '+date(access.testedAt)));}
+        for(const [id,access] of Object.entries(data.providerAccess||{})){technicalDetails.append(n('p',(brands[id]||id)+' · '+t(access.configured?'analysisProviderConfigured':'analysisProviderNoKey')+' · '+t('analysisReason_'+(data.availability?.[id]||'unrecorded'))+' · '+(access.testStatus||'—')+' · '+date(access.testedAt)));}
+        if(inline && technicalDetails.children.length>1)card.append(technicalDetails);
         const overview=n('div','','card');
         const flagged=rows.filter(row=>['malicious','suspicious'].includes(row.verdict));
         const danger=flagged.some(row=>row.verdict==='malicious');
@@ -577,7 +592,21 @@ const ThundyAnalysis = (() => {
             if(job.migration)actions.append(n('p',t('scanMigrationNotice')));
             const reasons=n('ul','');for(const [id,value] of Object.entries(job.providers||{})){const unique=[...new Set((value.checks||[]).map(c=>c.reason).filter(reason=>reason&&(reason!=='no_resources'||!value.checks.some(c=>!c.reason))))];if(value.state==='failed')unique.push(value.error==='rate_limited'?'quota':'provider_error');if(unique.length)reasons.append(n('li',(brands[id]||id)+': '+unique.map(reason=>t('analysisReason_'+reason)).join(' · ')));}if(reasons.childElementCount)actions.append(reasons);
         }
-        root.replaceChildren(style, live, ...(data.scanJob?[actions]:[]), switcher, card, overview);
+        if (inline) {
+            style.textContent += ':host([data-surface="message"]){--inline-pad:calc(var(--surface-pad,24px) / 2);font:14px/1.4 system-ui}.inline-toolbar{background:var(--card-bg,#fff);border:1px solid var(--card-border,#cbd5e1);border-radius:8px;padding:4px 8px;display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font:14px/1.4 system-ui;color:var(--text-color,#192b40);margin-bottom:6px}.inline-toolbar>.local-score{font-weight:700;margin:0}.inline-toolbar>.scan-actions{display:flex;align-items:center;flex:1;flex-wrap:wrap;gap:4px 8px;border:0;padding:0;margin:0;background:transparent;min-width:0}.inline-toolbar>.scan-actions>p{margin:0}.inline-toolbar>.scan-actions>ul,.inline-toolbar>.scan-actions>.warning{flex-basis:100%}.inline-toolbar button{margin:0}.card{padding:var(--inline-pad);font:14px/1.4 system-ui;border-radius:8px}h2{font-size:15px;margin:0 0 4px}p{margin:4px 0}li,details{margin:4px 0}summary{min-height:24px;padding-block:2px}ul{margin:4px 0}.services{gap:6px}.services>li{padding:8px}.service-results,.service-origin{margin:4px 0}.service-results{gap:4px}.service-verdict{padding:1px 6px}button{min-height:var(--control-size,44px);padding:4px 10px}.hybrid-report-link{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0}.hybrid-report-link>span{overflow-wrap:anywhere;min-width:0}.hybrid-report-link>span:first-child{flex:1}.inline-explanation{color:var(--text-muted,#536579)}';
+            const toolbar=n('div','','inline-toolbar');toolbar.append(n('p',localScoreText,'local-score'));
+            if(data.scanJob)toolbar.append(actions);toolbar.append(switcher);
+            const explanationTexts = new Set([t('analysisLimit'),t('analysisScoreExplanation'),t('analysisExportSensitive')]);
+            for(const view of [card,overview]) {
+                view.querySelector('.local-score')?.remove();
+                const explanation=details(view===card?'expert-explanation':'simple-explanation',t('hybridReportExplanation'));explanation.className='inline-explanation';
+                for(const node of [...view.children])if(node.tagName==='P'&&explanationTexts.has(node.textContent))explanation.append(node);
+                if(explanation.children.length>1)view.append(explanation);
+            }
+            if(data.sourcePersistenceFailed)overview.append(n('p',persistenceMessage,'warning'));
+            if(data.reportArchiveBlocked)overview.append(n('p',t('analysisReportArchiveBlocked'),'warning'));
+            root.replaceChildren(style,live,toolbar,card,overview);
+        } else root.replaceChildren(style, live, ...(data.scanJob?[actions]:[]), switcher, card, overview);
         if (wasPresent && changed) live.textContent = announcement;
         host.dataset.announcement = announcement;
         if (!wasPresent) { const mount = document.getElementById('analysisSourceMount'); if (mount) mount.append(host); else document.body.prepend(host); }
@@ -596,7 +625,7 @@ const ThundyAnalysis = (() => {
         } };
     }
     function labels(get) {
-        const keys = ['localScoreMessage','apiDebugOpen','apiDebugFailureHint',...['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes','storage_failed'].map(reason=>'analysisPersistence_'+reason),'analysisQuotaReset','analysisRetryAt','analysisLocalBackoff','hybridExpertEmpty','hybridExpertTitle','hybridExpertScope','hybridExpertMissing','hybridExpertYes','hybridExpertNo','hybridExpert_identity','hybridExpert_assessment','hybridExpert_scanners','hybridExpert_antivirus','hybridExpert_reports','hybridExpert_counts','hybridExpert_signatures','hybridExpert_mitre','hybridExpert_network','hybridExpert_processes','hybridExpert_extracted','hybridExpert_certificates','assessmentCompletion','assessmentCompletion_pending','assessmentCompletion_complete','assessmentCompletion_unknown','assessmentCompletion_failed','assessmentConflict','assessmentSignals','assessmentJob',...['verdict','scanner','threat_score','multiscan_result','threat_level','whitelist','overall','urlscan','engines','brand','report'].map(c=>'assessmentSignal_'+c),'scanCoverage','scanCoverageAttachments','scanCoverageLinks','scanCoverage_read_failed','scanCoverage_size_limit','scanCoverage_resource_limit','scanCoverage_inventory_incomplete','scanFailure_source_capacity','scanFailure_cancelled','scanFailure_timeout','scanFailure_scan_failed','scanActions','scanStart','scanRepeat','scanRefresh','scanRunning','scanProgress','scanMigrationNotice','scanState_idle','scanState_queued','scanState_running','scanState_completed','scanState_pending','scanState_incomplete','scanState_failed','scanState_blocked','scanState_deferred','bannerOpenOptions','auditLocalScore','analysisProviderConfigured','analysisProviderNoKey','analysisSimple','analysisExpert','analysisSimpleDocumentationIncomplete','analysisSimpleNone','analysisSimpleCaution','analysisSimpleDanger','analysisSimpleIncomplete','analysisSimpleBasis','analysisScoreExplanation','analysisApprovalRequired','analysisContinueWarning','analysisConflict','analysisExportSensitive','analysisModeResponses','analysisModeResponsesFailed','analysisCurrentAvailability','analysisStoredDataIncomplete','analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
+        const keys = ['hybridReportOpen','hybridReportUnavailable','hybridReportTechnical','hybridReportExplanation','localScoreMessage','apiDebugOpen','apiDebugFailureHint',...['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes','storage_failed'].map(reason=>'analysisPersistence_'+reason),'analysisQuotaReset','analysisRetryAt','analysisLocalBackoff','hybridExpertEmpty','hybridExpertTitle','hybridExpertScope','hybridExpertMissing','hybridExpertYes','hybridExpertNo','hybridExpert_identity','hybridExpert_assessment','hybridExpert_scanners','hybridExpert_antivirus','hybridExpert_reports','hybridExpert_counts','hybridExpert_signatures','hybridExpert_mitre','hybridExpert_network','hybridExpert_processes','hybridExpert_extracted','hybridExpert_certificates','assessmentCompletion','assessmentCompletion_pending','assessmentCompletion_complete','assessmentCompletion_unknown','assessmentCompletion_failed','assessmentConflict','assessmentSignals','assessmentJob',...['verdict','scanner','threat_score','multiscan_result','threat_level','whitelist','overall','urlscan','engines','brand','report'].map(c=>'assessmentSignal_'+c),'scanCoverage','scanCoverageAttachments','scanCoverageLinks','scanCoverage_read_failed','scanCoverage_size_limit','scanCoverage_resource_limit','scanCoverage_inventory_incomplete','scanFailure_source_capacity','scanFailure_cancelled','scanFailure_timeout','scanFailure_scan_failed','scanActions','scanStart','scanRepeat','scanRefresh','scanRunning','scanProgress','scanMigrationNotice','scanState_idle','scanState_queued','scanState_running','scanState_completed','scanState_pending','scanState_incomplete','scanState_failed','scanState_blocked','scanState_deferred','bannerOpenOptions','auditLocalScore','analysisProviderConfigured','analysisProviderNoKey','analysisSimple','analysisExpert','analysisSimpleDocumentationIncomplete','analysisSimpleNone','analysisSimpleCaution','analysisSimpleDanger','analysisSimpleIncomplete','analysisSimpleBasis','analysisScoreExplanation','analysisApprovalRequired','analysisContinueWarning','analysisConflict','analysisExportSensitive','analysisModeResponses','analysisModeResponsesFailed','analysisCurrentAvailability','analysisStoredDataIncomplete','analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
         for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded','manual','sender','links_disabled','no_resources','quota','running','provider_error']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
         return Object.fromEntries(keys.map(key => [key, get(key)]));
     }

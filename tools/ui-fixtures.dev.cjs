@@ -179,6 +179,12 @@ function addonMock({
       openOptionsPage: async () => {},
       onMessage: { addListener: fn => runtimeCallbacks.push(fn), removeListener: fn => {const i=runtimeCallbacks.indexOf(fn);if(i>=0)runtimeCallbacks.splice(i,1);} },
       sendMessage: async (p) => {
+        if(p.action === 'readHybridReport') {
+          uiTest.reportReads=(uiTest.reportReads||0)+1;
+          if(scenario==='unavailable')return {success:false};
+          return {success:true,report:{schemaVersion:2,kind:'thundy-hybrid-report',resourceRef:'link:0',resource:{url:'https://controlled.example.invalid/'+'long-path-'.repeat(12)+'?value=1#fragment',sha256:'ab'.repeat(32)},local:{score:12,state:'checked'},capturedAt:Date.now(),truncated:true,
+            reports:[0,1].map(i=>({index:i+1,verdict:i?'malicious':'none',completion:'complete',observedAt:Date.now()-1000,truncated:false,emptySections:['processes'],missingSections:['certificates'],sections:[{id:'assessment',rows:[[{key:'job_id',value:'synthetic-job-'+i},{key:'environment_description',value:i?'Second environment':'First environment'},{key:'threat_score',value:i?90:0},{key:'whitelisted',value:false}]]},{id:'network',rows:[[{key:'domains',value:'indicator-'+i+'.invalid'}]]}]}))}};
+        }
         if(p.action === 'getMessageAnalysis' && scenario === 'pending') await new Promise(resolve => {uiTest.finishSource=resolve;});
         return         p.action === 'linkApprovalCommand'
           ? p.op === 'status'

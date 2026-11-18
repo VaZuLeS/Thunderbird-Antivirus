@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="hybridReportTitle">Hybrid Analysis report</title>
+<link rel="stylesheet" href="theme.css"><link rel="stylesheet" href="hybrid_report.css">
+<script src="design_system.js"></script><script src="theme.js"></script><script src="i18n.js"></script><script src="hybrid_report.js" defer></script>
+</head><body class="admin-page profile-page"><main>
+<header class="scanner-header"><img src="img/icon-48px.png" width="40" height="40" alt=""><div><strong class="scanner-brand">Thundy AV</strong><h1 data-i18n="hybridReportTitle">Hybrid Analysis report</h1></div></header>
+<p data-i18n="hybridReportIntro"></p><p id="hybridReportStatus" role="status" aria-live="polite"></p>
+<div class="report-controls"><label><span data-i18n="hybridReportRun">Analysis run</span><select id="hybridReportSelect" disabled></select></label>
+<label><span data-i18n="hybridReportSearch">Search available fields</span><input id="hybridReportSearch" type="search" disabled></label></div>
+<div class="report-pages"><button id="hybridReportPrevious" type="button" data-i18n="auditPrevious" disabled>Previous</button><p id="hybridReportCount" role="status" aria-live="polite"></p><button id="hybridReportNext" type="button" data-i18n="auditNext" disabled>Next</button></div>
+<div id="hybridReportContent"></div>
+</main></body></html>

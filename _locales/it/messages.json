@@ -2743,5 +2743,278 @@
   },
   "uploadSentUnassigned": {
     "message": "Il file è stato inviato, ma non è stato possibile associare il risultato a questo allegato. Chiudi e riapri la finestra prima di inviarlo di nuovo."
+  },
+  "hybridReportTitle": {
+    "message": "Rapporto Hybrid Analysis"
+  },
+  "hybridReportIntro": {
+    "message": "Vista di sola lettura dei risultati ricevuti. L’apertura non invia richieste al servizio."
+  },
+  "hybridReportOpen": {
+    "message": "Mostra rapporto di analisi"
+  },
+  "hybridReportUnavailable": {
+    "message": "Rapporto non disponibile. Riaprilo dal messaggio corrente."
+  },
+  "hybridReportTechnical": {
+    "message": "Dettagli del servizio e della connessione"
+  },
+  "hybridReportExplanation": {
+    "message": "Informazioni sulla valutazione"
+  },
+  "hybridReportSummary": {
+    "message": "Valutazione e provenienza"
+  },
+  "hybridReportSnapshot": {
+    "message": "Istantanea del rapporto salvato; nessuna nuova analisi"
+  },
+  "hybridReportScope": {
+    "message": "I risultati del servizio e il punteggio locale sono separati. I campi mancanti non sono risultati negativi. Sono mostrati solo i dati disponibili entro i limiti."
+  },
+  "hybridReportCopy": {
+    "message": "Copia"
+  },
+  "hybridReportCopied": {
+    "message": "Copiato come testo."
+  },
+  "hybridReportCopyFailed": {
+    "message": "Copia non riuscita. Seleziona e copia il testo manualmente."
+  },
+  "hybridReportAvailableOnly": {
+    "message": "Righe nei dati disponibili"
+  },
+  "hybridReportNoMatches": {
+    "message": "Nessun campo corrispondente nei dati disponibili."
+  },
+  "hybridReportAvailability": {
+    "message": "Disponibilità e limiti"
+  },
+  "hybridReportRun": {
+    "message": "Esecuzione dell’analisi"
+  },
+  "hybridReportSearch": {
+    "message": "Cerca nei campi disponibili"
+  },
+  "hybridReportReady": {
+    "message": "Rapporto caricato. Nessuna nuova analisi avviata."
+  },
+  "hybridReportResource_name": {
+    "message": "Nome dell’allegato"
+  },
+  "hybridReportResource_url": {
+    "message": "URL di destinazione associata"
+  },
+  "hybridReportResource_sha256": {
+    "message": "SHA-256 della risorsa"
+  },
+  "hybridField_type": {
+    "message": "Tipo di file"
+  },
+  "hybridField_type_short": {
+    "message": "Tipo di file breve"
+  },
+  "hybridField_size": {
+    "message": "Dimensione in byte"
+  },
+  "hybridField_last_file_name": {
+    "message": "Ultimo nome del file"
+  },
+  "hybridField_submit_name": {
+    "message": "Nome dell’invio"
+  },
+  "hybridField_url_analysis": {
+    "message": "Analisi URL"
+  },
+  "hybridField_target_url": {
+    "message": "URL di destinazione del servizio (potenzialmente abbreviato)"
+  },
+  "hybridField_id": {
+    "message": "ID risposta (tipo non specificato)"
+  },
+  "hybridField_job_id": {
+    "message": "ID attività sandbox"
+  },
+  "hybridField_submission_id": {
+    "message": "ID invio"
+  },
+  "hybridField_state": {
+    "message": "Stato del servizio"
+  },
+  "hybridField_finished": {
+    "message": "Completato"
+  },
+  "hybridField_verdict": {
+    "message": "Verdetto del servizio"
+  },
+  "hybridField_threat_score": {
+    "message": "Punteggio di minaccia Hybrid Analysis"
+  },
+  "hybridField_threat_level": {
+    "message": "Livello di minaccia del servizio"
+  },
+  "hybridField_multiscan_result": {
+    "message": "Risultato multiscan (valore del servizio)"
+  },
+  "hybridField_av_detect": {
+    "message": "Valore di rilevamento AV (servizio)"
+  },
+  "hybridField_whitelisted": {
+    "message": "Voce nella lista consentita del servizio"
+  },
+  "hybridField_vx_family": {
+    "message": "Famiglia malware secondo il servizio"
+  },
+  "hybridField_classification_tags": {
+    "message": "Etichette di classificazione"
+  },
+  "hybridField_tags": {
+    "message": "Etichette"
+  },
+  "hybridField_analysis_start_time": {
+    "message": "Inizio dell’analisi"
+  },
+  "hybridField_environment_id": {
+    "message": "ID ambiente"
+  },
+  "hybridField_environment_description": {
+    "message": "Ambiente sandbox"
+  },
+  "hybridField_error_type": {
+    "message": "Tipo di errore del servizio"
+  },
+  "hybridField_error_origin": {
+    "message": "Origine dell’errore del servizio"
+  },
+  "hybridField_name": {
+    "message": "Nome"
+  },
+  "hybridField_status": {
+    "message": "Stato"
+  },
+  "hybridField_progress": {
+    "message": "Avanzamento (valore del servizio)"
+  },
+  "hybridField_positives": {
+    "message": "Rilevamenti positivi"
+  },
+  "hybridField_total": {
+    "message": "Totale controlli"
+  },
+  "hybridField_percent": {
+    "message": "Percentuale del servizio"
+  },
+  "hybridField_scan_time": {
+    "message": "Durata analisi (unità del servizio)"
+  },
+  "hybridField_scan_date": {
+    "message": "Data analisi"
+  },
+  "hybridField_product": {
+    "message": "Prodotto di scansione"
+  },
+  "hybridField_version": {
+    "message": "Versione scanner"
+  },
+  "hybridField_update": {
+    "message": "Aggiornamento scanner"
+  },
+  "hybridField_total_network_connections": {
+    "message": "Connessioni di rete"
+  },
+  "hybridField_total_processes": {
+    "message": "Processi"
+  },
+  "hybridField_total_signatures": {
+    "message": "Firme"
+  },
+  "hybridField_category": {
+    "message": "Categoria"
+  },
+  "hybridField_attck_id": {
+    "message": "ID tecnica MITRE ATT&CK"
+  },
+  "hybridField_tactic": {
+    "message": "Tattica MITRE ATT&CK"
+  },
+  "hybridField_technique": {
+    "message": "Tecnica MITRE ATT&CK"
+  },
+  "hybridField_description": {
+    "message": "Descrizione"
+  },
+  "hybridField_domains": {
+    "message": "Dominio osservato"
+  },
+  "hybridField_hosts": {
+    "message": "Host osservato"
+  },
+  "hybridField_compromised_hosts": {
+    "message": "Host compromesso secondo il servizio"
+  },
+  "hybridField_domain": {
+    "message": "Dominio"
+  },
+  "hybridField_host": {
+    "message": "Host"
+  },
+  "hybridField_ip": {
+    "message": "Indirizzo IP"
+  },
+  "hybridField_port": {
+    "message": "Porta"
+  },
+  "hybridField_protocol": {
+    "message": "Protocollo"
+  },
+  "hybridField_country": {
+    "message": "Paese"
+  },
+  "hybridField_asn": {
+    "message": "Numero di sistema autonomo"
+  },
+  "hybridField_uid": {
+    "message": "UID processo"
+  },
+  "hybridField_process_id": {
+    "message": "ID processo (PID)"
+  },
+  "hybridField_parent_uid": {
+    "message": "UID processo padre"
+  },
+  "hybridField_file_path": {
+    "message": "Percorso file"
+  },
+  "hybridField_subject": {
+    "message": "Soggetto certificato"
+  },
+  "hybridField_issuer": {
+    "message": "Emittente certificato"
+  },
+  "hybridField_valid_from": {
+    "message": "Valido dal"
+  },
+  "hybridField_valid_until": {
+    "message": "Valido fino al"
+  },
+  "hybridField_serial_number": {
+    "message": "Numero di serie certificato"
+  },
+  "hybridField_sha256": {
+    "message": "SHA-256"
+  },
+  "hybridField_sha1": {
+    "message": "SHA-1"
+  },
+  "hybridField_md5": {
+    "message": "MD5"
+  },
+  "hybridField_sha512": {
+    "message": "SHA-512"
+  },
+  "hybridField_imphash": {
+    "message": "Hash delle importazioni"
+  },
+  "hybridReportResource_quickScanId": {
+    "message": "ID Quick Scan salvato"
   }
 }
