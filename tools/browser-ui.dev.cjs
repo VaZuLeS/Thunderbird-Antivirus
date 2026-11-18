@@ -280,11 +280,11 @@ async function interaction(page, c) {
       );
     }
   } else if (c.view === 'hybrid_report.html') {
-    await page.waitForFunction(()=>!!document.getElementById('hybridReportStatus').textContent);
+    await page.waitForFunction(()=>!document.getElementById('hybridReportFilters').hidden || !!document.getElementById('hybridReportStatus').textContent);
     if(c.scenario==='unavailable')assert.equal(await page.locator('#hybridReportContent').textContent(),'');
     else {
       assert.equal(await page.locator('#hybridReportSelect option').count(),2);
-      assert.ok((await page.locator('#hybridReportContent').textContent()).includes('?value=1#fragment'));
+      assert.ok((await page.locator('#hybridReportOverview').textContent()).includes('?value=1#fragment'));
       await page.locator('#hybridReportSelect').selectOption('1');
       await page.locator('#hybridReportSearch').fill('indicator-1');
       assert.ok((await page.locator('#hybridReportContent').textContent()).includes('indicator-1.invalid'));

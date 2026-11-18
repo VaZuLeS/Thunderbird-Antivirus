@@ -5,9 +5,20 @@
 <script src="design_system.js"></script><script src="theme.js"></script><script src="i18n.js"></script><script src="hybrid_report.js" defer></script>
 </head><body class="admin-page profile-page"><main>
 <header class="scanner-header"><img src="img/icon-48px.png" width="40" height="40" alt=""><div><strong class="scanner-brand">Thundy AV</strong><h1 data-i18n="hybridReportTitle">Hybrid Analysis report</h1></div></header>
-<p data-i18n="hybridReportIntro"></p><p id="hybridReportStatus" role="status" aria-live="polite"></p>
-<div class="report-controls"><label><span data-i18n="hybridReportRun">Analysis run</span><select id="hybridReportSelect" disabled></select></label>
-<label><span data-i18n="hybridReportSearch">Search available fields</span><input id="hybridReportSearch" type="search" disabled></label></div>
-<div class="report-pages"><button id="hybridReportPrevious" type="button" data-i18n="auditPrevious" disabled>Previous</button><p id="hybridReportCount" role="status" aria-live="polite"></p><button id="hybridReportNext" type="button" data-i18n="auditNext" disabled>Next</button></div>
+<p id="hybridReportStatus" role="status" aria-live="polite"></p>
+<div id="hybridReportOverview"></div>
+<div id="hybridReportFilters" hidden>
+    <div class="report-controls">
+        <label id="hybridReportRunFilter"><span data-i18n="hybridReportRun">Analysis run</span><select id="hybridReportSelect"></select></label>
+        <label><span data-i18n="hybridReportSearch">Search available fields</span><input id="hybridReportSearch" type="search"></label>
+        <label><span data-i18n="hybridReportSection">Section</span><select id="hybridReportSection"></select></label>
+    </div>
+    <p id="hybridReportCount" role="status" aria-live="polite"></p>
+    <nav id="hybridReportPages" class="report-pages" data-i18n-aria-label="analysisHistoryPages" aria-label="Pages" hidden>
+        <button id="hybridReportPrevious" type="button" data-i18n="auditPrevious">Previous</button>
+        <span id="hybridReportPage"></span>
+        <button id="hybridReportNext" type="button" data-i18n="auditNext">Next</button>
+    </nav>
+</div>
 <div id="hybridReportContent"></div>
 </main></body></html>

@@ -2094,7 +2094,7 @@ var hybridReportBroker = typeof ThundyHybridReport === 'undefined' ? null : Thun
         ? (record?.attachments || []).filter(item => 'attachment:'+item.partName === request.resourceRef)
         : (record?.links || []).filter(item => item.analysisResourceRef === request.resourceRef);
     if (context.disposed || !context.isCached() || candidates.length !== 1 || !candidates[0].report) throw Error('REPORT_UNAVAILABLE');
-    return ThundyHybridReport.project(candidates[0], request.resourceRef, snapshot.local);
+    return ThundyHybridReport.project(candidates[0], request.resourceRef, snapshot.local, snapshot.rows);
 });
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {

@@ -3016,5 +3016,50 @@
   },
   "hybridReportResource_quickScanId": {
     "message": "Zapisany ID Quick Scan"
+  },
+  "analysisLocalOnly": {
+    "message": "Sprawdzono tylko lokalnie"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "Usługi z wynikami"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Oczekujące usługi"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Usługi z błędami"
+  },
+  "hybridReportSection": {
+    "message": "Sekcja"
+  },
+  "hybridReportAllSections": {
+    "message": "Wszystkie sekcje"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "Przetwarzanie zakończone"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "Przetwarzanie w toku"
+  },
+  "hybridReportProcessing_failed": {
+    "message": "Przetwarzanie nie powiodło się"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "Stan przetwarzania nieznany"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Pobrano raport"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Utworzono migawkę"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Zachowany wynik Hybrid Analysis dla tego zasobu"
+  },
+  "hybridReportSaved": {
+    "message": "Zapisany raport Hybrid Analysis"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Kopiuj UTC"
   }
 }

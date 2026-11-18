@@ -3021,6 +3021,51 @@ const ThundyI18n = (() => {
   },
   "hybridReportResource_quickScanId": {
     "message": "Recorded Quick-Scan ID"
+  },
+  "analysisLocalOnly": {
+    "message": "Checked locally only"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "Services with results"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Services pending"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Services with errors"
+  },
+  "hybridReportSection": {
+    "message": "Section"
+  },
+  "hybridReportAllSections": {
+    "message": "All sections"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "Processing complete"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "Processing pending"
+  },
+  "hybridReportProcessing_failed": {
+    "message": "Processing failed"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "Processing status unknown"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Report retrieved"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Snapshot created"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Retained Hybrid Analysis finding for this resource"
+  },
+  "hybridReportSaved": {
+    "message": "Saved Hybrid Analysis report"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Copy UTC"
   }
 };
     function get(key, params = []) {
