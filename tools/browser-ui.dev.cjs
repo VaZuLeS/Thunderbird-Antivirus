@@ -648,6 +648,8 @@ async function interaction(page, c) {
       await page.locator("#auditOutcome").selectOption("ABORTED");
       assert.equal(await page.locator("#auditRows tr").count(), 1);
       await page.locator("#auditJson").click();
+      assert.ok(await page.locator("#auditFullCancel").evaluate(el=>document.activeElement===el));
+      await page.locator("#auditFullSave").click();
       await page.waitForFunction(() => uiTest.downloads.length === 1);
       const downloaded = JSON.parse(
         await page.evaluate(() => uiTest.downloads[0].content),
@@ -677,6 +679,11 @@ async function interaction(page, c) {
           .update(JSON.stringify(downloaded.payload))
           .digest("hex"),
       );
+      await page.locator("#auditShare").click();
+      await page.waitForFunction(() => uiTest.downloads.length === 2);
+      const redacted=await page.evaluate(()=>uiTest.downloads[1].content);
+      assert.equal(JSON.parse(redacted).payload.kind,'thundy-link-audit-redacted');
+      assert.doesNotMatch(redacted,/example\.invalid|synthetic-abort|profileId|reasons/);
       await page.locator("#auditOutcome").selectOption("");
       assert.equal(await page.locator("#auditRows tr").count(), 2);
     }

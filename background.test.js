@@ -1215,8 +1215,8 @@ describe('background.js', () => {
 
         it('handles fetch failure/exception gracefully', async () => {
             let errorLogged = false;
-            context.console.error = (msg, e) => {
-                if (msg.includes("Fehler bei urlscan.io Abfrage")) errorLogged = true;
+            context.console.warn = (msg) => {
+                if (msg.includes("urlscan.io request failed")) errorLogged = true;
             };
             context.fetch = async () => {
                 throw new Error("Network offline");
@@ -1224,7 +1224,7 @@ describe('background.js', () => {
 
             const result = await context.checkUrlscanIo('http://error.com', 'apikey');
             assert.strictEqual(result.status, 'ERROR');
-            assert.strictEqual(result.details, 'Network offline');
+            assert.strictEqual(result.details, 'Provider request failed.');
             assert.strictEqual(errorLogged, true);
         });
 
@@ -1237,7 +1237,8 @@ describe('background.js', () => {
             const result = await context.checkUrlscanIo('http://example.com', 'apikey');
             assert.strictEqual(result.status, 'ERROR');
             assert.strictEqual(result.errorCode, 'rate_limited');
-            assert.strictEqual(result.details, 'Rate limit exceeded');
+            assert.strictEqual(result.httpStatus,429);
+            assert.ok(!result.details.includes('Rate limit exceeded'));
         });
 
         it('handles 401 invalid key correctly', async () => {
@@ -1249,7 +1250,8 @@ describe('background.js', () => {
             const result = await context.checkUrlscanIo('http://example.com', 'apikey');
             assert.strictEqual(result.status, 'ERROR');
             assert.strictEqual(result.errorCode, 'invalid_key');
-            assert.strictEqual(result.details, 'Invalid API key');
+            assert.strictEqual(result.httpStatus,401);
+            assert.ok(!result.details.includes('Invalid API key'));
         });
     });
 
@@ -2884,7 +2886,7 @@ describe('background.js', () => {
             context.fetch = async (url) => {
                 assert.strictEqual(url, 'https://hybrid-analysis.com/api/v2/overview/hash123');
                 return {
-                    json: async () => ({ verdict: 'no specific threat' })
+                    json: async () => ({ verdict: 'no specific threat', finished:true })
                 };
             };
             const res = await context.checkHybridAnalysisVerdict('hash123', 'UNKNOWN');
@@ -3069,7 +3071,7 @@ describe('background.js', () => {
             assert.strictEqual(response.status, 'MALICIOUS');
         });
 
-        it('returns linkObj state if urlscan is clean and hybrid_sha256 is missing', async () => {
+        it('keeps a response without a urlscan verdict incomplete when no Hybrid hash exists', async () => {
             context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
             context.set_urlscanApikey('test-urlscan');
 
@@ -3080,12 +3082,13 @@ describe('background.js', () => {
                 if (callCount === 2) return { status: 200, json: async () => ({ verdicts: {} }) };
             };
 
-            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'CUSTOM_STATE' }] });
+            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'UNKNOWN' }] });
             context.openDB = async () => ({});
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.equal(response.status, 'CUSTOM_STATE'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'stored'); assert.equal(response.check.outcome, 'missing_reference');
+            assert.equal(response.status, 'UNKNOWN'); assert.equal(response.provider, 'urlscan.io');
+            assert.equal(response.check.observedAt,null); assert.equal(response.check.outcome, 'incomplete');
         });
 
         it('fetches overview from hybrid analysis if hybrid_sha256 exists, returning CLEAN for no specific threat', async () => {
@@ -3095,7 +3098,7 @@ describe('background.js', () => {
 
             context.fetch = async (url) => {
                 assert.ok(url.includes('api/v2/overview/hash123'));
-                return { status: 200, json: async () => ({ verdict: 'no specific threat' }) };
+                return { status: 200, json: async () => ({ verdict: 'no specific threat', finished:true }) };
             };
 
             context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'UPLOADED', hybrid_sha256: 'hash123' }] });
@@ -3106,7 +3109,7 @@ describe('background.js', () => {
             assert.equal(response.status, 'CLEAN'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'live'); assert.equal(response.check.outcome, 'success');
         });
 
-        it('fetches overview from hybrid analysis, returning UPPERCASE verdict for threats', async () => {
+        it('warns on a Hybrid verdict without confirming processing completion', async () => {
             context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
 
             context.fetch = async () => ({ status: 200, json: async () => ({ verdict: 'malicious' }) });
@@ -3116,7 +3119,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.equal(response.status, 'MALICIOUS'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'live'); assert.equal(response.check.outcome, 'success');
+            assert.equal(response.status, 'MALICIOUS'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'live'); assert.equal(response.check.outcome, 'incomplete');
         });
 
         it('falls back to link state if hybrid analysis fetch throws an error', async () => {

@@ -61,7 +61,14 @@ test('review UI escapes evidence, paginates and exports all filtered rows', { ti
     assert.equal(dom.window.document.querySelector('#auditRows a'), null);
     dom.window.document.getElementById('auditNext').click();
     assert.equal(dom.window.document.querySelectorAll('#auditRows tr').length, 7);
+    const confirmation = dom.window.document.getElementById('auditFullConfirm');
+    confirmation.showModal = () => { confirmation.open = true; };
+    confirmation.close = () => { confirmation.open = false; };
     dom.window.document.getElementById('auditJson').click();
+    assert.equal(confirmation.open,true);
+    assert.equal(dom.window.document.activeElement.id,'auditFullCancel');
+    assert.equal(download,undefined);
+    dom.window.document.getElementById('auditFullSave').click();
     await exported;
     assert.equal(download.saveAs, true); assert.equal(revoked, true);
     assert.equal(JSON.parse(await blob.text()).payload.records.length, 57);
@@ -228,3 +235,16 @@ test('audit diagnostic block renders errorCode, errorDetails and retryAfter with
     } finally { dom.window.close(); }
 });
 
+
+test('redacted audit retains decision evidence and drops private fields even from nested checks', () => {
+    const output = JSON.stringify(exportsApi().redacted([{
+        ...records[0],id:'PRIVATE-ID',url:'https://private.invalid/a?secret=PRIVATE-TOKEN',
+        profileId:'PRIVATE-PROFILE',reasons:['PRIVATE-REASON'],providerAtDecision:'PRIVATE-PROVIDER',
+        heuristicScoreAtDecision:19,scoreAtDecision:88,verdictAtDecision:'MALICIOUS',
+        check:{outcome:'rate_limited',httpStatus:429,errorCode:'rate_limited',errorDetails:'PRIVATE-DETAIL',observedAt:100}
+    }]));
+    assert.doesNotMatch(output,/PRIVATE|private\.invalid/);
+    const [row] = JSON.parse(output);
+    assert.equal(row.heuristicScoreAtDecision,19);assert.equal(row.scoreAtDecision,88);
+    assert.equal(row.httpStatus,429);assert.equal(row.errorCode,'rate_limited');assert.equal(row.observedAt,100);
+});

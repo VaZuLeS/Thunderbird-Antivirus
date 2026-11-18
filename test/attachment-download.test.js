@@ -217,3 +217,23 @@ test('attachment dialog hides save for a hard block and focuses cancel without s
         assert.deepEqual(requests.map(r=>r.op),['status','cancel']);
     } finally {dom.window.close();}
 });
+
+test('a bound archived warning survives slot replacement until a new completed score takes precedence', async () => {
+    const f = fixture(), timestamp = '2026-11-18T15:00:00Z';
+    const previous = {...f.withScore(91),report_fetched_at:timestamp};
+    f.state.record = {attachments:[f.withScore(20,{},digest('other'))],analysisReportArchive:{entries:[
+        {kind:'attachment',resource:previous},
+        {kind:'attachment',resource:f.withScore(100,{},digest('other'))},
+        {kind:'attachment',resource:f.withScore(100,{},digest('abc'),'1.3')}
+    ]}};
+    await f.gate.start(target);
+    const status = (await f.command('status')).details;
+    assert.equal(status.source,'archive');assert.equal(status.observedAt,Date.parse(timestamp));
+    assert.equal(status.score,91);assert.equal(status.mode,'block');
+    await assert.rejects(f.command('save'),{code:'ATTACHMENT_BLOCKED'});
+    f.state.record.attachments = [f.withScore(20)];
+    const update = await f.command('save');
+    assert.equal(update.changed,true);assert.equal(update.details.source,'current');
+    assert.equal(update.details.mode,'allow');assert.equal(f.downloads.length,0);
+    assert.equal((await f.command('save')).saved,true);
+});

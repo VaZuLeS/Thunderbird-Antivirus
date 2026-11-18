@@ -388,7 +388,7 @@ test('audited link decisions persist URL, local score and provider verdict indep
     assert.equal(opened.success, true);
     const data = await state.context.readLinkAudit(); assert.equal(data.records.length, 1);
     const record = data.records[0]; assert.equal(record.outcome, 'OPENED'); assert.equal(record.url, request.url);
-    assert.equal(record.score, result.score); assert.equal(record.scoreSource, 'local-message-and-link');
+    assert.equal(record.score, result.score); assert.equal(record.scoreSource, 'decision-message-and-link');
     assert.equal(record.verdictAtDecision, 'UNKNOWN'); assert.ok(record.decidedAt >= record.clickedAt);
     assert.equal(state.requests.length, 0); assert.ok(data.profileId);
     assert.equal((await state.context.handleOpenAuditedLink(request, auditSender)).success, false);
@@ -1101,7 +1101,7 @@ test('stored link verdicts and urlscan writes never cross path, query or fragmen
  const links=urls.map(url=>({url,state:'UNKNOWN',urlscan:{status:'MALICIOUS'}}));
  const records=sourceRecords(s,{links});
  for(const url of urls){
-  for(const link of links)link.urlscan={status:link.url===url?'CLEAN':'MALICIOUS'};
+  for(const link of links)link.urlscan={status:link.url===url?'CLEAN':'MALICIOUS',assessment:{assessmentVersion:1,completion:'complete',signals:[{code:'overall',verdict:link.url===url?'none':'malicious'}]}};
   const result=await new Promise(resolve=>s.context.handleCheckLinkState({url,messageId:7},auditSender,resolve));assert.equal(result.status,'CLEAN',url);
   await s.context.persistUrlscanLinkResult(s.message,url,{status:'SUSPICIOUS'});
   assert.equal(links.filter(link=>link.urlscan.status==='SUSPICIOUS').length,1);assert.equal(links.find(link=>link.url===url).urlscan.status,'SUSPICIOUS');
@@ -1335,4 +1335,33 @@ test('manual uploads use current credentials and policy after the last storage w
   if(change==='key'){await upload;assert.equal(s.posts.length,1);assert.equal(s.posts[0].options.headers['api-key'],'rotated-key');}
   else{await assert.rejects(upload);assert.equal(s.posts.length,0,change);}
  }
+});
+
+test('a provider finding adjusts the decision value independently of the sender marker and heuristic', async () => {
+ const s=setup({customWhitelist:['example.invalid']});await s.context.configure();
+ const options={replyTo:'help@reply.invalid'};
+ const plain=s.context.calculateThreatScore('sender@example.invalid',['https://destination.invalid/'],options);
+ const enriched=s.context.calculateThreatScore('sender@example.invalid',['https://destination.invalid/'],
+  {...options,attachmentFindings:[{name:'Fixture.txt',verdict:'malicious',provider:'Hybrid Analysis'}]});
+ assert.ok(plain.heuristicReasons.some(reason=>/allowlist|whitelist/i.test(reason)));
+ assert.ok(plain.heuristicScore>=50);assert.equal(enriched.heuristicScore,plain.heuristicScore);
+ assert.ok(enriched.score>enriched.heuristicScore);
+ assert.equal(enriched.riskModelVersion,2);assert.ok(enriched.providerReasons.length>0);
+});
+
+test('a delayed OS acknowledgement leaves PENDING, prevents replay and resolves the original interaction once', async () => {
+ const s=setup();await s.context.configure();const clock=auditClock(s),req=auditRequest('delayed_native');
+ await s.context.handleAuditedLinkCheck(req,auditSender);
+ let resolve,dispatches=0;
+ s.context.handleOpenCheckedLink=async()=>{dispatches++;return {handoff:new Promise(done=>{resolve=done;})};};
+ const opening=s.context.handleOpenAuditedLink(req,auditSender);
+ while(!resolve)await new Promise(setImmediate);
+ await clock.advance(5000);
+ assert.equal((await opening).code,'LINK_HANDOFF_PENDING');
+ assert.equal(s.config.linkAuditLog[0].outcome,'PENDING');assert.equal(s.config.linkAuditLog[0].decidedAt,null);
+ assert.equal((await s.context.handleOpenAuditedLink(req,auditSender)).success,false);
+ assert.equal((await s.context.handleCancelAuditedLink(req,auditSender)).success,false);
+ resolve({success:true});await new Promise(setImmediate);
+ assert.equal(dispatches,1);assert.equal(s.config.linkAuditLog[0].outcome,'OPENED');
+ assert.equal(s.config.linkAuditLog[0].openAttempts,1);
 });

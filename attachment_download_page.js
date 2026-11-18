@@ -22,7 +22,13 @@
         get('attachmentName').textContent = details.name;
         get('attachmentScore').textContent = details.score === null ? t('analysisUnknown') : details.score+' / 100';
         get('attachmentThreshold').textContent = details.threshold+' / 100';
-        get('attachmentState').textContent = t('hybridReportProcessing_'+details.state);
+        get('attachmentState').textContent = t('hybridReportProcessing_'+(details.currentState ?? details.state));
+        const provenance=get('attachmentProvenance');
+        provenance.hidden=!details.source;
+        if (details.source) {
+            provenance.textContent=[t(details.source==='archive'?'attachmentArchivedFinding':'attachmentCurrentFinding'),
+                Number.isFinite(details.observedAt) ? new Date(details.observedAt).toLocaleString(document.documentElement.lang) : t('analysisTimeUnknown')].join(' · ');
+        }
         const reasons = {threshold:'attachmentThresholdReached',malicious:'attachmentMalicious',unknown:'attachmentUnknown'};
         const state = details.mode === 'block' ? 'attachmentBlocked' :
             details.mode === 'approval' ? details.approvalConfigured ? 'attachmentNeedsApproval' : 'securityApprovalMissing' : null;

@@ -36,6 +36,38 @@ const ThundyAttachmentDownload = (() => {
         return {mode:'allow',reason:null};
     }
 
+    function selectEvidence(record,part,digest,policy,pending) {
+        const matches = entry => entry?.partName === part &&
+            typeof entry.hybrid_sha256 === 'string' && entry.hybrid_sha256.toLowerCase() === digest;
+        const active = (Array.isArray(record?.attachments) ? record.attachments : []).filter(matches);
+        const current = active.length === 1 ? active[0] : null;
+        const result = evidence(current,digest);
+        if (pending) result.state = 'pending';
+        const observed = item => {
+            const time = Date.parse(item?.report_fetched_at);
+            return Number.isFinite(time) ? time : null;
+        };
+        const selection = {item:current,result,source:current ? 'current' : null,observedAt:observed(current)};
+        if (result.state === 'complete' && (result.malicious || validScore(result.score))) return selection;
+        const entries = record?.analysisReportArchive?.entries;
+        if (!Array.isArray(entries)) return selection;
+        const stronger = (a,b) => Number(a.malicious)-Number(b.malicious) || (a.score ?? -1)-(b.score ?? -1);
+        let best = selection;
+        for (const entry of entries) {
+            const item = entry?.resource;
+            if (entry?.kind !== 'attachment' || !matches(item)) continue;
+            const archived = evidence(item,digest);
+            if (archived.malicious || validScore(archived.score) && archived.score >= policy.threshold) {
+                const time = observed(item);
+                const rank = stronger(archived,best.result);
+                if (rank > 0 || rank === 0 && best.source === 'archive' && (time ?? 0) > (best.observedAt ?? 0)) {
+                    best = {item,result:archived,currentState:result.state,source:'archive',observedAt:time};
+                }
+            }
+        }
+        return best;
+    }
+
     function safeFilename(value) {
         let name = String(value || '').split(/[/\\]/).pop().replace(/[<>:"|?*\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/g,'_').trim();
         name = name.replace(/^[. ]+|[. ]+$/g,'');
@@ -117,22 +149,17 @@ const ThundyAttachmentDownload = (() => {
             }
             const message = await current(target);
             const revision = deps.revision(target.messageId);
-            let item;
+            let record;
             if (resource.digest && policy.mode !== 'off') {
                 // Read the latest stored result last. A manual report can update it without a scan-job revision.
-                let record;
                 try { record = await deps.record(message); } catch (_) { /* missing evidence stays unknown */ }
-                const matches = (Array.isArray(record?.attachments) ? record.attachments : [])
-                    .filter(entry => entry?.partName === target.partName &&
-                        typeof entry.hybrid_sha256 === 'string' && entry.hybrid_sha256.toLowerCase() === resource.digest);
-                if (matches.length === 1) item = matches[0];
             }
-            const result = evidence(item,resource.digest);
-            if (result.state !== 'pending' && deps.pending(target.messageId,target.partName)) result.state = 'pending';
+            const {item,result,currentState,source,observedAt} = selectEvidence(record,target.partName,resource.digest,policy,
+                deps.pending(target.messageId,target.partName));
             const rules = decision(policy,result);
-            const details = {name:safeFilename(resource.file.name),threshold:policy.threshold,...result,...rules,
+            const details = {name:safeFilename(resource.file.name),threshold:policy.threshold,...result,...rules,currentState,source,observedAt,
                 report:showReport && !!item?.report,approvalConfigured:!!saved.approval};
-            return {details, approval:saved.approval, revision,
+            return {details, item, approval:saved.approval, revision,
                 signature:JSON.stringify([policy.revision,details,saved.approval?.hash])};
         }
 
@@ -214,7 +241,7 @@ const ThundyAttachmentDownload = (() => {
                     const assessment = await boundedAssessment(entry.target,next);
                     if (challenges.get(id) !== entry || entry.until <= Date.now()) throw fail('ATTACHMENT_DIALOG_EXPIRED');
                     if (!assessment.details.report) throw fail('REPORT_UNAVAILABLE');
-                    return deps.openReport(entry.target,next,sender);
+                    return deps.openReport(entry.target,next,sender,assessment.details.source === 'archive' ? assessment.item : null);
                 }
                 const result = await deps.security.serialized(async () => {
                     let assessment = await boundedAssessment(entry.target,next);

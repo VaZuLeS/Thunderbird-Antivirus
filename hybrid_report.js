@@ -45,6 +45,16 @@ const ThundyHybridReport = (() => {
         let generation = 0;
         const views = new Map(), page = api.runtime.getURL('hybrid_report.html');
         const prune = () => { for (const [key,v] of views) if (v.expires <= clock()) views.delete(key); };
+        async function openBound(report) {
+            while (views.size >= 20) views.delete(views.keys().next().value);
+            const token = uuid(), view = {report,expires:clock()+5*60000,tabId:null,ready:null};
+            views.set(token,view);
+            try {
+                view.ready = api.tabs.create({url:page+'#'+token});
+                const tab = await view.ready;view.tabId = tab.id;
+            } catch (error) { views.delete(token);throw error; }
+            return {success:true};
+        }
         async function command(request, sender) {
             if (sender?.id !== api.runtime.id) throw Error('REPORT_UNAVAILABLE');
             prune();
@@ -53,14 +63,7 @@ const ThundyHybridReport = (() => {
                 const own = generation, report = await resolve(request);
                 if (own !== generation) throw Error('REPORT_UNAVAILABLE');
                 if (report?.schemaVersion !== 2 || report.resourceRef !== request.resourceRef) throw Error('REPORT_UNAVAILABLE');
-                while (views.size >= 20) views.delete(views.keys().next().value);
-                const token = uuid(), view = {report,expires:clock()+5*60000,tabId:null,ready:null};
-                views.set(token,view);
-                try {
-                    view.ready = api.tabs.create({url:page+'#'+token});
-                    const tab = await view.ready;view.tabId = tab.id;
-                } catch (error) { views.delete(token);throw error; }
-                return {success:true};
+                return openBound(report);
             }
             if (request.action !== 'readHybridReport' || typeof request.token !== 'string' || request.token.length > 128 || sender.url?.split('#')[0] !== page) throw Error('REPORT_UNAVAILABLE');
             const view = views.get(request.token);
@@ -70,7 +73,7 @@ const ThundyHybridReport = (() => {
             return {success:true,report:JSON.parse(JSON.stringify(view.report))};
         }
         api.tabs.onRemoved?.addListener(id => {for (const [key,v] of views) if (v.tabId === id) views.delete(key);});
-        return {command,clear:() => {generation++;views.clear();}};
+        return {command,openBound,clear:() => {generation++;views.clear();}};
     }
     function mount(api, document, location) {
         const get = id => document.getElementById(id), t = key => ThundyI18n.get(key);
@@ -228,6 +231,7 @@ const ThundyHybridReport = (() => {
             card.append(fields);
             const explanation = explain(report);
             if (explanation) card.append(explanation);
+            if (snapshot.historical === true) card.append(text('p',t('attachmentArchivedFinding'),'warning'));
             const retained = snapshot.retainedFinding;
             if (retained && warningRank[retained.verdict] > (warningRank[report.verdict] || 0)) {
                 const notice = text('div','','warning retained-finding');

@@ -1017,7 +1017,7 @@
     "message": "Keine abgeschlossene Entscheidung"
   },
   "auditMinScore": {
-    "message": "Lokaler Mindest-Score"
+    "message": "Niedrigster Entscheidungswert"
   },
   "auditFrom": {
     "message": "Von"
@@ -3160,5 +3160,29 @@
   },
   "attachmentSaveCancelled": {
     "message": "Speichern abgebrochen."
+  },
+  "auditDecisionScore": {
+    "message": "Entscheidungswert"
+  },
+  "linkHandoffPending": {
+    "message": "Die Übergabe wurde angefordert. Thunderbird hat sie noch nicht bestätigt. Sie können diesen Dialog schließen."
+  },
+  "linkPreflightTimeout": {
+    "message": "Die Prüfung konnte nicht abgeschlossen werden. Schließen Sie diesen Dialog und wählen Sie den Link erneut aus."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Historischer Hybrid-Analysis-Befund"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Aktueller Hybrid-Analysis-Befund"
+  },
+  "auditShare": {
+    "message": "Bereinigtes Audit exportieren"
+  },
+  "auditFullNotice": {
+    "message": "Das vollständige Audit enthält private URLs und Details. Geben Sie es nur an berechtigte Empfänger weiter."
+  },
+  "auditFullSave": {
+    "message": "Vollständiges Audit exportieren"
   }
 }

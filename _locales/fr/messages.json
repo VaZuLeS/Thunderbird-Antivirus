@@ -1014,7 +1014,7 @@
     "message": "Décision non finalisée"
   },
   "auditMinScore": {
-    "message": "Score local minimum"
+    "message": "Score de décision minimal"
   },
   "auditFrom": {
     "message": "Du"
@@ -3157,5 +3157,29 @@
   },
   "attachmentSaveCancelled": {
     "message": "Enregistrement annulé."
+  },
+  "auditDecisionScore": {
+    "message": "Score de décision"
+  },
+  "linkHandoffPending": {
+    "message": "L’ouverture a été demandée. Thunderbird ne l’a pas encore confirmée. Vous pouvez fermer cette boîte de dialogue."
+  },
+  "linkPreflightTimeout": {
+    "message": "La vérification a échoué. Fermez cette boîte de dialogue et sélectionnez à nouveau le lien."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Résultat historique de Hybrid Analysis"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Résultat actuel de Hybrid Analysis"
+  },
+  "auditShare": {
+    "message": "Exporter le journal expurgé"
+  },
+  "auditFullNotice": {
+    "message": "Le journal complet contient des URL et des détails privés. Partagez-le uniquement avec les destinataires autorisés."
+  },
+  "auditFullSave": {
+    "message": "Exporter le journal complet"
   }
 }

@@ -69,6 +69,23 @@ var ThundyProviderResults = (function () {
     function urlscanStatus(assessment,visual=false){
         return assessment.state==='failed'||assessment.completion==='failed'?'ERROR':assessment.completion==='pending'?'SUBMITTED':assessment.verdict==='malicious'?visual?'MALICIOUS_VISUAL':'MALICIOUS':assessment.verdict==='suspicious'?'SUSPICIOUS':assessment.verdict==='none'?'CLEAN':'UNKNOWN';
     }
+    function urlscanRecord(input,previous,now) {
+        const {details,observedAt:ignoredObservation,attemptedAt:ignoredAttempt,...record}=input;
+        const previousAssessment=previous?.uuid && previous.uuid===record.uuid ? previous.assessment : null;
+        const assessment=record.assessment;
+        if (assessment) record.assessment=merge(previousAssessment,assessment);
+        else if (previousAssessment) {
+            record.assessment=merge(previousAssessment,{assessmentVersion:1,
+                completion:record.status==='SUBMITTED'?'pending':'failed',signals:[]});
+        }
+        if (record.status==='CLEAN' && assessment?.completion!=='complete') record.status='UNKNOWN';
+        const warning = status => ['MALICIOUS','MALICIOUS_VISUAL','SUSPICIOUS'].includes(status);
+        const observed = warning(record.status) || record.status==='CLEAN';
+        const retained=previous?.retainedFinding || (warning(previous?.status)
+            ? {status:previous.status,observedAt:previous.observedAt} : null);
+        return {...record,attemptedAt:now,observedAt:observed ? now : previous?.observedAt ?? null,
+            ...(!observed && retained ? {retainedFinding:retained} : {})};
+    }
     function urlscanPending(item){
         return !!item?.uuid&&item.terminal!==true&&item.errorCode!=='result_gone'&&(item.assessment?.completion==='pending'||['TIMEOUT','SUBMITTED','ERROR'].includes(item.status));
     }
@@ -107,7 +124,8 @@ var ThundyProviderResults = (function () {
     }
     function resource(item){
         const ha=stored('hybridanalysis',item),us=item?.urlscan?.assessment?.assessmentVersion===1?stored('urlscan',item.urlscan):{verdict:judgement(item?.urlscan?.status)};
-        const values=[{verdict:ha.verdict,provider:'hybridanalysis',observedAt:Number.isFinite(Date.parse(item?.report_fetched_at))?Date.parse(item.report_fetched_at):null},{verdict:judgement(item?.hybrid_verdict?.status),provider:'hybridanalysis',observedAt:item?.hybrid_verdict?.observedAt||null},{verdict:us.verdict,provider:'urlscan',observedAt:item?.urlscan?.observedAt||null}];
+        const retained=item?.urlscan?.retainedFinding;
+        const values=[{verdict:ha.verdict,provider:'hybridanalysis',observedAt:Number.isFinite(Date.parse(item?.report_fetched_at))?Date.parse(item.report_fetched_at):null},{verdict:judgement(item?.hybrid_verdict?.status),provider:'hybridanalysis',observedAt:item?.hybrid_verdict?.observedAt||null},{verdict:judgement(retained?.status),provider:'urlscan',observedAt:retained?.observedAt||null},{verdict:us.verdict,provider:'urlscan',observedAt:item?.urlscan?.observedAt||null}];
         return values.reduce((a,b)=>verdicts.indexOf(b.verdict)>verdicts.indexOf(a.verdict)?b:a,{verdict:'unknown',provider:null,observedAt:null});
     }
     function legacy(provider,data){const a=evaluate(provider,data);return a.verdict==='malicious'?'MALICIOUS':a.verdict==='suspicious'?'SUSPICIOUS':a.verdict==='none'&&a.completion==='complete'?'CLEAN':a.completion==='complete'?'UNKNOWN':null;}
@@ -197,5 +215,5 @@ var ThundyProviderResults = (function () {
         if(scanners.some(s=>Array.isArray(s.anti_virus_results))&&scanners.filter(s=>Array.isArray(s.anti_virus_results)).every(s=>s.anti_virus_results.length===0))emptySections.push('antivirus');
         return {schemaVersion:1,sections,emptySections,truncated};
     }
-    return {evaluate,project,merge,stored,resource,legacy,hybridDetails,hybridCompletionConfirmed,urlscanStatus,urlscanPending,urlscanRejection,projectQuota};
+    return {evaluate,project,merge,stored,resource,legacy,hybridDetails,hybridCompletionConfirmed,urlscanStatus,urlscanRecord,urlscanPending,urlscanRejection,projectQuota};
 }());

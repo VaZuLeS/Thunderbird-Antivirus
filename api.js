@@ -133,8 +133,9 @@ function renderLocalAssessment(threat,state,fromSource=false){
         latestLocalAssessment=assessment;
     }else if(fromSource)return false;
     if(fromSource)localGeneration++;
-    const valid=state!=='failed'&&typeof threat?.score==='number'&&Number.isFinite(threat.score)&&threat.score>=0&&threat.score<=100;
-    const risk=valid?threat.score:null;
+    const heuristic=threat?.heuristicScore ?? threat?.score;
+    const valid=state!=='failed'&&Number.isFinite(heuristic)&&heuristic>=0&&heuristic<=100;
+    const risk=valid?heuristic:null;
     localCard.className='card local-risk'+(valid?' '+(risk>=50?'risk-high':risk>=25?'risk-medium':'risk-low'):'');
     localCard.dataset.state=state;localCard.setAttribute('aria-busy',String(state==='pending'));
     const heading=document.createElement('div');heading.className='risk-heading';
@@ -145,11 +146,11 @@ function renderLocalAssessment(threat,state,fromSource=false){
     if(valid){const meter=document.createElement('progress');meter.className='risk-meter';meter.max=100;meter.value=risk;meter.setAttribute('aria-label',score.textContent);content.push(meter);}
     const status=document.createElement('p');status.className='risk-note';
     status.textContent=uiText(state==='pending'?'analysisLocalPending':state==='failed'?'analysisLocalUnavailable':state==='incomplete'?'analysisLocalIncomplete':risk>0?'localScoreIndicators':'localScoreNoIndicators');content.push(status);
-    const reasons=Array.isArray(threat?.reasons)?threat.reasons:[];
+    const reasons=Array.isArray(threat?.heuristicReasons)?threat.heuristicReasons:Array.isArray(threat?.reasons)?threat.reasons:[];
     if(valid&&reasons.length){const list=document.createElement('ul');list.className='risk-reasons';for(const reason of reasons.slice(0,3)){const item=document.createElement('li');item.textContent=String(reason);list.append(item);}content.push(list);}
     const note=document.createElement('p');note.className='risk-note';note.textContent=uiText('popupLocalExplanation','Local indicators only. This score is not an antivirus verdict or a guarantee of safety.');content.push(note);
     localCard.replaceChildren(...content);
-    localResult={state:state==='pending'?'unrecorded':state,score:valid?risk:null,reasons:valid?reasons.slice(0,20):[],source:'local',observedAt:assessment?.observedAt||null,...(assessment?{assessment}:{})};if(!fromSource)renderLocalSourceState();return true;
+    localResult={state:state==='pending'?'unrecorded':state,score:valid?threat.score:null,heuristicScore:valid?risk:null,riskModelVersion:threat?.riskModelVersion,reasons:valid?(threat.reasons||reasons).slice(0,20):[],source:'local',observedAt:assessment?.observedAt||null,...(assessment?{assessment}:{})};if(!fromSource)renderLocalSourceState();return true;
 }
 renderLocalAssessment(null,'pending');
 refreshLocalAssessment=async()=>{
@@ -648,10 +649,13 @@ function renderUrlscanResult(urlscan, card) {
     pStatus.textContent = uiText("urlscanStatus", "Status: $1", [status]);
     card.appendChild(pStatus);
 
-    if (urlscan.details && typeof urlscan.details === 'string') {
+    if (isError) {
         const pDetails = document.createElement('p');
         pDetails.className = `ml-4 ${statusClass}`.trim();
-        pDetails.textContent = uiText("urlscanErrorDetails", "Ursache: $1", [urlscan.details]);
+        const reasons = {invalid_key:'urlscanInvalidKey',rate_limited:'urlscanRateLimited',result_gone:'urlscanResultGone',
+            timeout:'urlscanTimeoutDetails',domain_unresolvable:'urlscanDnsError',invalid_request:'urlscanInvalidRequest',
+            submission_rejected:'urlscanSubmissionRejected'};
+        pDetails.textContent = uiText(Object.hasOwn(reasons,urlscan.errorCode)?reasons[urlscan.errorCode]:'checkOutcome_failed');
         card.appendChild(pDetails);
     }
 

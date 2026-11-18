@@ -230,14 +230,14 @@ async function checkUrlscanIo(url, apikey, analysisContext = null) {
             const retryAfter = errData?.retry_after || Number(scanRes.headers?.get?.('retry-after')) || null;
             return {
                 status: 'ERROR',
-                errorCode: 'rate_limited',
+                errorCode: 'rate_limited', httpStatus: 429,
                 retryAfter: Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : null,
-                details: errData?.message || uiText('urlscanRateLimited', 'The urlscan.io rate limit or quota was reached. Please try again later.')
+                details: uiText('urlscanRateLimited', 'The urlscan.io rate limit or quota was reached. Please try again later.')
             };
         }
 
         if (scanRes.status === 401 || scanRes.status === 403) {
-            return { status: 'ERROR', errorCode: 'invalid_key', details: errData?.message || uiText('urlscanInvalidKey', 'Invalid or unauthorized urlscan.io API key.') };
+            return { status: 'ERROR', errorCode: 'invalid_key', httpStatus: scanRes.status, details: uiText('urlscanInvalidKey', 'Invalid or unauthorized urlscan.io API key.') };
         }
 
         if (!scanRes.ok) throw new Error(uiText("ui_100", "Fehler beim Starten des Scans (urlscan.io): ") + scanRes.status);
@@ -248,15 +248,15 @@ async function checkUrlscanIo(url, apikey, analysisContext = null) {
         if (!uuid) throw new Error(uiText("ui_101", "Keine UUID von urlscan.io erhalten."));
 
         if(analysisContext?.submitted)await analysisContext.submitted(uuid);
-        const result=await pollUrlscanIoResult(uuid, apikey, analysisContext, {fresh:true});
+        const result=await pollUrlscanIoResult(uuid, apikey, analysisContext, {fresh:true,requestedUrl:url});
         return {...result,uuid};
     } catch (e) {
-        Logger.error("Fehler bei urlscan.io Abfrage", e);
-        return { status: 'ERROR', errorCode: 'fetch_failed', details: e.message,...(submittedUuid?{uuid:submittedUuid}:{}) };
+        Logger.warn('urlscan.io request failed');
+        return { status: 'ERROR', errorCode: 'fetch_failed', details: uiText('checkOutcome_failed','Provider request failed.'),...(submittedUuid?{uuid:submittedUuid}:{}) };
     }
 }
 
-async function pollUrlscanIoResult(uuid, apikey, analysisContext = null, {fresh=false} = {}) {
+async function pollUrlscanIoResult(uuid, apikey, analysisContext = null, {fresh=false,requestedUrl=null} = {}) {
     analysisContext=await providerDiagnosticContext(analysisContext,'urlscan','report',!!apikey);
     // Fresh scans need at least 30 seconds; refreshing an existing UUID can start sooner.
     let waitTime = fresh ? 30000 : 2000;
@@ -266,9 +266,15 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null, {fresh=
     const failure=(errorCode,details,extra={})=>({status:'ERROR',errorCode,details,...extra,...(retainedAssessment?{assessment:ThundyProviderResults.merge(retainedAssessment,{assessmentVersion:1,completion:'failed',signals:[],state:'failed'})}:{})});
     const deadline = Date.now() + maxTime;
 
+    function matchesReport(data) {
+        if (data?.task?.uuid && data.task.uuid !== uuid) return false;
+        if (!requestedUrl || data?.task?.url == null) return true;
+        try { return new URL(data.task.url).href === new URL(requestedUrl).href; }
+        catch (_) { return false; }
+    }
     const pollContext = analysisContext ? {
         ...analysisContext,
-        validateResponse:data=>{analysisContext.validateResponse?.(data);if(data?.task?.uuid&&data.task.uuid!==uuid)throw Object.assign(Error('RESOURCE_MISMATCH'),{code:'RESOURCE_MISMATCH'});},
+        validateResponse:data=>{analysisContext.validateResponse?.(data);if(!matchesReport(data))throw Object.assign(Error('RESOURCE_MISMATCH'),{code:'RESOURCE_MISMATCH'});},
         event: (evt) => {
             if (evt && evt.phase === 'finish' && evt.state === 'incomplete' && Date.now() < deadline) {
                 return;
@@ -297,12 +303,12 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null, {fresh=
         }, Math.min(15000, deadline - Date.now()));
         } catch(error) {
             analysisContext?.guard?.();
-            return failure(error.code==='RESOURCE_MISMATCH'?'resource_mismatch':'fetch_failed',error.message);
+            return failure(error.code==='RESOURCE_MISMATCH'?'resource_mismatch':'fetch_failed',uiText('checkOutcome_failed','Provider request failed.'));
         }
         if (resultRes.status === 200) {
             const resultData = await resultRes.json();
 
-            if(resultData?.task?.uuid && resultData.task.uuid!==uuid) return failure('resource_mismatch');
+            if(!matchesReport(resultData)) return failure('resource_mismatch');
             const assessment=ThundyProviderResults.merge(retainedAssessment,ThundyProviderResults.evaluate('urlscan',resultData,'report'));
             retainedAssessment=assessment;
             const reasons=[];
@@ -323,11 +329,9 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null, {fresh=
         } else if (resultRes.status === 410) {
             return failure('result_gone',uiText('urlscanResultGone','This result was deleted by urlscan.io. Updating cannot restore it; a new submission requires an explicit scan.'),{terminal:true,httpStatus:410});
         } else if (resultRes.status === 429) {
-            let errData = null; try { errData = await resultRes.json(); } catch (_) {}
-            return failure('rate_limited',errData?.message || uiText('urlscanRateLimited', 'The urlscan.io rate limit or quota was reached. Please try again later.'));
+            return failure('rate_limited',uiText('urlscanRateLimited', 'The urlscan.io rate limit or quota was reached. Please try again later.'),{httpStatus:429});
         } else if (resultRes.status === 401 || resultRes.status === 403) {
-            let errData = null; try { errData = await resultRes.json(); } catch (_) {}
-            return failure('invalid_key',errData?.message || uiText('urlscanInvalidKey', 'Invalid or unauthorized urlscan.io API key.'));
+            return failure('invalid_key',uiText('urlscanInvalidKey', 'Invalid or unauthorized urlscan.io API key.'),{httpStatus:resultRes.status});
         } else {
             return failure('fetch_failed',uiText("ui_105", "Fehler beim Abrufen der Ergebnisse (urlscan.io): ") + resultRes.status);
         }

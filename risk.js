@@ -474,18 +474,15 @@ function calculateThreatScore(author, urls, options = {}) {
     let senderDomain = extractEmailDomain(email);
 
     const listCheck = checkLists(email, senderDomain);
-    if (listCheck && (listCheck.listType === 'blacklist' || (!attachmentFindings.some(x => x.verdict === 'malicious') && !linkFindings.some(x => x.verdict === 'malicious') && !urlhausDomains.length && !maliciousIps.length && !Object.values(parseAuthenticationResults(authHeaders)).some(values => values.some(value => value === 'fail' || value === 'softfail'))))) {
-        return { score: listCheck.score, reasons: listCheck.reasons, authStatus: 'neutral' };
+    if (listCheck?.listType === 'blacklist') {
+        return { score: 100, heuristicScore: 100, riskModelVersion: 2, reasons: listCheck.reasons,
+            heuristicReasons: listCheck.reasons, providerReasons: [], authStatus: 'neutral' };
     }
 
     const authEval = evaluateAuthHeaders(authHeaders, score, reasons);
     score = authEval.score;
     let authStatus = authEval.authStatus;
 
-    score = evaluateUrlhaus(urlhausDomains, score, reasons);
-    score = evaluateMaliciousIps(maliciousIps, score, reasons);
-    score = evaluateAttachmentFindings(attachmentFindings, score, reasons);
-    score = evaluateLinkFindings(linkFindings, score, reasons);
     score = evaluateReplyTo(replyTo, senderDomain, score, reasons);
     score = evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons);
 
@@ -502,6 +499,15 @@ function calculateThreatScore(author, urls, options = {}) {
         parsedUrlCache
     });
 
-    return { score: Math.min(score, 100), reasons: reasons, reasonDetails: reasons.details || [], authStatus: authStatus };
+    if (listCheck?.listType === 'whitelist') reasons.push(...listCheck.reasons);
+    const heuristicScore = Math.min(score, 100);
+    const heuristicReasons = reasons.slice();
+    score = evaluateUrlhaus(urlhausDomains, score, reasons);
+    score = evaluateMaliciousIps(maliciousIps, score, reasons);
+    score = evaluateAttachmentFindings(attachmentFindings, score, reasons);
+    score = evaluateLinkFindings(linkFindings, score, reasons);
+    return { score: Math.min(score, 100), heuristicScore, riskModelVersion: 2, reasons,
+        heuristicReasons, providerReasons: reasons.slice(heuristicReasons.length),
+        reasonDetails: reasons.details || [], authStatus };
 }
 

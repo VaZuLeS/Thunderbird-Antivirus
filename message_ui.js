@@ -17,7 +17,7 @@ async function injectIntoMessageDisplay(tabId, func, args = []) {
 async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null) {
     const forced = typeof ThundySecurity !== 'undefined' && (await ThundySecurity.read()).policy?.enabled;
     if (!timeOfClickProtection && !forced) return;
-    const labels = { scoreLabel:msg('localScoreLink'), localPending:msg('analysisLocalPending'), localFailed:msg('analysisLocalUnavailable'), localIncomplete:msg('analysisLocalIncomplete'), localNone:msg('localScoreNoIndicators'), localIndicators:msg('localScoreIndicators'), simple:msg('analysisSimple'), expert:msg('analysisExpert'), approval:msg('analysisApprovalRequired'), explanation:msg('analysisScoreExplanation'), incomplete:msg('analysisSimpleIncomplete'), danger:msg('analysisSimpleDanger'), caution:msg('analysisSimpleCaution'), waiting: msg('linkChecking'), warning: msg('linkWarning'), unknown: msg('linkUnknown'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel'), title: msg('linkDialogTitle'), destination: msg('linkDestination'), details: msg('linkUrlDetails'), open: msg('linkOpenBrowser'), opening: msg('linkOpening'), failed: msg('linkOpenFailed'), limited: msg('linkCheckLimited'), score: msg('auditLocalScore'), unavailable: msg('auditUnavailable'), auditFailed: msg('auditFailure'), origins: { live: msg('checkOrigin_live'), stored: msg('checkOrigin_stored'), none: msg('checkOrigin_none') }, outcomes: {success: msg('checkOutcome_success'), failed: msg('checkOutcome_failed'), disabled: msg('checkOutcome_disabled'), permission_denied: msg('checkOutcome_permission_denied'), missing_key: msg('checkOutcome_missing_key'), missing_reference: msg('checkOutcome_missing_reference'), not_requested: msg('checkOutcome_not_requested'), no_result: msg('checkOutcome_no_result')}, observed: msg('checkObserved'), attempted: msg('checkAttempted') };
+    const labels = { scoreLabel:msg('localScoreLink'), localPending:msg('analysisLocalPending'), localFailed:msg('analysisLocalUnavailable'), localIncomplete:msg('analysisLocalIncomplete'), localNone:msg('localScoreNoIndicators'), localIndicators:msg('localScoreIndicators'), simple:msg('analysisSimple'), expert:msg('analysisExpert'), approval:msg('analysisApprovalRequired'), explanation:msg('analysisScoreExplanation'), incomplete:msg('analysisSimpleIncomplete'), danger:msg('analysisSimpleDanger'), caution:msg('analysisSimpleCaution'), waiting: msg('linkChecking'), warning: msg('linkWarning'), unknown: msg('linkUnknown'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel'), title: msg('linkDialogTitle'), destination: msg('linkDestination'), details: msg('linkUrlDetails'), open: msg('linkOpenBrowser'), opening: msg('linkOpening'), failed: msg('linkOpenFailed'), limited: msg('linkCheckLimited'), score: msg('auditLocalScore'), unavailable: msg('auditUnavailable'), decisionScore:msg('auditDecisionScore'), handoffPending:msg('linkHandoffPending'), preflightTimeout:msg('linkPreflightTimeout'), auditFailed: msg('auditFailure'), origins: { live: msg('checkOrigin_live'), stored: msg('checkOrigin_stored'), none: msg('checkOrigin_none') }, outcomes: {incomplete:msg('analysisSimpleIncomplete'), rate_limited:msg('checkOutcome_rate_limited'), invalid_key:msg('checkOutcome_invalid_key'),success: msg('checkOutcome_success'), failed: msg('checkOutcome_failed'), disabled: msg('checkOutcome_disabled'), permission_denied: msg('checkOutcome_permission_denied'), missing_key: msg('checkOutcome_missing_key'), missing_reference: msg('checkOutcome_missing_reference'), not_requested: msg('checkOutcome_not_requested'), no_result: msg('checkOutcome_no_result')}, observed: msg('checkObserved'), attempted: msg('checkAttempted') };
     const theme = typeof ThundyTheme !== 'undefined' ? await ThundyTheme.snapshot() : null;
     await injectIntoMessageDisplay(tabId, function(labels, messageId, theme, forced) {
         document.documentElement.dataset.thundyForcedProtection = forced ? 'true' : 'false';
@@ -33,7 +33,7 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             busy = true;
             const url = link.href;
             const interactionId = Date.now().toString(36) + '_' + Math.random().toString(36).slice(2);
-            let opening = false;
+            let opening = false, awaitingHandoff = false;
             const panel = document.createElement('div');
             panel.id = 'thundy-link-dialog';
             panel.setAttribute('role', 'alertdialog');
@@ -92,7 +92,7 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                 if (!panel.isConnected || (opening && reason !== 'opened' && reason !== 'context_closed')) return;
                 panel.remove(); busy = false; if (link.isConnected) link.focus();
                 document.defaultView.removeEventListener('pagehide', onPageHide);
-                if (reason !== 'opened') browser.runtime.sendMessage({ action: 'cancelLinkInteraction', interactionId, url, messageId, reason }).catch(() => {});
+                if (reason !== 'opened' && !awaitingHandoff) browser.runtime.sendMessage({ action: 'cancelLinkInteraction', interactionId, url, messageId, reason }).catch(() => {});
             };
             const onPageHide = () => close('context_closed');
             document.defaultView.addEventListener('pagehide', onPageHide);
@@ -122,7 +122,7 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             if (!panel.isConnected) return;
             if (!link.isConnected || link.href !== url) { close('destination_changed'); return; }
             const dangerous = /MALICIOUS|SUSPICIOUS|MALICIOUS_VISUAL/.test(result && result.status || '');
-            const clean = result && result.status === 'CLEAN' && (!result.check || result.check.origin === 'live');
+            const clean = result && result.status === 'CLEAN' && result.check?.origin === 'live' && result.check?.outcome === 'success';
             const local=result?.local||{score:result?.score,state:'unknown',reasons:[]};
             const validScore=typeof local.score==='number'&&Number.isFinite(local.score)&&local.score>=0&&local.score<=100&&local.state!=='failed';
             const uncertain=result?.check?.origin==='stored'||!validScore||local.state!=='checked';
@@ -130,7 +130,7 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             text.textContent = dangerous ? labels.danger : validScore&&local.score>0 ? labels.localIndicators : local.state==='failed' ? labels.localFailed : local.state==='incomplete' ? labels.localIncomplete : local.state==='checked'&&validScore ? labels.localNone : clean ? labels.noDetection : labels.incomplete;
             score.textContent=labels.scoreLabel+': '+(validScore?local.score+' / 100':labels.unavailable);
             if(validScore&&local.state==='incomplete'){const limited=document.createElement('p');limited.className='note';limited.textContent=labels.localIncomplete;card.insertBefore(limited,note);}
-            const displayedReasons=[...(Array.isArray(local.reasons)?local.reasons.map(text=>({text,source:'local'})):[]),...(Array.isArray(result?.reasons)?result.reasons.map(text=>({text,source:'provider'})):[])];
+            const displayedReasons=[...(Array.isArray(local.reasons)?local.reasons.map(text=>({text,source:'local'})):[]),...[...new Set([...(local.providerReasons||[]),...(Array.isArray(result?.reasons)?result.reasons:[])])].map(text=>({text,source:'provider'}))];
             if (displayedReasons.length) {
                 for (const [index,reason] of displayedReasons.entries()) { const item = document.createElement('li'); item.textContent = String(reason.text);item.dataset.source=reason.source; if(index>=3){item.dataset.expert='true';item.hidden=true;} reasons.appendChild(item); }
                 reasons.hidden = !reasons.childElementCount;
@@ -141,6 +141,16 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                 errItem.textContent = String(result.errorDetails || result.check.error);
                 reasons.appendChild(errItem);
                 reasons.hidden = false;
+            }
+            if (Number.isFinite(local.decisionScore)) {
+                const decision=document.createElement('p');decision.className='note';decision.dataset.expert='true';decision.hidden=true;
+                decision.textContent=labels.decisionScore+' · '+local.decisionScore+' / 100';
+                card.insertBefore(decision,note);
+            }
+            if(result?.check?.outcome && result.check.outcome!=='success') {
+                const pending=document.createElement('p');pending.className='note';
+                pending.textContent=labels.outcomes[result.check.outcome]||labels.incomplete;
+                card.insertBefore(pending,note);
             }
             if (result?.check) {
                 const provenance = document.createElement('p'); provenance.className = 'note';provenance.dataset.expert='true';provenance.hidden=true;
@@ -166,6 +176,14 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                     const opened = await browser.runtime.sendMessage({ action: 'openCheckedLink', url, messageId, interactionId });
                     if (opened?.code === 'APPROVAL_NOT_CONFIGURED') { error.textContent=labels.approval;opening=false;cancel.disabled=false;proceed.disabled=true;return; }
                     if (opened?.code === 'APPROVAL_REQUIRED') { await browser.runtime.sendMessage({action:'startLinkApproval',url,messageId,interactionId}); opening=false;cancel.disabled=false;proceed.disabled=false;proceed.removeAttribute('aria-busy');proceed.textContent=buttonLabel;return; }
+                    if (opened?.code === 'LINK_HANDOFF_PENDING') {
+                        error.textContent=labels.handoffPending;opening=false;awaitingHandoff=true;cancel.disabled=false;
+                        proceed.hidden=true;cancel.focus();return;
+                    }
+                    if (opened?.code === 'LINK_PREFLIGHT_TIMEOUT' || opened?.code === 'LINK_CONTEXT_CHANGED') {
+                        error.textContent=labels.preflightTimeout;opening=false;cancel.disabled=false;
+                        proceed.hidden=true;cancel.focus();return;
+                    }
                     if (opened && opened.success) { close('opened'); return; }
                 } catch (e) { /* show the localized error below */ }
                 opening = false; cancel.disabled = false; proceed.disabled = false; proceed.removeAttribute('aria-busy'); proceed.textContent = buttonLabel; error.textContent = labels.failed;

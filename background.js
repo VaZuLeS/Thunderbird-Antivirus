@@ -983,7 +983,10 @@ function recordLocalCoverage(context, coverage, threat = null, assessment = thre
   assessment ||= beginLocalAssessment(context.messageId);
   const previous=context.model.data.local?.assessment;
   if(previous?.runtimeId===assessment.runtimeId&&previous.revision>=assessment.revision)return false;
-  context.model.data.local = {...coverage,source:'local',observedAt:assessment.observedAt,assessment,...(threat ? {score:threat.score,reasons:threat.reasons.slice(0,20)} : {})};
+  context.model.data.local = {...coverage,source:'local',observedAt:assessment.observedAt,assessment,...(threat ? {
+    score:threat.score,heuristicScore:threat.heuristicScore,riskModelVersion:threat.riskModelVersion,
+    reasons:threat.reasons.slice(0,20),heuristicReasons:threat.heuristicReasons?.slice(0,20),providerReasons:threat.providerReasons?.slice(0,20)
+  } : {})};
   context.schedule();
   return true;
 }
@@ -1808,7 +1811,7 @@ async function persistUrlscanLinkResult(message, url, res) {
     try {
         const db = await getSharedDB();
 
-        const observedAt = Date.now();
+        const attemptedAt = Date.now();
         const reportUrl = typeof res.reportUrl === 'string' && /^https:\/\/urlscan\.io\/result\/[A-Za-z0-9_-]+\/?$/i.test(res.reportUrl.trim())
             ? res.reportUrl.trim()
             : null;
@@ -1816,20 +1819,18 @@ async function persistUrlscanLinkResult(message, url, res) {
             if (!existingRecord || !Array.isArray(existingRecord.links)) return existingRecord;
             for (const item of existingRecord.links) {
                 if (item && sameAnalysisUrl(item.url,url)) {
-                    item.urlscan = {
-                        status: res.status,
+                    item.urlscan = ThundyProviderResults.urlscanRecord({
+                        status:res.status,
                         ...(res.terminal===true?{terminal:true}:{}),
-                        ...(res.assessment?.assessmentVersion===1?{assessment:ThundyProviderResults.merge(item.urlscan?.uuid===res.uuid?item.urlscan?.assessment:null,res.assessment)}:{}),
+                        ...(res.assessment?.assessmentVersion===1?{assessment:res.assessment}:{}),
                         ...(typeof res.uuid==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(res.uuid)?{uuid:res.uuid}:{}),
-                        reasons: Array.isArray(res.reasons) ? res.reasons : [],
-                        ...(res.details && { details: res.details }),
-                        ...(res.errorCode && { errorCode: res.errorCode }),
-                        ...(reportUrl && { reportUrl }),
-                        observedAt
-                    };
+                        reasons:Array.isArray(res.reasons)?res.reasons:[],
+                        ...(res.errorCode?{errorCode:res.errorCode}:{}),
+                        ...(reportUrl?{reportUrl}:{})
+                    },item.urlscan,attemptedAt);
                 }
             }
-            existingRecord.updatedAt = observedAt;
+            existingRecord.updatedAt = attemptedAt;
             return existingRecord;
         }, { preserveReports: true });
     } catch (e) {
@@ -1845,7 +1846,10 @@ async function persistHybridLinkVerdict(message, url, result) {
         await updateStore(await getSharedDB(), 'hybridanalysis', message.headerMessageId, existingRecord => {
             if (!existingRecord || !Array.isArray(existingRecord.links)) return existingRecord;
             for (const item of existingRecord.links) {
-                if (item && sameAnalysisUrl(item.url,url)) item.hybrid_verdict = { status: result.status, observedAt };
+                if (item && sameAnalysisUrl(item.url,url)) {
+                    if (result.check?.outcome !== 'success' && item.hybrid_verdict?.status === 'MALICIOUS' && result.status !== 'MALICIOUS') continue;
+                    item.hybrid_verdict = {status:result.status,observedAt,completion:result.check?.outcome === 'success'?'complete':'incomplete'};
+                }
             }
             existingRecord.updatedAt = observedAt;
             return existingRecord;
@@ -1886,45 +1890,49 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         if (request.userAction === true && urlscanApikey && tierAtLeast('max') && (!linkObj || linkObj.state === 'UNKNOWN')) {
             try {
                 const res = await checkUrlscanIo(request.url, urlscanApikey, analysisContext);
-                if(res?.status==='UNKNOWN'){incompleteProvider=true;await persistUrlscanLinkResult(message,request.url,res);}
-                if(['ERROR','TIMEOUT'].includes(res?.status))incompleteProvider=true;
-                const outcome = res?.status === 'NOT_CHECKED' ? 'not_requested' :
-                    res?.errorCode === 'rate_limited' ? 'rate_limited' :
-                    res?.errorCode === 'invalid_key' ? 'invalid_key' : 'failed';
+                const status = res?.status === 'CLEAN' && res.assessment?.completion !== 'complete' ? 'UNKNOWN' : res?.status;
+                const hasFinding = ['MALICIOUS','MALICIOUS_VISUAL','SUSPICIOUS','CLEAN'].includes(status);
+                const completed = hasFinding && res?.assessment?.completion === 'complete';
+                const outcome = completed ? 'success' : status === 'NOT_CHECKED' ? 'not_requested' :
+                    ['rate_limited','invalid_key'].includes(res?.errorCode) ? res.errorCode :
+                    ['UNKNOWN','SUBMITTED','TIMEOUT'].includes(status) || hasFinding ? 'incomplete' : 'failed';
+                if (!completed && status !== 'NOT_CHECKED') incompleteProvider = true;
+                const attemptedAt = Date.now();
                 urlscanAttempt = {
-                    origin: 'none',
+                    origin: hasFinding ? 'live' : 'none',
                     outcome,
                     errorCode: res?.errorCode || null,
                     errorDetails: res?.details || null,
+                    httpStatus: res?.httpStatus || null,
                     retryAfter: res?.retryAfter || null,
-                    attemptedAt: Date.now(),
-                    observedAt: null
+                    attemptedAt,
+                    observedAt: hasFinding ? attemptedAt : null
                 };
-                if (res && res.status !== 'ERROR' && res.status !== 'TIMEOUT' && res.status !== 'NOT_CHECKED') {
-                    await persistUrlscanLinkResult(message, request.url, res);
-                    // Wir überschreiben das Verhalten: Wenn es Visuelles Phishing ist, sofort warnen
-                    await sendResponse({ status: res.status, reasons: res.reasons, provider: 'urlscan.io', check: { origin: 'live', outcome: 'success', attemptedAt: Date.now(), observedAt: Date.now() } });
+                if (res && status !== 'NOT_CHECKED') await persistUrlscanLinkResult(message, request.url, {...res,status});
+                if (hasFinding) {
+                    await sendResponse({ status, reasons: res.reasons, provider: 'urlscan.io', check: urlscanAttempt });
                     return;
-                } else if (res && (res.status === 'ERROR' || res.status === 'TIMEOUT')) {
-                    await persistUrlscanLinkResult(message, request.url, res);
                 }
             } catch (e) {
-                urlscanAttempt = { origin: 'none', outcome: 'failed', errorCode: e.name || 'error', errorDetails: e.message, attemptedAt: Date.now(), observedAt: null };
-                Logger.error("Fehler bei Time-of-Click Live-Scan:", e);
+                urlscanAttempt = { origin: 'none', outcome: 'failed', errorCode: 'fetch_failed', attemptedAt: Date.now(), observedAt: null };
+                incompleteProvider = true;
+                Logger.warn('urlscan.io click check failed');
             }
         }
 
-        if (linkObj && linkObj.urlscan && ['MALICIOUS_VISUAL', 'MALICIOUS', 'SUSPICIOUS', 'CLEAN'].includes(linkObj.urlscan.status) && (!linkObj.hybrid_sha256 || linkObj.state === 'UNKNOWN')) {
+        if (linkObj?.urlscan && ['MALICIOUS_VISUAL','MALICIOUS','SUSPICIOUS','CLEAN'].includes(linkObj.urlscan.status) &&
+            (!linkObj.hybrid_sha256 || linkObj.state === 'UNKNOWN') &&
+            (linkObj.urlscan.status !== 'CLEAN' || linkObj.urlscan.assessment?.completion === 'complete')) {
             await sendResponse({
                 status: linkObj.urlscan.status,
                 reasons: Array.isArray(linkObj.urlscan.reasons) ? linkObj.urlscan.reasons : [],
                 provider: 'urlscan.io',
-                check: { origin: 'stored', outcome: 'success', attemptedAt: request.userAction ? Date.now() : null, observedAt: Number.isFinite(linkObj.urlscan.observedAt) ? linkObj.urlscan.observedAt : null }
+                check: { origin: 'stored', outcome: linkObj.urlscan.assessment?.completion === 'complete' ? 'success' : 'incomplete', attemptedAt: request.userAction ? Date.now() : null, observedAt: Number.isFinite(linkObj.urlscan.observedAt) ? linkObj.urlscan.observedAt : null }
             });
             return;
         }
 
-        if (linkObj) {
+        if (linkObj?.hybrid_sha256) {
             // A previously observed live verdict or stored report outranks the submission state.
             const storedVerdict = linkObj.hybrid_verdict && ['MALICIOUS', 'SUSPICIOUS', 'CLEAN'].includes(linkObj.hybrid_verdict.status) ? linkObj.hybrid_verdict : null;
             const reportVerdict = !storedVerdict && linkObj.report && typeof extractHybridVerdictFromOverview === 'function' ? extractHybridVerdictFromOverview(linkObj.report) : null;
@@ -1936,7 +1944,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
                 analysisContext,
                 quickScanId: linkObj.hybrid_quick_scan_id || linkObj.hybrid_submission_id || linkObj.hybrid_job_id || null
             });
-            if (result && result.check && result.check.origin === 'live' && result.check.outcome === 'success' && typeof persistHybridLinkVerdict === 'function') {
+            if (result && result.check && result.check.origin === 'live' && (result.check.outcome === 'success' || ['MALICIOUS','SUSPICIOUS'].includes(result.status)) && typeof persistHybridLinkVerdict === 'function') {
                 await persistHybridLinkVerdict(message, linkObj.url, result);
             }
             await sendResponse({ ...result, provider: 'Hybrid Analysis' });
@@ -1962,15 +1970,15 @@ function validLinkRequest(request, sender, { checking = true } = {}) {
 }
 
 // Message documents cannot navigate reliably. Use Thunderbird's external-browser API.
-async function handleOpenCheckedLink(request, sender) {
+async function handleOpenCheckedLink(request, sender, options) {
     try {
         const tabId = sender && sender.tab && sender.tab.id;
         if (tabId == null || request.messageId == null || typeof request.url !== 'string') return { success: false };
         const url = new URL(request.url);
         if (url.protocol !== 'http:' && url.protocol !== 'https:') return { success: false };
+        if (typeof ThundyLinkSecurity !== 'undefined') return await ThundyLinkSecurity.open(request,sender,options);
         const message = await getFirstDisplayedMessage(tabId, { throwOnError: true });
         if (!message || message.id !== request.messageId) return { success: false };
-        if (typeof ThundyLinkSecurity !== 'undefined') return await ThundyLinkSecurity.open(request,sender);
         await browser.windows.openDefaultBrowser(url.href);
         return { success: true };
     } catch (error) {
@@ -2024,6 +2032,7 @@ async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { request
         }
         if (response.status === 429) {
             check.outcome = 'rate_limited';
+            check.httpStatus = 429;
             check.errorCode = 'rate_limited';
             let retrySeconds = null;
             try {
@@ -2043,12 +2052,14 @@ async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { request
         if (response.status === 401 || response.status === 403) {
             check.outcome = 'invalid_key';
             check.errorCode = 'invalid_key';
+            check.httpStatus = response.status;
             check.error = 'Invalid API key';
             check.errorDetails = 'Invalid or unauthorized Hybrid Analysis API key';
             return fallback();
         }
         if (response.ok === false) {
             check.outcome = 'failed';
+            check.httpStatus = response.status;
             check.errorCode = `http_${response.status}`;
             check.error = `HTTP ${response.status}`;
             check.errorDetails = `HTTP ${response.status}`;
@@ -2056,13 +2067,24 @@ async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { request
         }
         const data = await response.json();
         const verdict = extractHybridVerdictFromOverview(data);
-        if (!verdict) { check.outcome = 'no_result'; return fallback(); }
-        return { status: verdict, check: { ...check, origin: 'live', outcome: 'success', observedAt: Date.now() } };
+        const roots = Array.isArray(data) ? data : [data];
+        if (roots.some(row => row?.sha256 != null && String(row.sha256).toLowerCase() !== String(hybrid_sha256).toLowerCase())) {
+            check.outcome = 'failed';
+            check.errorCode = 'resource_mismatch';
+            return fallback();
+        }
+        const assessment = ThundyProviderResults.evaluate('hybridanalysis',data);
+        const complete = assessment.completion === 'complete' && roots.length > 0 &&
+            roots.every(ThundyProviderResults.hybridCompletionConfirmed);
+        if (!verdict || verdict === 'UNKNOWN' || verdict === 'CLEAN' && !complete) {
+            check.outcome = assessment.completion === 'pending' ? 'incomplete' : 'no_result';
+            return fallback();
+        }
+        return { status: verdict, check: { ...check, origin: 'live', outcome: complete ? 'success' : 'incomplete', observedAt: Date.now() } };
     } catch (error) {
         check.outcome = 'failed';
-        check.errorCode = error.name || 'error';
-        check.error = error.message;
-        check.errorDetails = error.message;
+        check.errorCode = error instanceof SyntaxError ? 'invalid_response' : 'fetch_failed';
+        check.errorDetails = uiText('checkOutcome_failed','Provider request failed.');
         return fallback();
     }
 }
@@ -2142,9 +2164,13 @@ var attachmentDownloads = typeof ThundyAttachmentDownload === 'undefined' ? null
     record:async message => getFromStore(await getSharedDB(),'hybridanalysis',resolveMessageStorageKey(message)),
     revision:id => typeof ThundyScans === 'undefined' ? null : ThundyScans.revision(id),
     pending:(id,part) => typeof ThundyScans !== 'undefined' && ThundyScans.attachmentPending(id,part),
-    openReport:async (target,resource,sender) => {
+    openReport:async (target,resource,sender,archived) => {
         const message = await getFirstDisplayedMessage(target.tabId);
         if (message?.id !== target.messageId) throw Error('ATTACHMENT_CONTEXT_CHANGED');
+        if (archived) {
+            const snapshot = ThundyHybridReport.project(archived,'attachment:'+target.partName);
+            return hybridReportBroker.openBound({...snapshot,historical:true});
+        }
         const context = await getMessageAnalysisContext(message);
         context.forAttachment(target.partName,resource.file.name,resource.digest);
         return hybridReportBroker.command({action:'openHybridReport',messageId:message.id,

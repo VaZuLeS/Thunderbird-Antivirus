@@ -8,6 +8,12 @@
         event.preventDefault();const button=form.querySelector('button');button.disabled=true;
         const input=document.getElementById('password');const password=input.value;input.value='';
         try{const result=await send('approve',{password,confirmed:document.getElementById('confirmed').checked});if(!result?.success)throw Error('OPEN_FAILED');form.hidden=true;status.textContent=t('securityOpened');status.focus();}
-        catch(_){status.textContent=t('securityApprovalFailed');button.disabled=false;}
+        catch(error){
+            if (['LINK_HANDOFF_PENDING','LINK_PREFLIGHT_TIMEOUT','LINK_CONTEXT_CHANGED'].includes(error.message)) {
+                form.hidden=true;
+                status.textContent=t(error.message==='LINK_HANDOFF_PENDING'?'linkHandoffPending':'linkPreflightTimeout');
+                status.focus();
+            } else {status.textContent=t('securityApprovalFailed');button.disabled=false;}
+        }
     });
 })();

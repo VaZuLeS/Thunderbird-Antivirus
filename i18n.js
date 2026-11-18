@@ -1019,7 +1019,7 @@ const ThundyI18n = (() => {
     "message": "No completed decision"
   },
   "auditMinScore": {
-    "message": "Minimum local score"
+    "message": "Minimum decision score"
   },
   "auditFrom": {
     "message": "From"
@@ -3162,6 +3162,30 @@ const ThundyI18n = (() => {
   },
   "attachmentSaveCancelled": {
     "message": "Save cancelled."
+  },
+  "auditDecisionScore": {
+    "message": "Decision score"
+  },
+  "linkHandoffPending": {
+    "message": "The browser handoff was requested. Thunderbird has not confirmed it yet. You can close this dialog."
+  },
+  "linkPreflightTimeout": {
+    "message": "The check could not be completed. Close this dialog and select the link again."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Historical Hybrid Analysis finding"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Current Hybrid Analysis finding"
+  },
+  "auditShare": {
+    "message": "Export redacted audit"
+  },
+  "auditFullNotice": {
+    "message": "The full audit contains private URLs and details. Share it only with authorized recipients."
+  },
+  "auditFullSave": {
+    "message": "Export full audit"
   }
 };
     function get(key, params = []) {

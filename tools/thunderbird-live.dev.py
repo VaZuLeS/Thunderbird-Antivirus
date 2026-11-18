@@ -451,6 +451,9 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     assert opened['url'] == URL and opened['scoreAtDecision'] == expected_score and opened['openAttempts'] == 1
     report['openedAuditRecord'] = opened
     report['blockedOsAuditRecord'] = max(opened_records, key=lambda r: r['clickedAt'])
+    report['linkHandoff'] = {'passed':True, 'realThunderbirdAPIs':True, 'acceptedOnce':opened['openAttempts']==1,
+                             'realOsReceiver':report['osHandoff']=={'argv':[URL]},
+                             'acceptedWithoutOsDispatch':report['blockedOsDispatch']['additionalReceiverCalls']==0}
     m.screenshot(out / 'audit.png')
     if audit_only:
         return

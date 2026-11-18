@@ -1014,7 +1014,7 @@
     "message": "Decisión sin completar"
   },
   "auditMinScore": {
-    "message": "Puntuación local mínima"
+    "message": "Puntuación de decisión mínima"
   },
   "auditFrom": {
     "message": "Desde"
@@ -3157,5 +3157,29 @@
   },
   "attachmentSaveCancelled": {
     "message": "Guardado cancelado."
+  },
+  "auditDecisionScore": {
+    "message": "Puntuación de decisión"
+  },
+  "linkHandoffPending": {
+    "message": "Se solicitó la apertura. Thunderbird aún no la ha confirmado. Puedes cerrar este diálogo."
+  },
+  "linkPreflightTimeout": {
+    "message": "No se pudo completar la comprobación. Cierra este diálogo y selecciona el enlace de nuevo."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Resultado histórico de Hybrid Analysis"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Resultado actual de Hybrid Analysis"
+  },
+  "auditShare": {
+    "message": "Exportar auditoría depurada"
+  },
+  "auditFullNotice": {
+    "message": "La auditoría completa contiene URL y datos privados. Compártela solo con destinatarios autorizados."
+  },
+  "auditFullSave": {
+    "message": "Exportar auditoría completa"
   }
 }

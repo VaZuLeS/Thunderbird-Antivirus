@@ -238,7 +238,18 @@ test('new candidates require six-language upgrade/crash proof for both declared 
  assert.throws(()=>validateReports(viewer,viewerReports,ui),/debug viewer/);
  const viewerFlags=['viewerPassed','viewerDocumentSession','viewerReadOnly','viewerFilterPause','viewerExportVerified','viewerLockCleared'];
  for(const r of viewerReports){Object.assign(r.apiDebug,Object.fromEntries(viewerFlags.map(key=>[key,true])));r.hybridReportView={...Object.fromEntries(['passed', 'realThunderbirdAPIs', 'syntheticStoredData', 'compactInline', 'separateReports', 'searchWorks', 'textOnly', 'noProviderRequests', 'auditPreserved', 'resourcesPreserved'].map(key=>[key,true])),liveProviderCalls:false,rawPayload:'CANARY'};r.manualUploadBinding={...Object.fromEntries(['passed', 'realThunderbirdAPIs', 'realIndexedDB', 'syntheticTransport', 'refusedBeforePost', 'mismatchPreserved', 'uploadSentReported', 'actualBytesVerified', 'actualFilenameUsed', 'matchingReferenceSaved', 'singlePostPerExplicitAttempt', 'auditPreserved'].map(key=>[key,true])),liveProviderCalls:false,rawPayload:'CANARY'};r.storedSources={...Object.fromEntries(['passed', 'realThunderbirdAPIs', 'syntheticObservations', 'reportsAndLegacyUnchanged', 'isolatedResponseMessage', 'responsesWithoutVerdict'].map(key=>[key,true])),baseline:false,externalConsent:false,rawPayload:'CANARY'};r.localScoreVisibility=Object.fromEntries(['passed','realThunderbirdAPIs','linkVisible','overviewVisible','popupVisible','noExternalServices'].map(key=>[key,true]));}
+ const attachmentFlags=['passed','inline','popup','menu','archive','settings','linkedReport','originalBytes','noProviderRequests'];
+ const handoffFlags=['passed','realThunderbirdAPIs','acceptedOnce','realOsReceiver','acceptedWithoutOsDispatch'];
+ for(const r of viewerReports){
+  r.attachmentDownload=Object.fromEntries(attachmentFlags.map(key=>[key,true]));
+  r.linkHandoff=Object.fromEntries(handoffFlags.map(key=>[key,true]));
+ }
  validateReports(viewer,viewerReports,ui);
+ for(const [kind,key,re] of [['attachmentDownload','archive',/attachment protection/],['linkHandoff','realOsReceiver',/link handoff/]]){
+  const missing=structuredClone(viewerReports);
+  for(const r of missing.filter(r=>r.clientMatrixTarget==='minimum')) r[kind][key]=false;
+  assert.throws(()=>validateReports(viewer,missing,ui),re);
+ }
  for(const key of viewerFlags){const bad=structuredClone(viewerReports);for(const r of bad.filter(r=>r.clientMatrixTarget==='current'))r.apiDebug[key]=false;assert.throws(()=>validateReports(viewer,bad,ui),/debug viewer/);}
  const missingScore=structuredClone(viewerReports);for(const r of missingScore.filter(r=>r.clientMatrixTarget==='current'))r.localScoreVisibility.popupVisible=false;assert.throws(()=>validateReports(viewer,missingScore,ui),/local score/);
  for(const key of ['refusedBeforePost','actualBytesVerified','mismatchPreserved','matchingReferenceSaved','singlePostPerExplicitAttempt','auditPreserved']){
