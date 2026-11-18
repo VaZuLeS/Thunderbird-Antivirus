@@ -45,6 +45,8 @@ describe('popup consent enforcement (P0-7)', () => {
       createTextNode: (text) => ({ textContent: text }),
       createDocumentFragment: () => ({ hasChildNodes: () => false, appendChild() {} })
     };
+    context.apiGateway={fetchWithTimeout:(...args)=>context.fetch(...args)};
+    context.browser.permissions={contains:async()=>true};
     vm.createContext(context);
 
     const code = fs.readFileSync(path.join(ROOT, 'api.js'), 'utf8');
@@ -79,6 +81,7 @@ describe('popup consent enforcement (P0-7)', () => {
 
   it('transmits and caches the lookup once the consent is granted', async () => {
     context.__setConsent(true);
+    context.browser.storage.local.get=async()=>({externalAnalysisConsent:true});
     const result = await fetch_hybrid_report('b'.repeat(64));
     assert.strictEqual(context.fetchCount, 1);
     assert.strictEqual(result.json_data.verdict, 'no specific threat');

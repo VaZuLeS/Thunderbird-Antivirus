@@ -14,8 +14,9 @@ function popup(record = { attachments: [], links: [] }) {
         openDB: async () => ({ close() {} }),
         updateStore: async (_db, _store, _key, edit) => edit(record),
         fetch: async url => { requests.push(url); return { status: 200, json: async () => ({ state: 'IN_PROGRESS' }) }; },
-        browser: { runtime: { onMessage: { addListener() {} } } }
+        browser: { storage:{local:{get:async()=>({externalAnalysisConsent:true})}},permissions:{contains:async()=>true},runtime: { onMessage: { addListener() {} } } }
     });
+    context.apiGateway={fetchWithTimeout:(...args)=>context.fetch(...args),abortAll(){}};
     const source = (fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('api.js', 'utf8'))
         .replace(/^\(async \(\) => \{/m, 'async function initializeForTest() {')
         .replace(/\}\)\(\);/m, '}');
@@ -165,6 +166,11 @@ function loadSlice(file, name, context) {
     vm.runInContext(fs.readFileSync('provider_results.js','utf8')+'\n'+source.slice(start, end), context);
 }
 
+function loadUrlContract(context) {
+    Object.assign(context,{URL,DOMParser:new JSDOM().window.DOMParser});
+    for(const name of ['canonicalHttpUrl','sameAnalysisUrl','messageUrlInventory'])loadSlice('background.js',name,context);
+}
+
 test('attachment findings from Hybrid Analysis and VirusTotal raise the threat score with reasons', () => {
     const context = vm.createContext({ uiText: (key, fallback, params = []) => params.reduce((text, value, i) => text.replace('$' + (i + 1), value), fallback) });
     loadSlice('risk.js', 'addReason', context);
@@ -192,7 +198,7 @@ test('collectAttachmentFindings derives verdicts from stored reports and VirusTo
     ] };
     record.attachments.forEach((item,index)=>{item.partName=String(index+1);item.hybrid_sha256='a'.repeat(64);});
     const keys = [];
-    const context = vm.createContext({ browser:{messages:{listAttachments:async()=>record.attachments.map(item=>({partName:item.partName,size:1})),getAttachmentFile:async()=>({arrayBuffer:async()=>new ArrayBuffer(1)})}},get_sha256_hash:async()=>'a'.repeat(64),Logger: { warn() {} }, getSharedDB: async () => ({}), getFromStore: async (_db, _store, key) => { keys.push(key); return record; } });
+    const context = vm.createContext({ browser:{messages:{listAttachments:async()=>record.attachments.map(item=>({partName:item.partName,size:1})),getAttachmentFile:async()=>({size:1,arrayBuffer:async()=>new ArrayBuffer(1)})}},get_sha256_hash:async()=>'a'.repeat(64),Logger: { warn() {} }, getSharedDB: async () => ({}), getFromStore: async (_db, _store, key) => { keys.push(key); return record; } });
     loadSlice('background.js', 'extractHybridVerdictFromOverview', context);
     loadSlice('background.js', 'collectAttachmentFindings', context);
     const findings = await context.collectAttachmentFindings({ id: 4 });
@@ -212,17 +218,19 @@ test('collectAttachmentFindings derives verdicts from stored reports and VirusTo
 test('a live Hybrid Analysis link verdict is persisted and restored into the provider matrix', async () => {
     const record = { links: [{ url: 'https://x.invalid/', state: 'UPLOADED', hybrid_sha256: 'h' }, { url: 'https://other.invalid/' }] };
     const context = vm.createContext({ Logger: { error() {} }, getSharedDB: async () => ({}), updateStore: async (_db, _store, _key, edit) => edit(record) });
+    loadUrlContract(context);
     loadSlice('background.js', 'persistHybridLinkVerdict', context);
-    await context.persistHybridLinkVerdict({ headerMessageId: 'm' }, 'https://x.invalid/', { status: 'MALICIOUS', check: { observedAt: 1234 } });
-    assert.deepEqual(JSON.parse(JSON.stringify(record.links[0].hybrid_verdict)), { status: 'MALICIOUS', observedAt: 1234 });
+    await context.persistHybridLinkVerdict({ headerMessageId: 'm' }, 'https://x.invalid/', { status: 'MALICIOUS', check: { outcome:'incomplete', observedAt: 1234 } });
+    assert.deepEqual(JSON.parse(JSON.stringify(record.links[0].hybrid_verdict)), { status: 'MALICIOUS', observedAt: 1234, completion:'incomplete' });
     assert.equal(record.links[1].hybrid_verdict, undefined);
 
     const statusContext = vm.createContext({ console });
     vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('analysis_status.js', 'utf8')), statusContext);
     const analysis = vm.runInContext('typeof ThundyAnalysis !== "undefined" ? ThundyAnalysis : this.ThundyAnalysis', statusContext);
-    const data = analysis.legacy({ links: [{ url: 'https://x.invalid/', state: 'UPLOADED', hybrid_verdict: { status: 'MALICIOUS', observedAt: 1234 } }] });
+    const data = analysis.legacy({ links: [{ url: 'https://x.invalid/', state: 'UPLOADED', hybrid_verdict: record.links[0].hybrid_verdict }] });
     const row = data.rows.find(r => r.provider === 'hybridanalysis');
     assert.equal(row.verdict, 'malicious');
+    assert.equal(row.state, 'incomplete');
     assert.equal(row.scope, 'url');
 });
 
@@ -253,6 +261,7 @@ test('checkHybridAnalysisResult falls back to GET /quick-scan/{id} on 404 overvi
 test('urlscan reportUrl is persisted and rendered as a clickable link in the popup, and checkAbuseIPDB respects isWhitelisted', async () => {
     const record = { links: [{ url: 'https://phish.invalid/' }] };
     const bgContext = vm.createContext({ Logger: { error() {} }, getSharedDB: async () => ({}), updateStore: async (_db, _store, _key, edit) => edit(record) });
+    loadUrlContract(bgContext);
     loadSlice('background.js', 'persistUrlscanLinkResult', bgContext);
     await bgContext.persistUrlscanLinkResult({ headerMessageId: 'm' }, 'https://phish.invalid/', {
         status: 'MALICIOUS_VISUAL',
@@ -281,6 +290,7 @@ test('urlscan reportUrl is persisted and rendered as a clickable link in the pop
             })
         }
     });
+    loadSlice('providers.js', 'providerDiagnosticContext', provContext);
     loadSlice('providers.js', 'checkAbuseIPDB', provContext);
     assert.equal(await provContext.checkAbuseIPDB('8.8.8.8', 'key'), false);
 });
@@ -365,7 +375,8 @@ test('collectLinkFindings and evaluateLinkFindings incorporate Hybrid Analysis a
         })
     });
     loadSlice('background.js', 'extractHybridVerdictFromOverview', bgContext);
-    Object.assign(bgContext,{readFullForAnalysis:async()=>({parts:[]}),extractTextFromParts:()=>'',extractUrls:()=>['https://a.invalid/','https://b.invalid/','https://c.invalid/','https://d.invalid/'],filterUrls:urls=>urls});
+    Object.assign(bgContext,{readFullForAnalysis:async()=>({parts:[{contentType:'text/plain',body:'fixture'}]}),extractTextFromParts:()=>'',extractUrls:()=>['https://a.invalid/','https://b.invalid/','https://c.invalid/','https://d.invalid/'],filterUrls:urls=>urls});
+    loadUrlContract(bgContext);
     loadSlice('background.js', 'collectLinkFindings', bgContext);
     const findings = await bgContext.collectLinkFindings({ headerMessageId: 'm' });
     assert.deepEqual(JSON.parse(JSON.stringify(findings)), [

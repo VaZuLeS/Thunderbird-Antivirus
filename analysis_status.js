@@ -44,6 +44,7 @@ const ThundyAnalysis = (() => {
             const messages={domain_unresolvable:['urlscanDnsError','The provider could not resolve the target domain.'],invalid_request:['urlscanInvalidRequest','The provider rejected invalid submission parameters.'],submission_rejected:['urlscanSubmissionRejected','The provider rejected the submission; the response does not establish a DNS failure.']};
             return {state:'failed',verdict:'unknown',errorCode,errorDetails:uiText(...messages[errorCode])};
         }
+        if(info.provider==='urlscan'&&status===410)return {state:'failed',verdict:'unknown',errorCode:'result_gone',errorDetails:uiText('urlscanResultGone','This result was deleted by urlscan.io. Updating cannot restore it; a new submission requires an explicit scan.')};
         if (status === 404) {
             if (info.provider === 'urlscan') return { state: 'incomplete', verdict: 'unknown' };
             let errorDetails = null;
@@ -191,7 +192,7 @@ const ThundyAnalysis = (() => {
             const hvVerdict = ({MALICIOUS:'malicious',SUSPICIOUS:'suspicious',CLEAN:'none'})[item.hybrid_verdict?.status];
             if (hvVerdict && item.url) {
                 const info = { provider: 'hybridanalysis', scope: 'url', resource };
-                if (!documented.has(rowKey(info))) model.event({ ...info, phase: 'cache', state: 'checked', verdict: hvVerdict, observedAt: Number.isFinite(item.hybrid_verdict.observedAt) ? item.hybrid_verdict.observedAt : null });
+                if (!documented.has(rowKey(info))) model.event({ ...info, phase: 'cache', state: item.hybrid_verdict.completion === 'incomplete' ? 'incomplete' : 'checked', verdict: hvVerdict, observedAt: Number.isFinite(item.hybrid_verdict.observedAt) ? item.hybrid_verdict.observedAt : null });
             }
             // A URL verdict and a pending raw report are distinct observations.
             if (report || !(hvVerdict && item.url) && ['KNOWN', 'UPLOADED'].includes(item.state)) {
@@ -241,7 +242,7 @@ const ThundyAnalysis = (() => {
             for (const resource of refs) valid = context.event({...event, resource}) || valid;
             return valid;
         };
-        return {event:apply, cached(provider,scope,verdict,observedAt) { return apply({provider,scope,verdict,observedAt,phase:'cache',state:verdict === 'unknown' ? 'received' : 'checked'}); }};
+        return {diagnosticRun:context.diagnosticRun||null,event:apply, cached(provider,scope,verdict,observedAt) { return apply({provider,scope,verdict,observedAt,phase:'cache',state:verdict === 'unknown' ? 'received' : 'checked'}); }};
     }
     function history(record, excludeId = null) {
         const result = {rows:[],truncated:false}, seen = new Set();
@@ -285,7 +286,8 @@ const ThundyAnalysis = (() => {
         return result;
     }
     // Self-contained renderer: serialized into the message's isolated world too.
-    function render(data, labels, theme = '') {
+    function render(data, labels, theme = '', presentation = {}) {
+        const inline = presentation.surface === 'message';
         const document = globalThis.document;
         if (document.documentElement.dataset.thundyAnalysisMessage && document.documentElement.dataset.thundyAnalysisMessage !== String(data.messageId)) return null;
         let host = document.getElementById('thundy-analysis-status');
@@ -296,6 +298,7 @@ const ThundyAnalysis = (() => {
         const t = key => labels[key] || labels.analysisUnknown;
         if (!host) { host = document.createElement('section'); host.id = 'thundy-analysis-status'; host.attachShadow({mode:'open'}); }
         host.setAttribute('aria-label', labels.analysisTitle); host.style.cssText = 'all:initial!important;display:block!important;visibility:visible!important;opacity:1!important;margin:12px!important;' + theme.split(';').filter(Boolean).map(rule => rule + '!important').join(';');
+        host.dataset.surface = inline ? 'message' : 'popup';
         const root = host.shadowRoot;
         let live = root.querySelector('.live');
         if (!live) { live = n('div','','live'); live.setAttribute('role','status'); live.setAttribute('aria-live','polite'); live.setAttribute('aria-atomic','true'); }
@@ -314,14 +317,17 @@ const ThundyAnalysis = (() => {
         const phase = t(running ? 'analysisModeRunning' : waiting ? 'analysisModeSubmitted' : failures ? usable ? 'analysisModePartial' : received ? 'analysisModeResponsesFailed' : 'analysisModeFailed' : incomplete ? 'analysisModeIncomplete' : usable ? 'analysisModeResults' : received ? 'analysisModeResponses' : 'analysisModeUnknown');
         const card = n('div', '', 'card'); card.append(n('h2', t('analysisTitle')), n('p', mode, 'mode'));
         if (rows.length) card.append(n('p',phase, failures ? 'phase warning' : 'phase'));
+        const heuristicScore = data.local?.heuristicScore ?? data.local?.score;
+        const localScoreValid=Number.isFinite(heuristicScore)&&heuristicScore>=0&&heuristicScore<=100&&data.local?.state!=='failed';
+        const localScoreText=t('localScoreMessage')+': '+(localScoreValid?heuristicScore+' / 100':!data.local||['unrecorded','pending'].includes(data.local.state)?t('analysisLocalPending'):t('auditUnavailable'));
         const localLabel = t(data.local?.state === 'failed' ? 'analysisLocalUnavailable' : localLimited ? 'analysisLocalIncomplete' : local ? 'analysisLocalChecked' : 'analysisLocalPending');
         card.append(n('p', localLabel, localLimited ? 'warning' : 'muted'));
         const brands = data.providerNames || { hybridanalysis: 'Hybrid Analysis', virustotal: 'VirusTotal', urlhaus: 'URLhaus', abuseipdb: 'AbuseIPDB', urlscan: 'urlscan.io' };
         const warningTargets = {};
-        const providersByResource = new Map();
-        for (const row of rows) if (Object.prototype.hasOwnProperty.call(brands,row.provider)) {
-            if (!providersByResource.has(row.resource)) providersByResource.set(row.resource,new Set());
-            providersByResource.get(row.resource).add(brands[row.provider]);
+        const rowsByResource = new Map();
+        for (const row of rows) {
+            if (!rowsByResource.has(row.resource)) rowsByResource.set(row.resource,[]);
+            rowsByResource.get(row.resource).push(row);
         }
         const list = document.createElement('ul'), inactive = document.createElement('ul');
         list.className='services';list.setAttribute('role','list');
@@ -352,6 +358,59 @@ const ThundyAnalysis = (() => {
             if (typeof row.resource === 'string' && row.resource.startsWith('link:')) return t('analysisResourceLink') + ' ' + (Number(row.resource.slice(5)) + 1) + (data.resourceLabels?.[row.resource] ? ' · ' + data.resourceLabels[row.resource] : '');
             return t('analysisResourceUnknown');
         };
+        const flagged = rows.filter(row => ['malicious','suspicious'].includes(row.verdict));
+        const strongest = flagged.some(row => row.verdict === 'malicious') ? 'malicious' : flagged[0]?.verdict;
+        const hasBoundResource = row => Object.hasOwn(data.resourceLabels || {}, row.resource) &&
+            /^(?:attachment:[0-9]+(?:\.[0-9]+)*|link:[0-9]{1,6})$/.test(row.resource);
+        const warningRow = flagged.filter(row => row.verdict === strongest)
+            .sort((a,b) => Number(hasBoundResource(b)) - Number(hasBoundResource(a)) ||
+                (b.findingAt || 0) - (a.findingAt || 0))[0];
+        const comparable = row => hasBoundResource(row) && (row.resource.startsWith('attachment:')
+            ? ['hash','file','report'].includes(row.scope)
+            : ['url','report'].includes(row.scope));
+        const cleanFindings = new Map();
+        for (const row of rows) {
+            if (row.verdict !== 'none' || !comparable(row)) continue;
+            if (!cleanFindings.has(row.resource)) cleanFindings.set(row.resource, new Set());
+            cleanFindings.get(row.resource).add(row.provider);
+        }
+        const conflicting = flagged.some(row => comparable(row) &&
+            [...(cleanFindings.get(row.resource) || [])].some(provider => provider !== row.provider));
+
+        const openFinding = entry => {
+            entry.open = true;
+            hydrate(entry);
+            entry.querySelector('summary').focus();
+        };
+        const inlineReports = new Set();
+        const reportAction = (ref, inOverview = false) => {
+            const row = n('div','',inOverview ? 'overview-report-link' : 'hybrid-report-link');
+            const label = t(inOverview ? 'analysisOverviewOpenReport' : 'hybridReportOpen');
+            const button = n('button',label);
+            button.type = 'button';
+            button.dataset.focusKey = (inOverview ? 'overview-hybrid-report:' : 'hybrid-report:')+ref;
+            button.setAttribute('aria-label', label+' · '+resourceName({resource:ref}));
+            const status = n('span','');
+            status.setAttribute('role','status');
+            row.append(button,status);
+            button.addEventListener('click', async () => {
+                if (button.getAttribute('aria-disabled') === 'true') return;
+                button.setAttribute('aria-disabled','true');
+                try {
+                    const result = await browser.runtime.sendMessage({
+                        action:'openHybridReport', messageId:data.messageId, contextToken:data.contextToken, resourceRef:ref
+                    });
+                    if (!result?.success) throw Error('report');
+                    status.textContent = '';
+                } catch (_) { status.textContent = t('hybridReportUnavailable'); }
+                finally { button.removeAttribute('aria-disabled'); }
+            });
+            return row;
+        };
+        const hasReport = ref => data.displayPreferences?.hybridDetails !== false &&
+            /^(?:attachment:[0-9]+(?:\.[0-9]+)*|link:[0-9]{1,6})$/.test(ref) &&
+            ref.length <= 80 && data.hybridReports?.[ref]?.schemaVersion === 1 &&
+            Array.isArray(data.hybridReports[ref].sections);
         for (const [provider, brand] of Object.entries(brands)) {
             const items = rows.filter(row => row.provider === provider), li = document.createElement('li'); li.append(n('strong', brand));
             if (items.length) {
@@ -373,27 +432,41 @@ const ThundyAnalysis = (() => {
                     if (warning) entry.querySelector('summary').className = 'warning';
                     detailBodies.set(entry,{brand,verdict:row.verdict,warning,findingAt:row.findingAt,observedAt:row.observedAt,attemptedAt:row.attemptedAt,errorDetails:row.errorDetails,completion:row.completion,signals:row.signals,conflicts:row.conflicts,providerJobId:row.providerJobId});
                     if (entry.open) hydrate(entry);
-                    if (warning && !warningTargets[row.verdict]) warningTargets[row.verdict] = entry;
-                    li.append(entry);
+                    if (warning && (!warningTargets[row.verdict] || row === warningRow)) warningTargets[row.verdict] = entry;
+                    if (inline && provider === 'hybridanalysis' && hasReport(row.resource) &&
+                        !inlineReports.has(row.resource)) {
+                        const resourceRow = n('div','','service-resource');
+                        resourceRow.append(entry,reportAction(row.resource));
+                        li.append(resourceRow);
+                        inlineReports.add(row.resource);
+                    } else li.append(entry);
                 }
                 list.append(li);
             } else { li.append(n('div', t('analysisReason_' + (data.availability?.[provider] || 'unrecorded')), 'muted')); inactive.append(li); }
         }
-        const strongest = rows.some(row => row.verdict === 'malicious') ? 'malicious' : rows.some(row => row.verdict === 'suspicious') ? 'suspicious' : null;
         if (strongest) {
-            card.style.borderColor = 'var(--color-danger,#b32642)';card.append(n('p', t('analysisVerdict_' + strongest), 'warning'));
+            card.style.borderColor = 'var(--color-danger,#b32642)';card.append(n('p', inline ? [t('analysisVerdict_'+strongest),brands[warningRow.provider],resourceName(warningRow)].join(' · ') : t('analysisVerdict_'+strongest), 'warning'));
             if (warningTargets[strongest]) {
                 const jump=n('button',t('analysisCurrentFindWarning'));jump.type='button';jump.dataset.focusKey='current-find-warning';
-                jump.addEventListener('click',() => {const entry=warningTargets[strongest];entry.open=true;hydrate(entry);entry.querySelector('summary').focus();});card.append(jump);
+                jump.addEventListener('click',() => openFinding(warningTargets[strongest]));card.append(jump);
             }
         }
         card.append(list);
         if(rows.some(row=>row.state==='failed'||row.failures>0))card.append(n('p',t('apiDebugFailureHint'),'muted'));
+        if(data.sourcePersistenceFailed||rows.some(row=>row.state==='failed')){const debug=n('button',t('apiDebugOpen'));debug.type='button';debug.addEventListener('click',()=>browser.runtime.sendMessage({action:'openApiDebug',runId:data.diagnosticRun||null}).catch(()=>{}));card.append(debug);}
         // This renderer also runs serialized in the message's isolated world.
         // All provider data is projected in the background, never interpreted as HTML.
         for(const [ref,report] of Object.entries(data.hybridReports||{})){
             if(data.displayPreferences?.hybridDetails===false)break;
             if(!(typeof ref==='string'&&ref.length<=80&&/^(?:attachment:[0-9]+(?:\.[0-9]+)*|link:[0-9]{1,6})$/.test(ref))||report?.schemaVersion!==1||!Array.isArray(report.sections))continue;
+            if (inline) {
+                if (!inlineReports.has(ref)) {
+                    const resourceRow = n('div','','service-resource');
+                    resourceRow.append(n('strong','Hybrid Analysis · '+resourceName({resource:ref})),reportAction(ref));
+                    card.append(resourceRow);
+                }
+                continue;
+            }
             const panel=details('hybrid:'+ref,'Hybrid Analysis · '+t('hybridExpertTitle')+' · '+resourceName({resource:ref}));
             panel.className='hybrid-expert';
             panel.append(n('p',t('hybridExpertScope'),'muted'),n('p',t('analysisObserved')+': '+date(report.observedAt)));
@@ -431,19 +504,66 @@ const ThundyAnalysis = (() => {
         style.textContent+='.hybrid-expert{margin:12px 0;padding:12px;border:1px solid var(--card-border,#cbd5e1);border-radius:8px}.hybrid-expert details{margin:10px 0}.hybrid-expert dl{margin:8px 0}.hybrid-expert dt{font-weight:600}.hybrid-expert dd{margin:0 0 6px 12px;white-space:pre-wrap;overflow-wrap:anywhere}';
         if (inactive.childElementCount) { const other = details('other',t('analysisOtherServices')); other.append(inactive); card.append(other); }
         const refs = Object.keys(data.resourceLabels || {}).filter(ref => /^attachment:[0-9]+(?:\.[0-9]+)*$/.test(ref) || /^link:[0-9]{1,6}$/.test(ref));
-        if (refs.length) {
-            const inventory = details('resources', t('analysisResources'));
+        function inventory(key, findingsOnly) {
+            const section = details(key,t('analysisResources')+' · '+refs.length);
             const resources = document.createElement('ul');
             for (const resource of refs.slice(0,500)) {
                 const item = n('li',resourceName({resource}));
-                item.append(n('div',t(resource.startsWith('attachment:') ? 'analysisResourceLocal' : 'analysisResourceTarget'),'muted'));
-                const providers = [...(providersByResource.get(resource) || [])];
-                item.append(n('div', providers.length ? providers.join(' · ') : t('analysisResourceNoExternal')));
+                const attachment = resource.startsWith('attachment:');
+                const findings = rowsByResource.get(resource) || [];
+                const visible = findingsOnly ? findings.filter(row => row.provider === 'hybridanalysis' ||
+                    !attachment && row.provider === 'urlscan') : findings;
+                if (!findingsOnly) {
+                    item.append(n('div',t(attachment ? 'analysisResourceLocal' : 'analysisResourceTarget'),'muted'));
+                    const sources = [...new Set(visible.map(row=>brands[row.provider]))];
+                    item.append(n('div',sources.length ? sources.join(' · ') : t('analysisResourceNoExternal')));
+                }
+                for (const provider of findingsOnly ? new Set(visible.map(row=>row.provider)) : []) {
+                    const observed = visible.filter(row=>row.provider===provider);
+                    const verdict = ['malicious','suspicious','none'].find(value=>observed.some(row=>row.verdict===value));
+                    const parts = [brands[provider]];
+                    parts.push(t('analysisVerdict_'+(verdict || 'unknown')));
+                    if (provider === 'hybridanalysis') {
+                        const scores = observed.flatMap(row => (Array.isArray(row.signals) ? row.signals : []))
+                            .filter(signal => signal.code === 'threat_score' && Number.isFinite(signal.value) &&
+                                signal.value >= 0 && signal.value <= 100).map(signal=>signal.value);
+                        if (scores.length) parts.push(t('assessmentSignal_threat_score')+' '+Math.max(...scores)+' / 100');
+                    }
+                    if (observed.some(row=>row.completion==='pending'||['submitted','running'].includes(row.state))) parts.push(t('assessmentCompletion_pending'));
+                    if (observed.some(row=>row.state==='failed'||row.failures>0)) parts.push(t('assessmentCompletion_failed'));
+                    item.append(n('div',parts.join(' · '),['malicious','suspicious'].includes(verdict)?'warning':''));
+                }
+                if (findingsOnly && !visible.length) item.append(n('div',t('analysisResourceNoExternal'),'muted'));
+                if (data.attachmentActions && attachment) {
+                    const button = n('button',t('attachmentSaveWithThundy'));
+                    button.type = 'button';
+                    button.dataset.focusKey = key+':save:'+resource;
+                    button.setAttribute('aria-label',t('attachmentSaveWithThundy')+' · '+resourceName({resource}));
+                    const status = n('span','');
+                    status.setAttribute('role','status');
+                    button.addEventListener('click',async () => {
+                        if (button.getAttribute('aria-disabled') === 'true') return;
+                        button.setAttribute('aria-disabled','true');
+                        try {
+                            const result = await browser.runtime.sendMessage({action:'startAttachmentDownload',
+                                messageId:data.messageId,partName:resource.slice('attachment:'.length)});
+                            if (!result?.success) throw Error(result?.code);
+                            status.textContent = result.saved ? t('attachmentSaveRequested') : '';
+                        } catch (error) {
+                            status.textContent = t(error.message === 'ATTACHMENT_CONTEXT_CHANGED' ? 'attachmentContextChanged' :
+                                error.message === 'ATTACHMENT_READ_FAILED' ? 'attachmentReadFailed' :
+                                error.message === 'ATTACHMENT_CHECK_TIMEOUT' ? 'scanFailure_timeout' : 'attachmentFailed');
+                        } finally {button.removeAttribute('aria-disabled');}
+                    });
+                    item.append(button,status);
+                }
                 resources.append(item);
             }
             if (refs.length > 500) resources.append(n('li',t('analysisTruncated'),'warning'));
-            inventory.append(resources); card.append(inventory);
+            section.append(resources);
+            return section;
         }
+        if (refs.length) card.append(inventory('resources',false));
         if (data.truncated) card.append(n('p',t('analysisTruncated'),'warning'));
         const historyRows = (Array.isArray(data.sourceHistory?.rows) ? data.sourceHistory.rows : []).slice(0,1200).filter(row => row && Object.prototype.hasOwnProperty.call(brands,row.provider) && Object.prototype.hasOwnProperty.call(labels,'analysisScope_' + row.scope) && Object.prototype.hasOwnProperty.call(labels,'analysisState_' + row.state));
         const historicalWarning = historyRows.some(row => ['malicious','suspicious'].includes(row.verdict));
@@ -492,40 +612,84 @@ const ThundyAnalysis = (() => {
         if (sourceDataIncomplete) card.append(n('p',t('analysisStoredDataIncomplete'),'warning'));
         const persistenceReason = ['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes','storage_failed'].includes(data.sourcePersistenceReason) ? data.sourcePersistenceReason : null;
         const persistenceMessage = [t('analysisPersistenceFailed'),persistenceReason ? t('analysisPersistence_'+persistenceReason) : ''].filter(Boolean).join(' ');
-        if (data.sourcePersistenceFailed) card.append(n('p',persistenceMessage,'warning'));
+        if (data.sourcePersistenceFailed) {const code=['QuotaExceededError','InvalidStateError','AbortError','UnknownError','DataCloneError','NotFoundError','TransactionInactiveError','SecurityError'].includes(data.sourcePersistenceError)?data.sourcePersistenceError:null;card.append(n('p',persistenceMessage+(code?' ('+code+')':''),'warning'));}
         if (data.reportArchiveBlocked) card.append(n('p',t('analysisReportArchiveBlocked'),'warning'));
         card.append(n('p', t('analysisLimit'), 'muted'));
-        const announcement = [mode, localLabel, sourceDataIncomplete ? t('analysisStoredDataIncomplete') : '', rows.length ? phase : '', data.sourceHistory?.rows?.length ? t('analysisHistoryTitle') : '', historicalWarning ? t('analysisHistoryFlagged') : '', data.sourcePersistenceFailed ? persistenceMessage : '', data.reportArchiveBlocked ? t('analysisReportArchiveBlocked') : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
+        const announcement = [mode, localLabel, localScoreText, sourceDataIncomplete ? t('analysisStoredDataIncomplete') : '', rows.length ? phase : '', data.sourceHistory?.rows?.length ? t('analysisHistoryTitle') : '', historicalWarning ? t('analysisHistoryFlagged') : '', data.sourcePersistenceFailed ? persistenceMessage : '', data.reportArchiveBlocked ? t('analysisReportArchiveBlocked') : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
         const changed = host.dataset.announcement !== announcement;
+        const technicalDetails = inline ? details('provider-technical',t('hybridReportTechnical')) : card;
         for(const row of rows) {
             const technical=['httpStatus','providerVerdict','providerScore','reportCount','maliciousCount','suspiciousCount','totalCount','retryAfter','errorCode','quotaAction','quotaScope','quotaWindow','quotaLimit','quotaRemaining'].filter(key=>row[key]!=null).map(key=>key+': '+row[key]);
-            if(technical.length)card.append(n('p',(brands[row.provider]||row.provider)+' · '+(row.resource||'message')+' · '+technical.join(' · ')));
-            if(row.quotaResetAt)card.append(n('p',t('analysisQuotaReset')+': '+date(row.quotaResetAt)));
-            if(row.retryAt)card.append(n('p',t('analysisRetryAt')+': '+date(row.retryAt)));
-            if(row.localBackoff)card.append(n('p',t('analysisLocalBackoff'),'muted'));
+            if(technical.length)technicalDetails.append(n('p',(brands[row.provider]||row.provider)+' · '+(row.resource||'message')+' · '+technical.join(' · ')));
+            if(row.quotaResetAt)technicalDetails.append(n('p',t('analysisQuotaReset')+': '+date(row.quotaResetAt)));
+            if(row.retryAt)technicalDetails.append(n('p',t('analysisRetryAt')+': '+date(row.retryAt)));
+            if(row.localBackoff)technicalDetails.append(n('p',t('analysisLocalBackoff'),'muted'));
         }
-        for(const [id,access] of Object.entries(data.providerAccess||{})){card.append(n('p',(brands[id]||id)+' · '+t(access.configured?'analysisProviderConfigured':'analysisProviderNoKey')+' · '+t('analysisReason_'+(data.availability?.[id]||'unrecorded'))+' · '+(access.testStatus||'—')+' · '+date(access.testedAt)));}
+        for(const [id,access] of Object.entries(data.providerAccess||{})){technicalDetails.append(n('p',(brands[id]||id)+' · '+t(access.configured?'analysisProviderConfigured':'analysisProviderNoKey')+' · '+t('analysisReason_'+(data.availability?.[id]||'unrecorded'))+' · '+(access.testStatus||'—')+' · '+date(access.testedAt)));}
+        if(inline && technicalDetails.children.length>1)card.append(technicalDetails);
         const overview=n('div','','card');
-        const flagged=rows.filter(row=>['malicious','suspicious'].includes(row.verdict));
         const danger=flagged.some(row=>row.verdict==='malicious');
         const uncertain=data.scanJob?.coverage?.incomplete===true||data.scanJob?.assessmentIncomplete===true||jobBusy||['pending','incomplete','failed','deferred'].includes(data.scanJob?.state)||data.unavailable||sourceDataIncomplete||!local||failures||running||waiting||incomplete||rows.some(row=>['unknown'].includes(row.verdict));
         const title=danger?'analysisSimpleDanger':flagged.length||data.local?.score>=50?'analysisSimpleCaution':uncertain?'analysisSimpleIncomplete':data.sourcePersistenceFailed||data.reportArchiveBlocked?'analysisSimpleDocumentationIncomplete':'analysisSimpleNone';
-        overview.append(n('h2',t(title)),n('p',localLabel),n('p',t('analysisSimpleBasis')+': '+new Set(rows.filter(row=>['none','suspicious','malicious'].includes(row.verdict)).map(row=>row.provider)).size+' / '+new Set(rows.filter(row=>row.state==='failed'||row.failures>0).map(row=>row.provider)).size));
+        overview.append(n('h2',t(title)),n('p',localScoreText,'local-score'));
+        if (inline && warningRow) {
+            const focus = n('p',[brands[warningRow.provider],resourceName(warningRow),t('analysisVerdict_'+warningRow.verdict)].join(' · '),'warning finding-summary');
+            const summary = n('div','','finding-overview');
+            summary.append(focus);
+            if (warningRow.provider === 'hybridanalysis' && comparable(warningRow) && hasReport(warningRow.resource)) {
+                summary.append(reportAction(warningRow.resource,true));
+            } else if (warningTargets[strongest] && (hasBoundResource(warningRow) || warningRow.resource === 'message') &&
+                rows.filter(row => row.provider === warningRow.provider && row.scope === warningRow.scope &&
+                    row.resource === warningRow.resource).length === 1) {
+                const jump = n('button',t('analysisOverviewOpenFinding'));
+                jump.type = 'button';
+                jump.dataset.focusKey = 'overview-find-warning';
+                jump.addEventListener('click',() => {
+                    showView('expert');
+                    openFinding(warningTargets[strongest]);
+                });
+                summary.append(jump);
+            }
+            overview.append(summary);
+        }
+        const countProviders = predicate => new Set(rows.filter(predicate).map(row => row.provider)).size;
+        const findings = countProviders(row => ['none','suspicious','malicious'].includes(row.verdict));
+        const failedProviders = countProviders(row => row.state === 'failed' || row.completion === 'failed' || row.failures > 0);
+        if (inline) {
+            const pendingProviders = countProviders(row => ['running','submitted'].includes(row.state) || row.completion === 'pending');
+            if (local && !rows.length && !jobBusy && !['pending','incomplete','failed','deferred'].includes(data.scanJob?.state)) {
+                overview.append(n('p',t('analysisLocalOnly')));
+            } else overview.append(n('p',localLabel));
+            const counts = [['analysisProviderFindingsCount',findings],['analysisProviderPendingCount',pendingProviders],['analysisProviderErrorsCount',failedProviders]]
+                .filter(([,count]) => count > 0).map(([label,count]) => t(label)+': '+count);
+            if (counts.length) overview.append(n('p',counts.join(' · '),'provider-counts'));
+        } else overview.append(n('p',localLabel),n('p',t('analysisSimpleBasis')+': '+findings+' / '+failedProviders));
         if(rows.some(r=>r.completion==='pending'))overview.append(n('p',t('assessmentCompletion_pending')));
         if(rows.some(r=>r.completion==='complete'&&r.verdict==='unknown'))overview.append(n('p',t('assessmentCompletion_unknown')));
         if(rows.some(r=>r.completion==='failed'))overview.append(n('p',t('assessmentCompletion_failed'),'warning'));
         if(rows.some(r=>r.conflicts?.includes('mixed_verdicts')))overview.append(n('p',t('assessmentConflict'),'warning'));
+        if (data.attachmentActions && refs.length) overview.append(inventory('overview-resources',true));
         const reasons=n('ul','');
-        const topReasons=[...(Array.isArray(data.local?.reasons)?data.local.reasons:[]),...flagged.map(row=>(brands[row.provider]||row.provider)+': '+t('analysisVerdict_'+row.verdict))].slice(0,3);
+        const topReasons=[...(Array.isArray(data.local?.reasons)?data.local.reasons:[]),...(!inline ? flagged.map(row=>(brands[row.provider]||row.provider)+': '+t('analysisVerdict_'+row.verdict)) : [])].slice(0,3);
         for(const reason of topReasons)reasons.append(n('li',String(reason)));
         if(topReasons.length)overview.append(reasons);
-        const times=rows.map(row=>row.observedAt).filter(Number.isFinite);if(times.length)overview.append(n('p',t('analysisObserved')+': '+date(Math.max(...times))));
+        if (inline && warningRow) {
+            const times = [['analysisFindingObserved',warningRow.findingAt],['analysisAttempted',warningRow.attemptedAt]]
+                .filter(([,value]) => Number.isFinite(value)).map(([key,value]) => t(key)+': '+date(value));
+            if (times.length) overview.append(n('p',times.join(' · '),'muted'));
+        } else {
+            const times=rows.map(row=>row.observedAt).filter(Number.isFinite);
+            if(times.length)overview.append(n('p',t('analysisObserved')+': '+date(Math.max(...times))));
+        }
         if(data.protection?.required)overview.append(n('p',t('analysisApprovalRequired'),'warning'));else overview.append(n('p',t('analysisContinueWarning')));
         overview.append(n('p',t('analysisScoreExplanation'),'muted'));
-        if(flagged.length&&rows.some(row=>row.verdict==='none')){overview.append(n('p',t('analysisConflict'),'warning'));card.prepend(n('p',t('analysisConflict'),'warning'));}
+        if(conflicting){overview.append(n('p',t('analysisConflict'),'warning'));card.prepend(n('p',t('analysisConflict'),'warning'));}
         card.append(n('p',t('analysisScoreExplanation'),'muted'),n('p',t('analysisExportSensitive'),'muted'));
         if(Array.isArray(data.local?.reasons)){const allReasons=n('ul','');for(const reason of data.local.reasons.slice(0,20))allReasons.append(n('li',String(reason)));card.append(allReasons);}
-        if(data.local?.score!=null)card.append(n('p',t('auditLocalScore')+': '+data.local.score+' / 100'));
+        card.append(n('p',localScoreText,'local-score'));
+        if (data.local?.riskModelVersion === 2 && localScoreValid) {
+            card.append(n('p',t('auditDecisionScore')+' · '+data.local.score+' / 100'));
+        }
         if(data.protection?.required)card.append(n('p',t('analysisApprovalRequired')+' · '+data.protection.reason+' · '+data.protection.revision,'warning'));
         const switcher=n('button','');switcher.type='button';switcher.dataset.focusKey='view-switch';
         const preference=['simple','expert'].includes(data.displayPreferences?.view)?data.displayPreferences.view:null;
@@ -537,7 +701,13 @@ const ThundyAnalysis = (() => {
         }
         if(!host.dataset.view)host.dataset.view=document.body.dataset.thundyAnalysisView==='expert'?'expert':'simple';
         const applyView=()=>{const expert=host.dataset.view==='expert';card.hidden=!expert;overview.hidden=expert;switcher.textContent=t(expert?'analysisSimple':'analysisExpert');switcher.setAttribute('aria-expanded',String(expert));document.body.dataset.thundyAnalysisView=expert?'expert':'simple';};
-        switcher.addEventListener('click',()=>{host.dataset.viewChosen='true';host.dataset.view=host.dataset.view==='expert'?'simple':'expert';applyView();});applyView();
+        function showView(view) {
+            host.dataset.viewChosen = 'true';
+            host.dataset.view = view;
+            applyView();
+        }
+        switcher.addEventListener('click',()=>showView(host.dataset.view==='expert'?'simple':'expert'));
+        applyView();
         style.textContent+='[hidden]{display:none!important}.scan-actions{font:14px/1.5 system-ui;color:var(--text-color,#192b40);background:var(--card-bg,#fff);overflow-wrap:anywhere;padding:12px;border:1px solid var(--card-border,#cbd5e1);border-radius:10px;margin-bottom:12px}.scan-actions button{margin:4px;max-width:100%;white-space:normal;overflow-wrap:anywhere}';
         const actions=n('section','','scan-actions');actions.setAttribute('aria-label',t('scanActions'));
         if(data.scanJob){
@@ -573,7 +743,21 @@ const ThundyAnalysis = (() => {
             if(job.migration)actions.append(n('p',t('scanMigrationNotice')));
             const reasons=n('ul','');for(const [id,value] of Object.entries(job.providers||{})){const unique=[...new Set((value.checks||[]).map(c=>c.reason).filter(reason=>reason&&(reason!=='no_resources'||!value.checks.some(c=>!c.reason))))];if(value.state==='failed')unique.push(value.error==='rate_limited'?'quota':'provider_error');if(unique.length)reasons.append(n('li',(brands[id]||id)+': '+unique.map(reason=>t('analysisReason_'+reason)).join(' · ')));}if(reasons.childElementCount)actions.append(reasons);
         }
-        root.replaceChildren(style, live, ...(data.scanJob?[actions]:[]), switcher, card, overview);
+        if (inline) {
+            style.textContent += ':host([data-surface="message"]){--inline-pad:calc(var(--surface-pad,24px) / 2);font:14px/1.4 system-ui}.inline-toolbar{background:var(--card-bg,#fff);border:1px solid var(--card-border,#cbd5e1);border-radius:8px;padding:4px 8px;display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font:14px/1.4 system-ui;color:var(--text-color,#192b40);margin-bottom:6px}.inline-toolbar>.local-score{font-weight:700;margin:0}.inline-toolbar>.scan-actions{display:flex;align-items:center;flex:1;flex-wrap:wrap;gap:4px 8px;border:0;padding:0;margin:0;background:transparent;min-width:0}.inline-toolbar>.scan-actions>p{margin:0}.inline-toolbar>.scan-actions>ul,.inline-toolbar>.scan-actions>.warning{flex-basis:100%}.inline-toolbar button{margin:0}.card{padding:var(--inline-pad);font:14px/1.4 system-ui;border-radius:8px}h2{font-size:15px;margin:0 0 4px}p{margin:4px 0}li,details{margin:4px 0}summary{min-height:24px;padding-block:2px}ul{margin:4px 0}.services{gap:6px}.services>li{padding:8px}.service-results,.service-origin{margin:4px 0}.service-results{gap:4px}.service-verdict{padding:1px 6px}button{min-height:var(--control-size,44px);padding:4px 10px}.hybrid-report-link{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0}.hybrid-report-link>span{overflow-wrap:anywhere;min-width:0}.service-resource{min-width:0}.finding-summary{font-weight:650}.finding-overview,.overview-report-link{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}.finding-overview p,.overview-report-link span{overflow-wrap:anywhere;min-width:0}.overview-report-link span:empty{display:none}button[aria-disabled=true]{opacity:.65;cursor:wait}.inline-explanation{color:var(--text-muted,#536579)}';
+            const toolbar=n('div','','inline-toolbar');toolbar.append(n('p',localScoreText,'local-score'));
+            if(data.scanJob)toolbar.append(actions);toolbar.append(switcher);
+            const explanationTexts = new Set([t('analysisLimit'),t('analysisScoreExplanation'),t('analysisExportSensitive')]);
+            for(const view of [card,overview]) {
+                view.querySelector('.local-score')?.remove();
+                const explanation=details(view===card?'expert-explanation':'simple-explanation',t('hybridReportExplanation'));explanation.className='inline-explanation';
+                for(const node of [...view.children])if(node.tagName==='P'&&explanationTexts.has(node.textContent))explanation.append(node);
+                if(explanation.children.length>1)view.append(explanation);
+            }
+            if(data.sourcePersistenceFailed)overview.append(n('p',persistenceMessage,'warning'));
+            if(data.reportArchiveBlocked)overview.append(n('p',t('analysisReportArchiveBlocked'),'warning'));
+            root.replaceChildren(style,live,toolbar,card,overview);
+        } else root.replaceChildren(style, live, ...(data.scanJob?[actions]:[]), switcher, card, overview);
         if (wasPresent && changed) live.textContent = announcement;
         host.dataset.announcement = announcement;
         if (!wasPresent) { const mount = document.getElementById('analysisSourceMount'); if (mount) mount.append(host); else document.body.prepend(host); }
@@ -586,12 +770,13 @@ const ThundyAnalysis = (() => {
     function withCache(context, provider, scope, key) {
         if (!context) return context;
         return { ...context, cached: (...args) => context.cached?.(...args), event(event) {
+            if(event.phase==='cache'&&typeof ThundyApiDiagnostics!=='undefined')ThundyApiDiagnostics.event(context.diagnosticRun,'cache',{provider,state:event.state,verdict:event.verdict});
             if (event.phase === 'finish' && event.state !== 'failed' && Number.isFinite(event.observedAt)) cacheTime(provider, scope, key, event.observedAt);
             return context.event(event);
         } };
     }
     function labels(get) {
-        const keys = ['apiDebugFailureHint',...['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes','storage_failed'].map(reason=>'analysisPersistence_'+reason),'analysisQuotaReset','analysisRetryAt','analysisLocalBackoff','hybridExpertEmpty','hybridExpertTitle','hybridExpertScope','hybridExpertMissing','hybridExpertYes','hybridExpertNo','hybridExpert_identity','hybridExpert_assessment','hybridExpert_scanners','hybridExpert_antivirus','hybridExpert_reports','hybridExpert_counts','hybridExpert_signatures','hybridExpert_mitre','hybridExpert_network','hybridExpert_processes','hybridExpert_extracted','hybridExpert_certificates','assessmentCompletion','assessmentCompletion_pending','assessmentCompletion_complete','assessmentCompletion_unknown','assessmentCompletion_failed','assessmentConflict','assessmentSignals','assessmentJob',...['verdict','scanner','threat_score','multiscan_result','threat_level','whitelist','overall','urlscan','engines','brand','report'].map(c=>'assessmentSignal_'+c),'scanCoverage','scanCoverageAttachments','scanCoverageLinks','scanCoverage_read_failed','scanCoverage_size_limit','scanCoverage_resource_limit','scanCoverage_inventory_incomplete','scanFailure_source_capacity','scanFailure_cancelled','scanFailure_timeout','scanFailure_scan_failed','scanActions','scanStart','scanRepeat','scanRefresh','scanRunning','scanProgress','scanMigrationNotice','scanState_idle','scanState_queued','scanState_running','scanState_completed','scanState_pending','scanState_incomplete','scanState_failed','scanState_blocked','scanState_deferred','bannerOpenOptions','auditLocalScore','analysisProviderConfigured','analysisProviderNoKey','analysisSimple','analysisExpert','analysisSimpleDocumentationIncomplete','analysisSimpleNone','analysisSimpleCaution','analysisSimpleDanger','analysisSimpleIncomplete','analysisSimpleBasis','analysisScoreExplanation','analysisApprovalRequired','analysisContinueWarning','analysisConflict','analysisExportSensitive','analysisModeResponses','analysisModeResponsesFailed','analysisCurrentAvailability','analysisStoredDataIncomplete','analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
+        const keys = ['auditDecisionScore','attachmentSaveWithThundy','attachmentSaveRequested','attachmentFailed','attachmentReadFailed','attachmentContextChanged','analysisOverviewOpenReport','analysisOverviewOpenFinding','analysisLocalOnly','analysisProviderFindingsCount','analysisProviderPendingCount','analysisProviderErrorsCount','hybridReportOpen','hybridReportUnavailable','hybridReportTechnical','hybridReportExplanation','localScoreMessage','apiDebugOpen','apiDebugFailureHint',...['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes','storage_failed'].map(reason=>'analysisPersistence_'+reason),'analysisQuotaReset','analysisRetryAt','analysisLocalBackoff','hybridExpertEmpty','hybridExpertTitle','hybridExpertScope','hybridExpertMissing','hybridExpertYes','hybridExpertNo','hybridExpert_identity','hybridExpert_assessment','hybridExpert_scanners','hybridExpert_antivirus','hybridExpert_reports','hybridExpert_counts','hybridExpert_signatures','hybridExpert_mitre','hybridExpert_network','hybridExpert_processes','hybridExpert_extracted','hybridExpert_certificates','assessmentCompletion','assessmentCompletion_pending','assessmentCompletion_complete','assessmentCompletion_unknown','assessmentCompletion_failed','assessmentConflict','assessmentSignals','assessmentJob',...['verdict','scanner','threat_score','multiscan_result','threat_level','whitelist','overall','urlscan','engines','brand','report'].map(c=>'assessmentSignal_'+c),'scanCoverage','scanCoverageAttachments','scanCoverageLinks','scanCoverage_read_failed','scanCoverage_size_limit','scanCoverage_resource_limit','scanCoverage_inventory_incomplete','scanFailure_source_capacity','scanFailure_cancelled','scanFailure_timeout','scanFailure_scan_failed','scanActions','scanStart','scanRepeat','scanRefresh','scanRunning','scanProgress','scanMigrationNotice','scanState_idle','scanState_queued','scanState_running','scanState_completed','scanState_pending','scanState_incomplete','scanState_failed','scanState_blocked','scanState_deferred','bannerOpenOptions','auditLocalScore','analysisProviderConfigured','analysisProviderNoKey','analysisSimple','analysisExpert','analysisSimpleDocumentationIncomplete','analysisSimpleNone','analysisSimpleCaution','analysisSimpleDanger','analysisSimpleIncomplete','analysisSimpleBasis','analysisScoreExplanation','analysisApprovalRequired','analysisContinueWarning','analysisConflict','analysisExportSensitive','analysisModeResponses','analysisModeResponsesFailed','analysisCurrentAvailability','analysisStoredDataIncomplete','analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
         for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded','manual','sender','links_disabled','no_resources','quota','running','provider_error']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
         return Object.fromEntries(keys.map(key => [key, get(key)]));
     }

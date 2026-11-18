@@ -4,6 +4,12 @@ const ThundySecurity = (() => {
     const sessions = new Map(), failures = new Map(), verificationQueues = new Map();
     let queue = Promise.resolve();
     const defaults = { enabled: false, threshold: 50, unknown: 'warn', revision: 0 };
+    const attachmentDefaults = { mode: 'off', threshold: 70, unknown: 'warn', revision: 0 };
+    function validAttachmentPolicy(policy) {
+        return !!policy && ['off','warn','approval','block'].includes(policy.mode) &&
+            Number.isInteger(policy.threshold) && policy.threshold >= 0 && policy.threshold <= 100 &&
+            ['warn','block'].includes(policy.unknown);
+    }
     const error = code => Object.assign(new Error(code), { code });
     const hex = bytes => Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
     const random = () => hex(crypto.getRandomValues(new Uint8Array(32)));
@@ -15,6 +21,10 @@ const ThundySecurity = (() => {
         if(saved===undefined)return {schemaVersion:1,policy:{...defaults}};
         const validVerifier=value=>value && value.algorithm==='PBKDF2-SHA-256' && value.iterations===ITERATIONS && /^[0-9a-f]{64}$/.test(value.salt) && /^[0-9a-f]{64}$/.test(value.hash);
         if(!saved || saved.schemaVersion!==1 || (saved.apiDebugEnabled!==undefined&&typeof saved.apiDebugEnabled!=='boolean') || !saved.policy || typeof saved.policy.enabled!=='boolean' || !Number.isInteger(saved.policy.threshold) || saved.policy.threshold<0 || saved.policy.threshold>100 || !['warn','approval'].includes(saved.policy.unknown) || !Number.isSafeInteger(saved.policy.revision) || saved.policy.revision<0 || ['admin','approval','recovery'].some(key=>saved[key]!==undefined&&!validVerifier(saved[key])))throw error('SECURITY_STATE_INVALID');
+        if (saved.attachmentPolicy !== undefined && (!validAttachmentPolicy(saved.attachmentPolicy) ||
+            !Number.isSafeInteger(saved.attachmentPolicy.revision) || saved.attachmentPolicy.revision < 1)) {
+            throw error('SECURITY_STATE_INVALID');
+        }
         return saved;
     }
     async function digest(password, salt) {
@@ -42,8 +52,8 @@ const ThundySecurity = (() => {
         const job=(verificationQueues.get(kind)||Promise.resolve()).then(()=>verifyOne(password,saved,kind));
         verificationQueues.set(kind,job.catch(()=>{}));return job;
     }
-    async function authorized(sender, token, touch = true) {
-        if (!adminPage(sender)) throw error('ADMIN_PAGE_REQUIRED');
+    async function authorized(sender, token, touch = true, diagnostic = false) {
+        if (!adminPage(sender)&&!(diagnostic&&page(sender,'api_debug.html'))) throw error('ADMIN_PAGE_REQUIRED');
         const saved = await read();
         if (!saved.admin) return true;
         const session = sessions.get(token);
@@ -53,15 +63,17 @@ const ThundySecurity = (() => {
     }
     async function status(sender, token) {
         const saved = await read(); let unlocked = !saved.admin;
-        if (saved.admin) { try { await authorized(sender,token,false); unlocked=true; } catch (_) {} }
-        return {protected:!!saved.admin,unlocked,approvalConfigured:!!saved.approval,policy:{...defaults,...saved.policy}};
+        if (saved.admin) { try { await authorized(sender,token,false,page(sender,'api_debug.html')); unlocked=true; } catch (_) {} }
+        return {protected:!!saved.admin,unlocked,approvalConfigured:!!saved.approval,policy:{...defaults,...saved.policy},attachmentPolicy:{...attachmentDefaults,...saved.attachmentPolicy}};
     }
     function serialized(fn) { const job=queue.then(fn);queue=job.catch(()=>{});return job; }
     async function command(request,sender) {
         const {op,token}=request;
-        if (!adminPage(sender)) throw error('ADMIN_PAGE_REQUIRED');
+        const diagnostic=page(sender,'api_debug.html');
+        if(diagnostic&&!['status','unlock','lock','touch','apiDebugStatus','apiDebugReport','apiDebugClear'].includes(op))throw error('ADMIN_PAGE_REQUIRED');
+        if (!adminPage(sender)&&!diagnostic) throw error('ADMIN_PAGE_REQUIRED');
         if (op==='status') return status(sender,token);
-        if (op==='touch') { await authorized(sender,token);return {}; }
+        if (op==='touch') { await authorized(sender,token,true,diagnostic);return {}; }
         if (op==='lock') { sessions.delete(token);return {unlocked:false}; }
         if (op==='unlock') {
             await verify(request.password,(await read()).admin,'admin');
@@ -76,7 +88,7 @@ const ThundySecurity = (() => {
                 saved.admin=await verifier(request.password); const recovery=random();saved.recovery=await verifier(recovery);
                 sessions.clear(); saved.policy={...defaults,...saved.policy,revision:(saved.policy?.revision||0)+1};await browser.storage.local.set({[KEY]:saved});return {recovery};
             }
-            await authorized(sender,token);
+            await authorized(sender,token,!['apiDebugStatus','apiDebugReport'].includes(op),diagnostic);
             if (['apiDebugStatus','apiDebugSet','apiDebugReport','apiDebugClear'].includes(op)) {
                 if(op==='apiDebugSet') {
                     if(typeof request.enabled!=='boolean')throw error('SETTINGS_INVALID');
@@ -101,6 +113,15 @@ const ThundySecurity = (() => {
                 }
                 const policy=request.policy;
                 if (!policy || typeof policy.enabled!=='boolean' || !Number.isInteger(policy.threshold) || policy.threshold<0 || policy.threshold>100 || !['warn','approval'].includes(policy.unknown)) throw error('POLICY_INVALID');
+                if (request.attachmentPolicy !== undefined) {
+                    const next = request.attachmentPolicy;
+                    if (!validAttachmentPolicy(next)) throw error('POLICY_INVALID');
+                    const current = saved.attachmentPolicy || attachmentDefaults;
+                    const { mode, threshold, unknown } = next;
+                    if (mode !== current.mode || threshold !== current.threshold || unknown !== current.unknown) {
+                        saved.attachmentPolicy = {mode, threshold, unknown, revision:current.revision+1};
+                    }
+                }
                 saved.policy={...policy,revision:(saved.policy?.revision||0)+1};
                 await browser.storage.local.set({[KEY]:saved});sessions.clear();return {recovery};
             }
@@ -141,5 +162,5 @@ const ThundySecurity = (() => {
     if (browser.runtime.onConnect) browser.runtime.onConnect.addListener(port=>{
         if(port.name!=='thundy-admin-session')return;let bound;port.onMessage.addListener(value=>{const session=sessions.get(value.token);if(session?.identity===identity(port.sender))bound=value.token;});port.onDisconnect.addListener(()=>{sessions.delete(bound);});
     });
-    return {read,status,command,authorized,write,decision,verify,identity,page,defaults,serialized};
+    return {read,status,command,authorized,write,decision,verify,identity,page,defaults,attachmentDefaults,serialized};
 })();

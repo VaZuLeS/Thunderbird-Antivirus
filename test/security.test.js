@@ -66,7 +66,7 @@ function links(){
  const sender={id:'addon',url:'mailbox://message',tab:{id:7}};
  const request={url:body,messageId:4,interactionId:'click-1'};
  const session={...request,checked:true,terminal:false,verdict:'CLEAN',record:{id:'audit'},score:50,check:{origin:'live'}};sessions.set('7:click-1',session);
- const c=vm.createContext({URL,TextEncoder,crypto:webcrypto,Date:class extends Date{static now(){return now;}},ThundySecurity:{read:async()=>config,defaults:f.s.defaults,decision:f.s.decision,serialized:f.s.serialized,page:(s,p)=>s.id==='addon'&&s.url==='moz-extension://addon/'+p,verify:async password=>{verified++;if(password!=='approval-secret-123')throw Error('PASSWORD_INVALID');}},browser:{runtime:{getURL:p=>'moz-extension://addon/'+p},tabs:{create:async value=>{created=value.url;return {id:99};}},windows:{openDefaultBrowser:async()=>opened++}},auditSessionKey:(r,s)=>s.tab.id+':'+r.interactionId,linkAuditSessions:sessions,getFirstDisplayedMessage:async()=>({id:4}),readFullForAnalysis:async()=>({parts:[],body}),extractTextFromParts:x=>body,filterUrls:x=>x,extractUrls:()=>[request.url],collectThreatEvaluationOptions:async()=>({}),calculateThreatScore:()=>({score,reasons:['reason']}),localContentCoverage:()=>({state:'checked'}),updateLinkAudit:async(id,value)=>{logs.push(value);return true;}});
+ const c=vm.createContext({URL,TextEncoder,crypto:webcrypto,setTimeout,clearTimeout,Date:class extends Date{static now(){return now;}},ThundySecurity:{read:async()=>config,defaults:f.s.defaults,decision:f.s.decision,serialized:f.s.serialized,page:(s,p)=>s.id==='addon'&&s.url==='moz-extension://addon/'+p,verify:async password=>{verified++;if(password!=='approval-secret-123')throw Error('PASSWORD_INVALID');}},browser:{runtime:{getURL:p=>'moz-extension://addon/'+p},tabs:{create:async value=>{created=value.url;return {id:99};}},windows:{openDefaultBrowser:async()=>opened++}},auditSessionKey:(r,s)=>s.tab.id+':'+r.interactionId,linkAuditSessions:sessions,getFirstDisplayedMessage:async()=>({id:4}),readFullForAnalysis:async()=>({parts:[],body}),extractTextFromParts:x=>body,filterUrls:x=>x,extractUrls:()=>[request.url],collectThreatEvaluationOptions:async()=>({}),calculateThreatScore:()=>({score,reasons:['reason']}),localContentCoverage:()=>({state:'checked'}),updateLinkAudit:async(id,value)=>{logs.push(value);return true;}});
  vm.runInContext(fs.readFileSync('security_links.js','utf8')+'\nglobalThis.links=ThundyLinkSecurity;',c);
  c.handleOpenAuditedLink=async(r,s)=>{const result=await c.links.open(r,s);if(result.success)session.terminal=true;return result;};
  const approvalSender={id:'addon',url:'moz-extension://addon/security.html',tab:{id:99}};
@@ -207,4 +207,48 @@ test('a capacity-deferred analysis remains incomplete even without an admitted j
  const evaluated=await f.l.evaluate(f.session,f.sender);
  assert.equal(evaluated.input.coverage,'incomplete');assert.equal(evaluated.decision.reason,'incomplete');
  assert.equal((await f.l.open(f.request,f.sender)).code,'APPROVAL_REQUIRED');assert.equal(f.getOpened(),0);
+});
+
+test('attachment settings are opt-in, validated and protected by the administrator', async()=>{
+ const {s,sender}=fixture();
+ assert.equal((await s.status(sender)).attachmentPolicy.mode,'off');
+ assert.equal((await s.status(sender)).attachmentPolicy.threshold,70);
+ const attachmentPolicy={mode:'block',unknown:'warn',threshold:70};
+ await assert.rejects(s.command({op:'configure',policy,attachmentPolicy:{...attachmentPolicy,threshold:101}},sender),/POLICY_INVALID/);
+ await s.command({op:'configure',policy,adminPassword:'administrator-123',attachmentPolicy},sender);
+ assert.equal((await s.status(sender)).attachmentPolicy.revision,1);
+ await assert.rejects(s.command({op:'configure',policy,attachmentPolicy:{...attachmentPolicy,mode:'off'}},sender),/ADMIN_LOCKED/);
+ const {token}=await s.command({op:'unlock',password:'administrator-123'},sender);
+ await s.command({op:'configure',token,policy,attachmentPolicy:{...attachmentPolicy,mode:'warn'}},sender);
+ assert.equal((await s.status(sender)).attachmentPolicy.mode,'warn');
+ assert.equal((await s.status(sender)).attachmentPolicy.revision,2);
+});
+
+test('an expired revalidation releases security writes and a late read cannot dispatch a link', async () => {
+    const f=links();
+    let expire, release;
+    f.c.setTimeout=callback=>{expire=callback;return 1;};
+    f.c.clearTimeout=()=>{};
+    f.c.readFullForAnalysis=()=>new Promise(resolve=>{release=resolve;});
+    const opening=f.l.open(f.request,f.sender);
+    await new Promise(setImmediate);
+    const queued=f.c.ThundySecurity.serialized(()=>true);
+    expire();
+    assert.equal((await opening).code,'LINK_PREFLIGHT_TIMEOUT');
+    assert.equal(await queued,true);
+    release({parts:[]});
+    await new Promise(setImmediate);
+    assert.equal(f.getOpened(),0);
+});
+
+test('the OS reply never holds the shared settings queue', async () => {
+    const f=links();f.config.policy.enabled=false;
+    let acknowledged,calls=0;
+    f.c.browser.windows.openDefaultBrowser=()=>{calls++;return new Promise(resolve=>{acknowledged=resolve;});};
+    const pending=await f.l.open(f.request,f.sender,{deferHandoff:true});
+    assert.equal(await f.c.ThundySecurity.serialized(()=>true),true);
+    assert.equal(calls,1);
+    const again=await f.l.open({...f.request,interactionId:'separate-click'},f.sender,{deferHandoff:true});
+    assert.equal(again.code,'LINK_HANDOFF_PENDING');assert.equal(calls,1);
+    acknowledged();assert.equal((await pending.handoff).success,true);
 });

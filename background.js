@@ -169,7 +169,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
             try {
                 const full = Object.prototype.hasOwnProperty.call(inventory, 'fullMessage') ? inventory.fullMessage : await getAnalysisFull(message.id);
                 currentCoverage = localContentCoverage(full);
-                if (full) for (const url of filterUrls(extractUrls(extractTextFromParts(full.parts || full)))) currentLinks.add(url);
+                if (full) for (const url of messageUrlInventory(full)) currentLinks.add(url);
             } catch (_) { /* no fallback to another message's links */ }
             let record = null;
             try { record = await getFromStore(await getSharedDB(), 'hybridanalysis', key); } catch (_) { /* still expose live state */ }
@@ -178,7 +178,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                 saved = ThundyAnalysis.resources({...saved,links:Array.isArray(saved.links) ? saved.links.map((item,index) => item && typeof item === 'object' && !Array.isArray(item) ? {...item,analysisResourceRef:'link:' + index} : item) : saved.links});
                 // Numeric IDs and metadata alone cannot bind historical findings.
                 const attachments = (saved.attachments || []).filter(item => item.partName && currentParts.has(String(item.partName)) && currentParts.get(String(item.partName)) === item.attachment_name && verifiedHashes.has(String(item.partName)) && typeof item.hybrid_sha256 === 'string' && verifiedHashes.get(String(item.partName)) === item.hybrid_sha256.toLowerCase());
-                const links = saved.links.filter(item => currentLinks.has(item.url));
+                const links = saved.links.filter(item => currentLinks.has(canonicalHttpUrl(item.url)));
                 const scanCoverage = Object.fromEntries(Object.entries(saved.scanCoverage || {}).filter(([kind]) => saved.scanCoverageBindings?.[kind]?.runtimeId === getAnalysisRuntimeId() && saved.scanCoverageBindings[kind].messageId === message.id));
                 const threatIntel = saved.threatIntel && (!saved.threatIntelBinding || (saved.threatIntelBinding.runtimeId === getAnalysisRuntimeId() && saved.threatIntelBinding.messageId === message.id)) ? saved.threatIntel : undefined;
                 return {messageHeader:saved.messageHeader, attachments, links, ...(saved.scanJobMeta ? {scanJobMeta:saved.scanJobMeta}:{}), ...(saved.sourceDataIncomplete ? {sourceDataIncomplete:true} : {}), scanCoverage:Object.keys(scanCoverage).length ? scanCoverage : undefined, ...(threatIntel ? {threatIntel} : {})};
@@ -200,11 +200,11 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     return {...saved,attachments:(saved.attachments || []).filter(item => item.partName && currentParts.get(String(item.partName)) === item.attachment_name)};
                 },
                 async forLinks(urls) {
-                    for (const url of urls) currentLinks.add(url);
+                    for (const url of urls) { const key=canonicalHttpUrl(url); if(key)currentLinks.add(key); }
                     try {
                         const saved = await getFromStore(await getSharedDB(), 'hybridanalysis', key);
                         const links = Array.isArray(saved?.links) ? saved.links : [];
-                        return ThundyAnalysis.bind(context, urls.map(url => { const index = links.findIndex(item => item && item.url === url); return index < 0 ? null : 'link:' + index; }));
+                        return ThundyAnalysis.bind(context, urls.map(url => { const index = links.findIndex(item => item && sameAnalysisUrl(item.url,url)); return index < 0 ? null : 'link:' + index; }));
                     } catch (_) { return ThundyAnalysis.bind(context, []); }
                 },
                 schedule() { if (context.disposed) return; if (!context.timer) context.timer = setTimeout(() => { context.timer = null; context.flush().catch(() => {}); }, 300); },
@@ -216,7 +216,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     let hybridReportsTruncated=false,hybridReportBudget=500000;
                     try {
                         const original = await getFromStore(await getSharedDB(), 'hybridanalysis', key), saved = original ? ThundyAnalysis.resources(original) : null, current = sourceRecord(original);
-                        if (saved) sourceHistory = ThundyAnalysis.history({...saved,attachments:(saved.attachments || []).filter(item => !(current.attachments || []).includes(item)),links:(saved.links || []).filter(item => !currentLinks.has(item.url))},snapshotId);
+                        if (saved) sourceHistory = ThundyAnalysis.history({...saved,attachments:(saved.attachments || []).filter(item => !(current.attachments || []).includes(item)),links:(saved.links || []).filter(item => !currentLinks.has(canonicalHttpUrl(item.url)))},snapshotId);
                         // Only current, content-bound resources enter the detailed display.
                         // Raw protocols and these resource details never enter provenance exports.
                         for(const item of [...(current?.attachments||[]),...(current?.links||[])]){
@@ -245,7 +245,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     for (const [partName,name] of currentParts) if (ThundyAnalysis.validResource('attachment:' + partName)) resourceLabels['attachment:' + partName] = clean(name) + ' (' + partName + ')';
                     try {
                         const saved = await getFromStore(await getSharedDB(), 'hybridanalysis', key);
-                        for (const [index,item] of (Array.isArray(saved?.links) ? saved.links : []).entries()) if (item && currentLinks.has(item.url)) {
+                        for (const [index,item] of (Array.isArray(saved?.links) ? saved.links : []).entries()) if (item && currentLinks.has(canonicalHttpUrl(item.url))) {
                             try { const url = new URL(item.url); resourceLabels['link:' + index] = clean(url.origin + url.pathname); } catch (_) { /* no URL guess */ }
                         }
                     } catch (_) { /* actual parts remain identifiable without cached links */ }
@@ -260,7 +260,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     }
                     const security = typeof ThundySecurity !== 'undefined' ? await ThundySecurity.read() : null;
                     const protection = security ? ThundySecurity.decision({...ThundySecurity.defaults,...security.policy},{score:model.data.local.score,coverage:model.data.local.state,verdict:model.data.rows.some(row=>row.verdict==='malicious')?'MALICIOUS':model.data.rows.length && model.data.rows.every(row=>['none','suspicious'].includes(row.verdict)&&row.state==='checked')?model.data.rows.some(row=>row.verdict==='suspicious')?'SUSPICIOUS':'CLEAN':'UNKNOWN'}) : null;
-                    return { ...JSON.parse(JSON.stringify(model.data)), displayPreferences, hybridReports, hybridReportsTruncated, scanJob:context.scanJob || {state:'idle',migration:(await browser.storage.local.get('scanMode')).scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, sourcePersistenceFailed:context.persistenceFailed, sourcePersistenceReason:context.persistenceReason || null, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
+                    return { ...JSON.parse(JSON.stringify(model.data)), displayPreferences, hybridReports, hybridReportsTruncated, scanJob:context.scanJob || {state:'idle',migration:(await browser.storage.local.get('scanMode')).scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, attachmentActions:typeof ThundyAttachmentDownload !== 'undefined', sourcePersistenceFailed:context.persistenceFailed, sourcePersistenceReason:context.persistenceReason || null, sourcePersistenceError:context.persistenceError || null, diagnosticRun:context.diagnosticRun||null, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
                 },
                 async flush() {
                     if (context.disposed) return;
@@ -284,9 +284,9 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                             return {...(old || {messageHeader:key}),analysisSourceSnapshots:snapshots,updatedAt:Date.now()};
                         });
                         snapshotCreated = true;
-                        context.persistenceFailed = false; context.persistenceReason = null;
+                        context.persistenceFailed = false; context.persistenceReason = null; context.persistenceError = null;if(typeof ThundyApiDiagnostics!=='undefined')ThundyApiDiagnostics.event(context.diagnosticRun,'persistence',{state:'complete'});
                       }
-                      catch (error) { context.persistenceFailed = true; context.persistenceReason = ['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes'].includes(error?.code) ? error.code : 'storage_failed'; Logger.warn('Analysis source metadata could not be persisted'); }
+                      catch (error) { context.persistenceError=['QuotaExceededError','InvalidStateError','AbortError','UnknownError','DataCloneError','NotFoundError','TransactionInactiveError','SecurityError'].includes(error?.name)?error.name:null; if(typeof ThundyApiDiagnostics!=='undefined')ThundyApiDiagnostics.event(context.diagnosticRun,'persistence',{state:'failed',reason:context.persistenceError||error?.code||'storage_failed'}); context.persistenceFailed = true; context.persistenceReason = ['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes'].includes(error?.code) ? error.code : 'storage_failed'; Logger.warn('Analysis source metadata could not be persisted'); }
                     });
                     await persistenceQueue;
                     const snapshot = await context.snapshot();
@@ -296,7 +296,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     for (const tab of context.tabs) {
                         try {
                             const active = await getFirstDisplayedMessage(tab, { throwOnError: true });
-                            if (!context.disposed && active?.id === message.id) await injectIntoMessageDisplay(tab, ThundyAnalysis.render, [snapshot, labels, theme?.css || '']);
+                            if (!context.disposed && active?.id === message.id) await injectIntoMessageDisplay(tab, ThundyAnalysis.render, [snapshot, labels, theme?.css || '', {surface:'message'}]);
                             else if (active?.id !== message.id) context.tabs.delete(tab);
                         } catch (_) { /* closed or changed message */ }
                     }
@@ -314,6 +314,8 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
     return context;
 }
 function clearAnalysisMemory() {
+    hybridReportBroker?.clear();
+    attachmentDownloads?.clear();
     if(typeof ThundyScans !== 'undefined')ThundyScans.invalidate({silent:true,clear:true});
     if(typeof clearReportArchiveWarnings === 'function')clearReportArchiveWarnings();
     apiGateway?.clearBackoffs?.();
@@ -793,7 +795,7 @@ async function processAttachments(message, allowExternal = true, manualAction = 
 
 async function processLinks(tab, message, fullMessage, parsedUrlCache = null, allowExternal = true, manualAction = false, analysisContext = null) {
   let messageText = extractTextFromParts(fullMessage.parts || fullMessage);
-  let urls = extractUrls(messageText);
+  let urls = messageUrlInventory(fullMessage);
   let filteredUrls = filterUrls(urls, parsedUrlCache);
 
   if (filteredUrls.length > 0) {
@@ -839,23 +841,31 @@ async function collectAttachmentFindings(message) {
   try {
     const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id;
     const record = await getFromStore(await getSharedDB(), 'hybridanalysis', key);
-    const current = await browser.messages.listAttachments(message.id);
-    const hashes = new Map();
-    for (const item of current.slice(0,100)) { if (item.size > 25*1024*1024) continue; try { const file=await browser.messages.getAttachmentFile(message.id,item.partName);hashes.set(String(item.partName),await get_sha256_hash(await file.arrayBuffer())); } catch (_) {} }
-    const findings = [];
-    for (const att of (record && Array.isArray(record.attachments) ? record.attachments : [])) {
-      if (!att || typeof att !== 'object') continue;
-      if (!att.partName || !hashes.has(String(att.partName)) || hashes.get(String(att.partName)) !== String(att.hybrid_sha256 || '').toLowerCase()) continue;
-      const actual = current.find(item=>String(item.partName)===String(att.partName));
-      const name = typeof actual?.name === 'string' ? actual.name : typeof att.attachment_name === 'string' ? att.attachment_name : '';
-      const a=ThundyProviderResults.stored('hybridanalysis',att);const ha=({malicious:'MALICIOUS',suspicious:'SUSPICIOUS',none:'CLEAN'})[a.verdict]||null;
-      const vt = att.virustotal_stats && typeof att.virustotal_stats === 'object' ? att.virustotal_stats : null;
-      const vtMalicious = vt && Number.isFinite(vt.malicious) && vt.malicious > 0;
-      const vtSuspicious = vt && Number.isFinite(vt.suspicious) && vt.suspicious > 0;
-      if (ha === 'MALICIOUS') findings.push({ name, verdict: 'malicious', provider: 'Hybrid Analysis' });
-      else if (vtMalicious) findings.push({ name, verdict: 'malicious', provider: 'VirusTotal' });
-      else if (ha === 'SUSPICIOUS') findings.push({ name, verdict: 'suspicious', provider: 'Hybrid Analysis' });
-      else if (vtSuspicious) findings.push({ name, verdict: 'suspicious', provider: 'VirusTotal' });
+    // No cached finding can contribute a score without a candidate record.
+    const candidates=(Array.isArray(record?.attachments)?record.attachments:[]).filter(att=>{
+      if(!att||typeof att!=='object'||!att.partName||!/^[a-f0-9]{64}$/i.test(att.hybrid_sha256||''))return false;
+      const fact=ThundyProviderResults.stored('hybridanalysis',att),vt=att.virustotal_stats;
+      return ['malicious','suspicious'].includes(fact.verdict)||Number.isFinite(vt?.malicious)&&vt.malicious>0||Number.isFinite(vt?.suspicious)&&vt.suspicious>0;
+    });
+    if(!candidates.length)return [];
+    const current=await browser.messages.listAttachments(message.id);
+    const parts=new Map(current.slice(0,100).map(item=>[String(item.partName),item]));
+    const hashes=new Map(),findings=[];
+    for(const att of candidates){
+      const part=String(att.partName),actual=parts.get(part);
+      if(!actual||actual.size>25*1024*1024)continue;
+      if(!hashes.has(part)){
+        let digest=null;
+        try{const file=await browser.messages.getAttachmentFile(message.id,actual.partName);if(file.size<=25*1024*1024)digest=await get_sha256_hash(await file.arrayBuffer());}catch(_){}
+        hashes.set(part,digest);
+      }
+      if(hashes.get(part)!==att.hybrid_sha256.toLowerCase())continue;
+      const name=typeof actual.name==='string'?actual.name:typeof att.attachment_name==='string'?att.attachment_name:'';
+      const fact=ThundyProviderResults.stored('hybridanalysis',att),vt=att.virustotal_stats;
+      if(fact.verdict==='malicious')findings.push({name,verdict:'malicious',provider:'Hybrid Analysis'});
+      else if(Number.isFinite(vt?.malicious)&&vt.malicious>0)findings.push({name,verdict:'malicious',provider:'VirusTotal'});
+      else if(fact.verdict==='suspicious')findings.push({name,verdict:'suspicious',provider:'Hybrid Analysis'});
+      else if(Number.isFinite(vt?.suspicious)&&vt.suspicious>0)findings.push({name,verdict:'suspicious',provider:'VirusTotal'});
     }
     return findings;
   } catch (e) {
@@ -876,12 +886,12 @@ async function collectLinkFindings(message, fullMessage = null) {
     const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id;
     const record = await getFromStore(await getSharedDB(), 'hybridanalysis', key);
     const full = fullMessage || await readFullForAnalysis(message);
-    const currentLinks = new Set(filterUrls(extractUrls(extractTextFromParts(full.parts || full))));
+    const currentLinks = new Set(messageUrlInventory(full));
     const findings = [];
     for (const link of (record && Array.isArray(record.links) ? record.links : [])) {
       if (!link || typeof link !== 'object') continue;
       const url = typeof link.url === 'string' ? link.url : '';
-      if (!currentLinks.has(url)) continue;
+      if (!currentLinks.has(canonicalHttpUrl(url))) continue;
       const fact=ThundyProviderResults.resource(link);
       if(['malicious','suspicious'].includes(fact.verdict))findings.push({url,verdict:fact.verdict,provider:fact.provider==='hybridanalysis'?'Hybrid Analysis':'URLScan.io'});
     }
@@ -934,11 +944,14 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
 }
 
 async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null, allowExternal = true, analysisContext = null }) {
+  const assessment=beginLocalAssessment(message.id);
   const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache, allowExternal, analysisContext });
   const threat = calculateThreatScore(message.author, urls, options);
-  threat.coverage = localContentCoverage(fullMessage);
+  threat.coverage = localContentCoverage(fullMessage);threat.assessment={...assessment,observedAt:Date.now()};
+  if(analysisContext?.model.data.local?.assessment?.runtimeId===assessment.runtimeId&&analysisContext.model.data.local.assessment.revision>assessment.revision)return;
+  if (analysisContext && !recordLocalCoverage(analysisContext, threat.coverage, threat)) return;
   await injectThreatBanner(tab.id, threat);
-  if (analysisContext) { recordLocalCoverage(analysisContext, threat.coverage, threat); await analysisContext.flush().catch(() => {}); }
+  if (analysisContext) await analysisContext.flush().catch(() => {});
 }
 
 // This describes the available text input, not an antivirus or full MIME verdict.
@@ -961,19 +974,30 @@ function localContentCoverage(fullMessage) {
   return unavailable ? {state:'incomplete',reason:'decryption_unavailable'} : missingText ? {state:'incomplete',reason:'text_unavailable'} : {state:'checked'};
 }
 
-function recordLocalCoverage(context, coverage, threat = null) {
-  if (!context || context.disposed) return;
-  context.model.data.local = {...coverage,source:'local',observedAt:Date.now(),...(threat ? {score:threat.score,reasons:threat.reasons.slice(0,20)} : {})};
+let localAssessmentSequence=0;
+function beginLocalAssessment(messageId,requestId){
+  return {schemaVersion:1,runtimeId:getAnalysisRuntimeId(),revision:++localAssessmentSequence,messageId,observedAt:Date.now(),...(typeof requestId==='string'&&/^[a-zA-Z0-9_-]{1,128}$/.test(requestId)?{requestId}:{})};
+}
+function recordLocalCoverage(context, coverage, threat = null, assessment = threat?.assessment) {
+  if (!context || context.disposed) return false;
+  assessment ||= beginLocalAssessment(context.messageId);
+  const previous=context.model.data.local?.assessment;
+  if(previous?.runtimeId===assessment.runtimeId&&previous.revision>=assessment.revision)return false;
+  context.model.data.local = {...coverage,source:'local',observedAt:assessment.observedAt,assessment,...(threat ? {
+    score:threat.score,heuristicScore:threat.heuristicScore,riskModelVersion:threat.riskModelVersion,
+    reasons:threat.reasons.slice(0,20),heuristicReasons:threat.heuristicReasons?.slice(0,20),providerReasons:threat.providerReasons?.slice(0,20)
+  } : {})};
   context.schedule();
+  return true;
 }
 
-async function readFullForAnalysis(message, context = null) {
+async function readFullForAnalysis(message, context = null, assessment = null) {
   try { return await getAnalysisFull(message.id); }
   catch (error) {
     // Preserve the API failure without retrying it during context creation.
     try {
       context ||= await getMessageAnalysisContext(message, null, {fullMessage:null});
-      recordLocalCoverage(context, {state:'failed',reason:'read_failed'});
+      recordLocalCoverage(context, {state:'failed',reason:'read_failed'},null,assessment);
       await context?.flush();
     } catch (_) { /* the original read failure remains authoritative */ }
     throw error;
@@ -1170,7 +1194,7 @@ function extractTextFromParts(part, outObj) {
   }
 }
 
-const EXTRACT_URLS_REGEX = /https?:\/\/[^\s"'<>]+/g;
+const EXTRACT_URLS_REGEX = /https?:\/\/[^\s"'<>]+/gi;
 function extractUrls(text) {
     const urlSet = new Set();
     let match;
@@ -1193,6 +1217,37 @@ function extractUrls(text) {
         urlSet.add(url);
     }
     return Array.from(urlSet);
+}
+
+function canonicalHttpUrl(value){
+  try{const url=new URL(value);return ['http:','https:'].includes(url.protocol)?url.href:null;}catch(_){return null;}
+}
+function sameAnalysisUrl(a,b){
+  const key=canonicalHttpUrl(a);
+  return key!==null&&key===canonicalHttpUrl(b);
+}
+
+// Actual message targets are independent of provider eligibility. Detached HTML
+// is never inserted into a document; visible anchor text cannot replace href.
+function messageUrlInventory(full){
+  const urls=new Set();
+  const add=value=>{const key=canonicalHttpUrl(value);if(key)urls.add(key);};
+  const visit=part=>{
+    if(Array.isArray(part)){for(const child of part)visit(child);return;}
+    if(!part||typeof part!=='object')return;
+    const attachment=!!part.name||(part.headers?.['content-disposition']||[]).some(value=>/^attachment(?:;|$)/i.test(value.trim()));
+    if(attachment)return;
+    if(typeof part.body==='string'){
+      if(part.contentType?.toLowerCase().split(';')[0]==='text/html'){
+        const doc=new DOMParser().parseFromString(part.body,'text/html');
+        for(const element of doc.querySelectorAll('script,style,head,template'))element.remove();
+        for(const anchor of doc.querySelectorAll('a[href]')){add(anchor.getAttribute('href'));anchor.remove();}
+        for(const url of extractUrls(doc.body?.textContent||''))add(url);
+      }else if(!part.contentType||part.contentType.toLowerCase().split(';')[0]==='text/plain')for(const url of extractUrls(part.body))add(url);
+    }
+    for(const child of part.parts||[])visit(child);
+  };
+  visit(full);return [...urls];
 }
 
 const IGNORED_DOMAINS = [
@@ -1614,6 +1669,11 @@ function createContextMenus() {
             contexts: ["message_display_action"]
         }
     ];
+    if (typeof ThundyAttachmentDownload !== 'undefined') menus.push({
+        id: 'save-attachment-thundy',
+        title: msg('attachmentSaveWithThundy'),
+        contexts: ['message_attachments']
+    });
     for (const menu of menus) {
         try {
             // menus.create is asynchronous: a synchronous try/catch cannot catch
@@ -1683,7 +1743,39 @@ async function scanLinksOfDisplayedMessage(tabId) {
 
 createContextMenus();
 
+// Attachment menus can report the internal about:message tab instead of the
+// enclosing API tab. Bind that menu to its active message before a click.
+let attachmentMenuOrigin = null;
+browser.menus?.onShown?.addListener((info,tab) => {
+    if (!info.contexts?.includes('message_attachments')) return;
+    attachmentMenuOrigin = null;
+    if (!info.menuIds?.includes('save-attachment-thundy') || info.attachments?.length !== 1) return;
+    attachmentMenuOrigin = {
+        eventTabId:tab?.id,
+        partName:info.attachments[0].partName,
+        target:(async () => {
+            const [active] = await browser.tabs.query({active:true,lastFocusedWindow:true});
+            const tabId = ['mail','messageDisplay'].includes(tab?.type) ? tab.id : active?.id;
+            if (!Number.isSafeInteger(tabId) || tabId !== active?.id) return null;
+            const message = await getFirstDisplayedMessage(tabId);
+            return message ? {tabId,messageId:message.id,partName:info.attachments[0].partName} : null;
+        })().catch(() => null)
+    };
+});
+
 if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListener(async (info, tab) => {
+    if (info.menuItemId === 'save-attachment-thundy' && attachmentDownloads) {
+        const origin = attachmentMenuOrigin;
+        attachmentMenuOrigin = null;
+        try {
+            if (!origin || origin.eventTabId !== tab?.id || info.attachments?.length !== 1 ||
+                origin.partName !== info.attachments[0].partName) throw Error('ATTACHMENT_CONTEXT_CHANGED');
+            const target = await origin.target;
+            if (!target) throw Error('ATTACHMENT_CONTEXT_CHANGED');
+            await attachmentDownloads.start(target);
+        } catch (_) {notify('attachmentProtectionTitle','attachmentFailed');}
+        return;
+    }
     if (info.menuItemId === "scan-message-links-thundy") {
         await scanLinksOfDisplayedMessage(tab && tab.id);
         return;
@@ -1718,29 +1810,27 @@ async function persistUrlscanLinkResult(message, url, res) {
     if (!message || !message.headerMessageId || !res || !res.status) return;
     try {
         const db = await getSharedDB();
-        const reqUrl = url.endsWith('/') ? url.slice(0, -1) : url;
-        const reqUrlSlash = reqUrl + '/';
-        const observedAt = Date.now();
+
+        const attemptedAt = Date.now();
         const reportUrl = typeof res.reportUrl === 'string' && /^https:\/\/urlscan\.io\/result\/[A-Za-z0-9_-]+\/?$/i.test(res.reportUrl.trim())
             ? res.reportUrl.trim()
             : null;
         await updateStore(db, 'hybridanalysis', message.headerMessageId, existingRecord => {
             if (!existingRecord || !Array.isArray(existingRecord.links)) return existingRecord;
             for (const item of existingRecord.links) {
-                if (item && (item.url === reqUrl || item.url === reqUrlSlash)) {
-                    item.urlscan = {
-                        status: res.status,
-                        ...(res.assessment?.assessmentVersion===1?{assessment:ThundyProviderResults.merge(item.urlscan?.uuid===res.uuid?item.urlscan?.assessment:null,res.assessment)}:{}),
+                if (item && sameAnalysisUrl(item.url,url)) {
+                    item.urlscan = ThundyProviderResults.urlscanRecord({
+                        status:res.status,
+                        ...(res.terminal===true?{terminal:true}:{}),
+                        ...(res.assessment?.assessmentVersion===1?{assessment:res.assessment}:{}),
                         ...(typeof res.uuid==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(res.uuid)?{uuid:res.uuid}:{}),
-                        reasons: Array.isArray(res.reasons) ? res.reasons : [],
-                        ...(res.details && { details: res.details }),
-                        ...(res.errorCode && { errorCode: res.errorCode }),
-                        ...(reportUrl && { reportUrl }),
-                        observedAt
-                    };
+                        reasons:Array.isArray(res.reasons)?res.reasons:[],
+                        ...(res.errorCode?{errorCode:res.errorCode}:{}),
+                        ...(reportUrl?{reportUrl}:{})
+                    },item.urlscan,attemptedAt);
                 }
             }
-            existingRecord.updatedAt = observedAt;
+            existingRecord.updatedAt = attemptedAt;
             return existingRecord;
         }, { preserveReports: true });
     } catch (e) {
@@ -1756,7 +1846,10 @@ async function persistHybridLinkVerdict(message, url, result) {
         await updateStore(await getSharedDB(), 'hybridanalysis', message.headerMessageId, existingRecord => {
             if (!existingRecord || !Array.isArray(existingRecord.links)) return existingRecord;
             for (const item of existingRecord.links) {
-                if (item && item.url === url) item.hybrid_verdict = { status: result.status, observedAt };
+                if (item && sameAnalysisUrl(item.url,url)) {
+                    if (result.check?.outcome !== 'success' && item.hybrid_verdict?.status === 'MALICIOUS' && result.status !== 'MALICIOUS') continue;
+                    item.hybrid_verdict = {status:result.status,observedAt,completion:result.check?.outcome === 'success'?'complete':'incomplete'};
+                }
             }
             existingRecord.updatedAt = observedAt;
             return existingRecord;
@@ -1779,27 +1872,11 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         const db = await getSharedDB();
         const record = await getFromStore(db, "hybridanalysis", message.headerMessageId);
 
-        let linkObj = null;
-        if (record && record.links) {
-            // ⚡ Optimize URL normalization: Move requestUrl processing out of loop and use fast string methods over Regex
-            const reqUrl = request.url.endsWith("/") ? request.url.slice(0, -1) : request.url;
-            const reqUrlSlash = reqUrl + "/";
-            // ⚡ Bolt Optimization: Replace .find() with for loop to avoid callback overhead
-            linkObj = undefined; // Reset to match .find() semantics
-            const links = record.links;
-            const len = links.length;
-            for (let i = 0; i < len; i++) {
-                const u = links[i].url;
-                if (u === reqUrl || u === reqUrlSlash) {
-                    linkObj = links[i];
-                    break;
-                }
-            }
-        }
+        let linkObj=Array.isArray(record?.links)?record.links.find(item=>item&&sameAnalysisUrl(item.url,request.url)):null;
 
         const forward=sendResponse;let incompleteProvider=false;
         sendResponse=async result=>{
-            try{const latest=await getFromStore(db,'hybridanalysis',message.headerMessageId);const base=request.url.endsWith('/')?request.url.slice(0,-1):request.url;linkObj=latest?.links?.find(l=>l.url===base||l.url===base+'/')||linkObj;}catch(_){incompleteProvider=true;}
+            try{const latest=await getFromStore(db,'hybridanalysis',message.headerMessageId);linkObj=latest?.links?.find(l=>l&&sameAnalysisUrl(l.url,request.url))||linkObj;}catch(_){incompleteProvider=true;}
             const fact=ThundyProviderResults.resource(linkObj),rank={unknown:0,none:1,suspicious:2,malicious:3},status=({MALICIOUS:'malicious',MALICIOUS_VISUAL:'malicious',SUSPICIOUS:'suspicious',CLEAN:'none'})[result.status]||'unknown';
             if(rank[fact.verdict]>rank[status]&&['malicious','suspicious'].includes(fact.verdict))result={...result,status:fact.verdict==='malicious'?'MALICIOUS':'SUSPICIOUS',provider:fact.provider==='hybridanalysis'?'Hybrid Analysis':'urlscan.io',retainedFinding:true,check:{...result.check,origin:'stored',outcome:result.check?.outcome||'success',observedAt:fact.observedAt}};
             else if(result.status==='CLEAN'&&(incompleteProvider||typeof ThundyScans!=='undefined'&&ThundyScans.get?.(message.id)?.assessmentIncomplete))result={...result,status:'UNKNOWN',check:{...result.check,outcome:'incomplete'}};
@@ -1813,45 +1890,49 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         if (request.userAction === true && urlscanApikey && tierAtLeast('max') && (!linkObj || linkObj.state === 'UNKNOWN')) {
             try {
                 const res = await checkUrlscanIo(request.url, urlscanApikey, analysisContext);
-                if(res?.status==='UNKNOWN'){incompleteProvider=true;await persistUrlscanLinkResult(message,request.url,res);}
-                if(['ERROR','TIMEOUT'].includes(res?.status))incompleteProvider=true;
-                const outcome = res?.status === 'NOT_CHECKED' ? 'not_requested' :
-                    res?.errorCode === 'rate_limited' ? 'rate_limited' :
-                    res?.errorCode === 'invalid_key' ? 'invalid_key' : 'failed';
+                const status = res?.status === 'CLEAN' && res.assessment?.completion !== 'complete' ? 'UNKNOWN' : res?.status;
+                const hasFinding = ['MALICIOUS','MALICIOUS_VISUAL','SUSPICIOUS','CLEAN'].includes(status);
+                const completed = hasFinding && res?.assessment?.completion === 'complete';
+                const outcome = completed ? 'success' : status === 'NOT_CHECKED' ? 'not_requested' :
+                    ['rate_limited','invalid_key'].includes(res?.errorCode) ? res.errorCode :
+                    ['UNKNOWN','SUBMITTED','TIMEOUT'].includes(status) || hasFinding ? 'incomplete' : 'failed';
+                if (!completed && status !== 'NOT_CHECKED') incompleteProvider = true;
+                const attemptedAt = Date.now();
                 urlscanAttempt = {
-                    origin: 'none',
+                    origin: hasFinding ? 'live' : 'none',
                     outcome,
                     errorCode: res?.errorCode || null,
                     errorDetails: res?.details || null,
+                    httpStatus: res?.httpStatus || null,
                     retryAfter: res?.retryAfter || null,
-                    attemptedAt: Date.now(),
-                    observedAt: null
+                    attemptedAt,
+                    observedAt: hasFinding ? attemptedAt : null
                 };
-                if (res && res.status !== 'ERROR' && res.status !== 'TIMEOUT' && res.status !== 'NOT_CHECKED') {
-                    await persistUrlscanLinkResult(message, request.url, res);
-                    // Wir überschreiben das Verhalten: Wenn es Visuelles Phishing ist, sofort warnen
-                    await sendResponse({ status: res.status, reasons: res.reasons, provider: 'urlscan.io', check: { origin: 'live', outcome: 'success', attemptedAt: Date.now(), observedAt: Date.now() } });
+                if (res && status !== 'NOT_CHECKED') await persistUrlscanLinkResult(message, request.url, {...res,status});
+                if (hasFinding) {
+                    await sendResponse({ status, reasons: res.reasons, provider: 'urlscan.io', check: urlscanAttempt });
                     return;
-                } else if (res && (res.status === 'ERROR' || res.status === 'TIMEOUT')) {
-                    await persistUrlscanLinkResult(message, request.url, res);
                 }
             } catch (e) {
-                urlscanAttempt = { origin: 'none', outcome: 'failed', errorCode: e.name || 'error', errorDetails: e.message, attemptedAt: Date.now(), observedAt: null };
-                Logger.error("Fehler bei Time-of-Click Live-Scan:", e);
+                urlscanAttempt = { origin: 'none', outcome: 'failed', errorCode: 'fetch_failed', attemptedAt: Date.now(), observedAt: null };
+                incompleteProvider = true;
+                Logger.warn('urlscan.io click check failed');
             }
         }
 
-        if (linkObj && linkObj.urlscan && ['MALICIOUS_VISUAL', 'MALICIOUS', 'SUSPICIOUS', 'CLEAN'].includes(linkObj.urlscan.status) && (!linkObj.hybrid_sha256 || linkObj.state === 'UNKNOWN')) {
+        if (linkObj?.urlscan && ['MALICIOUS_VISUAL','MALICIOUS','SUSPICIOUS','CLEAN'].includes(linkObj.urlscan.status) &&
+            (!linkObj.hybrid_sha256 || linkObj.state === 'UNKNOWN') &&
+            (linkObj.urlscan.status !== 'CLEAN' || linkObj.urlscan.assessment?.completion === 'complete')) {
             await sendResponse({
                 status: linkObj.urlscan.status,
                 reasons: Array.isArray(linkObj.urlscan.reasons) ? linkObj.urlscan.reasons : [],
                 provider: 'urlscan.io',
-                check: { origin: 'stored', outcome: 'success', attemptedAt: request.userAction ? Date.now() : null, observedAt: Number.isFinite(linkObj.urlscan.observedAt) ? linkObj.urlscan.observedAt : null }
+                check: { origin: 'stored', outcome: linkObj.urlscan.assessment?.completion === 'complete' ? 'success' : 'incomplete', attemptedAt: request.userAction ? Date.now() : null, observedAt: Number.isFinite(linkObj.urlscan.observedAt) ? linkObj.urlscan.observedAt : null }
             });
             return;
         }
 
-        if (linkObj) {
+        if (linkObj?.hybrid_sha256) {
             // A previously observed live verdict or stored report outranks the submission state.
             const storedVerdict = linkObj.hybrid_verdict && ['MALICIOUS', 'SUSPICIOUS', 'CLEAN'].includes(linkObj.hybrid_verdict.status) ? linkObj.hybrid_verdict : null;
             const reportVerdict = !storedVerdict && linkObj.report && typeof extractHybridVerdictFromOverview === 'function' ? extractHybridVerdictFromOverview(linkObj.report) : null;
@@ -1863,7 +1944,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
                 analysisContext,
                 quickScanId: linkObj.hybrid_quick_scan_id || linkObj.hybrid_submission_id || linkObj.hybrid_job_id || null
             });
-            if (result && result.check && result.check.origin === 'live' && result.check.outcome === 'success' && typeof persistHybridLinkVerdict === 'function') {
+            if (result && result.check && result.check.origin === 'live' && (result.check.outcome === 'success' || ['MALICIOUS','SUSPICIOUS'].includes(result.status)) && typeof persistHybridLinkVerdict === 'function') {
                 await persistHybridLinkVerdict(message, linkObj.url, result);
             }
             await sendResponse({ ...result, provider: 'Hybrid Analysis' });
@@ -1889,15 +1970,15 @@ function validLinkRequest(request, sender, { checking = true } = {}) {
 }
 
 // Message documents cannot navigate reliably. Use Thunderbird's external-browser API.
-async function handleOpenCheckedLink(request, sender) {
+async function handleOpenCheckedLink(request, sender, options) {
     try {
         const tabId = sender && sender.tab && sender.tab.id;
         if (tabId == null || request.messageId == null || typeof request.url !== 'string') return { success: false };
         const url = new URL(request.url);
         if (url.protocol !== 'http:' && url.protocol !== 'https:') return { success: false };
+        if (typeof ThundyLinkSecurity !== 'undefined') return await ThundyLinkSecurity.open(request,sender,options);
         const message = await getFirstDisplayedMessage(tabId, { throwOnError: true });
         if (!message || message.id !== request.messageId) return { success: false };
-        if (typeof ThundyLinkSecurity !== 'undefined') return await ThundyLinkSecurity.open(request,sender);
         await browser.windows.openDefaultBrowser(url.href);
         return { success: true };
     } catch (error) {
@@ -1951,6 +2032,7 @@ async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { request
         }
         if (response.status === 429) {
             check.outcome = 'rate_limited';
+            check.httpStatus = 429;
             check.errorCode = 'rate_limited';
             let retrySeconds = null;
             try {
@@ -1970,12 +2052,14 @@ async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { request
         if (response.status === 401 || response.status === 403) {
             check.outcome = 'invalid_key';
             check.errorCode = 'invalid_key';
+            check.httpStatus = response.status;
             check.error = 'Invalid API key';
             check.errorDetails = 'Invalid or unauthorized Hybrid Analysis API key';
             return fallback();
         }
         if (response.ok === false) {
             check.outcome = 'failed';
+            check.httpStatus = response.status;
             check.errorCode = `http_${response.status}`;
             check.error = `HTTP ${response.status}`;
             check.errorDetails = `HTTP ${response.status}`;
@@ -1983,13 +2067,24 @@ async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { request
         }
         const data = await response.json();
         const verdict = extractHybridVerdictFromOverview(data);
-        if (!verdict) { check.outcome = 'no_result'; return fallback(); }
-        return { status: verdict, check: { ...check, origin: 'live', outcome: 'success', observedAt: Date.now() } };
+        const roots = Array.isArray(data) ? data : [data];
+        if (roots.some(row => row?.sha256 != null && String(row.sha256).toLowerCase() !== String(hybrid_sha256).toLowerCase())) {
+            check.outcome = 'failed';
+            check.errorCode = 'resource_mismatch';
+            return fallback();
+        }
+        const assessment = ThundyProviderResults.evaluate('hybridanalysis',data);
+        const complete = assessment.completion === 'complete' && roots.length > 0 &&
+            roots.every(ThundyProviderResults.hybridCompletionConfirmed);
+        if (!verdict || verdict === 'UNKNOWN' || verdict === 'CLEAN' && !complete) {
+            check.outcome = assessment.completion === 'pending' ? 'incomplete' : 'no_result';
+            return fallback();
+        }
+        return { status: verdict, check: { ...check, origin: 'live', outcome: complete ? 'success' : 'incomplete', observedAt: Date.now() } };
     } catch (error) {
         check.outcome = 'failed';
-        check.errorCode = error.name || 'error';
-        check.error = error.message;
-        check.errorDetails = error.message;
+        check.errorCode = error instanceof SyntaxError ? 'invalid_response' : 'fetch_failed';
+        check.errorDetails = uiText('checkOutcome_failed','Provider request failed.');
         return fallback();
     }
 }
@@ -2048,6 +2143,41 @@ async function handleRequestScan(request, sender) {
     }
 }
 
+// Viewer snapshots never accept a caller-supplied database key or provider request.
+var hybridReportBroker = typeof ThundyHybridReport === 'undefined' ? null : ThundyHybridReport.broker(browser, async request => {
+    const context = await getMessageAnalysisContext(await browser.messages.get(request.messageId));
+    if (!context || context.disposed || context.snapshotId !== request.contextToken) throw Error('REPORT_UNAVAILABLE');
+    const snapshot = await context.snapshot();
+    if (snapshot.displayPreferences?.hybridDetails === false) throw Error('REPORT_UNAVAILABLE');
+    const record = await context.resourceRecord();
+    const candidates = request.resourceRef.startsWith('attachment:')
+        ? (record?.attachments || []).filter(item => 'attachment:'+item.partName === request.resourceRef)
+        : (record?.links || []).filter(item => item.analysisResourceRef === request.resourceRef);
+    if (context.disposed || !context.isCached() || candidates.length !== 1 || !candidates[0].report) throw Error('REPORT_UNAVAILABLE');
+    return ThundyHybridReport.project(candidates[0], request.resourceRef, snapshot.local, snapshot.rows);
+});
+
+// The download dialog uses the same resource-bound report broker as the message view.
+var attachmentDownloads = typeof ThundyAttachmentDownload === 'undefined' ? null : ThundyAttachmentDownload.create(browser,{
+    security:ThundySecurity,
+    hash:get_sha256_hash,
+    record:async message => getFromStore(await getSharedDB(),'hybridanalysis',resolveMessageStorageKey(message)),
+    revision:id => typeof ThundyScans === 'undefined' ? null : ThundyScans.revision(id),
+    pending:(id,part) => typeof ThundyScans !== 'undefined' && ThundyScans.attachmentPending(id,part),
+    openReport:async (target,resource,sender,archived) => {
+        const message = await getFirstDisplayedMessage(target.tabId);
+        if (message?.id !== target.messageId) throw Error('ATTACHMENT_CONTEXT_CHANGED');
+        if (archived) {
+            const snapshot = ThundyHybridReport.project(archived,'attachment:'+target.partName);
+            return hybridReportBroker.openBound({...snapshot,historical:true});
+        }
+        const context = await getMessageAnalysisContext(message);
+        context.forAttachment(target.partName,resource.file.name,resource.digest);
+        return hybridReportBroker.command({action:'openHybridReport',messageId:message.id,
+            contextToken:context.snapshotId,resourceRef:'attachment:'+target.partName},sender);
+    }
+});
+
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Harden the message boundary: only our own extension contexts may drive the
     // background script (P3-25 in docs/PROBLEMANALYSE_STORE_READINESS.md).
@@ -2090,6 +2220,20 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }).catch(()=>sendResponse({success:false,code:'ADMIN_LOCKED'}));
         return true;
     }
+    if (['startAttachmentDownload','attachmentDownloadCommand'].includes(request.action) && attachmentDownloads) {
+        (async () => {
+            if (sender?.id !== browser.runtime.id) throw Error('ATTACHMENT_CONTEXT_CHANGED');
+            if (request.action === 'attachmentDownloadCommand') return attachmentDownloads.command(request,sender);
+            const tabId = ThundySecurity.page(sender,'popup.html')
+                ? (await browser.tabs.query({active:true,currentWindow:true}))[0]?.id : sender.tab?.id;
+            return attachmentDownloads.start({tabId,messageId:request.messageId,partName:request.partName});
+        })().then(sendResponse).catch(error => sendResponse({success:false,code:error.code || 'ATTACHMENT_DOWNLOAD_FAILED'}));
+        return true;
+    }
+    if (['openHybridReport','readHybridReport'].includes(request.action) && hybridReportBroker) {
+        hybridReportBroker.command(request,sender).then(sendResponse).catch(()=>sendResponse({success:false,code:'REPORT_UNAVAILABLE'}));return true;
+    }
+    if(request.action==='openApiDebug'&&sender?.id===browser.runtime.id){const run=Number.isSafeInteger(request.runId)&&request.runId>0?'#run='+request.runId:'';browser.tabs.create({url:browser.runtime.getURL('api_debug.html')+run}).then(()=>sendResponse({success:true})).catch(()=>sendResponse({success:false}));return true;}
     if (request.action === 'openScanSettings') { browser.runtime.openOptionsPage().then(()=>sendResponse({success:true})).catch(()=>sendResponse({success:false}));return true; }
     switch (request.action) {
         case "reportArchiveBlocked":
@@ -2122,43 +2266,49 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 return { success: context ? context.event(request.event) : false };
             })().then(sendResponse).catch(() => sendResponse({ success: false }));
             return true;
-        case "getLocalRisk":
+        case "getLocalRisk": {
+            const assessment=beginLocalAssessment(request.messageId,request.requestId);
             (async () => {
                 const message = await browser.messages.get(request.messageId);
-                const fullMessage = await readFullForAnalysis(message);
+                const fullMessage = await readFullForAnalysis(message,null,assessment);
                 const messageText = extractTextFromParts(fullMessage.parts || fullMessage);
-                const urls = filterUrls(extractUrls(messageText));
+                const urls = messageUrlInventory(fullMessage);
                 const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls: urls, messageText, allowExternal: false });
                 const threat = calculateThreatScore(message.author, urls, options);
-                threat.coverage = localContentCoverage(fullMessage);
-                const context = await getMessageAnalysisContext(message, null, {fullMessage});
-                recordLocalCoverage(context, threat.coverage, threat);
+                threat.coverage = localContentCoverage(fullMessage);threat.assessment={...assessment,observedAt:Date.now()};
+                // Recording provenance must not discard an already computed score.
+                void Promise.resolve().then(()=>getMessageAnalysisContext(message, null, {fullMessage})).then(context=>recordLocalCoverage(context, threat.coverage, threat)).catch(()=>{});
                 return threat;
-            })().then(threat => sendResponse({ status: 'success', threat })).catch(() => sendResponse({ status: 'error' }));
+            })().then(threat => sendResponse({ status: 'success', threat })).catch(() => sendResponse({ status: 'error', assessment:{...assessment,observedAt:Date.now()} }));
             return true;
-        case "refreshThreatBanner":
+        }
+        case "refreshThreatBanner": {
             if (sender?.url?.split(/[?#]/)[0] !== browser.runtime.getURL('popup.html') || !Number.isInteger(request.messageId)) { sendResponse({ success: false }); return false; }
             (async () => {
+                const assessment=beginLocalAssessment(request.messageId);
                 const message = await browser.messages.get(request.messageId);
-                const fullMessage = await readFullForAnalysis(message);
+                const fullMessage = await readFullForAnalysis(message,null,assessment);
                 const messageText = extractTextFromParts(fullMessage.parts || fullMessage);
-                const urls = extractUrls(messageText);
+                const urls = messageUrlInventory(fullMessage);
                 const filteredUrls = filterUrls(urls);
                 const parsedUrlCache = new Map();
                 const context = await getMessageAnalysisContext(message, null, { fullMessage });
                 const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache, allowExternal: false, analysisContext: context });
                 const threat = calculateThreatScore(message.author, urls, options);
-                threat.coverage = localContentCoverage(fullMessage);
+                threat.coverage = localContentCoverage(fullMessage);threat.assessment={...assessment,observedAt:Date.now()};
+                if(context?.model.data.local?.assessment?.runtimeId===assessment.runtimeId&&context.model.data.local.assessment.revision>assessment.revision)return {success:false};
+                if(context && !recordLocalCoverage(context, threat.coverage, threat))return {success:false};
                 for (const tab of (context && context.tabs ? context.tabs : [])) {
                     try {
                         const active = await getFirstDisplayedMessage(tab, { throwOnError: true });
                         if (!context.disposed && active?.id === message.id) await injectThreatBanner(tab, threat);
                     } catch (_) { /* closed or changed message */ }
                 }
-                if (context) { recordLocalCoverage(context, threat.coverage, threat); await context.flush().catch(() => {}); }
+                if (context) await context.flush().catch(() => {});
                 return { success: true, score: threat.score };
             })().then(sendResponse).catch(() => sendResponse({ success: false }));
             return true;
+        }
         case "clearMemoryCaches":
             clearAnalysisMemory();
             sendResponse({ status: 'success' });
@@ -2166,7 +2316,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case "uploadAttachment":
             handleManualUpload(request.messageId, request.partName, request.attachmentName, request.hash, request.headerMessageId)
                 .then(res => sendResponse({status: 'success', data: res}))
-                .catch(err => sendResponse({status: 'error', message: err.message, code: err.code}));
+                .catch(err => sendResponse({status:'error',message:err.message,code:err.code,...(err.uploadSent?{uploadSent:true}:{} )}));
             return true;
 
         case "scanUrl":
@@ -2337,69 +2487,75 @@ async function handleUrlScan(url, headerMessageId, analysisContext = null) {
 }
 
 async function handleManualUpload(messageId, partName, attachmentName, hash, headerMessageId) {
-    const messageContext = await getMessageAnalysisContext(await browser.messages.get(messageId));
-    const analysisContext = messageContext?.forAttachment ? messageContext.forAttachment(partName) : messageContext;
-    if (!apikey_hybridanalysis) throw new Error(uiText("ui_086", "API-Key fehlt."));
+    if (!apikey_hybridanalysis) throw new Error(uiText('ui_086', 'API-Key fehlt.'));
     assertExternalAnalysisAllowed();
-    // Uploading the full file is only allowed from "balanced" upwards; the tier
-    // applies to manual actions as well (see docs/privacy_policy.md §3.3/§5).
-    if (!tierAtLeast('balanced')) {
-        throw typedError(TIER_BLOCKS_UPLOAD, msg('errorTierUploadBlocked'));
-    }
+    if (!tierAtLeast('balanced')) throw typedError(TIER_BLOCKS_UPLOAD, msg('errorTierUploadBlocked'));
     await requireHostPermission('https://hybrid-analysis.com/api/v2/quick-scan/file');
 
-    let file = await browser.messages.getAttachmentFile(messageId, partName);
-    const content_of_atachment = file.slice();
-    const file_to_submit = new File([content_of_atachment], attachmentName, { type: file.type || 'application/octet-stream' });
+    const changed = () => typedError('MESSAGE_CONTEXT_CHANGED', msg('analysisContextChanged'));
+    if (!Number.isInteger(messageId) || typeof partName !== 'string' || !partName || typeof hash !== 'string' || !/^[a-f0-9]{64}$/i.test(hash)) throw changed();
+    const message = await browser.messages.get(messageId);
+    if (!message || message.id !== messageId) throw changed();
+    const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id;
+    if (!key || key !== headerMessageId) throw changed();
+    const digest = hash.toLowerCase();
+    const matching = record => (Array.isArray(record?.attachments) ? record.attachments : []).filter(item => item && typeof item === 'object' && !Array.isArray(item) && item.partName === partName && typeof item.hybrid_sha256 === 'string' && item.hybrid_sha256.toLowerCase() === digest);
+    const reference = item => JSON.stringify([item.hybrid_quick_scan_id || null, item.hybrid_submission_id || null, item.hybrid_job_id || null]);
+    const db = await getSharedDB();
+    const candidates = matching(await getFromStore(db, 'hybridanalysis', key));
+    if (candidates.length !== 1) throw changed();
+    const originalReference = reference(candidates[0]);
+    const file = await browser.messages.getAttachmentFile(messageId, partName);
+    if (file.size > 25 * 1024 * 1024) throw typedError('RESOURCE_MISMATCH', msg('scanCoverage_size_limit'));
+    const bytes = await file.arrayBuffer();
+    if (await get_sha256_hash(bytes) !== digest) throw changed();
 
+    const messageContext = await getMessageAnalysisContext(message);
+    const analysisContext = messageContext?.forAttachment ? messageContext.forAttachment(partName, file.name, digest) : messageContext;
+    const unassigned = () => Object.assign(typedError('RESOURCE_MISMATCH', msg('uploadSentUnassigned')), {uploadSent:true});
+    const validateResponse = data => {
+        if (data?.sha256 != null && (typeof data.sha256 !== 'string' || data.sha256.toLowerCase() !== digest)) throw unassigned();
+    };
     const formData = new FormData();
     formData.append('scan_type', 'all');
-    formData.append('file', file_to_submit);
-
+    // Send exactly the bytes whose hash was checked, with Thunderbird's actual filename.
+    formData.append('file', new File([bytes], file.name || attachmentName, {type:file.type || 'application/octet-stream'}));
+    const url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
+    await requireHostPermission(url);
+    const beforeSend = matching(await getFromStore(db, 'hybridanalysis', key));
+    if (messageContext?.disposed || beforeSend.length !== 1 || reference(beforeSend[0]) !== originalReference) throw changed();
+    // Read policy and credentials after preflight awaits, immediately before queuing.
+    assertExternalAnalysisAllowed();
+    if (!tierAtLeast('balanced')) throw typedError(TIER_BLOCKS_UPLOAD, msg('errorTierUploadBlocked'));
     const options = getHybridAnalysisOptions('POST', formData);
-    options.analysisContext = analysisContext;
-    options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
-
+    options.analysisContext = {...analysisContext, validateResponse};
+    options.url = url;
     const response = await apiGateway.fetchWithTimeout(options.url, options, 60000);
-    const json_data = await response.json();
-
-    if (response.status === 200 || response.status === 201) {
-        // Update DB record
-        try {
-            const db = await getSharedDB();
-            await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
-                if (existingRecord && existingRecord.attachments) {
-                    // ⚡ Bolt Optimization: Replace .findIndex() with for loop to avoid callback overhead
-                    let attIndex = -1;
-                    const attachments = existingRecord.attachments;
-                    const len = attachments.length;
-                    for (let i = 0; i < len; i++) {
-                        if (attachments[i].partName === partName) {
-                            attIndex = i;
-                            break;
-                        }
-                    }
-                    if (attIndex > -1) {
-                        existingRecord.attachments[attIndex].hybrid_quick_scan_id = typeof json_data.id==='string'?json_data.id:null;
-                        existingRecord.attachments[attIndex].hybrid_submission_id = json_data.submission_id || json_data.id;
-                        existingRecord.attachments[attIndex].hybrid_job_id = json_data.job_id || (Array.isArray(json_data.reports) && json_data.reports[0]) || json_data.id;
-                        if (json_data.sha256) existingRecord.attachments[attIndex].hybrid_sha256 = json_data.sha256;
-                        existingRecord.attachments[attIndex].state = 'UPLOADED';
-                        // Keep the immediate quick-scan payload (scanner states) instead of discarding it.
-                        const quickReport = typeof quickScanReport === 'function' ? quickScanReport(json_data) : null;
-                        existingRecord.attachments[attIndex].report = quickReport;
-                        existingRecord.attachments[attIndex].report_fetched_at = quickReport ? new Date().toISOString() : null;
-                    }
-                }
-                return existingRecord;
-            }, {preserveReports:true});
-        } catch (dbError) {
-            Logger.error('Fehler beim Aktualisieren des DB Records:', dbError);
-        }
-        return json_data;
-    } else {
-        throw new Error(uiText("ui_060", "Fehler beim Upload: ") + String(response.status));
+    const data = await response.json();
+    if (response.status !== 200 && response.status !== 201) throw new Error(uiText('ui_060', 'Fehler beim Upload: ') + String(response.status));
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw unassigned();
+    validateResponse(data);
+    try {
+        await updateStore(db, 'hybridanalysis', key, record => {
+            const current = matching(record);
+            // A later submission or another message's part must not inherit this response.
+            if (messageContext?.disposed || current.length !== 1 || reference(current[0]) !== originalReference) throw unassigned();
+            const target = current[0];
+            target.hybrid_quick_scan_id = typeof data.id === 'string' ? data.id : null;
+            target.hybrid_submission_id = data.submission_id || data.id;
+            target.hybrid_job_id = data.job_id || (Array.isArray(data.reports) && data.reports[0]) || data.id;
+            target.hybrid_sha256 = digest;
+            target.state = 'UPLOADED';
+            const quickReport = typeof quickScanReport === 'function' ? quickScanReport(data) : null;
+            target.report = quickReport;
+            target.report_fetched_at = quickReport ? new Date().toISOString() : null;
+            return record;
+        }, {preserveReports:true});
+    } catch (error) {
+        if (error.uploadSent) throw error;
+        Logger.error('Fehler beim Aktualisieren des DB Records:', error);
     }
+    return {...data, sha256:digest};
 }
 
 // Prune expired audit records when the extension starts as well as on access/write.

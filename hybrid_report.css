@@ -1,0 +1,61 @@
+#hybridReportStatus:empty { margin: 0; }
+#hybridReportFilters[hidden], #hybridReportRunFilter[hidden], .report-pages[hidden] { display: none; }
+
+.report-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    gap: 12px;
+}
+.report-controls label { display: grid; gap: 4px; min-width: 0; }
+.report-controls :is(input, select) { width: 100%; min-width: 0; max-width: 100%; }
+.report-pages { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.report-value { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.report-value .report-identity { flex: 1 1 220px; min-width: 0; }
+.report-time { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+
+:is(#hybridReportOverview, #hybridReportContent, #hybridReportComparison) .card { margin: 12px 0; overflow-wrap: anywhere; }
+:is(#hybridReportOverview, #hybridReportContent, #hybridReportComparison) summary {
+    cursor: pointer;
+    font-weight: 650;
+    min-height: 24px;
+    padding-block: 2px;
+}
+.report-identity { margin: 0; overflow-wrap: anywhere; }
+.report-verdict { margin: 6px 0; font-size: 1.15em; font-weight: 700; }
+.report-run { color: var(--text-muted); margin: 4px 0 10px; }
+.retained-finding { border-inline-start: 3px solid currentColor; padding-inline-start: 10px; }
+.report-overview dl, #hybridReportContent dl {
+    display: grid;
+    align-items: baseline;
+    grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr);
+    gap: 4px 12px;
+}
+:is(#hybridReportOverview, #hybridReportContent, #hybridReportComparison) dt { font-weight: 600; }
+#hybridReportContent dt code { display: block; color: var(--text-muted); font-weight: 400; }
+:is(#hybridReportOverview, #hybridReportContent, #hybridReportComparison) dd {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+#hybridReportContent dd button { display: block; margin-block-start: 4px; }
+#hybridReportContent ol { padding-inline-start: 20px; }
+#hybridReportContent li { margin: 12px 0; }
+#hybridReportContent code { overflow-wrap: anywhere; }
+.warning { color: var(--color-danger); }
+.report-explanation h3 { margin-block-end: 4px; }
+.report-explanation ul { margin-block: 4px; }
+.report-overview details { margin-block-start: 6px; }
+.report-comparison ol { list-style: none; margin-block-end: 0; padding: 0; }
+.report-comparison li { border-block-start: 1px solid var(--card-border); padding-block: 8px; }
+.report-comparison dl {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px 12px;
+    margin-block-end: 0;
+}
+.report-comparison button[aria-current="true"] { border-color: var(--link-color); font-weight: 700; }
+
+@media (max-width: 600px) {
+    .report-overview dl, #hybridReportContent dl, .report-comparison dl { grid-template-columns: minmax(0, 1fr); }
+    :is(#hybridReportOverview, #hybridReportContent, #hybridReportComparison) dd { margin-bottom: 8px; }
+}

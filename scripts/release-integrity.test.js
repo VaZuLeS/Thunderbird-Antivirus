@@ -233,6 +233,60 @@ test('new candidates require six-language upgrade/crash proof for both declared 
  validateReports(recovery,recoveryReports,ui);
  for(const key of ['earlierFailuresPreserved','responseCountersPreserved','popupView','storedSnapshotAgrees']){const bad=structuredClone(recoveryReports);for(const r of bad.filter(r=>r.clientMatrixTarget==='current'))r.failedStoredRecovery[key]=false;assert.throws(()=>validateReports(recovery,bad,ui),/failed stored/);}
  const recoveryProof=api.create(recovery,recoveryReports,ui,'fixture');assert.ok(api.verify(recoveryProof,recovery));assert.ok(!JSON.stringify(recoveryProof).includes('CANARY'));
+ const viewer={...recovery,extensionVersion:'1.25.9'},viewerReports=structuredClone(recoveryReports);
+ for(const r of viewerReports){r.extensionVersion=viewer.extensionVersion;r.currentRestart.addon.version=viewer.extensionVersion;}
+ assert.throws(()=>validateReports(viewer,viewerReports,ui),/debug viewer/);
+ const viewerFlags=['viewerPassed','viewerDocumentSession','viewerReadOnly','viewerFilterPause','viewerExportVerified','viewerLockCleared'];
+ for(const r of viewerReports){Object.assign(r.apiDebug,Object.fromEntries(viewerFlags.map(key=>[key,true])));r.hybridReportView={...Object.fromEntries(['passed', 'realThunderbirdAPIs', 'syntheticStoredData', 'compactInline', 'separateReports', 'searchWorks', 'textOnly', 'noProviderRequests', 'auditPreserved', 'resourcesPreserved'].map(key=>[key,true])),liveProviderCalls:false,rawPayload:'CANARY'};r.manualUploadBinding={...Object.fromEntries(['passed', 'realThunderbirdAPIs', 'realIndexedDB', 'syntheticTransport', 'refusedBeforePost', 'mismatchPreserved', 'uploadSentReported', 'actualBytesVerified', 'actualFilenameUsed', 'matchingReferenceSaved', 'singlePostPerExplicitAttempt', 'auditPreserved'].map(key=>[key,true])),liveProviderCalls:false,rawPayload:'CANARY'};r.storedSources={...Object.fromEntries(['passed', 'realThunderbirdAPIs', 'syntheticObservations', 'reportsAndLegacyUnchanged', 'isolatedResponseMessage', 'responsesWithoutVerdict'].map(key=>[key,true])),baseline:false,externalConsent:false,rawPayload:'CANARY'};r.localScoreVisibility=Object.fromEntries(['passed','realThunderbirdAPIs','linkVisible','overviewVisible','popupVisible','noExternalServices'].map(key=>[key,true]));}
+ const attachmentFlags=['passed','inline','popup','menu','archive','settings','linkedReport','originalBytes','noProviderRequests'];
+ const handoffFlags=['passed','realThunderbirdAPIs','acceptedOnce','realOsReceiver','acceptedWithoutOsDispatch'];
+ const baseline=require('./release-upgrade-baselines.json')[viewer.extensionVersion];
+ for(const r of viewerReports){
+  r.attachmentDownload=Object.fromEntries(attachmentFlags.map(key=>[key,true]));
+  r.linkHandoff=Object.fromEntries(handoffFlags.map(key=>[key,true]));
+  r.previousInstallation.extensionVersion=baseline.version;
+  r.previousRestart.addon.version=baseline.version;
+  r.previousXpiSha256=baseline.sha256;
+  r.backupRestore={passed:true,restoredVersion:baseline.version,snapshotRecordsPreserved:3,scope:'CANARY'};
+ }
+ validateReports(viewer,viewerReports,ui);
+ for(const change of [
+  r=>{r.previousInstallation.extensionVersion='1.25.7';r.previousRestart.addon.version='1.25.7';},
+  r=>{r.previousXpiSha256='b'.repeat(64);},
+  r=>{delete r.backupRestore;},
+  r=>{r.backupRestore.restoredVersion='1.25.7';},
+  r=>{r.backupRestore.passed=false;}
+ ]){
+  const invalid=structuredClone(viewerReports);
+  for(const r of invalid.filter(r=>r.clientMatrixTarget==='minimum')) change(r);
+  assert.throws(()=>validateReports(viewer,invalid,ui),/pinned upgrade\/crash\/restore evidence from 1\.25\.8: minimum/);
+ }
+ for(const [kind,key,re] of [['attachmentDownload','archive',/attachment protection/],['linkHandoff','realOsReceiver',/link handoff/]]){
+  const missing=structuredClone(viewerReports);
+  for(const r of missing.filter(r=>r.clientMatrixTarget==='minimum')) r[kind][key]=false;
+  assert.throws(()=>validateReports(viewer,missing,ui),re);
+ }
+ for(const key of viewerFlags){const bad=structuredClone(viewerReports);for(const r of bad.filter(r=>r.clientMatrixTarget==='current'))r.apiDebug[key]=false;assert.throws(()=>validateReports(viewer,bad,ui),/debug viewer/);}
+ const missingScore=structuredClone(viewerReports);for(const r of missingScore.filter(r=>r.clientMatrixTarget==='current'))r.localScoreVisibility.popupVisible=false;assert.throws(()=>validateReports(viewer,missingScore,ui),/local score/);
+ for(const key of ['refusedBeforePost','actualBytesVerified','mismatchPreserved','matchingReferenceSaved','singlePostPerExplicitAttempt','auditPreserved']){
+  const bad=structuredClone(viewerReports);for(const r of bad.filter(r=>r.clientMatrixTarget==='current'))r.manualUploadBinding[key]=false;
+  assert.throws(()=>validateReports(viewer,bad,ui),/manual upload binding/);
+ }
+ for(const key of ['compactInline', 'separateReports', 'searchWorks', 'noProviderRequests', 'auditPreserved', 'resourcesPreserved']){const bad=structuredClone(viewerReports);for(const r of bad.filter(r=>r.clientMatrixTarget==='current'))r.hybridReportView[key]=false;assert.throws(()=>validateReports(viewer,bad,ui),/Hybrid report viewer/);}
+ const missingManual=structuredClone(viewerReports);for(const r of missingManual)delete r.manualUploadBinding;
+ assert.throws(()=>validateReports(viewer,missingManual,ui),/manual upload binding/);
+ for(const key of ['isolatedResponseMessage','responsesWithoutVerdict','reportsAndLegacyUnchanged']){
+  const bad=structuredClone(viewerReports);for(const r of bad.filter(r=>r.clientMatrixTarget==='current'))r.storedSources[key]=false;
+  assert.throws(()=>validateReports(viewer,bad,ui),/isolated stored source/);
+ }
+ const missingSources=structuredClone(viewerReports);for(const r of missingSources)delete r.storedSources;
+ assert.throws(()=>validateReports(viewer,missingSources,ui),/isolated stored source/);
+ const liveSources=structuredClone(viewerReports);for(const r of liveSources)r.storedSources.externalConsent=true;
+ assert.throws(()=>validateReports(viewer,liveSources,ui),/isolated stored source/);
+ const viewerProof=api.create(viewer,viewerReports,ui,'fixture');assert.ok(api.verify(viewerProof,viewer));assert.equal(viewerProof.thunderbird[0].storedSources.isolatedResponseMessage,true);assert.equal(viewerProof.thunderbird[0].storedSources.baseline,false);assert.ok(!JSON.stringify(viewerProof).includes('CANARY'));
+ assert.equal(viewerProof.thunderbird[0].previousXpiSha256,baseline.sha256);
+ assert.deepEqual(viewerProof.thunderbird[0].backupRestore,{passed:true,restoredVersion:baseline.version,snapshotRecordsPreserved:3});
+
 
 
 

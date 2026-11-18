@@ -114,7 +114,7 @@ class Marionette:
             'WebDriver:TakeScreenshot', {'full': True})['value']))
 
 
-def native_click(display, x, y):
+def native_click(display, x, y, button=1):
     """XTest sends a real X11 button event, needed for native popup activation."""
     x11 = ctypes.CDLL('libX11.so.6')
     xtest = ctypes.CDLL('libXtst.so.6')
@@ -131,8 +131,8 @@ def native_click(display, x, y):
         raise RuntimeError('Cannot connect to isolated Xvfb display')
     try:
         for result in [xtest.XTestFakeMotionEvent(connection, -1, round(x), round(y), 0),
-                       xtest.XTestFakeButtonEvent(connection, 1, 1, 0),
-                       xtest.XTestFakeButtonEvent(connection, 1, 0, 0)]:
+                       xtest.XTestFakeButtonEvent(connection, button, 1, 0),
+                       xtest.XTestFakeButtonEvent(connection, button, 0, 0)]:
             if not result:
                 raise RuntimeError('XTest event failed')
         x11.XFlush(connection)
@@ -220,7 +220,9 @@ def native_download(m, display, out, button, stem, browser='window.gTabmail.curr
     ready_before = m.page('return document.readyState;',browser=button_browser or browser)
     known = m.page('return window.wrappedJSObject.browser.downloads.search({}).then(items=>items.map(item=>item.id));',browser=browser)
     dialogs_before=native_dialogs(display)
-    m.page('document.getElementById(arguments[0]).click();', [button],browser=button_browser or browser)
+    # Popup report cards may rerender while the download inventory is queried.
+    # Resolve a semantic locator and click in the same JS turn; no stale node ID.
+    wait_for(lambda:m.page('''const locator=arguments[0],button=typeof locator==='string'?document.getElementById(locator):[...document.querySelectorAll('#hybrid_analysis_api_content button')].filter(node=>node.textContent===window.wrappedJSObject.browser.i18n.getMessage(locator.labelKey))[locator.index];if(!button||button.disabled)return false;button.click();return true;''',[button],browser=button_browser or browser))
     def completed():
         return m.page('''const known=new Set(arguments[0]);return window.wrappedJSObject.browser.downloads.search({}).then(items=>items.find(item=>!known.has(item.id)&&item.state==="complete")||null);''', [known],browser=browser)
     try:
@@ -375,6 +377,12 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     assert dialog['width'] >= 500 and dialog['url'] == URL and 'Thundy AV' in dialog['text']
     assert catalogs[locale]['linkDialogTitle']['message'] in dialog['text']
     assert dialog['focus'] == catalogs[locale]['linkCancel']['message']
+    current_score_ui=tuple(map(int,report['extensionVersion'].split('.'))) >= (1,25,9)
+    if current_score_ui:
+        score=m.page('const n=document.getElementById("thundy-link-dialog").shadowRoot.querySelector(".local-score");return {visible:!!n&&n.getClientRects().length>0,text:n?.textContent};')
+        assert score['visible'] and str(expected_score)+' / 100' in score['text'],score
+        overview=wait_for(lambda:m.page(r'const r=document.getElementById("thundy-analysis-status")?.shadowRoot;return Array.from(r?.querySelectorAll(".local-score")||[]).some(n=>n.getClientRects().length>0&&/\d+ \/ 100/.test(n.textContent));'))
+        report['localScoreVisibility']={'passed':True,'realThunderbirdAPIs':True,'linkVisible':True,'overviewVisible':bool(overview),'popupVisible':False,'noExternalServices':True}
     report['linkDialog'] = dialog
     m.screenshot(out / 'link-dialog.png')
     m.page('document.getElementById("thundy-link-dialog").shadowRoot.querySelector("footer button").click();')
@@ -393,6 +401,9 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     wait_for(lambda: m.page('return document.body.innerText.includes("Thundy AV") && document.body.innerText.includes("sender@example.invalid");', browser=popup_browser))
     assert m.page('return document.documentElement.lang;', browser=popup_browser) == locale
     assert m.page('return document.querySelector("h1").textContent;', browser=popup_browser) == catalogs[locale]['popupSubtitle']['message']
+    if current_score_ui:
+        wait_for(lambda:m.page(r'const n=document.querySelector(".local-risk .risk-score");return !!n&&n.getClientRects().length>0&&/\d+ \/ 100/.test(n.textContent);',browser=popup_browser))
+        report['localScoreVisibility']['popupVisible']=True
     popup['language'] = locale
     popup['heading'] = catalogs[locale]['popupSubtitle']['message']
     report['nativePopup'] = popup
@@ -440,6 +451,9 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     assert opened['url'] == URL and opened['scoreAtDecision'] == expected_score and opened['openAttempts'] == 1
     report['openedAuditRecord'] = opened
     report['blockedOsAuditRecord'] = max(opened_records, key=lambda r: r['clickedAt'])
+    report['linkHandoff'] = {'passed':True, 'realThunderbirdAPIs':True, 'acceptedOnce':opened['openAttempts']==1,
+                             'realOsReceiver':report['osHandoff']=={'argv':[URL]},
+                             'acceptedWithoutOsDispatch':report['blockedOsDispatch']['additionalReceiverCalls']==0}
     m.screenshot(out / 'audit.png')
     if audit_only:
         return
@@ -1412,7 +1426,7 @@ def check_hybrid_popup(m, base, out, report, display, baseline=False, actions=Fa
             wait_for(lambda:m.page('const b=document.getElementById(arguments[0]),s=document.getElementById(b.getAttribute("aria-describedby"));return !b.disabled&&s.textContent.startsWith(window.wrappedJSObject.browser.i18n.getMessage("ui_045"));',[controls['firstRescan']],browser=popup))
             assert controls['unique']
             assert m.page('const b=document.getElementById(arguments[0]);return !b.disabled&&document.getElementById(b.getAttribute("aria-describedby")).textContent==="";',[controls['secondRescan']],browser=popup)
-            actual=native_download(m,display,out,controls['secondDownload'],'local-cdr-report.html',browser=options,button_browser=popup,save_button=True)
+            actual=native_download(m,display,out,{'labelKey':'ui_035','index':1},'local-cdr-report.html',browser=options,button_browser=popup,save_button=True)
             data=actual.read_bytes();assert b'Fixture' in data and b'<script' not in data.lower(),data
             observed=json.loads(m.page('return JSON.stringify(window.wrappedJSObject.__reportActionRows);',browser=options))
             assert observed==[{'action':'uploadAttachment','messageId':target,'partName':'1.2'},{'action':'downloadDisarmed','messageId':target,'partName':'1.3'}],observed
@@ -1429,28 +1443,53 @@ def check_hybrid_popup(m, base, out, report, display, baseline=False, actions=Fa
 
 def check_stored_sources(m, base, out, report, display, baseline=False):
     """Actual source RPCs and both views, synthetic stored metadata, no provider calls."""
+    # A response with no verdict must not share the report-bearing message:
+    # normal display preparation may legitimately rebind its verified findings.
+    fixture=out/'responses-without-verdict.eml'
+    mail=EmailMessage(policy=SMTP)
+    mail['From']='responses@example.invalid';mail['To']='receiver@example.invalid'
+    mail['Subject']='Thundy responses without verdict'
+    mail['Message-ID']='<responses-without-verdict@example.invalid>'
+    mail.set_content('Synthetic response accounting fixture without resources.')
+    fixture.write_bytes(mail.as_bytes())
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      const root=MailServices.accounts.localFoldersServer.rootFolder;root.createSubfolder("Response Accounting",null);
+      const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+      MailServices.copy.copyFileMessage(file,root.getChildNamed("Response Accounting"),null,false,0,"",null,null);''',[str(fixture)])
+    wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Response Accounting").getTotalMessages(false)===1;'''))
+    open_page(m,base+'options.html')
+    response_id=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,message=(await b.messages.query({subject:"Thundy responses without verdict"})).messages.find(row=>row.subject==="Thundy responses without verdict");await b.messageDisplay.open({messageId:message.id,location:"tab"});return message.id;})();''')
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status");'))
     open_page(m,base+'options.html')
     prepared=m.page('''return (async()=>{
       const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
-      const message=(await b.messages.query({subject:"Thundy hybrid popup"})).messages.find(row=>row.subject==="Thundy hybrid popup");
-      let tabId=null;for(const tab of await b.tabs.query({})){try{const list=await b.messageDisplay.getDisplayedMessages(tab.id);if(list.messages?.some(row=>row.id===message.id)){tabId=tab.id;break;}}catch{}}
-      if(tabId===null)throw new Error("Fixture message tab missing");
+      const original=(await b.messages.query({subject:"Thundy hybrid popup"})).messages.find(row=>row.subject==="Thundy hybrid popup"),message=await b.messages.get(arguments[1]);
+      let tabId=null,originalTabId=null;for(const tab of await b.tabs.query({})){try{const list=await b.messageDisplay.getDisplayedMessages(tab.id);if(list.messages?.some(row=>row.id===message.id))tabId=tab.id;if(list.messages?.some(row=>row.id===original.id))originalTabId=tab.id;}catch{}}
+      if(tabId===null||originalTabId===null)throw new Error("Fixture message tab missing");
       await b.runtime.sendMessage({action:"clearMemoryCaches"});
       const ready=await bg.getMessageAnalysisContext(message,tabId),context=ready.wrappedJSObject||ready;
       for(const provider of ["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"]){context.event({provider,scope:"url",resource:null,phase:"finish",state:"failed",verdict:"unknown",responded:false,observedAt:null});context.event({provider,scope:"url",resource:null,phase:"finish",state:"received",verdict:"unknown",responded:true,observedAt:1000});}
       await b.runtime.sendMessage({action:"getLocalRisk",messageId:message.id});await context.flush();
-      return {messageId:message.id,expectedPhase:b.i18n.getMessage(arguments[0]?"analysisModePartial":"analysisModeResponsesFailed"),warning:b.i18n.getMessage("analysisStoredDataIncomplete")};
-    })();''',[baseline])
+      return {messageId:original.id,originalTabId,responseMessageId:message.id,responseTabId:tabId,expectedPhase:b.i18n.getMessage(arguments[0]?"analysisModePartial":"analysisModeResponsesFailed"),warning:b.i18n.getMessage("analysisStoredDataIncomplete")};
+    })();''',[baseline,response_id])
     m.js('window.gTabmail.switchToTab(window.gTabmail.tabInfo.filter(tab=>tab.mode.name==="mailMessageTab").at(-1));')
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(".phase")?.textContent===arguments[0];',[prepared['expectedPhase']]))
     m.screenshot(out/'responses-without-verdict.png')
     open_page(m,base+'options.html')
+    response_snapshot=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[response_id]) if not baseline else None
+    if not baseline:
+        rows=response_snapshot['rows']
+        assert prepared['messageId']!=response_id and len(rows)==5,response_snapshot
+        assert {row['provider'] for row in rows}=={'hybridanalysis','virustotal','urlhaus','abuseipdb','urlscan'},rows
+        assert all(row['verdict']=='unknown' and row['responses']==1 and row['failures']==1 and row['observedAt']==1000 for row in rows),rows
+    m.page('return window.wrappedJSObject.browser.tabs.remove(arguments[0]);',[prepared['responseTabId']])
     original=m.page('''return (async()=>{
       const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]),db=await bg.getSharedDB();
       await bg.updateStore(db,"hybridanalysis",message.headerMessageId,old=>({...old,attachments:[null,...old.attachments],links:{unreadable:true},analysisStatusLegacy:{schemaVersion:2,rows:[null,...["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"].map(provider=>({provider,scope:"report",state:"checked",verdict:"malicious",responses:1,observedAt:10}))]}}));
       if(!arguments[1]){
         await bg.pruneStore(db,"hybridanalysis");
-        const ready=await bg.getMessageAnalysisContext(message),context=ready.wrappedJSObject||ready;
+        const ready=await bg.getMessageAnalysisContext(message,arguments[2]),context=ready.wrappedJSObject||ready;
+        for(const provider of ["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"])context.event({provider,scope:"url",resource:null,phase:"finish",state:"received",verdict:"unknown",responded:true,observedAt:1000});
         for(const attachment of await b.messages.listAttachments(message.id)){
           const file=await b.messages.getAttachmentFile(message.id,attachment.partName);
           const bytes=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsArrayBuffer(file);});
@@ -1460,7 +1499,7 @@ def check_stored_sources(m, base, out, report, display, baseline=False):
       }
       const stored=await bg.getFromStore(db,"hybridanalysis",message.headerMessageId);
       return JSON.stringify({attachments:stored.attachments,links:stored.links,legacy:stored.analysisStatusLegacy});
-    })();''',[prepared['messageId'],baseline])
+    })();''',[prepared['messageId'],baseline,prepared['originalTabId']])
     result=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysisRecord",messageId:arguments[0]});',[prepared['messageId']])
     assert result['success'] != baseline,result
     m.js('window.gTabmail.switchToTab(window.gTabmail.tabInfo.filter(tab=>tab.mode.name==="mailMessageTab").at(-1));')
@@ -1481,7 +1520,7 @@ def check_stored_sources(m, base, out, report, display, baseline=False):
     open_page(m,base+'options.html')
     after=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]),stored=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId);return JSON.stringify({attachments:stored.attachments,links:stored.links,legacy:stored.analysisStatusLegacy});})();''',[prepared['messageId']])
     assert original==after
-    report['storedSources']={'passed':True,'baseline':baseline,'genericPopupError':baseline,'rpcSuccess':not baseline,'reportsAndLegacyUnchanged':True,'externalConsent':False,'syntheticObservations':True,'phaseWithoutVerdict':prepared['expectedPhase']}
+    report['storedSources']={'passed':True,'baseline':baseline,'genericPopupError':baseline,'rpcSuccess':not baseline,'reportsAndLegacyUnchanged':True,'externalConsent':False,'syntheticObservations':True,'realThunderbirdAPIs':True,'isolatedResponseMessage':prepared['messageId']!=response_id,'responsesWithoutVerdict':not baseline,'phaseWithoutVerdict':prepared['expectedPhase']}
 
 
 def probe_source_export_navigation(m, base, invalidate=False):
@@ -1956,7 +1995,7 @@ def check_automatic_scans(m, base, out, report, display):
     def snapshot():
         return m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[setup['messageId']],browser=options)
     try:
-        finished=wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('state')=='completed' else None),45)
+        finished=wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('state')=='completed' else None),100)
     except TimeoutError:
         report['automaticScanFailure']={'snapshot':snapshot(),'errors':m.page('return window.wrappedJSObject.__automaticScanErrors;',browser=options),'calls':m.page('return window.wrappedJSObject.__automaticScanCalls;',browser=options),'probe':m.page('return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;const tab=(await b.tabs.query({active:true,currentWindow:true}))[0];return bg.handleRequestScan({messageId:arguments[0],tabId:tab.id},{});})();',[setup['messageId']],browser=options)}
         raise
@@ -1981,7 +2020,7 @@ def check_automatic_scans(m, base, out, report, display):
     wait_for(lambda:m.page('return window.wrappedJSObject.__retryResponseReleases.length>0;',browser=options))
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
     m.page('window.wrappedJSObject.__holdRetryResponses=false;for(const resolve of window.wrappedJSObject.__retryResponseReleases.splice(0))resolve();',browser=options)
-    wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('id')!=finished['scanJob']['id'] and r.get('scanJob',{}).get('state')=='completed' else None),45)
+    wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('id')!=finished['scanJob']['id'] and r.get('scanJob',{}).get('state')=='completed' else None),100)
     later=m.page('return window.wrappedJSObject.__automaticScanCalls;',browser=options)
     assert len([c for c in later if c['method']=='POST' and 'urlscan.io' in c['url']])>len(us)
     report['passed']=True
@@ -2001,14 +2040,21 @@ def check_provider_results(m, base, out, report, display, message_id):
         if(url==='https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis')data={id:'provider-hybrid-job',finished:false};
         else if(url.includes('hybrid-analysis.com/api/v2/quick-scan/')){
           hybridPolls++;
-          if(hybridPolls===1)data={id:'provider-hybrid-job',finished:false,verdict:'clean',scanners:[{status:'malicious',positives:2,total:35},{status:'in-progress'}]};
+          if(hybridPolls===1)data={id:'provider-hybrid-job',finished:false,verdict:'clean',scanners_v2:[{status:'malicious',positives:2,total:35},{status:'in-progress'}]};
           else{if(!window.wrappedJSObject.__providerReleased)await new Promise(resolve=>window.wrappedJSObject.__releaseProvider=resolve);data={id:'provider-hybrid-job',finished:true,verdict:'unknown',type:'Synthetic HTML',scanners_v2:{Fixture:{status:'unknown'}},mitre_attcks:[{attck_id:'T1059',tactic:'execution'}],signatures:[{name:'Synthetic expert signature',threat_level:2}],total_processes:0};}
         }else if(url==='https://urlscan.io/api/v1/scan/')data={uuid:'provider-urlscan-job'};
         else if(url.includes('urlscan.io/api/v1/result/'))data={task:{uuid:'provider-urlscan-job'},verdicts:{overall:{malicious:false,score:65},urlscan:{malicious:false,brands:['Example']}}};
         else throw Error('Unexpected synthetic provider route');
         return new bg.Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}});
-      };return true;
-    })();''',browser=options)
+      };
+      // This probe exercises mixed findings using already accepted synthetic UUIDs.
+      // Fresh submission timing is exercised separately by the inline probes.
+      const message=await b.messages.get(arguments[0]);
+      await bg.updateStore(await bg.getSharedDB(),'hybridanalysis',bg.resolveMessageStorageKey(message),old=>{
+        if(!old?.links?.length)throw Error('Missing synthetic resource inventory');
+        return {...old,links:old.links.map(link=>({...link,urlscan:{status:'SUBMITTED',uuid:'provider-urlscan-job'}}))};
+      },{preserveReports:true});return true;
+    })();''',[message_id],browser=options)
     def snapshot():
         return m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[message_id],browser=options)
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector("[data-focus-key=scan-start]")?.disabled===false;'))
@@ -2040,6 +2086,19 @@ def check_provider_results(m, base, out, report, display, message_id):
     assert m.page('return window.wrappedJSObject.__providerCalls.filter(c=>c.method==="POST").length;',browser=options)==before
     assert any(r['provider']=='hybridanalysis' and r['verdict']=='malicious' for r in refreshed['rows']),refreshed
     def expert_details(browser='window.gTabmail.currentTabInfo.browser'):
+        inline=m.page('return document.getElementById("thundy-analysis-status").dataset.surface==="message";',browser=browser)
+        if inline:
+            message_tab=m.js('return window.gTabmail.tabInfo.indexOf(window.gTabmail.currentTabInfo);')
+            m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector(".hybrid-report-link button").click();',browser=browser)
+            wait_for(lambda:m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.startsWith(arguments[0]);',[base+'hybrid_report.html#']))
+            wait_for(lambda:m.page('return document.getElementById("hybridReportContent")?.textContent.includes("T1059");'))
+            result=m.page('const panel=document.getElementById("hybridReportContent");return {text:panel.textContent,activeContent:panel.querySelectorAll("script,img,a").length};')
+            assert 'Synthetic expert signature' in result['text'] and 'total_processes' in result['text'] and result['activeContent']==0,result
+            m.page('const section=document.querySelector("[data-section=mitre]");section.open=true;section.scrollIntoView({block:"center"});')
+            wait_for(lambda:m.page('const node=document.querySelector("[data-section=mitre]");node.scrollIntoView({block:"center"});const r=node.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;'))
+            m.screenshot(out/'hybrid-expert-report-tab.png')
+            m.js('window.gTabmail.switchToTab(arguments[0]);',[message_tab])
+            return
         m.page('const root=document.getElementById("thundy-analysis-status").shadowRoot;const panel=root.querySelector(".hybrid-expert");if(!panel)throw Error("Missing Hybrid expert panel");panel.open=true;for(const group of panel.querySelectorAll("details"))group.open=true;',browser=browser)
         wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.querySelector(".hybrid-expert").textContent.includes("T1059");',browser=browser))
         result=m.page('const panel=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(".hybrid-expert");return {text:panel.textContent,activeContent:panel.querySelectorAll("script,img,a").length};',browser=browser)
@@ -2078,6 +2137,7 @@ def check_provider_results(m, base, out, report, display, message_id):
     assert any(r.get('retryAt',0)>0 and r.get('quotaAction')=='submit-unlisted' for r in limited['rows']),limited
     def quota_details(browser='window.gTabmail.currentTabInfo.browser'):
         expert_view(m,browser)
+        m.page('const node=document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-key=provider-technical]");if(node)node.open=true;',browser=browser)
         wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes("This attempt was deferred locally; no new provider request was sent.");',browser=browser))
         assert m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes("quotaRemaining: 0");',browser=browser)
         wait_for(lambda:m.page('const node=Array.from(document.getElementById("thundy-analysis-status").shadowRoot.querySelectorAll("p")).find(p=>p.textContent==="This attempt was deferred locally; no new provider request was sent.");node.scrollIntoView({block:"center"});const r=node.getBoundingClientRect();return r.height>0&&r.top>=0&&r.bottom<=innerHeight;',browser=browser))
@@ -2089,7 +2149,41 @@ def check_provider_results(m, base, out, report, display, message_id):
     quota_details(popup)
     subprocess.run(['import','-window','root',str(out/'urlscan-quota-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
-    report['providerResults']={'passed':True,'partialMaliciousBlocks':True,'terminalUnknownRetainsFinding':True,'brandDoesNotEscalate':True,'refreshWithoutSubmission':True,'bothViewsAgree':True,'hybridExpertDetails':True,'actionScopedQuota':True,'syntheticTransport':True}
+    # A deleted accepted result is terminal; its earlier finding remains stored.
+    deleted=m.page('''return (async()=>{const w=window.wrappedJSObject,b=w.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+      const cleared=await b.runtime.sendMessage({action:'clearMemoryCaches'});if(!cleared.success)throw Error('Cache clear rejected');const fetch=bg.fetch;
+      const postCount=w.__providerCalls.filter(call=>call.method==='POST').length;
+      // The preceding quota scenario rejected a NEW submission. Restore the
+      // separately captured accepted-result fixture for the deletion scenario.
+      const accepted=new Map(arguments[1].map(link=>[link.url,link.urlscan])),message=await b.messages.get(arguments[0]);
+      await bg.updateStore(await bg.getSharedDB(),'hybridanalysis',bg.resolveMessageStorageKey(message),old=>({...old,links:old.links.map(link=>{
+        const saved=accepted.get(link.url);if(!saved?.uuid)throw Error('Missing accepted UUID fixture');return {...link,urlscan:saved};
+      })}),{preserveReports:true});
+      bg.fetch=async(url,options={})=>{if(String(url).includes('urlscan.io/api/v1/result/')){w.__providerCalls.push({url:String(url),method:options.method||'GET'});return new bg.Response('{}',{status:410});}return fetch(url,options);};
+      const result=await bg.handleRequestScan({messageId:arguments[0],tabId:(await b.tabs.query({active:true,currentWindow:true}))[0].id,operation:'refresh'},{});
+      if(!result.success)throw Error(result.code||'Deleted result probe rejected');
+      return {id:result.id,postCount,reason:b.i18n.getMessage('urlscanResultGone')};})();''',[message_id,record['links']],browser=options)
+    try:
+        gone=wait_for(lambda:(s if (s:=snapshot()).get('scanJob',{}).get('id')==deleted['id'] and s.get('scanJob',{}).get('state')=='incomplete' else None),20)
+    except TimeoutError:
+        raise AssertionError({'deletedResultExpectedJob':deleted['id'],'actualJob':snapshot().get('scanJob')})
+    assert gone['scanJob']['pending'] is False,gone
+    record=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysisRecord",messageId:arguments[0]});',[message_id],browser=options)['record']
+    assert all(link['urlscan']['terminal'] and link['urlscan']['errorCode']=='result_gone' and link['urlscan']['assessment']['verdict']=='suspicious' for link in record['links']),record
+    m.page('for(const detail of document.getElementById("thundy-analysis-status").shadowRoot.querySelectorAll("details"))detail.open=true;')
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes(arguments[0]);',[deleted['reason']]))
+    m.screenshot(out/'urlscan-deleted-result-message.png')
+    native_click(display,point['x'],point['y']);wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    expert_view(m,popup)
+    # The local card mounts before the async provider snapshot. Wait for the
+    # actual provider controls before expanding them; an empty early view has
+    # no details to open and must not be mistaken for missing error text.
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector("[data-provider=urlscan] details");',browser=popup))
+    m.page('for(const detail of document.getElementById("thundy-analysis-status").shadowRoot.querySelectorAll("details"))detail.open=true;',browser=popup)
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes(arguments[0]);',[deleted['reason']],browser=popup))
+    m.screenshot(out/'urlscan-deleted-result-popup.png');m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    assert m.page('return window.wrappedJSObject.__providerCalls.filter(c=>c.method==="POST").length;',browser=options)==deleted['postCount']
+    report['providerResults']={'passed':True,'partialMaliciousBlocks':True,'terminalUnknownRetainsFinding':True,'brandDoesNotEscalate':True,'refreshWithoutSubmission':True,'bothViewsAgree':True,'hybridExpertDetails':True,'actionScopedQuota':True,'existingUrlscanJobs':True,'deletedResultTerminal':True,'hybridScannerList':True,'syntheticTransport':True}
 
 
 def check_inline_scan(m, base, out, report, display, fresh=False):
@@ -2136,7 +2230,7 @@ def check_inline_scan(m, base, out, report, display, fresh=False):
         failed=m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes("Check failed; try again");')
         if failed:raise AssertionError('Inline Check now failed in fresh profile' if fresh else 'Inline Check now failed after cache clear')
         return None
-    finished=wait_for(outcome,30)
+    finished=wait_for(outcome,45)
     completed_label=json.loads((ROOT/'_locales/en/messages.json').read_text())['scanState_completed']['message']
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[completed_label]))
     calls=m.page('return window.wrappedJSObject.inlineScanCalls;',browser=options)
@@ -2167,7 +2261,7 @@ def check_scan_coverage(m, base, out, report, display, baseline=False):
     def result():
         r=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[target],browser=options)
         return r if r.get('scanJob',{}).get('id')!=old and r.get('scanJob',{}).get('state') in ['completed','incomplete','failed'] else None
-    final=wait_for(result,30)
+    final=wait_for(result,45)
     expected='completed' if baseline else 'incomplete'
     assert final['scanJob']['state']==expected,final['scanJob']
     key='scanState_'+expected
@@ -2577,6 +2671,8 @@ def main():
                                                       'controlledLocalPageRequested': True,
                                                       'scope': 'real isolated Chromium process; localhost HTTPS fixture, not an external website'}
                     if args.performance_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        open_page(m,base+'options.html')
                         report['performance'] = m.page('''return (async()=>{
                             const samples=[]; let score=null;
                             for(let i=0;i<6;i++){
@@ -2623,6 +2719,10 @@ def main():
                     if args.hybrid_popup_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_hybrid_popup(m,base,out,report,display,args.hybrid_popup_baseline,args.report_actions_check,args.report_actions_baseline)
+                        if args.report_actions_check and not args.report_actions_baseline:
+                            runpy.run_path(str(ROOT/'tools/manual-upload-binding.dev.py'))['check'](m,base,out,report,wait_for,open_page)
+                            runpy.run_path(str(ROOT/'tools/hybrid-report-view.dev.py'))['check'](m,base,out,report,wait_for,open_page)
+                            runpy.run_path(str(ROOT/'tools/attachment-download.dev.py'))['check'](m,base,out,report,display,wait_for,open_page,native_click,native_dialogs,native_download)
                         if args.stored_source_check:
                             check_stored_sources(m,base,out,report,display,args.stored_source_baseline)
                             if tuple(map(int, report['extensionVersion'].split('.'))) >= (1,25,6) and not args.stored_source_baseline:

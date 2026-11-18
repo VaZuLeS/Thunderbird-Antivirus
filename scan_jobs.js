@@ -1,7 +1,7 @@
 /* Shared background coordinator. No popup owns network work or polling timers. */
 function createScanCoordinator(env) {
     const MAX_JOBS = 200;
-    const jobs=new Map();let queue=Promise.resolve(),generation=0;
+    const jobs=new Map(),preparations=new Set();let queue=Promise.resolve(),generation=0;
     const serial=fn=>{const next=queue.then(fn);queue=next.catch(()=>{});return next;};
     const active=job=>!!job&&jobs.get(job.messageId)===job&&!job.controller.signal.aborted&&job.generation===generation&&env.now()<job.deadline&&(!env.valid||env.valid(job));
     const assert=job=>{if(!active(job))throw Object.assign(Error('SCAN_CANCELLED'),{code:'SCAN_CANCELLED'});};
@@ -24,12 +24,26 @@ function createScanCoordinator(env) {
             }
             const preparationGeneration = generation;
             const requestedAt=env.now();
-            let preparationTimer;
-            const prepared=await Promise.race([env.prepare(input,options),new Promise((resolve,reject)=>{preparationTimer=env.setTimeout(()=>reject(Error('SCAN_PREPARATION_TIMEOUT')),300000);})]).finally(()=>env.clearTimeout(preparationTimer));
+            const controller=new AbortController();let preparationTimer,rejectPreparation,preparationError;
+            const preparation={signal:controller.signal,assert(){
+                if(preparationError)throw preparationError;
+                if(controller.signal.aborted||generation!==preparationGeneration)throw Object.assign(Error('SCAN_CANCELLED'),{code:'SCAN_CANCELLED'});
+                if(env.now()-requestedAt>=300000)throw Object.assign(Error('SCAN_PREPARATION_TIMEOUT'),{code:'SCAN_PREPARATION_TIMEOUT'});
+            },cancel(code='SCAN_CANCELLED'){
+                preparationError=Object.assign(Error(code),{code});controller.abort();rejectPreparation?.(preparationError);
+            }};
+            preparations.add(preparation);
+            let prepared;
+            try {
+                const cancelled=new Promise((resolve,reject)=>{rejectPreparation=reject;});
+                preparationTimer=env.setTimeout(()=>preparation.cancel('SCAN_PREPARATION_TIMEOUT'),300000);
+                prepared=await Promise.race([Promise.resolve().then(()=>{preparation.assert();return env.prepare(input,options,preparation);}),cancelled]);
+                preparation.assert();
+            } finally {env.clearTimeout(preparationTimer);preparations.delete(preparation);}
             if (generation !== preparationGeneration) throw Object.assign(Error('SCAN_CANCELLED'),{code:'SCAN_CANCELLED'});
             if(env.now()-requestedAt>=300000)throw Error('SCAN_PREPARATION_TIMEOUT');
             const previous=jobs.get(input.id);
-            if(previous&&previous.fingerprint===prepared.fingerprint&&!previous.controller.signal.aborted&&(!env.valid||env.valid(previous))&&(previous.state==='running'||previous.state==='queued'||!options.manual&&!options.refresh&&previous.state==='completed'&&env.now()-(previous.finishedAt||0)<900000))return {...snapshot(previous),attached:true};
+            if(previous&&previous.fingerprint===prepared.fingerprint&&!previous.controller.signal.aborted&&(!env.valid||env.valid(previous))&&(previous.state==='running'||previous.state==='queued'||!options.manual&&!options.refresh&&previous.state==='completed'&&!prepared.pending&&env.now()-(previous.finishedAt||0)<900000))return {...snapshot(previous),attached:true};
             if(previous)previous.controller.abort();
             const job={id:env.uuid(),messageId:input.id,revision:env.uuid(),fingerprint:prepared.fingerprint,prepared,options,generation,controller:new AbortController(),startedAt:env.now(),deadline:requestedAt+300000,state:'queued',completed:0,total:0,providers:prepared.providers,coverage:prepared.coverage||null,errors:0,pending:false};
             jobs.set(input.id,job);
@@ -48,7 +62,7 @@ function createScanCoordinator(env) {
             return snapshot(job);
         });
     }
-    function invalidate(options={}){generation++;for(const job of jobs.values()){job.controller.abort();env.invalidated?.(job,options);if(['running','queued'].includes(job.state)){job.state='incomplete';job.finishedAt=env.now();if(!options.silent)env.changed(job,snapshot(job)).catch(()=>{});}}if(options.clear)jobs.clear();}
+    function invalidate(options={}){generation++;for(const preparation of preparations)preparation.cancel();for(const job of jobs.values()){job.controller.abort();env.invalidated?.(job,options);if(['running','queued'].includes(job.state)){job.state='incomplete';job.finishedAt=env.now();if(!options.silent)env.changed(job,snapshot(job)).catch(()=>{});}}if(options.clear)jobs.clear();}
     return {start,invalidate,current:job=>jobs.get(job.messageId)===job,get:id=>snapshot(jobs.get(id)),contextFor:id=>active(jobs.get(id))?jobs.get(id).prepared.context:null,revision:id=>jobs.get(id)?.revision||null,active,assert,settled:id=>jobs.get(id)?.done};
 }
 
@@ -71,15 +85,15 @@ const ThundyScans=(()=>{
         }
         return providers;
     }
-    function bound(job,ctx){return {signal:job.controller.signal,guard:()=>coordinator.assert(job),event:event=>{if(coordinator.active(job)){if(event.phase==='finish'&&event.state==='failed'&&job.providers[event.provider]){job.providers[event.provider].state='failed';job.providers[event.provider].error=(event.httpStatus===429||event.errorCode==='rate_limited')?'rate_limited':'provider_error';}ctx?.event?.(event);job.prepared.context.schedule();}},cached:(...args)=>{if(coordinator.active(job))ctx?.cached?.(...args);}};}
-    async function record(job,edit,terminal=false){if(!terminal)coordinator.assert(job);await updateStore(await getSharedDB(),'hybridanalysis',job.prepared.key,old=>{if(!terminal)coordinator.assert(job);else if(!coordinator.current(job)||job.prepared.context.disposed)throw Error('SCAN_CANCELLED');const value=edit(old||{messageHeader:job.prepared.key});value.updatedAt=Date.now();return value;},{preserveReports:true});if(!terminal)coordinator.assert(job);}
+    function bound(job,ctx){return {diagnosticRun:job.prepared.diagnosticRun,signal:job.controller.signal,guard:()=>coordinator.assert(job),event:event=>{if(coordinator.active(job)){if(event.phase==='finish'&&event.state==='failed'&&job.providers[event.provider]){job.providers[event.provider].state='failed';job.providers[event.provider].error=(event.httpStatus===429||event.errorCode==='rate_limited')?'rate_limited':'provider_error';}if(typeof ThundyApiDiagnostics!=='undefined'&&['finish','assessment','cache'].includes(event.phase))ThundyApiDiagnostics.event(job.prepared.diagnosticRun,event.phase==='cache'?'cache':'assessment',event);ctx?.event?.(event);job.prepared.context.schedule();}},cached:(...args)=>{if(coordinator.active(job))ctx?.cached?.(...args);}};}
+    async function record(job,edit,terminal=false){if(!terminal)coordinator.assert(job);await updateStore(await getSharedDB(),'hybridanalysis',job.prepared.key,old=>{if(!terminal)coordinator.assert(job);else if(!coordinator.current(job)||job.prepared.context.disposed)throw Error('SCAN_CANCELLED');const value=edit(old||{messageHeader:job.prepared.key});value.updatedAt=Date.now();return value;},{preserveReports:true}).then(()=>{if(typeof ThundyApiDiagnostics!=='undefined')ThundyApiDiagnostics.event(job.prepared.diagnosticRun,'persistence',{state:'complete'});},error=>{if(typeof ThundyApiDiagnostics!=='undefined')ThundyApiDiagnostics.event(job.prepared.diagnosticRun,'persistence',{state:'failed',reason:'storage_failed'});throw error;});if(!terminal)coordinator.assert(job);}
     async function attachment(job,item,patch){await record(job,old=>{const values=[...(old.attachments||[])];let index=values.findIndex(a=>a.partName===item.partName);const digest=job.prepared.hashes[item.partName];let previous=index<0?{}:values[index];if(previous.hybrid_sha256!==digest)previous={};if(patch.assessment){patch={...patch,assessment:(previous.assessmentScanId===job.id||job.options.refresh||previous.state==='UPLOADED'&&patch.hybrid_submission_id===undefined)?ThundyProviderResults.merge(previous.assessment,patch.assessment):patch.assessment,assessmentScanId:job.id};}const value={...previous,partName:item.partName,attachment_name:item.name,hybrid_sha256:digest,created:previous.created||new Date().toISOString(),...patch};if(index<0)values.push(value);else values[index]=value;return {...old,attachments:values};});job.revision=crypto.randomUUID();scheduleRisk(job);}
-    async function link(job,url,patch){await record(job,old=>{const values=[...(old.links||[])];const index=values.findIndex(l=>l.url===url);const previous=index<0?{}:values[index];if(patch.urlscan&&previous.urlscan?.uuid===patch.urlscan.uuid&&previous.urlscan?.assessment&&!patch.urlscan.assessment)patch={...patch,urlscan:{...previous.urlscan,...patch.urlscan}};if(patch.urlscan?.assessment&&previous.urlscan?.uuid===patch.urlscan.uuid&&previous.urlscan?.assessment){const assessed=ThundyProviderResults.merge(previous.urlscan.assessment,patch.urlscan.assessment);patch={...patch,urlscan:{...patch.urlscan,assessment:assessed,status:assessed.state==='failed'?'ERROR':assessed.verdict==='malicious'?'MALICIOUS':assessed.verdict==='suspicious'?'SUSPICIOUS':assessed.verdict==='none'?'CLEAN':'UNKNOWN'}};}if(patch.assessment){patch={...patch,assessment:(previous.assessmentScanId===job.id||job.options.refresh||previous.state==='UPLOADED'&&patch.hybrid_submission_id===undefined)?ThundyProviderResults.merge(previous.assessment,patch.assessment):patch.assessment,assessmentScanId:job.id};patch.hybrid_verdict={status:({malicious:'MALICIOUS',suspicious:'SUSPICIOUS',none:'CLEAN',unknown:'UNKNOWN'})[patch.assessment.verdict],observedAt:Date.now()};}const value={...previous,url,created:index<0?new Date().toISOString():values[index].created,...patch};if(index<0)values.push(value);else values[index]=value;return {...old,links:values};});job.revision=crypto.randomUUID();scheduleRisk(job);}
+    async function link(job,url,patch){await record(job,old=>{const values=[...(old.links||[])];const index=values.findIndex(l=>l.url===url);const previous=index<0?{}:values[index];if(patch.urlscan)patch={...patch,urlscan:ThundyProviderResults.urlscanRecord(patch.urlscan,previous.urlscan,Date.now())};if(patch.assessment){patch={...patch,assessment:(previous.assessmentScanId===job.id||job.options.refresh||previous.state==='UPLOADED'&&patch.hybrid_submission_id===undefined)?ThundyProviderResults.merge(previous.assessment,patch.assessment):patch.assessment,assessmentScanId:job.id};patch.hybrid_verdict={status:({malicious:'MALICIOUS',suspicious:'SUSPICIOUS',none:'CLEAN',unknown:'UNKNOWN'})[patch.assessment.verdict],observedAt:Date.now()};}const value={...previous,url,created:index<0?new Date().toISOString():values[index].created,...patch};if(index<0)values.push(value);else values[index]=value;return {...old,links:values};});job.revision=crypto.randomUUID();scheduleRisk(job);}
     function pending(job,resource,value){job.pendingResources ||= new Set();if(value)job.pendingResources.add(resource);else job.pendingResources.delete(resource);job.pending=job.pendingResources.size>0;}
     async function updateRisk(job){
-        coordinator.assert(job);const p=job.prepared,text=extractTextFromParts(p.full.parts||p.full);
+        coordinator.assert(job);const p=job.prepared,text=extractTextFromParts(p.full.parts||p.full),assessment=typeof beginLocalAssessment==='function'?beginLocalAssessment(p.message.id):null;
         const risk=await collectThreatEvaluationOptions({message:p.message,fullMessage:p.full,filteredUrls:p.urls,messageText:text,allowExternal:false});coordinator.assert(job);
-        risk.urlhausDomains=job.domains||[];risk.maliciousIps=job.ips||[];const threat=calculateThreatScore(p.message.author,p.urls,risk);threat.coverage=localContentCoverage(p.full);recordLocalCoverage(p.context,threat.coverage,threat);
+        risk.urlhausDomains=job.domains||[];risk.maliciousIps=job.ips||[];const threat=calculateThreatScore(p.message.author,p.localUrls||p.urls,risk);threat.coverage=localContentCoverage(p.full);if(assessment)threat.assessment={...assessment,observedAt:Date.now()};if(recordLocalCoverage(p.context,threat.coverage,threat)===false)return;
         for(const tab of p.context.tabs){const current=await getFirstDisplayedMessage(tab);coordinator.assert(job);if(current?.id===p.message.id)await injectThreatBanner(tab,threat);}
     }
     function scheduleRisk(job){if(job.riskTimer)return;job.riskTimer=setTimeout(()=>{job.riskTimer=null;if(coordinator.active(job))updateRisk(job).catch(()=>{});},300);}
@@ -139,7 +153,8 @@ const ThundyScans=(()=>{
             if(ThundyProviders.registry.urlscan)add('urlscan','url',async()=>{
                 const ctx=bound(job,await p.context.forLinks([url]));const previous=p.record?.links?.find(l=>l.url===url)?.urlscan;
                 let result,submittedUuid;const ref='urlscan:'+url;
-                if(previous?.uuid&&(job.options.refresh||['TIMEOUT','SUBMITTED','ERROR'].includes(previous.status))){if(previous.assessment?.assessmentVersion===1)ctx.event({...ThundyProviderResults.stored('urlscan',previous),provider:'urlscan',scope:'report',phase:'cache',observedAt:previous.observedAt||null});pending(job,ref,true);result={...await pollUrlscanIoResult(previous.uuid,s.urlscanApikey,ctx),uuid:previous.uuid};}
+                if(previous?.uuid&&(previous.terminal===true||previous.errorCode==='result_gone')&&(job.options.refresh||!job.options.manual)){ctx.event({provider:'urlscan',scope:'report',phase:'cache',state:'failed',verdict:previous.assessment?.verdict||'unknown',...ThundyProviderResults.project(previous.assessment),errorCode:'result_gone',errorDetails:msg('urlscanResultGone')});throw Object.assign(Error('result_gone'),{code:'result_gone'});}
+                if(previous?.uuid&&(job.options.refresh||ThundyProviderResults.urlscanPending(previous))){if(previous.assessment?.assessmentVersion===1)ctx.event({...ThundyProviderResults.stored('urlscan',previous),provider:'urlscan',scope:'report',phase:'cache',observedAt:previous.observedAt||null});pending(job,ref,true);result={...await pollUrlscanIoResult(previous.uuid,s.urlscanApikey,ctx,{requestedUrl:url}),uuid:previous.uuid};}
                 else{
                     if(job.options.refresh)return;
                     ctx.submitted=async uuid=>{coordinator.assert(job);submittedUuid=uuid;pending(job,ref,true);await link(job,url,{urlscan:{status:'SUBMITTED',uuid,observedAt:Date.now()}});};
@@ -148,7 +163,7 @@ const ThundyScans=(()=>{
                 coordinator.assert(job);if(!result)throw Error('no_result');
                 if(submittedUuid&&!result.uuid)result={...result,uuid:submittedUuid};
                 await link(job,url,{urlscan:{...result,observedAt:Date.now()}});
-                pending(job,ref,!!result.uuid&&['TIMEOUT','SUBMITTED','ERROR'].includes(result.status));
+                pending(job,ref,ThundyProviderResults.urlscanPending(result));
                 if(result.status==='ERROR')throw Object.assign(Error(result.errorCode||'provider_error'),{code:result.errorCode||'provider_error'});
             });
         }
@@ -174,39 +189,52 @@ const ThundyScans=(()=>{
         async deferred(message, summary, options) {
             const context = await getMessageAnalysisContext(message, options.tabId);
             context.scanJob = {...summary, manualAllowed:mayTransmitExternally()};
+            if(typeof ThundyApiDiagnostics!=='undefined'){const id=await ThundyApiDiagnostics.beginRun(options.manual?'manual':'automatic');context.diagnosticRun=id;ThundyApiDiagnostics.event(id,'precondition',{state:'blocked',reason:'capacity'});ThundyApiDiagnostics.endRun(id,'blocked');}
             context.schedule();
         },
-        async prepare(message,options){
-            if(typeof settingsReady!=='undefined')await settingsReady;await loadSettings();const settings=await browser.storage.local.get(keys);
+        async prepare(message,options,preparation){
+            const guard=()=>preparation?.assert();guard();
+            const diagnosticRun=typeof ThundyApiDiagnostics!=='undefined'?await ThundyApiDiagnostics.beginRun(options.manual?'manual':'automatic'):null;
+            try{
+            if(typeof settingsReady!=='undefined')await settingsReady;guard();await loadSettings();guard();const settings=await browser.storage.local.get(keys);guard();
             let full=options.full||await readFullForAnalysis(message),attachments=options.attachments;
             if(!attachments)try{attachments=await browser.messages.listAttachments(message.id);}catch(_){attachments=[];full={...full,thundyInputStatus:'incomplete',thundyInventoryIncomplete:true};}
-            const allUrls=[...new Set(filterUrls(extractUrls(extractTextFromParts(full.parts||full))))];
+            guard();
+            const localUrls=typeof messageUrlInventory==='function'?messageUrlInventory(full):extractUrls(extractTextFromParts(full.parts||full));
+            const allUrls=[...new Set(filterUrls(localUrls))];
             const coverage={schemaVersion:1,inventoryIncomplete:full.thundyInventoryIncomplete===true,
                 attachments:{total:attachments.length,selected:Math.min(100,attachments.length),prepared:0,readFailed:0,sizeLimited:0,omitted:Math.max(0,attachments.length-100)},
                 urls:{total:allUrls.length,selected:Math.min(100,allUrls.length),omitted:Math.max(0,allUrls.length-100)},incomplete:false};
             attachments=attachments.slice(0,100);
             const urls=allUrls.slice(0,100);
             const key=resolveMessageStorageKey(message);const context=await getMessageAnalysisContext(message,options.tabId,{fullMessage:full,attachments});
+            context.diagnosticRun=diagnosticRun;
+            const check=()=>{guard();if(context.disposed)throw Object.assign(Error('SCAN_CANCELLED'),{code:'SCAN_CANCELLED'});};check();
             const preparationDeadline=Date.now()+300000;
             const hashes={};for(const item of attachments){
-                if(Date.now()>preparationDeadline)throw Error('SCAN_PREPARATION_TIMEOUT');
+                check();if(Date.now()>=preparationDeadline)throw Error('SCAN_PREPARATION_TIMEOUT');
                 if(item.size>25*1024*1024){coverage.attachments.sizeLimited++;continue;}
                 try{
-                    const file=await browser.messages.getAttachmentFile(message.id,item.partName);
+                    const file=await browser.messages.getAttachmentFile(message.id,item.partName);check();
                     if(file.size>25*1024*1024){coverage.attachments.sizeLimited++;continue;}
-                    const digest=await get_sha256_hash(await file.arrayBuffer());
+                    const bytes=await file.arrayBuffer();check();
+                    const digest=await get_sha256_hash(bytes);check();
                     if(typeof digest!=='string'||!/^[a-f0-9]{64}$/i.test(digest))throw Error('INVALID_HASH');
                     context.forAttachment(item.partName,item.name,digest);hashes[item.partName]=digest;coverage.attachments.prepared++;
-                }catch(_){coverage.attachments.readFailed++;}
+                }catch(_){check();coverage.attachments.readFailed++;}
             }
+            check();
             coverage.incomplete=coverage.inventoryIncomplete||coverage.attachments.readFailed>0||coverage.attachments.sizeLimited>0||coverage.attachments.omitted>0||coverage.urls.omitted>0;
-            const record=await getFromStore(await getSharedDB(),'hybridanalysis',key);
-            const providers=await plan(settings,message,attachments,urls,options.manual,full);
+            const record=await getFromStore(await getSharedDB(),'hybridanalysis',key);check();
+            const providers=await plan(settings,message,attachments,urls,options.manual,full);check();
+            if(typeof ThundyApiDiagnostics!=='undefined')for(const [provider,plan] of Object.entries(providers))for(const item of plan.checks)ThundyApiDiagnostics.event(diagnosticRun,'precondition',{provider,state:item.reason?'blocked':'complete',reason:item.reason});
             const fingerprint=await hash({assessmentVersion:2,messageId:message.id,full,hashes,coverage,settings:Object.fromEntries(Object.entries(settings).sort(([a],[b])=>a.localeCompare(b))),providers});
+            check();
             const meta=record?.scanJobMeta, same=meta?.fingerprint===fingerprint;
-            const pending=record?.links?.some(l=>urls.includes(l.url)&&(l.state==='UPLOADED'||l.urlscan?.uuid&&['SUBMITTED','TIMEOUT','ERROR'].includes(l.urlscan.status)))||record?.attachments?.some(a=>hashes[a.partName]===a.hybrid_sha256&&a.state==='UPLOADED');
-            const reusable=same&&meta.state==='completed'&&Date.now()-meta.finishedAt<900000?{...meta,providers,pending:false}:!options.manual&&pending&&!Object.values(providers).some(p=>p.checks.some(c=>!c.reason))?{state:meta?.errors?'incomplete':'pending',errors:meta?.errors||0,providers,pending:true,finishedAt:Date.now(),total:meta?.total||0,completed:meta?.completed||0}:null;
-            return {reusable,message:{...message,headerMessageId:key},settings,full,attachments,urls,key,context,hashes,record,fingerprint,providers,coverage};
+            const pending=record?.links?.some(l=>urls.includes(l.url)&&(l.state==='UPLOADED'||ThundyProviderResults.urlscanPending(l.urlscan)))||record?.attachments?.some(a=>hashes[a.partName]===a.hybrid_sha256&&a.state==='UPLOADED');
+            const reusable=same&&!pending&&meta.state==='completed'&&Date.now()-meta.finishedAt<900000?{...meta,providers,pending:false}:!options.manual&&pending&&!Object.values(providers).some(p=>p.checks.some(c=>!c.reason))?{state:meta?.errors?'incomplete':'pending',errors:meta?.errors||0,providers,pending:true,finishedAt:Date.now(),total:meta?.total||0,completed:meta?.completed||0}:null;
+            return {diagnosticRun,reusable,pending:!!pending,message:{...message,headerMessageId:key},settings,full,attachments,urls,localUrls,key,context,hashes,record,fingerprint,providers,coverage};
+            }catch(error){if(typeof ThundyApiDiagnostics!=='undefined'){const cancelled=error?.code==='SCAN_CANCELLED'||error?.message==='SCAN_CANCELLED';ThundyApiDiagnostics.event(diagnosticRun,cancelled?'cancelled':'precondition',{state:'failed',reason:cancelled?'cancelled':error?.message==='SCAN_PREPARATION_TIMEOUT'?'timeout':'preparation_failed'});ThundyApiDiagnostics.endRun(diagnosticRun,'failed');}throw error;}
         },
         async begin(job){const p=job.prepared;if(!Object.values(p.providers).some(v=>v.checks.some(c=>!c.reason)))return;
             await p.context.flush();
@@ -218,13 +246,13 @@ const ThundyScans=(()=>{
             if(job.options.manual&&!job.options.refresh){vtCache.clear();urlhausCache.clear();ipReputationCache.clear();}
             await indexedDB_save_links_to_db(p.message,p.urls);assert(job);
             const work=await tasks(job);job.total=work.length;await changed();let index=0;
-            await Promise.all(Array.from({length:Math.min(4,work.length)},async()=>{while(index<work.length){assert(job);const task=work[index++];await lane(task.provider,async()=>{assert(job);const state=job.providers[task.provider];if(state.state!=='failed')state.state='running';await changed();try{await task.run();assert(job);if(state.state!=='failed')state.state='checked';}catch(error){assert(job);job.errors++;state.state='failed';state.error=state.error==='rate_limited'?'rate_limited':['rate_limited','invalid_key','no_result'].includes(error.code||error.message)?error.code||error.message:'provider_error';}finally{if(coordinator.active(job)){job.completed++;await changed();}}});}}));
+            await Promise.all(Array.from({length:Math.min(4,work.length)},async()=>{while(index<work.length){assert(job);const task=work[index++];await lane(task.provider,async()=>{assert(job);const state=job.providers[task.provider];if(state.state!=='failed')state.state='running';await changed();try{await task.run();assert(job);if(state.state!=='failed')state.state='checked';}catch(error){assert(job);job.errors++;state.state='failed';state.error=state.error==='rate_limited'?'rate_limited':['rate_limited','invalid_key','no_result','result_gone'].includes(error.code||error.message)?error.code||error.message:'provider_error';}finally{if(coordinator.active(job)){job.completed++;await changed();}}});}}));
             assert(job);
             if(job.domains.length||job.ips.length)await record(job,old=>({...old,threatIntel:{urlhausDomains:job.domains,maliciousIps:job.ips,observedAt:Date.now()},threatIntelBinding:{runtimeId:getAnalysisRuntimeId(),messageId:p.message.id}}));
             assert(job);
             if(job.riskTimer){clearTimeout(job.riskTimer);job.riskTimer=null;}await updateRisk(job);
         },
-        async changed(job,summary){if(!coordinator.current(job))return;const p=job.prepared;p.context.scanJob={...summary,migration:!p.settings.scanMode,manualAllowed:p.settings.externalAnalysisConsent===true};
+        async changed(job,summary){if(!coordinator.current(job))return;const p=job.prepared;if(typeof ThundyApiDiagnostics!=='undefined'){ThundyApiDiagnostics.event(p.diagnosticRun,'assessment',{state:summary.state==='completed'?'complete':summary.state==='queued'?'running':summary.state,reason:summary.reason});ThundyApiDiagnostics.endRun(p.diagnosticRun,['completed','blocked','incomplete','failed'].includes(summary.state)?summary.state==='completed'?'complete':summary.state:'running');}p.context.scanJob={...summary,migration:!p.settings.scanMode,manualAllowed:p.settings.externalAnalysisConsent===true};
             if(!p.context.disposed){p.context.schedule();await record(job,old=>({...old,scanJobMeta:{...summary,fingerprint:job.fingerprint}}),!['queued','running'].includes(summary.state)).catch(()=>{});}
         }
     });
@@ -235,9 +263,9 @@ const ThundyScans=(()=>{
         let attachments;try{attachments=await browser.messages.listAttachments(message.id);}catch(_){attachments=[];full={...full,thundyInputStatus:'incomplete',thundyInventoryIncomplete:true};}
         await injectIntoMessageDisplay(tab.id,function(id){document.documentElement.dataset.thundyAnalysisMessage=String(id);},[message.id]);
         const context=await getMessageAnalysisContext(message,tab.id,{fullMessage:full,attachments});
-        if(!full.thundyInventoryIncomplete)await processAttachments(message,false,false,context);const text=extractTextFromParts(full.parts||full),urls=filterUrls(extractUrls(text));await indexedDB_save_links_to_db(message,urls);
+        if(!full.thundyInventoryIncomplete)await processAttachments(message,false,false,context);const text=extractTextFromParts(full.parts||full),urls=typeof messageUrlInventory==='function'?messageUrlInventory(full):extractUrls(text),eligibleUrls=filterUrls(urls);await indexedDB_save_links_to_db(message,eligibleUrls);
         await injectTimeOfClickProtection(tab.id,urls,message.id);
-        await evaluateAndInjectThreats({tab,message,fullMessage:full,urls,filteredUrls:urls,messageText:text,allowExternal:false,analysisContext:context});
+        await evaluateAndInjectThreats({tab,message,fullMessage:full,urls,filteredUrls:eligibleUrls,messageText:text,allowExternal:false,analysisContext:context});
         await coordinator.start(message,{tabId:tab.id,full,attachments,manual:false});
     }
     async function request(request,sender){
@@ -251,5 +279,13 @@ const ThundyScans=(()=>{
     }
     let restartTimer=null;
     function reconfigure(){coordinator.invalidate();if(restartTimer)clearTimeout(restartTimer);restartTimer=setTimeout(async()=>{const seen=new Set();for(const tab of await browser.tabs.query({}).catch(()=>[])){try{const message=await getFirstDisplayedMessage(tab.id);if(message&&!seen.has(message.id)){seen.add(message.id);await display(tab,message);}}catch(_){}}},200);}
-    return {...coordinator,reconfigure,display,request,mode,plan};
+    function attachmentPending(messageId, partName) {
+        const job = coordinator.get(messageId);
+        return !!job && ['queued','running'].includes(job.state) && job.providers?.hybridanalysis?.checks.some(check =>
+            check.kind === 'hash' && !check.reason) && !!coordinator.contextFor(messageId)?.model.data.rows.some(row =>
+            row.provider === 'hybridanalysis' && row.resource === 'attachment:'+partName &&
+            (row.state === 'running' || row.completion === 'pending'));
+    }
+
+    return {...coordinator,reconfigure,display,request,mode,plan,attachmentPending};
 })();

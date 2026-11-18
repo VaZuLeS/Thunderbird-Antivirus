@@ -592,68 +592,28 @@ describe('background.js', () => {
         assert.strictEqual(savedResults[0].attachmentName, 'unknown.exe');
     });
 
-    it('handleManualUpload successfully uploads and updates DB', async () => {
-        context.set_apikey('test-key');
-        context.set_privacyTier('balanced');
-
-        let fetchCalledWith = null;
-        context.fetch = async (url, options) => {
-            fetchCalledWith = options;
-            return {
-                status: 200,
-                json: async () => ({ submission_id: 'sub-upload', job_id: 'job-upload' })
-            };
-        };
-
-        let dbUpdated = false;
-        context.indexedDB.open = () => ({
-            onsuccess: function() {
-                this.result = {
-                    transaction: () => ({
-                        objectStore: () => ({
-                            get: () => ({
-                                onsuccess: function() {
-                                    this.result = {
-                                        attachments: [{ partName: 'part1', state: 'UNKNOWN' }]
-                                    };
-                                    this.onsuccess();
-                                }
-                            }),
-                            put: (data) => {
-                                if (data.attachments[0].state === 'UPLOADED') dbUpdated = true;
-                            }
-                        })
-                    })
-                };
-                this.onsuccess({ target: { result: this.result } });
-            }
-        });
-
-        const res = await context.handleManualUpload(1, 'part1', 'file.exe', 'hash123', 'header123');
-
-        assert.ok(fetchCalledWith);
-        assert.strictEqual(fetchCalledWith.method, 'POST');
-        assert.strictEqual(res.submission_id, 'sub-upload');
+    async function manualFixture() {
+        context.set_apikey('test-key'); context.set_privacyTier('balanced');
+        context.FormData=globalThis.FormData;context.File=globalThis.File;
+        const file=new File(['verified bytes'],'actual.txt');
+        const hash=await context.get_sha256_hash(await file.arrayBuffer());
+        const record={messageHeader:'test-msg-id',attachments:[{partName:'part1',hybrid_sha256:hash,state:'UNKNOWN'}]};
+        context.getSharedDB=async()=>({}); context.getFromStore=async()=>record;
+        context.updateStore=async(_db,_store,_key,edit)=>edit(record);
+        context.browser.messages.getAttachmentFile=async()=>file;
+        return {file,hash,record};
+    }
+    it('handleManualUpload successfully uploads verified bytes and updates the matching record', async () => {
+        const f=await manualFixture();let sent;
+        context.fetch=async(_url,options)=>{sent=options;return {status:201,json:async()=>({submission_id:'sub-upload',job_id:'job-upload',sha256:f.hash})};};
+        const result=await context.handleManualUpload(1,'part1','untrusted-name.exe',f.hash,'test-msg-id');
+        assert.strictEqual(sent.method,'POST');assert.strictEqual(sent.body.get('file').name,'actual.txt');
+        assert.strictEqual(result.submission_id,'sub-upload');assert.strictEqual(f.record.attachments[0].state,'UPLOADED');
     });
-
-    it('handleManualUpload throws error on failed upload', async () => {
-        context.set_apikey('test-key');
-        context.set_privacyTier('balanced');
-
-        context.fetch = async () => ({
-            status: 500,
-            json: async () => ({ error: 'Internal Error' })
-        });
-
-        await assert.rejects(
-            async () => {
-                await context.handleManualUpload(1, 'part1', 'file.exe', 'hash123', 'header123');
-            },
-            (err) => {
-                assert.strictEqual(err.message, 'Fehler beim Upload: 500');
-                return true;
-            }
-        );
+    it('handleManualUpload throws the HTTP error for an otherwise valid resource',async()=>{
+        const f=await manualFixture();context.fetch=async()=>({status:500,json:async()=>({error:'Internal Error'})});
+        await assert.rejects(context.handleManualUpload(1,'part1','actual.txt',f.hash,'test-msg-id'),/Fehler beim Upload: 500/);
+        assert.strictEqual(f.record.attachments[0].state,'UNKNOWN');
     });
 
     it('runtime.onMessage listener processes uploadAttachment action', async () => {
@@ -1118,7 +1078,7 @@ describe('background.js', () => {
             context.console.error = () => {};
             context.console.log = () => {};
             context.setTimeout = (cb, ms) => {
-                if (ms < 15000) cb(); // Fast-forward polling waits, not request deadlines.
+                if (ms < 15000 || ms === 30000) cb(); // Fast-forward poll waits (including fresh scans), not request deadlines.
                 return 0;
             };
         });
@@ -1255,8 +1215,8 @@ describe('background.js', () => {
 
         it('handles fetch failure/exception gracefully', async () => {
             let errorLogged = false;
-            context.console.error = (msg, e) => {
-                if (msg.includes("Fehler bei urlscan.io Abfrage")) errorLogged = true;
+            context.console.warn = (msg) => {
+                if (msg.includes("urlscan.io request failed")) errorLogged = true;
             };
             context.fetch = async () => {
                 throw new Error("Network offline");
@@ -1264,7 +1224,7 @@ describe('background.js', () => {
 
             const result = await context.checkUrlscanIo('http://error.com', 'apikey');
             assert.strictEqual(result.status, 'ERROR');
-            assert.strictEqual(result.details, 'Network offline');
+            assert.strictEqual(result.details, 'Provider request failed.');
             assert.strictEqual(errorLogged, true);
         });
 
@@ -1277,7 +1237,8 @@ describe('background.js', () => {
             const result = await context.checkUrlscanIo('http://example.com', 'apikey');
             assert.strictEqual(result.status, 'ERROR');
             assert.strictEqual(result.errorCode, 'rate_limited');
-            assert.strictEqual(result.details, 'Rate limit exceeded');
+            assert.strictEqual(result.httpStatus,429);
+            assert.ok(!result.details.includes('Rate limit exceeded'));
         });
 
         it('handles 401 invalid key correctly', async () => {
@@ -1289,7 +1250,8 @@ describe('background.js', () => {
             const result = await context.checkUrlscanIo('http://example.com', 'apikey');
             assert.strictEqual(result.status, 'ERROR');
             assert.strictEqual(result.errorCode, 'invalid_key');
-            assert.strictEqual(result.details, 'Invalid API key');
+            assert.strictEqual(result.httpStatus,401);
+            assert.ok(!result.details.includes('Invalid API key'));
         });
     });
 
@@ -2078,7 +2040,7 @@ describe('background.js', () => {
             assert.strictEqual(executedWarningScripts[0].args[0], 100); // 100 score
         });
 
-        it('does not inject warning banner if score < 50', async () => {
+        it('clears an obsolete warning without rendering a warning if score < 50', async () => {
             let executedWarningScripts = [];
             context.browser.scripting.executeScript = async (opts) => {
                 executedWarningScripts.push(opts);
@@ -2095,10 +2057,15 @@ describe('background.js', () => {
             // This will trigger a score of 20 because of the "Action required" subject and no other reasons.
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'User <user@example.com>', subject: 'Action required' });
 
-            assert.strictEqual(executedWarningScripts.length, 0);
+            const dom=new JSDOM('<body><div id="thundy-threat-banner">Earlier warning</div><div id="thundy-auth-badge">Earlier badge</div></body>');
+            try {
+                for(const script of executedWarningScripts)vm.runInNewContext('('+script.func.toString()+')(...args)',{document:dom.window.document,args:script.args});
+                assert.strictEqual(dom.window.document.getElementById('thundy-threat-banner'),null);
+                assert.strictEqual(dom.window.document.getElementById('thundy-auth-badge'),null);
+            } finally { dom.window.close(); }
         });
 
-        it('does not inject warning banner if score === 0', async () => {
+        it('clears an obsolete warning without rendering a warning if score === 0', async () => {
             let executedWarningScripts = [];
             context.browser.scripting.executeScript = async (opts) => {
                 executedWarningScripts.push(opts);
@@ -2114,7 +2081,12 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Friend <friend@domain.com>', subject: 'Hello' });
 
-            assert.ok(executedWarningScripts.length === 0);
+            const dom=new JSDOM('<body><div id="thundy-threat-banner">Earlier warning</div><div id="thundy-auth-badge">Earlier badge</div></body>');
+            try {
+                for(const script of executedWarningScripts)vm.runInNewContext('('+script.func.toString()+')(...args)',{document:dom.window.document,args:script.args});
+                assert.strictEqual(dom.window.document.getElementById('thundy-threat-banner'),null);
+                assert.strictEqual(dom.window.document.getElementById('thundy-auth-badge'),null);
+            } finally { dom.window.close(); }
         });
     });
 
@@ -2914,7 +2886,7 @@ describe('background.js', () => {
             context.fetch = async (url) => {
                 assert.strictEqual(url, 'https://hybrid-analysis.com/api/v2/overview/hash123');
                 return {
-                    json: async () => ({ verdict: 'no specific threat' })
+                    json: async () => ({ verdict: 'no specific threat', finished:true })
                 };
             };
             const res = await context.checkHybridAnalysisVerdict('hash123', 'UNKNOWN');
@@ -3099,7 +3071,7 @@ describe('background.js', () => {
             assert.strictEqual(response.status, 'MALICIOUS');
         });
 
-        it('returns linkObj state if urlscan is clean and hybrid_sha256 is missing', async () => {
+        it('keeps a response without a urlscan verdict incomplete when no Hybrid hash exists', async () => {
             context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
             context.set_urlscanApikey('test-urlscan');
 
@@ -3110,12 +3082,13 @@ describe('background.js', () => {
                 if (callCount === 2) return { status: 200, json: async () => ({ verdicts: {} }) };
             };
 
-            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'CUSTOM_STATE' }] });
+            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'UNKNOWN' }] });
             context.openDB = async () => ({});
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.equal(response.status, 'CUSTOM_STATE'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'stored'); assert.equal(response.check.outcome, 'missing_reference');
+            assert.equal(response.status, 'UNKNOWN'); assert.equal(response.provider, 'urlscan.io');
+            assert.equal(response.check.observedAt,null); assert.equal(response.check.outcome, 'incomplete');
         });
 
         it('fetches overview from hybrid analysis if hybrid_sha256 exists, returning CLEAN for no specific threat', async () => {
@@ -3125,7 +3098,7 @@ describe('background.js', () => {
 
             context.fetch = async (url) => {
                 assert.ok(url.includes('api/v2/overview/hash123'));
-                return { status: 200, json: async () => ({ verdict: 'no specific threat' }) };
+                return { status: 200, json: async () => ({ verdict: 'no specific threat', finished:true }) };
             };
 
             context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'UPLOADED', hybrid_sha256: 'hash123' }] });
@@ -3136,7 +3109,7 @@ describe('background.js', () => {
             assert.equal(response.status, 'CLEAN'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'live'); assert.equal(response.check.outcome, 'success');
         });
 
-        it('fetches overview from hybrid analysis, returning UPPERCASE verdict for threats', async () => {
+        it('warns on a Hybrid verdict without confirming processing completion', async () => {
             context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
 
             context.fetch = async () => ({ status: 200, json: async () => ({ verdict: 'malicious' }) });
@@ -3146,7 +3119,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.equal(response.status, 'MALICIOUS'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'live'); assert.equal(response.check.outcome, 'success');
+            assert.equal(response.status, 'MALICIOUS'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'live'); assert.equal(response.check.outcome, 'incomplete');
         });
 
         it('falls back to link state if hybrid analysis fetch throws an error', async () => {

@@ -15,6 +15,9 @@ var ThundyProviderResults = (function () {
         return {assessmentVersion:1,state:invalid?'failed':completion==='pending'?receipt?'submitted':'incomplete':completion==='failed'?'failed':verdict==='unknown'?'received':'checked',verdict,completion,
             signals:[...new Set([...verdicts.slice().reverse().map(v=>signals.find(s=>s.verdict===v)).filter(Boolean),...signals])].slice(0,128),conflicts:new Set(observed.map(s=>s.verdict)).size>1?['mixed_verdicts']:[],...(invalid?{errorCode:'invalid_response'}:{})};
     }
+    function hybridCompletionConfirmed(data) {
+        return data?.finished === true || complete.includes(word(data?.state));
+    }
     function hybrid(data,scope='report'){
         if(Array.isArray(data)){
             if(!data.length)return result([],'unknown');
@@ -26,7 +29,7 @@ var ThundyProviderResults = (function () {
         const signals=[];const add=(code,verdict,value,total)=>signals.push({code,verdict,...(number(value)?{value}:{}),...(number(total)?{total}:{})});
         const v=judgement(data.verdict);if(v!=='unknown'||['UNKNOWN','NO-CLASSIFICATION'].includes(word(data.verdict)))add('verdict',v);
         if(data.whitelisted===true)add('whitelist','none');
-        const scanners=[...(Array.isArray(data.scanners)?data.scanners:[]),...(object(data.scanners_v2)?Object.values(data.scanners_v2):[])].filter(object);
+        const scanners=[...(Array.isArray(data.scanners)?data.scanners:[]),...(Array.isArray(data.scanners_v2)?data.scanners_v2:object(data.scanners_v2)?Object.values(data.scanners_v2):[])].filter(object);
         for(const scanner of scanners){
             let verdict=judgement(scanner.status);const positives=number(scanner.positives)?scanner.positives:null,total=number(scanner.total)?scanner.total:null;
             if(positives>0)verdict='malicious';else if(verdict==='unknown'&&positives===0&&total>0)verdict='none';
@@ -41,7 +44,7 @@ var ThundyProviderResults = (function () {
         const state=word(data.state),isPending=pending.includes(state)||data.finished===false||scanners.some(s=>pending.includes(word(s.status)));
         const failed=['ERROR','FAILED','FAILURE'].includes(state);
         const receipt=['file','url'].includes(scope)&&!!(data.id||data.submission_id||data.job_id)&&data.finished!==true&&!complete.includes(state)&&!signals.some(s=>s.verdict!=='unknown');
-        const completion=isPending||receipt?'pending':failed?'failed':data.finished===true||complete.includes(state)||signals.some(s=>s.verdict!=='unknown')?'complete':'unknown';
+        const completion=isPending||receipt?'pending':failed?'failed':hybridCompletionConfirmed(data)||signals.some(s=>s.verdict!=='unknown')?'complete':'unknown';
         const valid=signals.length||scanners.length||data.finished!==undefined||state||data.verdict!==undefined||data.id||data.submission_id||data.job_id||data.sha256;
         return result(signals,completion,receipt,!valid);
     }
@@ -62,6 +65,29 @@ var ThundyProviderResults = (function () {
         const failed=['ERROR','FAILED','FAILURE'].includes(word(data.state));
         const valid=receipt||object(data.verdicts)||object(data.page)||object(data.task)||data.finished!==undefined||word(data.state);
         return result(signals,processing?'pending':failed?'failed':valid?'complete':'unknown',receipt,!valid);
+    }
+    function urlscanStatus(assessment,visual=false){
+        return assessment.state==='failed'||assessment.completion==='failed'?'ERROR':assessment.completion==='pending'?'SUBMITTED':assessment.verdict==='malicious'?visual?'MALICIOUS_VISUAL':'MALICIOUS':assessment.verdict==='suspicious'?'SUSPICIOUS':assessment.verdict==='none'?'CLEAN':'UNKNOWN';
+    }
+    function urlscanRecord(input,previous,now) {
+        const {details,observedAt:ignoredObservation,attemptedAt:ignoredAttempt,...record}=input;
+        const previousAssessment=previous?.uuid && previous.uuid===record.uuid ? previous.assessment : null;
+        const assessment=record.assessment;
+        if (assessment) record.assessment=merge(previousAssessment,assessment);
+        else if (previousAssessment) {
+            record.assessment=merge(previousAssessment,{assessmentVersion:1,
+                completion:record.status==='SUBMITTED'?'pending':'failed',signals:[]});
+        }
+        if (record.status==='CLEAN' && assessment?.completion!=='complete') record.status='UNKNOWN';
+        const warning = status => ['MALICIOUS','MALICIOUS_VISUAL','SUSPICIOUS'].includes(status);
+        const observed = warning(record.status) || record.status==='CLEAN';
+        const retained=previous?.retainedFinding || (warning(previous?.status)
+            ? {status:previous.status,observedAt:previous.observedAt} : null);
+        return {...record,attemptedAt:now,observedAt:observed ? now : previous?.observedAt ?? null,
+            ...(!observed && retained ? {retainedFinding:retained} : {})};
+    }
+    function urlscanPending(item){
+        return !!item?.uuid&&item.terminal!==true&&item.errorCode!=='result_gone'&&(item.assessment?.completion==='pending'||['TIMEOUT','SUBMITTED','ERROR'].includes(item.status));
     }
     function urlscanRejection(data){
         const errors=Array.isArray(data?.errors)?data.errors:[];
@@ -98,7 +124,8 @@ var ThundyProviderResults = (function () {
     }
     function resource(item){
         const ha=stored('hybridanalysis',item),us=item?.urlscan?.assessment?.assessmentVersion===1?stored('urlscan',item.urlscan):{verdict:judgement(item?.urlscan?.status)};
-        const values=[{verdict:ha.verdict,provider:'hybridanalysis',observedAt:Number.isFinite(Date.parse(item?.report_fetched_at))?Date.parse(item.report_fetched_at):null},{verdict:judgement(item?.hybrid_verdict?.status),provider:'hybridanalysis',observedAt:item?.hybrid_verdict?.observedAt||null},{verdict:us.verdict,provider:'urlscan',observedAt:item?.urlscan?.observedAt||null}];
+        const retained=item?.urlscan?.retainedFinding;
+        const values=[{verdict:ha.verdict,provider:'hybridanalysis',observedAt:Number.isFinite(Date.parse(item?.report_fetched_at))?Date.parse(item.report_fetched_at):null},{verdict:judgement(item?.hybrid_verdict?.status),provider:'hybridanalysis',observedAt:item?.hybrid_verdict?.observedAt||null},{verdict:judgement(retained?.status),provider:'urlscan',observedAt:retained?.observedAt||null},{verdict:us.verdict,provider:'urlscan',observedAt:item?.urlscan?.observedAt||null}];
         return values.reduce((a,b)=>verdicts.indexOf(b.verdict)>verdicts.indexOf(a.verdict)?b:a,{verdict:'unknown',provider:null,observedAt:null});
     }
     function legacy(provider,data){const a=evaluate(provider,data);return a.verdict==='malicious'?'MALICIOUS':a.verdict==='suspicious'?'SUSPICIOUS':a.verdict==='none'&&a.completion==='complete'?'CLEAN':a.completion==='complete'?'UNKNOWN':null;}
@@ -188,5 +215,5 @@ var ThundyProviderResults = (function () {
         if(scanners.some(s=>Array.isArray(s.anti_virus_results))&&scanners.filter(s=>Array.isArray(s.anti_virus_results)).every(s=>s.anti_virus_results.length===0))emptySections.push('antivirus');
         return {schemaVersion:1,sections,emptySections,truncated};
     }
-    return {evaluate,project,merge,stored,resource,legacy,hybridDetails,urlscanRejection,projectQuota};
+    return {evaluate,project,merge,stored,resource,legacy,hybridDetails,hybridCompletionConfirmed,urlscanStatus,urlscanRecord,urlscanPending,urlscanRejection,projectQuota};
 }());

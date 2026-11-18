@@ -3,16 +3,17 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),vm=require('node:vm');
 const {JSDOM}=require('jsdom');
 
-async function popup(record, lang='de') {
+async function popup(record, lang='de', overrides={}) {
  const dom=new JSDOM(fs.readFileSync('popup.html','utf8'),{url:'https://addon.invalid/popup.html'});
  const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json'));
- const requests=[],reads=[],messages=[];
+ const requests=[],reads=[],messages=[],listeners=[];
  const browser={
   tabs:{query:async()=>[{id:1}]},messageDisplay:{getDisplayedMessages:async()=>({messages:[{id:7,headerMessageId:'fixture',subject:'Fixture',author:'sender@example.invalid'}]})},
-  storage:{local:{get:async()=>({apikey:'fixture',externalAnalysisConsent:true})},onChanged:{addListener(){}}},
+  storage:{local:{get:async()=>overrides.localOnly?{externalAnalysisConsent:false}:{apikey:'fixture',externalAnalysisConsent:true}},onChanged:{addListener(){}}},
   permissions:{contains:async()=>true},
-  runtime:{onMessage:{addListener(){}},getURL:p=>'https://addon.invalid/'+p,openOptionsPage(){},sendMessage:async request=>{
+  runtime:{onMessage:{addListener:fn=>listeners.push(fn)},getURL:p=>'https://addon.invalid/'+p,openOptionsPage(){},sendMessage:async request=>{
    reads.push(request.action);
+   if(overrides[request.action])return await overrides[request.action](request);
    messages.push(structuredClone(request));
    if(request.action==='getMessageAnalysisRecord')return {success:true,record};
    if(request.action==='getMessageAnalysis')return {success:true,messageId:7,local:{state:'checked'},rows:[],availability:{}};
@@ -22,7 +23,7 @@ async function popup(record, lang='de') {
   }}
  };
  const context=vm.createContext({document:dom.window.document,window:dom.window,URL,TextEncoder,console,
-  browser,openDB:async()=>({close(){}}),setTimeout,clearTimeout,
+  browser,openDB:async()=>({close(){}}),setTimeout:overrides.setTimeout||setTimeout,clearTimeout:overrides.clearTimeout||clearTimeout,
   ThundyI18n:{get:(key,args=[])=>{
    const item=catalog[key];return (item?.message||key).replace(/\$([A-Z0-9_]+)\$/g,(all,name)=>{
     const placeholder=item?.placeholders?.[name.toLowerCase()];return placeholder ? placeholder.content.replace(/\$(\d+)/g,(_,i)=>String(args[Number(i)-1]??'')) : all;
@@ -33,7 +34,8 @@ async function popup(record, lang='de') {
  const source=(fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('api.js','utf8')).replace(/^\(async \(\) => \{/m,'async function initializePopup() {').replace(/\}\)\(\);/m,'}');
  vm.runInContext(source,context);
  await context.initializePopup();
- return {dom,context,requests,reads,messages,catalog,close:()=>dom.window.close()};
+ await new Promise(setImmediate);
+ return {dom,context,requests,reads,messages,catalog,notify:async()=>{for(const fn of listeners)fn({action:"analysisStatusChanged",messageId:7});await new Promise(setImmediate);},close:()=>{dom.window.dispatchEvent(new dom.window.Event('pagehide'));dom.window.close();}};
 }
 
 test('opening the popup tolerates optional Hybrid Analysis field shapes without losing other stored results',async()=>{
@@ -182,3 +184,73 @@ test('popup renders unified threatIntel (URLhaus, AbuseIPDB) and urlscan.io link
  }finally{f.close();}
 });
 
+
+test('local popup score loads while the source snapshot is stalled without external services',async()=>{
+ for(const score of [0,40,100]){
+  let release;const pending=new Promise(resolve=>release=resolve);
+  const f=await popup({attachments:[],links:[]},'de',{localOnly:true,getMessageAnalysis:()=>pending,getLocalRisk:async()=>({threat:{score,reasons:score?['Local warning']:[],coverage:{state:'checked'}}})});
+  try{const card=f.dom.window.document.querySelector('.local-risk');assert.equal(card.dataset.state,'checked');assert.ok(card.querySelector('.risk-score').textContent.includes(score+' / 100'));assert.equal(card.closest('[hidden]'),null);assert.equal(f.requests.length,0);assert.ok(f.reads.includes('getLocalRisk'));const root=f.dom.window.document.getElementById('thundy-analysis-status').shadowRoot;assert.ok([...root.querySelectorAll('.local-score')].some(n=>!n.closest('[hidden]')&&n.textContent.includes(score+' / 100')));}
+  finally{f.close();release({success:false});}
+ }
+});
+test('invalid or missing local popup results show unavailable without inventing a zero',async()=>{
+ for(const threat of [undefined,{score:null},{score:'0'},{score:NaN},{score:0,coverage:{state:'failed'}}]){
+  const f=await popup({},'de',{localOnly:true,getLocalRisk:async()=>({threat})});
+  try{const card=f.dom.window.document.querySelector('.local-risk');assert.equal(card.dataset.state,'failed');assert.ok(!card.querySelector('.risk-score').textContent.includes('0 / 100'));assert.equal(card.querySelector('progress'),null);assert.equal(f.requests.length,0);}finally{f.close();}
+ }
+});
+test('a popup closed before its local answer does not apply that late score',async()=>{
+ let release;const pending=new Promise(resolve=>release=resolve),f=await popup({},'de',{getLocalRisk:()=>pending});
+ const card=f.dom.window.document.querySelector('.local-risk');assert.equal(card.dataset.state,'pending');f.dom.window.dispatchEvent(new f.dom.window.Event('pagehide'));
+ release({threat:{score:100,reasons:[]}});await new Promise(setImmediate);assert.equal(card.dataset.state,'pending');f.close();
+});
+
+test('a local popup timeout stays unavailable after its delayed answer arrives',async()=>{
+ let expire,release;const pending=new Promise(resolve=>release=resolve);
+ const f=await popup({},'de',{getMessageAnalysis:async()=>({success:false}),getLocalRisk:()=>pending,setTimeout:(fn,ms)=>ms===5000?(expire=fn,'local-deadline'):setTimeout(fn,ms),clearTimeout:id=>{if(id!=='local-deadline')clearTimeout(id);}});
+ try{expire();await new Promise(setImmediate);const card=f.dom.window.document.querySelector('.local-risk');assert.equal(card.dataset.state,'failed');assert.ok(!card.textContent.includes('0 / 100'));release({threat:{score:100,reasons:[]}});await new Promise(setImmediate);assert.equal(card.dataset.state,'failed');}finally{f.close();}
+});
+
+function localAssessment(revision,runtimeId='runtime-a',extra={}){return {runtimeId,revision,messageId:7,observedAt:Date.now(),...extra};}
+function localSource(score,revision,runtimeId='runtime-a',extra={}){return {success:true,messageId:7,rows:[],availability:{},local:{state:'checked',score,reasons:[],assessment:localAssessment(revision,runtimeId,extra)}};}
+
+test('source-only score changes update the popup without a job or provider-row change',async()=>{
+ let source=localSource(0,1),calls=0;
+ const f=await popup({},'de',{getMessageAnalysis:async()=>source,getLocalRisk:async()=>{calls++;return {threat:{score:0,reasons:[],assessment:localAssessment(1)}};},setTimeout:(fn,ms)=>ms===150?'refresh-suppressed':setTimeout(fn,ms),clearTimeout:id=>{if(id!=='refresh-suppressed')clearTimeout(id);}});
+ try{const card=f.dom.window.document.querySelector('.local-risk');assert.equal(card.querySelector('progress').value,0);source=localSource(100,2);await f.notify();assert.equal(card.querySelector('progress').value,100);assert.equal(calls,1);
+  source=localSource(0,1);await f.notify();assert.equal(card.querySelector('progress').value,100);
+  const root=f.dom.window.document.getElementById('thundy-analysis-status').shadowRoot;assert.ok(root.textContent.includes('100'));
+ }finally{f.close();}
+});
+
+test('older successful and failed replies cannot replace a newer source assessment',async()=>{
+ for(const failed of [false,true]){
+  let release,source=localSource(100,3);
+  const f=await popup({},'de',{getMessageAnalysis:async()=>source,getLocalRisk:()=>new Promise(resolve=>{release=resolve;}),setTimeout:(fn,ms)=>ms===150?'refresh-suppressed':setTimeout(fn,ms),clearTimeout:id=>{if(id!=='refresh-suppressed')clearTimeout(id);}});
+  try{release(failed?{status:'error',assessment:localAssessment(1)}:{threat:{score:0,reasons:[],assessment:localAssessment(1)}});await new Promise(setImmediate);const card=f.dom.window.document.querySelector('.local-risk');assert.equal(card.dataset.state,'checked');assert.equal(card.querySelector('progress').value,100);
+   source=localSource(40,1,'runtime-b');await f.notify();assert.equal(card.querySelector('progress').value,40);source=localSource(0,99,'runtime-a');await f.notify();assert.equal(card.querySelector('progress').value,40);
+  }finally{f.close();}
+ }
+});
+
+test('a timed-out local request cannot reappear through the source event channel',async()=>{
+ let expire,request,source={success:false};
+ const f=await popup({},'de',{getMessageAnalysis:async()=>source,getLocalRisk:r=>{request=r;return new Promise(()=>{});},setTimeout:(fn,ms)=>ms===5000?(expire=fn,'deadline'):ms===150?'refresh-suppressed':setTimeout(fn,ms),clearTimeout:id=>{if(!['deadline','refresh-suppressed'].includes(id))clearTimeout(id);}});
+ try{expire();await new Promise(setImmediate);const card=f.dom.window.document.querySelector('.local-risk');assert.equal(card.dataset.state,'failed');source=localSource(0,1,'runtime-a',{requestId:request.requestId});await f.notify();assert.equal(card.dataset.state,'failed');source=localSource(100,2);await f.notify();assert.equal(card.querySelector('progress').value,100);}
+ finally{f.close();}
+});
+
+test('sent but unassigned uploads remain explicit and cannot be retried by either button in all six languages',async()=>{
+ for(const lang of ['en','de','fr','es','it','pl'])for(const kind of ['rescan','upload']){
+  let calls=0;
+  const record={attachments:[{partName:'1.2',attachment_name:'file.html',hybrid_sha256:'a'.repeat(64),state:'KNOWN',report:{state:'COMPLETE',verdict:'clean'}}]};
+  const f=await popup(record,lang,{uploadAttachment:async()=>{calls++;return {status:'error',code:'RESOURCE_MISMATCH',uploadSent:true,message:'Controlled sent but unassigned'};}});
+  try{let button;
+   if(kind==='rescan')button=[...f.dom.window.document.querySelectorAll('#hybrid_analysis_api_content button')].find(b=>b.textContent===f.catalog.ui_034.message);
+   else{const doc=f.dom.window.document;button=doc.createElement('button');const status=doc.createElement('p');status.id='upload-status-manual-fixture';doc.body.append(button,status);button.addEventListener('click',f.context.handleUploadClick({hash:'a'.repeat(64),safeHash:'manual-fixture',attachmentName:'file.html',messageId:7,partName:'1.2',headerMessageId:'fixture'}));}
+   assert.ok(button);button.click();await new Promise(setImmediate);assert.equal(calls,1);assert.equal(button.disabled,true);
+   assert.equal(kind==='rescan'?button.textContent:button.innerText,f.catalog.uploadSentLabel.message);
+   button.click();await new Promise(setImmediate);assert.equal(calls,1);assert.equal(f.requests.length,0);
+  }finally{f.close();}
+ }
+});

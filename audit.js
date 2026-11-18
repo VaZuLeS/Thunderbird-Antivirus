@@ -21,6 +21,25 @@ const AuditExport = (() => {
         const sha256 = Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, '0')).join('');
         return JSON.stringify({ payload, sha256 }, null, 2);
     }
+    function redacted(records) {
+        const time = value => Number.isFinite(value) && value >= 0 && value <= 8640000000000000 ? value : null;
+        const score = value => Number.isFinite(value) && value >= 0 && value <= 100 ? value : null;
+        const allowed = (value, list) => list.includes(value) ? value : null;
+        return records.map(record => ({
+            clickedAt:time(record.clickedAt), decidedAt:time(record.decidedAt),
+            outcome:allowed(record.outcome,['OPENED','ABORTED','OPEN_ERROR','PENDING']),
+            heuristicScoreAtDecision:score(record.heuristicScoreAtDecision), scoreAtDecision:score(record.scoreAtDecision),
+            verdictAtDecision:allowed(record.verdictAtDecision,['UNKNOWN','CLEAN','SUSPICIOUS','MALICIOUS','MALICIOUS_VISUAL']),
+            providerAtDecision:allowed(record.providerAtDecision,['none','urlscan.io','Hybrid Analysis']),
+            checkOutcome:allowed(record.check?.outcome,['success','incomplete','failed','disabled','permission_denied','missing_key',
+                'missing_reference','not_requested','no_result','rate_limited','invalid_key','not_found']),
+            errorCode:allowed(record.check?.errorCode ?? record.errorCode,['rate_limited','invalid_key','fetch_failed','invalid_response',
+                'invalid_request','resource_mismatch','result_gone','timeout','LINK_CHECK_TIMEOUT']),
+            observedAt:time(record.check?.observedAt), attemptedAt:time(record.check?.attemptedAt),
+            httpStatus:Number.isInteger(record.check?.httpStatus) && record.check.httpStatus >= 100 && record.check.httpStatus <= 599
+                ? record.check.httpStatus : null
+        }));
+    }
     function filter(records, options) {
         const query = (options.query || '').toLowerCase();
         const from = options.from ? new Date(options.from + 'T00:00:00').getTime() : -Infinity;
@@ -29,13 +48,13 @@ const AuditExport = (() => {
             (options.minScore === '' || options.minScore == null || (Number.isFinite(record.score) && record.score >= Number(options.minScore))) && record.clickedAt >= from && record.clickedAt <= to);
     }
     const riskyOpened = record => record.outcome === 'OPENED' && ((Number.isFinite(record.scoreAtDecision) && record.scoreAtDecision >= 50) || /MALICIOUS|SUSPICIOUS/.test(record.verdictAtDecision || ''));
-    return { csv, json, filter, riskyOpened };
+    return { csv, json, redacted, filter, riskyOpened };
 })();
 
 if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', () => {
     const t = key => ThundyI18n.get(key);
     const $ = id => document.getElementById(id);
-    let records = [], snapshot = null, page = 0, refreshGeneration = 0;
+    let records = [], snapshot = null, page = 0, refreshGeneration = 0, fullFormat = null;
     const pageSize = 50;
     const decisionKeys = { OPENED: 'auditOpened', ABORTED: 'auditAborted', OPEN_ERROR: 'auditOpenError', PENDING: 'auditPending' };
     const cancelKeys = { cancel: 'auditCancelUser', escape: 'auditCancelEscape', destination_changed: 'auditCancelDestination', context_closed: 'auditCancelContext' };
@@ -63,6 +82,10 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
             const time = document.createElement('td'); time.append(node('div', date(record.clickedAt)), node('small', date(record.decidedAt)));
             const decision = node('td', t(decisionKeys[record.outcome] || 'auditPending')); decision.className = 'audit-' + record.outcome.toLowerCase();
             const score = document.createElement('td'); score.append(node('div', record.score == null ? t('auditUnavailable') : record.score + ' / 100'), node('small', t('auditScoreAtDecision') + ': ' + (record.scoreAtDecision == null ? t('auditUnavailable') : record.scoreAtDecision)));
+            if (record.riskModelVersion === 2) {
+                const decisionHeuristic = record.heuristicScoreAtDecision;
+                score.append(node('small',t('auditLocalScore')+' · '+(decisionHeuristic == null ? t('auditUnavailable') : decisionHeuristic+' / 100')));
+            }
             const verdict = document.createElement('td'); verdict.append(node('div', t('auditVerdictAtDecision') + ': ' + verdictLabel(record.verdictAtDecision)), node('small', !record.providerAtDecision || record.providerAtDecision === 'none' ? t('auditUnavailable') : record.providerAtDecision));
             const address = document.createElement('td');
             let domain; try { domain = new URL(record.url).host; } catch (error) { domain = '—'; }
@@ -71,13 +94,15 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
             details.append(node('p', t('auditEventId') + ': ' + record.id));
             if (record.cancelReason) details.append(node('p', t('auditCancelReason') + ': ' + t(cancelKeys[record.cancelReason] || 'auditCancelUnknown')));
             if (record.outcome === 'PENDING') details.append(node('p', t('auditPendingExplanation')));
-            if (record.check) details.append(node('p', t(({ live: 'checkOrigin_live', stored: 'checkOrigin_stored', none: 'checkOrigin_none' })[record.check.origin] || 'auditUnavailable') + ' · ' + t(({success: 'checkOutcome_success', failed: 'checkOutcome_failed', disabled: 'checkOutcome_disabled', permission_denied: 'checkOutcome_permission_denied', missing_key: 'checkOutcome_missing_key', missing_reference: 'checkOutcome_missing_reference', not_requested: 'checkOutcome_not_requested', no_result: 'checkOutcome_no_result', rate_limited: 'checkOutcome_rate_limited', invalid_key: 'checkOutcome_invalid_key'})[record.check.outcome] || 'auditUnavailable') + ' · ' + t('checkAttempted') + ': ' + date(record.check.attemptedAt) + ' · ' + t('checkObserved') + ': ' + date(record.check.observedAt)));
+            if (record.check) details.append(node('p', t(({ live: 'checkOrigin_live', stored: 'checkOrigin_stored', none: 'checkOrigin_none' })[record.check.origin] || 'auditUnavailable') + ' · ' + t(({success: 'checkOutcome_success', failed: 'checkOutcome_failed', incomplete: 'analysisSimpleIncomplete', disabled: 'checkOutcome_disabled', permission_denied: 'checkOutcome_permission_denied', missing_key: 'checkOutcome_missing_key', missing_reference: 'checkOutcome_missing_reference', not_requested: 'checkOutcome_not_requested', no_result: 'checkOutcome_no_result', rate_limited: 'checkOutcome_rate_limited', invalid_key: 'checkOutcome_invalid_key'})[record.check.outcome] || 'auditUnavailable') + ' · ' + t('checkAttempted') + ': ' + date(record.check.attemptedAt) + ' · ' + t('checkObserved') + ': ' + date(record.check.observedAt)));
             const errorCode = record.errorCode || record.check?.errorCode;
             const errorDetails = record.errorDetails || record.check?.errorDetails;
             const retryAfter = record.retryAfter || record.check?.retryAfter;
-            if (errorCode || errorDetails || retryAfter) {
+            const httpStatus = record.httpStatus ?? record.check?.httpStatus;
+            if (errorCode || errorDetails || retryAfter || httpStatus) {
                 const diag = document.createElement('div');
                 diag.className = 'audit-diagnostic-block';
+                if (Number.isInteger(httpStatus)&&httpStatus>=100&&httpStatus<=599) diag.append(node('p','HTTP '+httpStatus));
                 if (errorCode) diag.append(node('p', t('auditErrorCode') + ': ' + errorCode, 'audit-error-code'));
                 if (errorDetails) diag.append(node('p', t('auditErrorDetails') + ': ' + errorDetails, 'audit-error-details'));
                 if (retryAfter) {
@@ -99,7 +124,7 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
         }
         $('auditPage').textContent = (page + 1) + ' / ' + Math.max(1, Math.ceil(filtered.length / pageSize));
         $('auditPrevious').disabled = page === 0; $('auditNext').disabled = (page + 1) * pageSize >= filtered.length;
-        $('auditJson').disabled = !snapshot; $('auditCsv').disabled = !snapshot;
+        $('auditJson').disabled = $('auditCsv').disabled = $('auditShare').disabled = !snapshot;
         if (focusedId) (restoreFocus || document.querySelector('.audit-table-wrap')).focus();
     }
     async function refresh() {
@@ -117,9 +142,10 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
         if (!snapshot) return;
         const data = selected().map(record => ({ ...record }));
         try {
-            const content = format === 'json' ? await AuditExport.json(data, { profileId: snapshot.profileId, extensionVersion: browser.runtime.getManifest().version, retentionDays: snapshot.retentionDays, maxRecords: snapshot.maxRecords, filters: { query: $('auditSearch').value, outcome: $('auditOutcome').value, minScore: $('auditMinScore').value, from: $('auditFrom').value, to: $('auditTo').value } }) : AuditExport.csv(data);
-            const url = URL.createObjectURL(new Blob([content], { type: format === 'json' ? 'application/json' : 'text/csv;charset=utf-8' }));
-            try { await browser.downloads.download({ url, filename: 'thundy-link-audit-' + new Date().toISOString().slice(0, 10) + '.' + format, saveAs: true }); }
+            const shared = format === 'share';
+            const content = shared ? await AuditExport.json(AuditExport.redacted(data),{kind:'thundy-link-audit-redacted'}) : format === 'json' ? await AuditExport.json(data, { profileId: snapshot.profileId, extensionVersion: browser.runtime.getManifest().version, retentionDays: snapshot.retentionDays, maxRecords: snapshot.maxRecords, filters: { query: $('auditSearch').value, outcome: $('auditOutcome').value, minScore: $('auditMinScore').value, from: $('auditFrom').value, to: $('auditTo').value } }) : AuditExport.csv(data);
+            const url = URL.createObjectURL(new Blob([content], { type: format !== 'csv' ? 'application/json' : 'text/csv;charset=utf-8' }));
+            try { await browser.downloads.download({ url, filename: (shared ? 'thundy-link-audit-redacted-' : 'thundy-link-audit-') + new Date().toISOString().slice(0, 10) + '.' + (shared?'json':format), saveAs: true }); }
             finally { URL.revokeObjectURL(url); }
             $('auditStatus').textContent = t('auditExported');
         } catch (error) { $('auditStatus').textContent = t('auditExportFailed'); }
@@ -128,7 +154,22 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
     $('auditFilters').addEventListener('input', () => { page = 0; render(); });
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
     $('auditRefresh').addEventListener('click', refresh);
-    $('auditJson').addEventListener('click', () => download('json')); $('auditCsv').addEventListener('click', () => download('csv'));
+    $('auditShare').addEventListener('click', () => download('share'));
+    for (const [id,format] of [['auditJson','json'],['auditCsv','csv']]) {
+        $(id).addEventListener('click', () => {
+            fullFormat=format;
+            $('auditFullConfirm').showModal();
+            $('auditFullCancel').focus();
+        });
+    }
+    $('auditFullCancel').addEventListener('click', () => $('auditFullConfirm').close());
+    $('auditFullConfirm').addEventListener('close', () => { fullFormat=null; });
+    $('auditFullSave').addEventListener('click', () => {
+        const format=fullFormat;
+        fullFormat=null;
+        $('auditFullConfirm').close();
+        if (format) void download(format);
+    });
     $('auditPrevious').addEventListener('click', () => { page--; render(); }); $('auditNext').addEventListener('click', () => { page++; render(); });
     $('auditClear').addEventListener('click', () => { $('auditConfirm').showModal(); $('auditKeep').focus(); });
     $('auditKeep').addEventListener('click', () => $('auditConfirm').close());

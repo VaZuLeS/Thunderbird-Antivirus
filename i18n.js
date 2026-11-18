@@ -1019,7 +1019,7 @@ const ThundyI18n = (() => {
     "message": "No completed decision"
   },
   "auditMinScore": {
-    "message": "Minimum local score"
+    "message": "Minimum decision score"
   },
   "auditFrom": {
     "message": "From"
@@ -1981,7 +1981,7 @@ const ThundyI18n = (() => {
     "message": "Invalid or unauthorized urlscan.io API key."
   },
   "urlscanTimeoutDetails": {
-    "message": "Timeout: Scan result was not ready within 30 seconds."
+    "message": "The result was not ready within the polling window. The accepted scan can be checked again without a new submission."
   },
   "urlscanDomainUnresolvable": {
     "message": "Domain could not be resolved by urlscan.io."
@@ -2580,6 +2580,612 @@ const ThundyI18n = (() => {
   },
   "apiDebugFailureHint": {
     "message": "For a detailed failure report, enable API debug mode in settings, reproduce the check and export the debug report."
+  },
+  "urlscanResultGone": {
+    "message": "This result was deleted by urlscan.io. Updating cannot restore it; a new submission requires an explicit scan."
+  },
+  "apiDebugOpen": {
+    "message": "Open API diagnostics"
+  },
+  "diagTitle": {
+    "message": "API diagnostics"
+  },
+  "diagHelp": {
+    "message": "Filtered checks in local memory. Keys, private URLs and raw content remain hidden. HTTP success is not a completed safety verdict. Only steps recorded after activation are available."
+  },
+  "diagOff": {
+    "message": "Debug mode is off. Enable it in settings."
+  },
+  "diagEmpty": {
+    "message": "No matching records."
+  },
+  "diagPause": {
+    "message": "Pause view"
+  },
+  "diagResume": {
+    "message": "Resume view"
+  },
+  "diagPaused": {
+    "message": "View paused; recording remains active."
+  },
+  "diagActive": {
+    "message": "Recording active; refreshing once per second."
+  },
+  "diagProvider": {
+    "message": "Provider"
+  },
+  "diagState": {
+    "message": "State"
+  },
+  "diagPurpose": {
+    "message": "Operation type"
+  },
+  "diagFrom": {
+    "message": "From"
+  },
+  "diagTo": {
+    "message": "To"
+  },
+  "diagAll": {
+    "message": "All"
+  },
+  "diagRuns": {
+    "message": "Check flows"
+  },
+  "diagDetails": {
+    "message": "Selected flow details"
+  },
+  "diagDropped": {
+    "message": "Dropped records or steps"
+  },
+  "diagNoHttp": {
+    "message": "No HTTP call recorded for this flow."
+  },
+  "diagNotCaptured": {
+    "message": "Not captured"
+  },
+  "diagTimeline": {
+    "message": "Timeline"
+  },
+  "diagRequest": {
+    "message": "Filtered request"
+  },
+  "diagResponse": {
+    "message": "Transport and filtered response"
+  },
+  "diagReset": {
+    "message": "Reset filters"
+  },
+  "diagTruncated": {
+    "message": "This flow was truncated due to recording limits."
+  },
+  "diag_phase_precondition": {
+    "message": "Prerequisites"
+  },
+  "diag_phase_queue": {
+    "message": "Queue"
+  },
+  "diag_phase_attempt": {
+    "message": "Send attempt"
+  },
+  "diag_phase_response": {
+    "message": "HTTP response / transport completion"
+  },
+  "diag_phase_parse": {
+    "message": "JSON processing"
+  },
+  "diag_phase_assessment": {
+    "message": "Assessment"
+  },
+  "diag_phase_persistence": {
+    "message": "Persistence"
+  },
+  "diag_phase_cache": {
+    "message": "Cache hit"
+  },
+  "diag_phase_wait": {
+    "message": "Waiting"
+  },
+  "diag_phase_cancelled": {
+    "message": "Cancelled"
+  },
+  "diag_phase_expired": {
+    "message": "Recording expired without confirmed completion"
+  },
+  "diag_purpose_automatic": {
+    "message": "Automatic check"
+  },
+  "diag_purpose_manual": {
+    "message": "Manual check"
+  },
+  "diag_purpose_link": {
+    "message": "Link check"
+  },
+  "diag_purpose_key_test": {
+    "message": "Key test"
+  },
+  "diag_purpose_report": {
+    "message": "Report request"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analysis"
+  },
+  "diag_state_running": {
+    "message": "Running"
+  },
+  "diag_state_complete": {
+    "message": "Operation finished"
+  },
+  "diag_state_pending": {
+    "message": "Pending"
+  },
+  "diag_state_blocked": {
+    "message": "Not started / blocked"
+  },
+  "diag_state_incomplete": {
+    "message": "Incomplete"
+  },
+  "diag_state_failed": {
+    "message": "Failed"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Completion unconfirmed"
+  },
+  "localScoreMessage": {
+    "message": "Local message score"
+  },
+  "localScoreLink": {
+    "message": "Local score for this link in the message"
+  },
+  "localScoreNoIndicators": {
+    "message": "No local warning indicators found."
+  },
+  "localScoreIndicators": {
+    "message": "Local warning indicators found. Review the reasons before opening."
+  },
+  "uploadSentLabel": {
+    "message": "Upload sent"
+  },
+  "uploadSentUnassigned": {
+    "message": "The upload was sent, but its result could not be assigned to this attachment. Close and reopen the popup before submitting again."
+  },
+  "hybridReportTitle": {
+    "message": "Hybrid Analysis report"
+  },
+  "hybridReportIntro": {
+    "message": "Read-only view of received results. Opening this report sends no provider request."
+  },
+  "hybridReportOpen": {
+    "message": "View analysis report"
+  },
+  "hybridReportUnavailable": {
+    "message": "Report unavailable. Reopen it from the current message."
+  },
+  "hybridReportTechnical": {
+    "message": "Provider and connection details"
+  },
+  "hybridReportExplanation": {
+    "message": "About this assessment"
+  },
+  "hybridReportSummary": {
+    "message": "Assessment and provenance"
+  },
+  "hybridReportSnapshot": {
+    "message": "Stored report snapshot; not a new scan"
+  },
+  "hybridReportScope": {
+    "message": "Provider results and the local score are separate. Missing fields are not negative findings. Only available, bounded data is shown."
+  },
+  "hybridReportCopy": {
+    "message": "Copy"
+  },
+  "hybridReportCopied": {
+    "message": "Copied as text."
+  },
+  "hybridReportCopyFailed": {
+    "message": "Could not copy. Select and copy the text manually."
+  },
+  "hybridReportAvailableOnly": {
+    "message": "Rows in available data"
+  },
+  "hybridReportNoMatches": {
+    "message": "No matching fields in available data."
+  },
+  "hybridReportAvailability": {
+    "message": "Availability and limitations"
+  },
+  "hybridReportRun": {
+    "message": "Analysis run"
+  },
+  "hybridReportSearch": {
+    "message": "Search available fields"
+  },
+  "hybridReportReady": {
+    "message": "Report loaded. No new scan was started."
+  },
+  "hybridReportResource_name": {
+    "message": "Attachment name"
+  },
+  "hybridReportResource_url": {
+    "message": "Bound target URL"
+  },
+  "hybridReportResource_sha256": {
+    "message": "Resource SHA-256"
+  },
+  "hybridField_type": {
+    "message": "File type"
+  },
+  "hybridField_type_short": {
+    "message": "Short file type"
+  },
+  "hybridField_size": {
+    "message": "Size in bytes"
+  },
+  "hybridField_last_file_name": {
+    "message": "Last file name"
+  },
+  "hybridField_submit_name": {
+    "message": "Submission name"
+  },
+  "hybridField_url_analysis": {
+    "message": "URL analysis"
+  },
+  "hybridField_target_url": {
+    "message": "Provider target URL (may be shortened)"
+  },
+  "hybridField_id": {
+    "message": "Response ID (type unspecified)"
+  },
+  "hybridField_job_id": {
+    "message": "Sandbox job ID"
+  },
+  "hybridField_submission_id": {
+    "message": "Submission ID"
+  },
+  "hybridField_state": {
+    "message": "Provider state"
+  },
+  "hybridField_finished": {
+    "message": "Finished"
+  },
+  "hybridField_verdict": {
+    "message": "Provider verdict"
+  },
+  "hybridField_threat_score": {
+    "message": "Hybrid Analysis threat score"
+  },
+  "hybridField_threat_level": {
+    "message": "Provider threat level"
+  },
+  "hybridField_multiscan_result": {
+    "message": "Multiscan result (provider value)"
+  },
+  "hybridField_av_detect": {
+    "message": "AV detection value (provider value)"
+  },
+  "hybridField_whitelisted": {
+    "message": "Provider whitelist entry"
+  },
+  "hybridField_vx_family": {
+    "message": "Provider malware family"
+  },
+  "hybridField_classification_tags": {
+    "message": "Classification tags"
+  },
+  "hybridField_tags": {
+    "message": "Tags"
+  },
+  "hybridField_analysis_start_time": {
+    "message": "Analysis start time"
+  },
+  "hybridField_environment_id": {
+    "message": "Environment ID"
+  },
+  "hybridField_environment_description": {
+    "message": "Sandbox environment"
+  },
+  "hybridField_error_type": {
+    "message": "Provider error type"
+  },
+  "hybridField_error_origin": {
+    "message": "Provider error origin"
+  },
+  "hybridField_name": {
+    "message": "Name"
+  },
+  "hybridField_status": {
+    "message": "Status"
+  },
+  "hybridField_progress": {
+    "message": "Progress (provider value)"
+  },
+  "hybridField_positives": {
+    "message": "Positive detections"
+  },
+  "hybridField_total": {
+    "message": "Total checks"
+  },
+  "hybridField_percent": {
+    "message": "Percentage (provider value)"
+  },
+  "hybridField_scan_time": {
+    "message": "Scan duration (provider unit)"
+  },
+  "hybridField_scan_date": {
+    "message": "Scan date"
+  },
+  "hybridField_product": {
+    "message": "Scanner product"
+  },
+  "hybridField_version": {
+    "message": "Scanner version"
+  },
+  "hybridField_update": {
+    "message": "Scanner update"
+  },
+  "hybridField_total_network_connections": {
+    "message": "Network connections"
+  },
+  "hybridField_total_processes": {
+    "message": "Processes"
+  },
+  "hybridField_total_signatures": {
+    "message": "Signatures"
+  },
+  "hybridField_category": {
+    "message": "Category"
+  },
+  "hybridField_attck_id": {
+    "message": "MITRE ATT&CK technique ID"
+  },
+  "hybridField_tactic": {
+    "message": "MITRE ATT&CK tactic"
+  },
+  "hybridField_technique": {
+    "message": "MITRE ATT&CK technique"
+  },
+  "hybridField_description": {
+    "message": "Description"
+  },
+  "hybridField_domains": {
+    "message": "Observed domain"
+  },
+  "hybridField_hosts": {
+    "message": "Observed host"
+  },
+  "hybridField_compromised_hosts": {
+    "message": "Compromised host (provider claim)"
+  },
+  "hybridField_domain": {
+    "message": "Domain"
+  },
+  "hybridField_host": {
+    "message": "Host"
+  },
+  "hybridField_ip": {
+    "message": "IP address"
+  },
+  "hybridField_port": {
+    "message": "Port"
+  },
+  "hybridField_protocol": {
+    "message": "Protocol"
+  },
+  "hybridField_country": {
+    "message": "Country"
+  },
+  "hybridField_asn": {
+    "message": "Autonomous system number"
+  },
+  "hybridField_uid": {
+    "message": "Process UID"
+  },
+  "hybridField_process_id": {
+    "message": "Process ID (PID)"
+  },
+  "hybridField_parent_uid": {
+    "message": "Parent process UID"
+  },
+  "hybridField_file_path": {
+    "message": "File path"
+  },
+  "hybridField_subject": {
+    "message": "Certificate subject"
+  },
+  "hybridField_issuer": {
+    "message": "Certificate issuer"
+  },
+  "hybridField_valid_from": {
+    "message": "Valid from"
+  },
+  "hybridField_valid_until": {
+    "message": "Valid until"
+  },
+  "hybridField_serial_number": {
+    "message": "Certificate serial number"
+  },
+  "hybridField_sha256": {
+    "message": "SHA-256"
+  },
+  "hybridField_sha1": {
+    "message": "SHA-1"
+  },
+  "hybridField_md5": {
+    "message": "MD5"
+  },
+  "hybridField_sha512": {
+    "message": "SHA-512"
+  },
+  "hybridField_imphash": {
+    "message": "Import hash"
+  },
+  "hybridReportResource_quickScanId": {
+    "message": "Recorded Quick-Scan ID"
+  },
+  "analysisLocalOnly": {
+    "message": "Checked locally only"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "Services with results"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Services pending"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Services with errors"
+  },
+  "hybridReportSection": {
+    "message": "Section"
+  },
+  "hybridReportAllSections": {
+    "message": "All sections"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "Processing complete"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "Processing pending"
+  },
+  "hybridReportProcessing_failed": {
+    "message": "Processing failed"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "Processing status unknown"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Report retrieved"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Snapshot created"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Retained Hybrid Analysis finding for this resource"
+  },
+  "hybridReportSaved": {
+    "message": "Saved Hybrid Analysis report"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Copy UTC"
+  },
+  "hybridReportWhy": {
+    "message": "Why this assessment?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Other assessment signals"
+  },
+  "hybridReportCompare": {
+    "message": "Compare analysis runs"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Sections with data"
+  },
+  "hybridReportAssessment": {
+    "message": "Thundy assessment from Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Source and timestamps"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Finding available · completion unconfirmed"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Open Hybrid report"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Show finding details"
+  },
+  "attachmentProtectionTitle": {
+    "message": "Attachment protection"
+  },
+  "attachmentProtectionScope": {
+    "message": "This rule applies when saving with Thundy. Thunderbird’s own attachment commands remain available."
+  },
+  "attachmentPolicyMode": {
+    "message": "When threshold is reached"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Hybrid Analysis score threshold"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Attachments without a confirmed score"
+  },
+  "attachmentModeOff": {
+    "message": "Off"
+  },
+  "attachmentModeWarn": {
+    "message": "Warn"
+  },
+  "attachmentModeApproval": {
+    "message": "Require approval"
+  },
+  "attachmentModeBlock": {
+    "message": "Block"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Save with Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "Save attachment"
+  },
+  "attachmentCancelSave": {
+    "message": "Cancel"
+  },
+  "attachmentThresholdReached": {
+    "message": "Hybrid score reaches the configured threshold."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis classified this file as malicious."
+  },
+  "attachmentUnknown": {
+    "message": "No confirmed score for this attachment."
+  },
+  "attachmentBlocked": {
+    "message": "Saving with Thundy is blocked."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Enter the approval password to save this file."
+  },
+  "attachmentFailed": {
+    "message": "Could not start saving the attachment."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy could not read this attachment."
+  },
+  "attachmentContextChanged": {
+    "message": "The message or attachment changed. Select the attachment again."
+  },
+  "attachmentDecisionChanged": {
+    "message": "The result or policy changed. Review the updated decision."
+  },
+  "attachmentSaveRequested": {
+    "message": "Save request started."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Save cancelled."
+  },
+  "auditDecisionScore": {
+    "message": "Decision score"
+  },
+  "linkHandoffPending": {
+    "message": "The browser handoff was requested. Thunderbird has not confirmed it yet. You can close this dialog."
+  },
+  "linkPreflightTimeout": {
+    "message": "The check could not be completed. Close this dialog and select the link again."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Historical Hybrid Analysis finding"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Current Hybrid Analysis finding"
+  },
+  "auditShare": {
+    "message": "Export redacted audit"
+  },
+  "auditFullNotice": {
+    "message": "The full audit contains private URLs and details. Share it only with authorized recipients."
+  },
+  "auditFullSave": {
+    "message": "Export full audit"
   }
 };
     function get(key, params = []) {

@@ -171,7 +171,7 @@ class ApiGateway {
     async fetchWithTimeout(url, options = {}, timeout = 15000) {
         const diagnostic=typeof ThundyApiDiagnostics!=='undefined'?ThundyApiDiagnostics:null;
         const ticket=diagnostic?await diagnostic.start(url,this._injectAuthHeaders(url,options)):null;
-        const trace={attempts:[]};
+        const trace={attempts:[],ticket};
         try {return await this._fetchWithTimeout(url,options,timeout,ticket===null?null:trace);}
         catch(error){if(!trace.reason&&diagnostic)trace.reason=diagnostic.classify(error);if(diagnostic&&!trace.errorCode)trace.errorCode=diagnostic.code(error);throw error;}
         finally {if(ticket!==null)await diagnostic.finish(ticket,trace);}
@@ -229,6 +229,7 @@ class ApiGateway {
         let release,releaseSubmission;
         try {
             if(typeof ThundyProviders !== 'undefined') { const {provider,config,scope}=ThundyProviders.identify(url,options.method);if((options.method||'GET').toUpperCase()==='POST'&&scope==='url'&&config.submitConcurrency)releaseSubmission=await this.acquire('submit:'+provider,controller.signal,config.submitConcurrency); }
+            if(trace)await ThundyApiDiagnostics.progress(trace.ticket,'queue',{state:'running'});
             release = await this.acquire(hostname || new URL(url).hostname, controller.signal);
             options.analysisContext?.guard?.();
             if (options.keyTestAuthorization) await options.keyTestAuthorization();
@@ -243,9 +244,11 @@ class ApiGateway {
                 const blocked=currentBackoff();
                 if(blocked){if(response)break;return localResponse(blocked);}
                 if (info && !started) { emit({ phase: 'start' }); started = true; }
+                if(trace)await ThundyApiDiagnostics.progress(trace.ticket,'attempt',{state:'running',count:attempt+1});
                 const attemptAt=Date.now();
                 response = await fetch(url, fetchOptions);
                 if(trace){const type=response.headers?.get?.('content-type')||'';trace.attempts.push({status:response.status,durationMs:Math.max(0,Date.now()-attemptAt),contentType:!type?'missing':/json/i.test(type)?'json':/html/i.test(type)?'html':/^text\//i.test(type)?'text':'other'});trace.reason=ThundyApiDiagnostics.classify(null,response.status);}
+                if(trace)await ThundyApiDiagnostics.progress(trace.ticket,'response',{httpStatus:response.status,durationMs:Math.max(0,Date.now()-attemptAt)});
                 responded = true;
                 const rate=this.rateHeaders(response,ratePolicy);quota=rate.quota;retrySeconds=rate.seconds;cooldownKey=rate.key||rateKey;
                 if(response.status===429||quota.quotaRemaining===0&&retrySeconds!==null){
@@ -254,6 +257,7 @@ class ApiGateway {
                 }
                 const isGet=(options.method||'GET').toUpperCase()==='GET';
                 if(!isGet||![429,503].includes(response.status)||retrySeconds===null||retrySeconds>2||attempt===2)break;
+                if(trace)await ThundyApiDiagnostics.progress(trace.ticket,'wait',{reason:'rate_limited',durationMs:Math.max(1,Math.ceil(retrySeconds))*1000});
                 await this.pause(Math.max(1,Math.ceil(retrySeconds))*1000,controller.signal);
             }
             // Provider responses are JSON. Keep the slot, abort signal and deadline
@@ -262,7 +266,8 @@ class ApiGateway {
             if ((response.body || info) && typeof response.json === 'function') {
                 let data;
                 try { data = await response.json(); }
-                catch(error) { if(trace){trace.bodyState='invalid_json';if(response.status>=200&&response.status<300)trace.reason='invalid_json';}if(response.status>=200&&response.status<300)throw error;data=null; }
+                catch(error) { if(trace){await ThundyApiDiagnostics.progress(trace.ticket,'parse',{state:'failed',reason:'invalid_json'});trace.bodyState='invalid_json';if(response.status>=200&&response.status<300)trace.reason='invalid_json';}if(response.status>=200&&response.status<300)throw error;data=null; }
+                if(trace)await ThundyApiDiagnostics.progress(trace.ticket,'parse',{state:trace.bodyState==='invalid_json'?'failed':'complete'});
                 data=this.sanitizeResponse(data,fetchOptions);
                 if(trace){trace.bodyState=trace.bodyState||'json';trace.response=ThundyApiDiagnostics.project(data);}
                 await options.analysisContext?.validateResponse?.(data);

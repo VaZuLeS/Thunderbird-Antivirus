@@ -323,6 +323,38 @@ test('inventory provider index preserves resource ownership, source order and de
  }finally{dom.window.close();}
 });
 
+test('message and popup distinguish a flagged attachment from clean links and compare findings only for the same target', async () => {
+ const a=model(),catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json'));
+ const labels=a.labels(key=>catalog[key]?.message);
+ for(const surface of ['message','popup']){
+  const dom=new JSDOM('<html lang="en"><body></body></html>');
+  try{
+   const requests=[];
+   const c=vm.createContext({document:dom.window.document,Date,labels,browser:{runtime:{
+    sendMessage:async request=>{requests.push(JSON.parse(JSON.stringify(request)));return {success:true,dialog:true};}
+   }}});
+   vm.runInContext('globalThis.render='+a.render.toString(),c);
+   const row=(provider,scope,resource,verdict,signals=[])=>({provider,scope,resource,verdict,signals,state:'checked',source:'stored'});
+   const data={messageId:7,attachmentActions:true,local:{state:'checked',score:5},rows:[
+    row('hybridanalysis','report','attachment:1.2','malicious',[{code:'threat_score',value:93}]),
+    row('urlscan','url','link:0','none')
+   ],resourceLabels:{'attachment:1.2':'document.pdf','link:0':'https://example.invalid/doc?x=5#view'}};
+   const root=c.render(data,labels,'',{surface}).shadowRoot;
+   const inventory=()=>[...root.querySelectorAll('[data-key="overview-resources"] li')];
+   assert.match(root.textContent,new RegExp(labels.analysisSimpleDanger));
+   assert.ok(!root.textContent.includes(labels.analysisConflict));
+   assert.match(inventory()[0].textContent,/Hybrid Analysis.*93 \/ 100/);
+   assert.match(inventory()[1].textContent,/example\.invalid\/doc\?x=5#view.*urlscan/);
+   inventory()[0].querySelector('button').click();
+   await new Promise(setImmediate);
+   assert.deepEqual(requests,[{action:'startAttachmentDownload',messageId:7,partName:'1.2'}]);
+   c.render({...data,rows:[...data.rows,row('hybridanalysis','report','link:0','suspicious')]},labels,'',{surface});
+   assert.match(inventory()[1].textContent,/urlscan.*Hybrid Analysis/);
+   assert.ok(root.textContent.includes(labels.analysisConflict));
+  }finally{dom.window.close();}
+ }
+});
+
 test('Hybrid Analysis API v2 Quick-Scan and Overview payloads classify id, finished, whitelisted and scanners_v2 accurately',()=>{
  const a=model();
  assert.deepEqual({...a.spec('https://hybrid-analysis.com/api/v2/quick-scan/64f123')},{provider:'hybridanalysis',scope:'report'});
@@ -595,5 +627,17 @@ test('newer stored reports recover failed source rows without rewriting earlier 
   const stable=JSON.stringify(m.data);a.refreshStored(m,current);assert.equal(JSON.stringify(m.data),stable);
   for(const source of ['remote','attempt']){const live=a.create(a.legacy(original));live.data.rows[0].source=source;const unchanged=JSON.stringify(live.data);a.refreshStored(live,current);assert.equal(JSON.stringify(live.data),unchanged);}
   const active=a.create(a.legacy(original));active.data.rows[0].active=1;const unchanged=JSON.stringify(active.data);a.refreshStored(active,current);assert.equal(JSON.stringify(active.data),unchanged);
+ }
+});
+
+test('message score is visible in both views across six languages, with unavailable separate from zero',()=>{
+ for(const lang of ['en','de','fr','es','it','pl']){
+  const dom=new JSDOM('<body></body>'),c=vm.createContext({document:dom.window.document,URL,Date});vm.runInContext(source+';globalThis.a=ThundyAnalysis;',c);
+  const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=c.a.labels(k=>catalog[k]?.message);
+  try{for(const score of [0,40,100]){
+   const data={local:{state:'checked',score,reasons:score?['Local warning']:[]},rows:[]};const host=c.a.render(data,labels),root=host.shadowRoot;
+   for(let i=0;i<2;i++){const visible=[...root.querySelectorAll('.local-score')].filter(n=>!n.closest('[hidden]'));assert.equal(visible.length,1);assert.ok(visible[0].textContent.includes(score+' / 100'));root.querySelector('[data-focus-key=view-switch]').click();}
+   data.local={state:'failed',score:null};c.a.render(data,labels);assert.ok([...root.querySelectorAll('.local-score')].every(n=>!n.textContent.includes('0 / 100')));
+  }}finally{dom.window.close();}
  }
 });

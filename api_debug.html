@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="script-src 'self';"><title data-i18n="diagTitle">API diagnostics</title><link rel="stylesheet" href="theme.css"><link rel="stylesheet" href="api_debug.css"><script src="design_system.js"></script><script src="theme.js"></script><script src="i18n.js"></script><script src="api_debug.js" defer></script></head>
+<body class="admin-page"><main>
+<header class="scanner-header"><img src="img/icon-48px.png" width="40" height="40" alt=""><div><strong class="scanner-brand">Thundy AV</strong><h1 data-i18n="diagTitle">API diagnostics</h1></div><a href="options.html" data-i18n="bannerOpenOptions">Open settings</a></header>
+<p data-i18n="diagHelp"></p>
+<form id="diagAuth"><label><span data-i18n="securityUnlockPassword"></span><input id="diagPassword" type="password" autocomplete="current-password" maxlength="1024"></label><button type="submit" data-i18n="securityUnlock"></button></form>
+<button type="button" id="diagLock" data-i18n="securityLock" hidden></button>
+<p id="diagStatus" role="status" aria-live="polite"></p>
+<section id="diagView" hidden>
+<div class="diag-actions"><button type="button" id="diagPause" data-i18n="diagPause"></button><button type="button" id="diagExport" data-i18n="apiDebugExport"></button><button type="button" id="diagClear" data-i18n="apiDebugClear"></button></div>
+<form id="diagFilters" class="diag-filters"><label><span data-i18n="diagProvider"></span><select id="diagProvider"><option value="" data-i18n="diagAll"></option></select></label><label><span data-i18n="diagState"></span><select id="diagState"><option value="" data-i18n="diagAll"></option></select></label><label><span data-i18n="diagPurpose"></span><select id="diagPurpose"><option value="" data-i18n="diagAll"></option></select></label><label><span data-i18n="diagFrom"></span><input id="diagFrom" type="datetime-local"></label><label><span data-i18n="diagTo"></span><input id="diagTo" type="datetime-local"></label><button type="button" id="diagReset" data-i18n="diagReset"></button></form>
+<p id="diagSummary" aria-live="polite"></p>
+<div class="diag-layout"><section aria-labelledby="diagListTitle"><h2 id="diagListTitle" data-i18n="diagRuns"></h2><ul id="diagRuns" class="diag-runs"></ul></section><section class="card" id="diagDetail" aria-labelledby="diagDetailTitle"><h2 id="diagDetailTitle" data-i18n="diagDetails"></h2><div id="diagContent"></div></section></div>
+</section></main></body></html>

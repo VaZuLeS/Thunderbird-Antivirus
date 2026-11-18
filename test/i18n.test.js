@@ -85,7 +85,7 @@ test('fresh popup without API credentials renders local risk and HTML actions wi
     vm.runInContext(api, context);
     await context.initialization;
     const text = dom.window.document.body.textContent;
-    assert.ok(text.includes('Risk score: 0 of 100'));
+    assert.ok(text.includes(catalogs.en.localScoreMessage.message+': 0 / 100'));
     assert.ok(text.includes('local.html'));
     assert.ok(text.includes('Sanitize and download'));
     const notice = dom.window.document.getElementById('thundy-consent-notice');

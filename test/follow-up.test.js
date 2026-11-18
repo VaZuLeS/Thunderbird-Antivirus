@@ -16,7 +16,7 @@ test('authentication parser ignores prose, comments, suffixes and malformed synt
  for(const result of ['fail','softfail'])assert.equal(c.evaluateAuthHeaders(['mx; spf='+result+'; spf=pass; dkim=pass; dmarc=pass'],0,[]).authStatus,'fail');
  assert.equal(c.parseAuthenticationResults(['mx; spf=temperror']).spf[0],'temperror');
 });
-function audit(stored={}){let writes=0;const c=vm.createContext({TextEncoder,crypto:crypto.webcrypto,browser:{storage:{local:{get:async()=>structuredClone(stored),set:async values=>{writes++;Object.assign(stored,structuredClone(values))}}}}});vm.runInContext(fs.readFileSync('runtime.js','utf8')+'\n'+fs.readFileSync('link_audit.js','utf8'),c);return {c,stored,writes:()=>writes};}
+function audit(stored={}){let writes=0;const c=vm.createContext({TextEncoder,setTimeout,clearTimeout,crypto:crypto.webcrypto,browser:{storage:{local:{get:async()=>structuredClone(stored),set:async values=>{writes++;Object.assign(stored,structuredClone(values))}}}}});vm.runInContext(fs.readFileSync('runtime.js','utf8')+'\n'+fs.readFileSync('link_audit.js','utf8'),c);return {c,stored,writes:()=>writes};}
 test('read-only audit skips unchanged writes but persists pruning and profile creation',async()=>{
  const a=audit();await a.c.readLinkAudit();assert.equal(a.writes(),1);await a.c.readLinkAudit();assert.equal(a.writes(),1);
  a.stored.linkAuditLog=[{id:'old',clickedAt:0}];await a.c.readLinkAudit();assert.equal(a.writes(),2);assert.equal(a.stored.linkAuditLog.length,0);

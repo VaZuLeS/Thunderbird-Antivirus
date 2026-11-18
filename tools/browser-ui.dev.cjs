@@ -14,6 +14,7 @@ const {
 } = require("./message-flow.dev.cjs");
 const root = path.resolve(__dirname, ".."),
   addonFiles = [
+    "api_debug.html",
     "options.html",
     "onboarding.html",
     "enterprise_setup.html",
@@ -110,10 +111,12 @@ function matrix(o, kinds) {
         for (const scheme of o.matrix === "smoke"
           ? ["dark"]
           : ["light", "dark"])
+          for(const density of file==="api_debug.html"?["comfortable","compact"]:[undefined])
           cases.push({
-            id: `addon-${file}-${lang}-${file === "popup.html" ? Math.max(600, width) : width}-${scheme}`,
+            id: `addon-${file}-${lang}-${file === "popup.html" ? Math.max(600, width) : width}-${scheme}${density?"-"+density:""}`,
             kind: "addon",
             view: file,
+            density,
             url: "/" + file,
             lang,
             width: file === "popup.html" ? Math.max(600, width) : width,
@@ -124,19 +127,22 @@ function matrix(o, kinds) {
       for (const scheme of o.matrix === "smoke"
         ? ["dark"]
         : ["light", "dark"]) {
-        for (const file of ["popup.html", "audit.html"])
+        for (const file of ["popup.html", "audit.html", "api_debug.html"])
+          for(const density of file==="api_debug.html"?["comfortable","compact"]:[undefined])
           cases.push({
-            id: `addon-${file}-populated-${lang}-${file === "popup.html" ? Math.max(600, width) : width}-${scheme}`,
+            id: `addon-${file}-populated-${lang}-${file === "popup.html" ? Math.max(600, width) : width}-${scheme}${density?"-"+density:""}`,
             kind: "addon",
             view: file,
+            density,
             url: "/" + file,
             lang,
             width: file === "popup.html" ? Math.max(600, width) : width,
             scheme,
             populated: true,
           });
-        cases.push({
-          id: `message-${lang}-${width}-${scheme}`,
+        for (const density of ["comfortable","compact"]) cases.push({
+          id: `message-${lang}-${width}-${scheme}-${density}`,
+          density,
           kind: "message",
           view: "message",
           url: "/message-fixture",
@@ -146,14 +152,14 @@ function matrix(o, kinds) {
         });
       }
   // Dedicated state matrices exercise the real page scripts with synthetic APIs.
-  for (const file of ['security.html','source_export.html'])
+  for (const file of ['security.html','source_export.html','hybrid_report.html','attachment_download.html'])
     for (const lang of langs)
       for (const width of o.matrix === 'smoke' ? [360] : [320,1280])
         for (const scheme of o.matrix === 'smoke' ? ['dark'] : ['light','dark'])
           for (const density of ['comfortable','compact'])
-            for (const scenario of file === 'security.html' ? ['ready','pending','failed','expired','opened'] : ['empty','ready','pending','unavailable','changed','saved','failed'])
+            for (const scenario of file === 'security.html' ? ['ready','pending','failed','expired','opened'] : file === 'hybrid_report.html' ? ['ready','unavailable'] : file === 'attachment_download.html' ? ['ready','blocked'] : ['empty','ready','pending','unavailable','changed','saved','failed'])
               cases.push({id:`addon-${file}-${scenario}-${lang}-${width}-${scheme}-${density}`,kind:'addon',view:file,
-                url:'/'+file+(file === 'security.html' ? '?approval=synthetic-challenge' : '?messageId=42&contextToken=synthetic-context'),
+                url:'/'+file+(file === 'security.html' ? '?approval=synthetic-challenge' : ['hybrid_report.html','attachment_download.html'].includes(file) ? '#12345678-1234-4234-8234-123456789abc' : '?messageId=42&contextToken=synthetic-context'),
                 lang,width,scheme,density,scenario});
   const selected = (o.view ? cases.filter((c) => c.view === o.view) : cases).filter(c => o.zoom === 1 || c.width >= 600);
   if (selected.length === 0) throw Error("UI_VIEW_INVALID");
@@ -273,6 +279,53 @@ async function interaction(page, c) {
         "complete export changed after filter",
       );
     }
+  } else if (c.view === 'attachment_download.html') {
+    await page.locator('#attachmentDecision').waitFor();
+    assert.equal(await page.locator('#attachmentName').textContent(),'fixture.pdf');
+    assert.equal(await page.locator('#attachmentSaveForm').isVisible(),c.scenario!=='blocked');
+    assert.equal(await page.locator('#attachmentCancel').evaluate(el=>el===document.activeElement),true);
+    if (c.scenario === 'blocked') {
+      assert.equal(await page.locator('#attachmentConfirm').isVisible(),false);
+      assert.equal(await page.evaluate(()=>uiTest.attachmentSaves || 0),0);
+    } else {
+      await page.locator('#attachmentConfirm').press('Enter');
+      await page.waitForFunction(()=>uiTest.attachmentSaves===1);
+    }
+  } else if (c.view === 'hybrid_report.html') {
+    await page.waitForFunction(()=>!document.getElementById('hybridReportFilters').hidden || !!document.getElementById('hybridReportStatus').textContent);
+    if(c.scenario==='unavailable')assert.equal(await page.locator('#hybridReportContent').textContent(),'');
+    else {
+      assert.equal(await page.locator('#hybridReportSelect option').count(),2);
+      assert.ok((await page.locator('#hybridReportOverview').textContent()).includes('?value=1#fragment'));
+      const comparison = page.locator('#hybridReportComparison');
+      await comparison.locator('summary').press('Enter');
+      await comparison.locator('button[data-run="1"]').press('Enter');
+      assert.equal(await page.locator('#hybridReportSelect').inputValue(),'1');
+      assert.equal(await page.locator('#hybridReportOverview h2').evaluate(el=>el===document.activeElement),true);
+      assert.ok((await page.locator('.report-explanation').textContent()).includes('90'));
+      await page.locator('#hybridReportSearch').fill('indicator-1');
+      assert.ok((await page.locator('#hybridReportContent').textContent()).includes('indicator-1.invalid'));
+      assert.equal(await page.locator('#hybridReportContent a').count(),0);
+      await page.locator('#hybridReportSearch').focus();await page.keyboard.press('Tab');
+      assert.equal(await page.evaluate(()=>uiTest.reportReads),1);
+      await page.locator('#hybridReportSearch').fill('');
+    }
+  } else if (c.view === 'api_debug.html') {
+    const catalog=JSON.parse(fs.readFileSync(path.join(root,'_locales',c.lang,'messages.json')));
+    await page.waitForFunction(()=>!!document.getElementById('diagStatus').textContent);
+    if(c.populated){
+      await page.locator('#diagRuns button').waitFor();
+      await page.locator('#diagPause').focus();await page.keyboard.press('Enter');
+      assert.equal(await page.locator('#diagPause').textContent(),catalog.diagResume.message);
+      await page.locator('#diagProvider').selectOption('urlscan');assert.equal(await page.locator('#diagRuns button').count(),0);
+      await page.locator('#diagReset').click();assert.equal(await page.locator('#diagRuns button').count(),1);
+      await page.locator('#diagRuns button').focus();await page.keyboard.press('Enter');
+      await page.locator('#diagContent summary').first().focus();await page.keyboard.press('Enter');
+      assert.equal(await page.locator('#diagContent details').first().getAttribute('open'),'');
+      await page.locator('#diagExport').click();await page.waitForFunction(()=>uiTest.downloads.length===1);
+      await page.locator('#diagClear').click();assert.equal(await page.locator('#diagRuns button').count(),0);
+    }else{assert.equal(await page.locator('#diagStatus').textContent(),catalog.diagOff.message);assert.equal(await page.locator('#diagExport').isDisabled(),true);}
+    assert.equal(await page.evaluate(()=>uiTest.permissionRequests),0);
   } else if (c.view === 'security.html') {
     const catalog=JSON.parse(fs.readFileSync(path.join(root,'_locales',c.lang,'messages.json')));
     if(c.scenario === 'expired') {
@@ -352,6 +405,17 @@ async function interaction(page, c) {
     assert.equal(await page.evaluate(()=>uiTest.permissionRequests),0);
   } else if (c.view === "options.html") {
     await page.locator('#analysisDisplayForm').waitFor();
+    const attachmentMode=page.locator('select[data-security="attachmentPolicyMode"]');
+    const attachmentThreshold=page.locator('input[data-security="attachmentScoreThreshold"]');
+    const attachmentUnknown=page.locator('select[data-security="attachmentUnknownSetting"]');
+    assert.equal(await attachmentMode.inputValue(),'off');
+    assert.equal(await attachmentThreshold.inputValue(),'70');
+    await attachmentMode.selectOption('block');
+    await attachmentThreshold.fill('83');
+    await attachmentUnknown.selectOption('block');
+    await page.locator('#securitySettingsForm button[type="submit"]').click();
+    await page.waitForFunction(()=>uiTest.attachmentPolicy?.threshold===83);
+    assert.deepEqual(await page.evaluate(()=>uiTest.attachmentPolicy),{mode:'block',threshold:83,unknown:'block'});
     await page.locator('#analysisDefaultView').selectOption('expert');
     assert.equal(await page.locator('#settingsDirty').evaluate(el=>el.hidden),true,'display preferences marked unrelated settings as unsaved');
     await page.locator('#analysisShowHybridDetails').uncheck();
@@ -584,6 +648,8 @@ async function interaction(page, c) {
       await page.locator("#auditOutcome").selectOption("ABORTED");
       assert.equal(await page.locator("#auditRows tr").count(), 1);
       await page.locator("#auditJson").click();
+      assert.ok(await page.locator("#auditFullCancel").evaluate(el=>document.activeElement===el));
+      await page.locator("#auditFullSave").click();
       await page.waitForFunction(() => uiTest.downloads.length === 1);
       const downloaded = JSON.parse(
         await page.evaluate(() => uiTest.downloads[0].content),
@@ -613,6 +679,11 @@ async function interaction(page, c) {
           .update(JSON.stringify(downloaded.payload))
           .digest("hex"),
       );
+      await page.locator("#auditShare").click();
+      await page.waitForFunction(() => uiTest.downloads.length === 2);
+      const redacted=await page.evaluate(()=>uiTest.downloads[1].content);
+      assert.equal(JSON.parse(redacted).payload.kind,'thundy-link-audit-redacted');
+      assert.doesNotMatch(redacted,/example\.invalid|synthetic-abort|profileId|reasons/);
       await page.locator("#auditOutcome").selectOption("");
       assert.equal(await page.locator("#auditRows tr").count(), 2);
     }
@@ -764,7 +835,7 @@ async function main() {
           if (o.zoom !== 1) await page.evaluate(zoom => { document.documentElement.style.zoom = String(zoom); }, o.zoom);
           Object.assign(result, await checks(page, c));
           await interaction(page, c);
-          if (["security.html","source_export.html"].includes(c.view)) Object.assign(result,await checks(page,c));
+          if (["security.html","source_export.html","api_debug.html","hybrid_report.html","attachment_download.html"].includes(c.view)) Object.assign(result,await checks(page,c));
           // The options interaction explicitly imports a light appearance profile.
           if (c.view === "options.html") Object.assign(result,await checks(page,{...c,scheme:'light'}));
           if (c.kind === "message")

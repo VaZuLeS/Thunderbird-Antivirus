@@ -266,7 +266,7 @@ async function clickDialog(status = 'UNKNOWN', open = async () => ({ success: tr
     const dom = new JSDOM('<a href="https://example.com/path?token=secret">Visit</a>', { url: 'https://mail.invalid/' });
     const sent = [];
     const context = vm.createContext({ document: dom.window.document, URL, browser: { runtime: { sendMessage: async payload => {
-        sent.push(payload); return payload.action === 'checkLinkState' ? { status, reasons: ['Provider result'] } : open(payload);
+        sent.push(payload); return payload.action === 'checkLinkState' ? typeof status==='string'?{ status, reasons: ['Provider result'] }:status : open(payload);
     } } }, args: injected.args });
     vm.runInContext('(' + injected.func.toString() + ')(...args)', context);
     const link = dom.window.document.querySelector('a');
@@ -388,7 +388,7 @@ test('audited link decisions persist URL, local score and provider verdict indep
     assert.equal(opened.success, true);
     const data = await state.context.readLinkAudit(); assert.equal(data.records.length, 1);
     const record = data.records[0]; assert.equal(record.outcome, 'OPENED'); assert.equal(record.url, request.url);
-    assert.equal(record.score, result.score); assert.equal(record.scoreSource, 'local-message-and-link');
+    assert.equal(record.score, result.score); assert.equal(record.scoreSource, 'decision-message-and-link');
     assert.equal(record.verdictAtDecision, 'UNKNOWN'); assert.ok(record.decidedAt >= record.clickedAt);
     assert.equal(state.requests.length, 0); assert.ok(data.profileId);
     assert.equal((await state.context.handleOpenAuditedLink(request, auditSender)).success, false);
@@ -585,8 +585,10 @@ test('disabled external analysis exposes local-only status and stored findings w
 test('urlscan submission is visible before its later report and VirusTotal IP scope is distinct', {timeout:15000}, async()=>{
  const s=setup({externalAnalysisConsent:true,privacyTier:'max',urlscanApikey:'url-key',ipReputationProvider:'virustotal',ipReputationApiKey:'ip-key'},true);await s.context.configure();
  s.context.fetch=async(url)=>({status:200,ok:true,json:async()=>url.includes('/scan/')?{uuid:'scan-id'}:url.includes('/result/')?{verdicts:{overall:{malicious:true}}}:{data:{attributes:{last_analysis_stats:{malicious:2}}}}});
+ const nativeTimer=s.context.setTimeout;let releasePoll;s.context.setTimeout=(fn,ms)=>ms===30000?(releasePoll=fn,0):nativeTimer(fn,ms);
  const ctx=await s.context.getMessageAnalysisContext(s.message);const pending=s.context.checkUrlscanIo('https://example.net/','url-key',ctx);await new Promise(resolve=>setImmediate(resolve));
- assert.equal(ctx.model.data.rows.find(r=>r.provider==='urlscan').state,'submitted');await pending;assert.equal(ctx.model.data.rows.find(r=>r.provider==='urlscan').verdict,'malicious');
+ assert.ok(releasePoll,'fresh scan waits before fetching its result');
+ assert.equal(ctx.model.data.rows.find(r=>r.provider==='urlscan').state,'submitted');releasePoll();s.context.setTimeout=nativeTimer;await pending;assert.equal(ctx.model.data.rows.find(r=>r.provider==='urlscan').verdict,'malicious');
  await s.context.checkIPReputation(['from sender ([8.8.8.8])'],ctx);assert.ok(ctx.model.data.rows.some(r=>r.provider==='virustotal'&&r.scope==='ip'&&r.verdict==='malicious'));await ctx.flush();
 });
 
@@ -888,7 +890,7 @@ test('affected input is repaired without mutating native trees and reaches the l
  s.context.calculateThreatScore=(author,urls,options)=>{received.push({urls:Array.from(urls),text:options.messageText});return calculate(author,urls,options);};
  const result=await new Promise(resolve=>s.listeners.at(-1)({action:'getLocalRisk',messageId:7},{},resolve));
  assert.equal(result.status,'success');assert.equal(result.threat.coverage.state,'checked');
- assert.equal(received[0].text,'https://example.invalid/ż ');assert.deepEqual(received[0].urls,['https://example.invalid/ż']);
+ assert.equal(received[0].text,'https://example.invalid/ż ');assert.deepEqual(received[0].urls,['https://example.invalid/%C5%BC']);
  assert.equal(f.reads.length,2);assert.equal(f.reads[1].options.decodeContent,false);
  assert.equal(JSON.stringify(f.full),before);assert.equal(JSON.stringify(f.raw),rawBefore);assert.equal(s.requests.length,0);
  (await s.context.getMessageAnalysisContext(s.message)).dispose();
@@ -1026,4 +1028,340 @@ test('authorized cache clearing uses the same cancellation and notification path
  const result=await new Promise(resolve=>s.listeners.at(-1)({action:'clearMemoryCaches'},{},resolve));
  await new Promise(setImmediate);assert.equal(result.success,true);assert.equal(cancellation.clear,true);assert.equal(cancellation.silent,true);
  assert.equal(context.disposed,true);assert.ok(notifications.some(value=>value.action==='memoryCachesCleared'));
+});
+
+test('a stalled provider cannot indefinitely block explicit opening with default policy; late verdicts do not rewrite decisions',async()=>{
+ const s=setup();await s.context.configure();let finish;const clock=auditClock(s);
+ s.context.handleCheckLinkState=(_request,_sender,resolve)=>{finish=resolve;};
+ const request=auditRequest(),checking=s.context.handleAuditedLinkCheck(request,auditSender);
+ while(!finish)await new Promise(setImmediate);await clock.advance(5000);
+ const result=await checking;assert.equal(result.status,'UNKNOWN');assert.equal(result.check.errorCode,'LINK_CHECK_TIMEOUT');assert.equal(result.check.observedAt,null);
+ let opened=0;s.context.browser.windows.openDefaultBrowser=async()=>{opened++;};
+ assert.equal((await s.context.handleOpenAuditedLink(request,auditSender)).success,true);
+ finish({status:'MALICIOUS',provider:'late provider'});await new Promise(setImmediate);
+ const record=(await s.context.readLinkAudit()).records[0];assert.equal(record.outcome,'OPENED');assert.equal(record.verdictAtDecision,'UNKNOWN');assert.equal(opened,1);
+});
+test('unavailable providers with default settings remain unknown and can be explicitly confirmed',async()=>{
+ const s=setup();await s.context.configure();s.context.handleCheckLinkState=(_request,_sender,resolve)=>resolve({status:'UNKNOWN',check:{origin:'none',outcome:'missing_key',observedAt:null}});
+ const request=auditRequest(),result=await s.context.handleAuditedLinkCheck(request,auditSender);assert.equal(result.status,'UNKNOWN');assert.notEqual(result.protection?.required,true);
+ assert.equal((await s.context.handleOpenAuditedLink(request,auditSender)).success,true);assert.equal((await s.context.readLinkAudit()).records[0].verdictAtDecision,'UNKNOWN');
+});
+test('source storage failures expose only a fixed safe exception name and clear it after recovery',async()=>{
+ const s=setup({},true);await s.context.configure();sourceRecords(s,{links:[]});const ctx=await s.context.getMessageAnalysisContext(s.message);
+ const save=s.context.updateStore;s.context.updateStore=async()=>{throw Object.assign(new Error('PRIVATE_PATH_CANARY'),{name:'QuotaExceededError'});};
+ await ctx.flush();let snapshot=await ctx.snapshot();assert.equal(snapshot.sourcePersistenceReason,'storage_failed');assert.equal(snapshot.sourcePersistenceError,'QuotaExceededError');assert.ok(!JSON.stringify(snapshot).includes('PRIVATE_PATH_CANARY'));
+ s.context.updateStore=save;await ctx.flush();snapshot=await ctx.snapshot();assert.equal(snapshot.sourcePersistenceError,null);ctx.dispose();
+});
+
+
+test('local-only checks return their own complete score and reasons without provider verdicts',async()=>{
+ for(const [url,score] of [['https://example.com/',0],['https://unrelated.invalid/',40],['https://paypa1.com/',100]]){
+  const s=setup();await s.context.configure();s.full.parts[0].body='Visit '+url;
+  const result=await s.context.handleAuditedLinkCheck({...auditRequest(),url},auditSender);
+  assert.equal(result.status,'UNKNOWN');assert.equal(result.score,score);assert.equal(result.local.score,score);assert.equal(result.local.state,'checked');assert.equal(result.local.scope,'link-in-message');assert.equal(s.requests.length,0);
+  assert.deepEqual(Array.from(result.local.reasons),Array.from((await s.context.readLinkAudit()).records[0].reasons));
+ }
+});
+test('local score and reasons are visible before switching to the expert link view',async()=>{
+ for(const score of [0,40,100]){
+  const f=await clickDialog({status:'UNKNOWN',local:{state:'checked',score,reasons:score?['Local warning']:[]},check:{origin:'none',outcome:'disabled'}});
+  try{const text=f.root.querySelector('.local-score');assert.ok(text.textContent.includes(score+' / 100'));assert.equal(text.hidden,false);assert.equal(text.closest('[hidden]'),null);
+   if(score)assert.equal(f.root.querySelector('[data-source=local]').hidden,false);
+   const switcher=[...f.root.querySelectorAll('button')].find(b=>!b.closest('footer'));switcher.click();assert.equal(text.hidden,false);switcher.click();assert.equal(text.hidden,false);
+  }finally{f.dom.window.close();}
+ }
+});
+test('local read failures remain unavailable instead of a zero score',async()=>{
+ const s=setup();await s.context.configure();s.context.browser.messages.getFull=async()=>{throw Error('read failure');};
+ const result=await s.context.handleAuditedLinkCheck(auditRequest(),auditSender);assert.equal(result.local.state,'failed');assert.equal(result.local.score,null);assert.equal(result.score,null);assert.equal(s.requests.length,0);
+ const f=await clickDialog(result);try{assert.ok(!f.root.querySelector('.local-score').textContent.includes('0 / 100'));assert.equal(f.root.querySelector('.local-score').closest('[hidden]'),null);}finally{f.dom.window.close();}
+});
+
+test('a failed source context does not discard an already calculated local popup score',async()=>{
+ const s=setup();await s.context.configure();s.full.parts[0].body='Visit https://paypa1.com/';s.context.getMessageAnalysisContext=async()=>{throw Error('source cache unavailable');};
+ const result=await new Promise(resolve=>s.listeners.at(-1)({action:'getLocalRisk',messageId:7},{},resolve));assert.equal(result.status,'success');assert.equal(result.threat.score,100);assert.equal(s.requests.length,0);
+});
+
+test('a stalled source context does not hold a calculated local popup score',{timeout:2000},async()=>{
+ const s=setup();await s.context.configure();s.full.parts[0].body='Visit https://paypa1.com/';s.context.getMessageAnalysisContext=()=>new Promise(()=>{});
+ const result=await new Promise(resolve=>s.listeners.at(-1)({action:'getLocalRisk',messageId:7},{},resolve));assert.equal(result.status,'success');assert.equal(result.threat.score,100);assert.equal(s.requests.length,0);
+});
+
+test('message URL inventory retains actual HTML targets and provider-excluded hosts independently',async()=>{
+ const s=setup();await s.context.configure();
+ const full={parts:[{contentType:'text/html',body:'<style>https://style.invalid/</style><script>https://script.invalid/</script><a href="HTTPS://GITHUB.COM/project?a=1&amp;b=2#part">https://decoy.invalid/</a><a href="https://example.com/path/">Open</a><p>HTTPS://MICROSOFT.COM/help</p><img src="https://pixel.invalid/">'},{contentType:'text/plain',name:'file.txt',body:'https://attachment.invalid/'}]};
+ const urls=Array.from(s.context.messageUrlInventory(full));
+ assert.deepEqual(urls,['https://github.com/project?a=1&b=2#part','https://example.com/path/','https://microsoft.com/help']);
+ assert.deepEqual(Array.from(s.context.filterUrls(urls)),['https://example.com/path/']);assert.equal(s.requests.length,0);
+});
+
+test('stored link verdicts and urlscan writes never cross path, query or fragment boundaries',async()=>{
+ const s=setup();await s.context.configure();
+ const urls=['https://example.com/path','https://example.com/path/','https://example.com/path?a=1','https://example.com/path?a=2','https://example.com/path#one','https://example.com/path#two'];
+ const links=urls.map(url=>({url,state:'UNKNOWN',urlscan:{status:'MALICIOUS'}}));
+ const records=sourceRecords(s,{links});
+ for(const url of urls){
+  for(const link of links)link.urlscan={status:link.url===url?'CLEAN':'MALICIOUS',assessment:{assessmentVersion:1,completion:'complete',signals:[{code:'overall',verdict:link.url===url?'none':'malicious'}]}};
+  const result=await new Promise(resolve=>s.context.handleCheckLinkState({url,messageId:7},auditSender,resolve));assert.equal(result.status,'CLEAN',url);
+  await s.context.persistUrlscanLinkResult(s.message,url,{status:'SUSPICIOUS'});
+  assert.equal(links.filter(link=>link.urlscan.status==='SUSPICIOUS').length,1);assert.equal(links.find(link=>link.url===url).urlscan.status,'SUSPICIOUS');
+ }
+ assert.equal(records.get(s.message.headerMessageId).links.length,6);
+ assert.equal(s.context.sameAnalysisUrl('HTTPS://EXAMPLE.COM:443','https://example.com/'),true);assert.equal(s.context.sameAnalysisUrl('invalid','invalid'),false);
+});
+
+test('local scoring includes provider-excluded URLs and ignores an HTML anchor decoy',async()=>{
+ const s=setup();await s.context.configure();s.message.author='Alice <alice@unrelated.invalid>';
+ s.full.parts=[{contentType:'text/html',body:'<a href="https://github.com/project">https://unrelated.invalid/</a>'}];
+ const result=await new Promise(resolve=>s.listeners.at(-1)({action:'getLocalRisk',messageId:7},{},resolve));
+ assert.ok(result.threat.score>0);assert.equal(s.requests.length,0);
+});
+
+test('local attachment lookup skips all file APIs without relevant stored findings',async()=>{
+ const s=setup();await s.context.configure();let listed=0,read=0;
+ s.context.browser.messages.listAttachments=async()=>{listed++;return [];};s.context.browser.messages.getAttachmentFile=async()=>{read++;return new Promise(()=>{});};
+ for(const record of [null,{attachments:[]},{attachments:[{partName:'1',hybrid_sha256:'a'.repeat(64),report:{verdict:'no specific threat',finished:true}}]}]){
+  s.context.getFromStore=async()=>record;assert.equal((await s.context.collectAttachmentFindings(s.message)).length,0);
+ }
+ assert.equal(listed,0);assert.equal(read,0);
+});
+
+test('attachment findings hash only relevant parts once per evaluation and reject changed actual bytes',async()=>{
+ const s=setup();await s.context.configure();const hash=await s.context.get_sha256_hash(new TextEncoder().encode('test'));
+ sourceRecords(s,{attachments:[{partName:'1',hybrid_sha256:hash,state:'KNOWN',report:{verdict:'malicious'}},{partName:'1',hybrid_sha256:hash,virustotal_stats:{malicious:1}},{partName:'2',hybrid_sha256:'a'.repeat(64),report:{verdict:'no specific threat'}}]});
+ s.context.browser.messages.listAttachments=async()=>[{partName:'1',name:'relevant.txt',size:4},{partName:'2',name:'unrelated.txt',size:4}];let bytes='test';const reads=[];
+ s.context.browser.messages.getAttachmentFile=async(_id,part)=>{reads.push(part);assert.equal(part,'1');return new File([bytes],'relevant.txt');};
+ let findings=await s.context.collectAttachmentFindings(s.message);assert.equal(findings.length,2);assert.deepEqual(reads,['1']);
+ bytes='changed';findings=await s.context.collectAttachmentFindings(s.message);assert.equal(findings.length,0);assert.deepEqual(reads,['1','1']);
+});
+
+test('local revisions are allocated before asynchronous reads and older computations cannot overwrite the source score',async()=>{
+ const s=setup({},true);await s.context.configure();const ctx=await s.context.getMessageAnalysisContext(s.message);
+ const earlier=s.context.beginLocalAssessment(7),later=s.context.beginLocalAssessment(7);
+ s.context.recordLocalCoverage(ctx,{state:'checked'},{score:100,reasons:['current'],assessment:later});
+ s.context.recordLocalCoverage(ctx,{state:'checked'},{score:0,reasons:[],assessment:earlier});
+ assert.equal(ctx.model.data.local.score,100);assert.equal(ctx.model.data.local.assessment.revision,later.revision);ctx.dispose();
+ let release;let reads=0;s.context.browser.messages.getFull=()=>++reads===1?new Promise(resolve=>{release=resolve;}):Promise.resolve(s.full);
+ const call=id=>new Promise(resolve=>s.listeners.at(-1)({action:'getLocalRisk',messageId:7,requestId:id},{},resolve));
+ const old=call('old');while(!release)await new Promise(setImmediate);const current=await call('current');release(s.full);const previous=await old;
+ assert.ok(previous.threat.assessment.revision<current.threat.assessment.revision);assert.equal(previous.threat.assessment.requestId,'old');assert.equal(current.threat.assessment.messageId,7);
+ vm.runInContext('messageAnalyses.clear()',s.context);
+});
+
+function auditClock(state){
+ let now=Date.now(),next=0;const timers=new Map();
+ state.context.Date=class extends Date{static now(){return now;}};
+ state.context.setTimeout=(fn,ms)=>{const id=++next;timers.set(id,{fn,at:now+ms});return id;};state.context.clearTimeout=id=>timers.delete(id);
+ return {advance:async ms=>{now+=ms;for(let round=0;round<20;round++){await new Promise(setImmediate);const due=[...timers].filter(([,t])=>t.at<=now);if(!due.length)break;for(const [id,t]of due){timers.delete(id);t.fn();}}}};
+}
+
+test('a stalled initial audit write does not block the local score; late persistence remains PENDING',async()=>{
+ const s=setup();await s.context.configure();const clock=auditClock(s);let release;const original=s.context.browser.storage.local.set;
+ s.context.browser.storage.local.set=values=>new Promise(resolve=>{release=async()=>{await original(structuredClone(values));resolve();};});
+ const request=auditRequest('slow_initial'),checking=s.context.handleAuditedLinkCheck(request,auditSender);
+ while(!release)await new Promise(setImmediate);await clock.advance(5000);
+ const result=await checking;assert.equal(result.auditSaved,false);assert.equal(typeof result.score,'number');
+ await release();await new Promise(setImmediate);
+ const record=s.config.linkAuditLog[0];assert.equal(record.outcome,'PENDING');assert.equal(record.decidedAt,null);assert.equal(record.openAttempts,0);
+});
+
+test('audit timeouts retain real serialization and expired queued edits never execute later',async()=>{
+ const s=setup();await s.context.configure();const clock=auditClock(s);const original=s.context.browser.storage.local.set;
+ let release,writes=0,edited=false;
+ s.context.browser.storage.local.set=values=>{writes++;return new Promise(resolve=>{release=async()=>{await original(structuredClone(values));resolve();};});};
+ const first=s.context.editLinkAudit(records=>records.unshift({id:'first',clickedAt:Date.now(),outcome:'PENDING'}));const firstRejected=assert.rejects(first,{code:'AUDIT_STORAGE_TIMEOUT'});
+ while(!release)await new Promise(setImmediate);
+ const second=s.context.editLinkAudit(records=>{edited=true;records.unshift({id:'must-not-appear',clickedAt:Date.now(),outcome:'OPENED'});});const secondRejected=assert.rejects(second,{code:'AUDIT_STORAGE_TIMEOUT'});
+ await clock.advance(5000);await Promise.all([firstRejected,secondRejected]);assert.equal(writes,1);assert.equal(edited,false);
+ await release();await new Promise(setImmediate);assert.equal(edited,false);assert.equal(s.config.linkAuditLog.length,1);assert.equal(s.config.linkAuditLog[0].outcome,'PENDING');
+ s.context.browser.storage.local.set=original;assert.equal((await s.context.readLinkAudit()).records.length,1);
+});
+
+test('audit initialization reads and post-opening commits are bounded without replaying an accepted opening',async()=>{
+ for(const stage of ['initial_read','final_write']){
+  const s=setup();await s.context.configure();const request=auditRequest(stage),clock=auditClock(s);let opens=0,release;
+  s.context.browser.windows.openDefaultBrowser=async()=>{opens++;};
+  if(stage==='initial_read'){
+   const get=s.context.browser.storage.local.get;s.context.browser.storage.local.get=keys=>Array.isArray(keys)&&keys.includes('linkAuditLog')?new Promise(resolve=>{release=()=>resolve({});}):get(keys);
+   const checking=s.context.handleAuditedLinkCheck(request,auditSender);while(!release)await new Promise(setImmediate);await clock.advance(5000);
+   assert.equal((await checking).auditSaved,false);release();await new Promise(setImmediate);assert.equal(s.config.linkAuditLog.length,0);
+  }else{
+   await s.context.handleAuditedLinkCheck(request,auditSender);const set=s.context.browser.storage.local.set;
+   s.context.browser.storage.local.set=values=>new Promise(resolve=>{release=async()=>{await set(structuredClone(values));resolve();};});
+   const opening=s.context.handleOpenAuditedLink(request,auditSender);while(!release)await new Promise(setImmediate);await clock.advance(5000);
+   const result=await opening;assert.equal(result.success,true);assert.equal(result.auditSaved,false);assert.equal(opens,1);
+   assert.equal((await s.context.handleOpenAuditedLink(request,auditSender)).success,false);assert.equal(opens,1);
+   await release();assert.equal(s.config.linkAuditLog[0].outcome,'OPENED');assert.equal(s.config.linkAuditLog[0].openAttempts,1);
+  }
+ }
+});
+
+test('admin link evaluation accepts actual message targets even when providers exclude their domains',async()=>{
+ const s=setup();await s.context.configure();
+ s.context.ThundySecurity={read:async()=>({policy:{enabled:true}}),defaults:{},decision:()=>({required:false})};
+ s.context.getMessageAnalysisContext=async()=>({scanJob:null});
+ vm.runInContext(fs.readFileSync('security_links.js','utf8')+'\nglobalThis.linkSecurity=ThundyLinkSecurity;',s.context);
+ for(const url of ['https://github.com/project','https://microsoft.com/help?x=1&y=2#part']){
+  s.full.parts=[{contentType:'text/html',body:'<a href="'+url.replaceAll('&','&amp;')+'">https://decoy.invalid/</a>'}];
+  assert.equal(s.context.filterUrls([url]).length,0);
+  const result=await s.context.linkSecurity.evaluate({messageId:7,url,verdict:'UNKNOWN'},auditSender);assert.equal(typeof result.fingerprint,'string');
+  await assert.rejects(s.context.linkSecurity.evaluate({messageId:7,url:'https://decoy.invalid/'},auditSender),/LINK_CONTEXT_CHANGED/);
+ }
+ assert.equal(s.requests.length,0);
+});
+
+test('injected warning banners reject out-of-order scores and clear a superseded warning',async()=>{
+ const s=setup();await s.context.configure();const dom=new JSDOM('<body></body>');
+ const context=vm.createContext({document:dom.window.document});
+ async function render(score,revision,runtimeId='runtime-a'){
+  await s.context.injectThreatBanner(1,{score,reasons:['warning'],assessment:{messageId:7,runtimeId,revision}});
+  const injected=s.injections.at(-1);context.args=injected.args;vm.runInContext('('+injected.func.toString()+')(...args)',context);
+ }
+ try{await render(100,2);assert.ok(dom.window.document.getElementById('thundy-threat-banner'));
+  await render(0,1);assert.ok(dom.window.document.getElementById('thundy-threat-banner'));
+  await render(0,3);assert.equal(dom.window.document.getElementById('thundy-threat-banner'),null);
+  await render(100,2);assert.equal(dom.window.document.getElementById('thundy-threat-banner'),null);
+  await render(100,1,'runtime-b');assert.ok(dom.window.document.getElementById('thundy-threat-banner'));
+  await render(0,100,'runtime-a');assert.ok(dom.window.document.getElementById('thundy-threat-banner'));
+ }finally{dom.window.close();}
+});
+
+test('cancelled interactions cannot wait indefinitely for the final audit write',async()=>{
+ const s=setup();await s.context.configure();const request=auditRequest('slow_cancel'),clock=auditClock(s);
+ await s.context.handleAuditedLinkCheck(request,auditSender);let release;const set=s.context.browser.storage.local.set;
+ s.context.browser.storage.local.set=values=>new Promise(resolve=>{release=async()=>{await set(structuredClone(values));resolve();};});
+ const cancel=s.context.handleCancelAuditedLink({...request,reason:'escape'},auditSender);
+ while(!release)await new Promise(setImmediate);await clock.advance(5000);assert.equal((await cancel).success,false);
+ assert.equal((await s.context.handleOpenAuditedLink(request,auditSender)).success,false);
+ await release();assert.equal(s.config.linkAuditLog[0].outcome,'ABORTED');assert.equal(s.config.linkAuditLog[0].cancelReason,'escape');
+});
+
+test('provider timeout does not invent an admin requirement, while unavailable policy stays protected',async()=>{
+ for(const stalledPolicy of [false,true]){
+  const s=setup();await s.context.configure();const clock=auditClock(s);let provider;
+  s.context.ThundySecurity={read:stalledPolicy?()=>new Promise(()=>{}):async()=>({policy:{enabled:false}})};
+  s.context.ThundyLinkSecurity={evaluate:async()=>{throw Error('must not evaluate a disabled or unreadable policy');}};
+  s.context.handleCheckLinkState=(_request,_sender,resolve)=>{provider=resolve;};
+  const check=s.context.handleAuditedLinkCheck(auditRequest('policy_'+stalledPolicy),auditSender);
+  while(!provider)await new Promise(setImmediate);await clock.advance(5000);const result=await check;
+  assert.equal(result.status,'UNKNOWN');assert.equal(result.protection?.required===true,stalledPolicy);
+ }
+});
+
+async function manualUploadFixture(){
+ const s=setup({apikey:'synthetic-key',externalAnalysisConsent:true,privacyTier:'balanced'});await s.context.configure();
+ const digest=await s.context.get_sha256_hash(await new File(['test'],'actual.txt').arrayBuffer());
+ const records=sourceRecords(s,{messageHeader:s.message.headerMessageId,attachments:[{partName:'1',attachment_name:'actual.txt',hybrid_sha256:digest,hybrid_job_id:'old-job',report:{verdict:'malicious'},report_fetched_at:'2026-10-01T00:00:00Z'}]});
+ s.context.browser.messages.getAttachmentFile=async()=>new File(['test'],'actual.txt');
+ const posts=[];s.context.fetch=async(url,options)=>{posts.push({url,options});return {status:201,ok:true,json:async()=>({id:'accepted-quick-scan',sha256:digest})};};
+ return {...s,digest,records,posts,upload:(hash=digest,key=s.message.headerMessageId)=>s.context.handleManualUpload(7,'1','untrusted-name.txt',hash,key)};
+}
+
+test('manual uploads reject foreign storage keys, wrong hashes, changed bytes and ambiguous slots before POST',async()=>{
+ for(const problem of ['key','hash','bytes','missing','duplicate']){
+  const s=await manualUploadFixture();const record=s.records.get(s.message.headerMessageId);
+  if(problem==='bytes')s.context.browser.messages.getAttachmentFile=async()=>new File(['changed'],'actual.txt');
+  if(problem==='missing')s.records.clear();if(problem==='duplicate')record.attachments.push({...record.attachments[0]});
+  const before=JSON.stringify([...s.records]);
+  await assert.rejects(s.upload(problem==='hash'?'a'.repeat(64):s.digest,problem==='key'?'unrelated-record':undefined),{code:'MESSAGE_CONTEXT_CHANGED'});
+  assert.equal(s.posts.length,0,problem);assert.equal(JSON.stringify([...s.records]),before,problem);
+ }
+});
+
+test('manual uploads transmit verified bytes and Thunderbird filename, accepting a missing or uppercase response hash',async()=>{
+ for(const hashKind of ['missing','uppercase']){
+  const s=await manualUploadFixture();s.context.fetch=async(url,options)=>{s.posts.push({url,options});return {status:201,ok:true,json:async()=>({id:'accepted',...(hashKind==='uppercase'?{sha256:s.digest.toUpperCase()}: {})})};};
+  const result=await s.upload(s.digest.toUpperCase());assert.equal(result.sha256,s.digest);assert.equal(s.posts.length,1);
+  const file=s.posts[0].options.body.get('file');assert.equal(file.name,'actual.txt');assert.equal(await file.text(),'test');
+  assert.equal(s.records.get(s.message.headerMessageId).attachments[0].hybrid_quick_scan_id,'accepted');
+ }
+});
+
+test('a foreign provider hash is not assigned and the response records that the upload was sent',async()=>{
+ const s=await manualUploadFixture(),before=JSON.stringify([...s.records]);
+ s.context.fetch=async()=>{s.posts.push('POST');return {status:201,ok:true,json:async()=>({id:'foreign-job',sha256:'b'.repeat(64)})};};
+ await assert.rejects(s.upload(),error=>error.code==='RESOURCE_MISMATCH'&&error.uploadSent===true);
+ assert.equal(s.posts.length,1);assert.equal(JSON.stringify([...s.records]),before);
+});
+
+test('a late manual response cannot overwrite another resource or a later submission',async()=>{
+ for(const change of ['bytes','reference','deleted']){
+  const s=await manualUploadFixture();let release;
+  s.context.fetch=async()=>{s.posts.push('POST');return await new Promise(resolve=>{release=()=>resolve({status:201,ok:true,json:async()=>({id:'late-job',sha256:s.digest})});});};
+  const upload=s.upload();while(!release)await new Promise(setImmediate);
+  const record=s.records.get(s.message.headerMessageId);
+  if(change==='bytes')record.attachments[0].hybrid_sha256='b'.repeat(64);
+  if(change==='reference')record.attachments[0].hybrid_quick_scan_id='newer-accepted-job';
+  if(change==='deleted')s.records.clear();
+  const before=JSON.stringify([...s.records]);release();await assert.rejects(upload,error=>error.code==='RESOURCE_MISMATCH'&&error.uploadSent===true);
+  assert.equal(JSON.stringify([...s.records]),before);assert.equal(s.posts.length,1);
+ }
+});
+
+test('consent withdrawal during manual file hashing prevents the POST',async()=>{
+ const s=await manualUploadFixture(),hash=s.context.get_sha256_hash;let release;
+ s.context.get_sha256_hash=async bytes=>{await new Promise(resolve=>{release=resolve;});return hash(bytes);};
+ const upload=s.upload();while(!release)await new Promise(setImmediate);vm.runInContext('externalAnalysisConsent=false;',s.context);release();
+ await assert.rejects(upload,{code:'EXTERNAL_ANALYSIS_DISABLED'});assert.equal(s.posts.length,0);
+});
+
+test('the upload RPC preserves the sent-but-unassigned distinction for the popup',async()=>{
+ const s=await manualUploadFixture();s.context.fetch=async()=>({status:201,ok:true,json:async()=>({id:'foreign',sha256:'b'.repeat(64)})});
+ const result=await new Promise(resolve=>s.listeners.at(-1)({action:'uploadAttachment',messageId:7,partName:'1',attachmentName:'untrusted-name.txt',hash:s.digest,headerMessageId:s.message.headerMessageId},{id:'test',url:'popup.html'},resolve));
+ assert.equal(result.status,'error');assert.equal(result.code,'RESOURCE_MISMATCH');assert.equal(result.uploadSent,true);
+});
+
+test('oversized manual attachments are rejected before allocating their bytes',async()=>{
+ const s=await manualUploadFixture();let reads=0;
+ s.context.browser.messages.getAttachmentFile=async()=>({size:26*1024*1024,arrayBuffer:async()=>{reads++;throw Error('must not allocate');}});
+ await assert.rejects(s.upload(),error=>error.code==='RESOURCE_MISMATCH'&&!error.uploadSent);assert.equal(reads,0);assert.equal(s.posts.length,0);
+});
+
+test('a newer resource reference during manual hashing prevents the POST',async()=>{
+ const s=await manualUploadFixture(),hash=s.context.get_sha256_hash;let release;
+ s.context.get_sha256_hash=async bytes=>{await new Promise(resolve=>{release=resolve;});return hash(bytes);};
+ const upload=s.upload();while(!release)await new Promise(setImmediate);
+ s.records.get(s.message.headerMessageId).attachments[0].hybrid_quick_scan_id='newer-before-send';release();
+ await assert.rejects(upload,{code:'MESSAGE_CONTEXT_CHANGED'});assert.equal(s.posts.length,0);
+});
+
+test('manual uploads use current credentials and policy after the last storage wait',async()=>{
+ for(const change of ['key','removed-key','consent','tier']){
+  const s=await manualUploadFixture(),get=s.context.getFromStore;let reads=0,release;
+  s.context.getFromStore=async(...args)=>{if(++reads===2)await new Promise(resolve=>{release=resolve;});return get(...args);};
+  const upload=s.upload();while(!release)await new Promise(setImmediate);
+  const assignments={key:"apikey_hybridanalysis='rotated-key'",'removed-key':"apikey_hybridanalysis=''",consent:'externalAnalysisConsent=false',tier:"privacyTier='strict'"};
+  vm.runInContext(assignments[change],s.context);release();
+  if(change==='key'){await upload;assert.equal(s.posts.length,1);assert.equal(s.posts[0].options.headers['api-key'],'rotated-key');}
+  else{await assert.rejects(upload);assert.equal(s.posts.length,0,change);}
+ }
+});
+
+test('a provider finding adjusts the decision value independently of the sender marker and heuristic', async () => {
+ const s=setup({customWhitelist:['example.invalid']});await s.context.configure();
+ const options={replyTo:'help@reply.invalid'};
+ const plain=s.context.calculateThreatScore('sender@example.invalid',['https://destination.invalid/'],options);
+ const enriched=s.context.calculateThreatScore('sender@example.invalid',['https://destination.invalid/'],
+  {...options,attachmentFindings:[{name:'Fixture.txt',verdict:'malicious',provider:'Hybrid Analysis'}]});
+ assert.ok(plain.heuristicReasons.some(reason=>/allowlist|whitelist/i.test(reason)));
+ assert.ok(plain.heuristicScore>=50);assert.equal(enriched.heuristicScore,plain.heuristicScore);
+ assert.ok(enriched.score>enriched.heuristicScore);
+ assert.equal(enriched.riskModelVersion,2);assert.ok(enriched.providerReasons.length>0);
+});
+
+test('a delayed OS acknowledgement leaves PENDING, prevents replay and resolves the original interaction once', async () => {
+ const s=setup();await s.context.configure();const clock=auditClock(s),req=auditRequest('delayed_native');
+ await s.context.handleAuditedLinkCheck(req,auditSender);
+ let resolve,dispatches=0;
+ s.context.handleOpenCheckedLink=async()=>{dispatches++;return {handoff:new Promise(done=>{resolve=done;})};};
+ const opening=s.context.handleOpenAuditedLink(req,auditSender);
+ while(!resolve)await new Promise(setImmediate);
+ await clock.advance(5000);
+ assert.equal((await opening).code,'LINK_HANDOFF_PENDING');
+ assert.equal(s.config.linkAuditLog[0].outcome,'PENDING');assert.equal(s.config.linkAuditLog[0].decidedAt,null);
+ assert.equal((await s.context.handleOpenAuditedLink(req,auditSender)).success,false);
+ assert.equal((await s.context.handleCancelAuditedLink(req,auditSender)).success,false);
+ resolve({success:true});await new Promise(setImmediate);
+ assert.equal(dispatches,1);assert.equal(s.config.linkAuditLog[0].outcome,'OPENED');
+ assert.equal(s.config.linkAuditLog[0].openAttempts,1);
 });

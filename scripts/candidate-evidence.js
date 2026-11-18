@@ -62,6 +62,7 @@ function validateReports(identity, thunderbird, browserUi) {
     const { matrix } = require('../tools/browser-ui.dev.cjs');
     const expected = matrix({ matrix: 'full', zoom: 1 }, ['alerts', 'capacity-alerts', 'capacity', 'cases', 'events', 'health', 'heartbeats', 'storage']);
     const versionParts=identity.extensionVersion.split('.').map(Number);
+    const baseline = require('./release-upgrade-baselines.json')[identity.extensionVersion];
     if(versionParts[0]>1 || versionParts[0]===1 && (versionParts[1]>25 || versionParts[1]===25 && versionParts[2]>=1)) {
         const automatic=thunderbird.some(r=>r.passed===true&&!r.error&&r.extensionVersion===identity.extensionVersion&&r.xpiSha256===identity.packageSha256&&r.automaticScans?.passed===true&&r.automaticScans.bothProvidersWithoutLinkClick===true&&r.automaticScans.popupClosedDuringRetry===true&&r.automaticScans.duplicateDisplayReused===true&&r.automaticScans.unlisted===true&&r.automaticScans.syntheticTransport===true&&r.providerResults?.passed===true&&r.providerResults.partialMaliciousBlocks===true&&r.providerResults.terminalUnknownRetainsFinding===true&&r.providerResults.brandDoesNotEscalate===true&&r.providerResults.refreshWithoutSubmission===true&&r.providerResults.bothViewsAgree===true);
         if(!automatic)throw new Error('Missing package-bound automatic scan acceptance');
@@ -80,7 +81,17 @@ function validateReports(identity, thunderbird, browserUi) {
             if(!thunderbird.some(r=>matches(r)&&r.scanCoverage?.passed===true&&r.scanCoverage.baselineObserved===false&&r.scanCoverage.realThunderbirdAPIs===true&&r.scanCoverage.syntheticTransport===true&&r.scanCoverage.injectedInventoryFailure===true&&r.scanCoverage.liveProviderCalls===false&&r.scanCoverage.state==='incomplete'&&r.scanCoverage.assessmentIncomplete===true&&r.scanCoverage.coverage?.attachments?.readFailed===1&&r.scanCoverage.visibleState===true&&r.scanCoverage.visiblePopup===true&&r.scanCoverage.sourceCapacityPreserved===true&&r.scanCoverage.sourceCapacityReason==='source_capacity'))throw Error('Missing scan coverage acceptance: '+target);
             if((versionParts[0]>1||versionParts[1]>25||versionParts[2]>=6)&&!thunderbird.some(r=>matches(r)&&r.hybridStoredRefresh?.liveProviderCalls===false&&['passed','realThunderbirdAPIs','realIndexedDB','syntheticProviderPayload','pendingAdvanced','sameContext','messageView','popupView','capacityReasonVisible','historyPreserved','auditPreserved','readCountersStable','storedVerdictRetained','unfinishedReportPreserved','localFindingAgrees','storedSnapshotAgrees'].every(key=>r.hybridStoredRefresh?.[key]===true)))throw Error('Missing stored Hybrid result refresh acceptance: '+target);
             if((versionParts[0]>1||versionParts[1]>25||versionParts[2]>=7)&&!thunderbird.some(r=>matches(r)&&r.apiDebug?.liveProviderCalls===false&&["passed", "realThunderbirdAPIs", "adminProtected", "backgroundCaptured", "popupCaptured", "httpStatusVisible", "invalidJsonVisible", "exportVerified", "secretsRedacted", "noExtraRequests", "auditPreserved", "disabledCleared", "syntheticTransport"].every(key=>r.apiDebug?.[key]===true)))throw Error('Missing API debug acceptance: '+target);
+            if((versionParts[0]>1||versionParts[1]>25||versionParts[2]>=9)&&!thunderbird.some(r=>matches(r)&&['viewerPassed','viewerDocumentSession','viewerReadOnly','viewerFilterPause','viewerExportVerified','viewerLockCleared'].every(key=>r.apiDebug?.[key]===true)))throw Error('Missing API debug viewer acceptance: '+target);
+            if((versionParts[0]>1||versionParts[1]>25||versionParts[2]>=9)&&!thunderbird.some(r=>matches(r)&&['passed', 'realThunderbirdAPIs', 'syntheticStoredData', 'compactInline', 'separateReports', 'searchWorks', 'textOnly', 'noProviderRequests', 'auditPreserved', 'resourcesPreserved'].every(key=>r.hybridReportView?.[key]===true)&&r.hybridReportView.liveProviderCalls===false))throw Error('Missing Hybrid report viewer acceptance: '+target);
+            if((versionParts[0]>1||versionParts[1]>25||versionParts[2]>=9)&&!thunderbird.some(r=>matches(r)&&['passed', 'realThunderbirdAPIs', 'realIndexedDB', 'syntheticTransport', 'refusedBeforePost', 'mismatchPreserved', 'uploadSentReported', 'actualBytesVerified', 'actualFilenameUsed', 'matchingReferenceSaved', 'singlePostPerExplicitAttempt', 'auditPreserved'].every(key=>r.manualUploadBinding?.[key]===true)&&r.manualUploadBinding.liveProviderCalls===false))throw Error('Missing manual upload binding acceptance: '+target);
+            if((versionParts[0]>1||versionParts[1]>25||versionParts[2]>=9)&&!thunderbird.some(r=>matches(r)&&['passed', 'realThunderbirdAPIs', 'syntheticObservations', 'reportsAndLegacyUnchanged', 'isolatedResponseMessage', 'responsesWithoutVerdict'].every(key=>r.storedSources?.[key]===true)&&r.storedSources.baseline===false&&r.storedSources.externalConsent===false))throw Error('Missing isolated stored source acceptance: '+target);
             if((versionParts[0]>1||versionParts[1]>25||versionParts[2]>=8)&&!thunderbird.some(r=>matches(r)&&r.failedStoredRecovery?.liveProviderCalls===false&&["passed", "realThunderbirdAPIs", "realIndexedDB", "syntheticProviderPayload", "messageView", "popupView", "earlierFailuresPreserved", "responseCountersPreserved", "storedSnapshotAgrees", "localFindingAgrees", "auditPreserved", "idempotent"].every(key=>r.failedStoredRecovery?.[key]===true)))throw Error('Missing failed stored result recovery acceptance: '+target);
+            if (versionParts[0]>1 || versionParts[1]>25 || versionParts[2]>=9) {
+                if (!thunderbird.some(r=>matches(r)&&['passed','inline','popup','menu','archive','settings','linkedReport','originalBytes','noProviderRequests']
+                    .every(key=>r.attachmentDownload?.[key]===true))) throw Error('Missing native attachment protection acceptance: '+target);
+                if (!thunderbird.some(r=>matches(r)&&['passed','realThunderbirdAPIs','acceptedOnce','realOsReceiver','acceptedWithoutOsDispatch']
+                    .every(key=>r.linkHandoff?.[key]===true))) throw Error('Missing native link handoff acceptance: '+target);
+            }
             if(!thunderbird.some(r=>matches(r)&&r.cryptoContent?.passed===true&&r.cryptoContent.synthetic===true&&r.cryptoContent.realThunderbirdAPIs===true&&r.cryptoContent.liveProviderCalls===false&&['openpgpDecrypted','smimeSignedReadable','smimeEnvelopeConservative','attachmentBytesVerified'].every(key=>r.cryptoContent[key]===true)))throw Error('Missing crypto input acceptance: '+target);
         }
     }
@@ -93,16 +104,29 @@ function validateReports(identity, thunderbird, browserUi) {
                 report.client?.capabilities?.browserName === 'thunderbird' && Number.isInteger(report.gracefulRestarts) && report.gracefulRestarts >= 2 && Number.isInteger(report.forcedRestarts) && report.forcedRestarts >= 2 && historicalRecordsPreserved(report) &&
                 report.previousRestart?.storagePreserved === true && current?.storagePreserved === true && current.addon?.version === identity.extensionVersion && current.addon.active === true &&
                 report.previousRestart?.addon?.version === report.previousInstallation?.extensionVersion && report.previousRestart.addon.version !== identity.extensionVersion && current.auditRecordsPreserved >= 3 &&
+                (!baseline || (report.previousInstallation.extensionVersion === baseline.version && report.previousXpiSha256 === baseline.sha256 &&
+                    report.backupRestore?.passed === true && report.backupRestore.restoredVersion === baseline.version &&
+                    Number.isInteger(report.backupRestore.snapshotRecordsPreserved) && report.backupRestore.snapshotRecordsPreserved >= 3)) &&
                 report.acknowledgedCrashRecovery?.storagePreserved === true && report.acknowledgedCrashRecovery.extraOsDispatches === 0 &&
                 pending?.storagePreserved === true && pending.decisionNotInvented === true && pending.extraOsDispatches === 0 &&
                 pending.record?.outcome === 'PENDING' && pending.record.decidedAt === null && pending.record.openAttempts === 0 &&
                 Array.isArray(report.finalAuditRecords) && report.finalAuditRecords.some(record => record.id === pending.record.id && record.outcome === 'PENDING' && record.decidedAt === null);
         };
+        if (baseline) {
+            for (const target of ['minimum','current']) {
+                if (!thunderbird.some(report => validUpgrade(report) && report.clientMatrixTarget === target)) {
+                    throw Error('Missing pinned upgrade/crash/restore evidence from '+baseline.version+': '+target+'/'+lang);
+                }
+            }
+        }
         if(versionParts[0]>1||versionParts[0]===1&&(versionParts[1]>25||versionParts[1]===25&&versionParts[2]>=5)) {
             for(const target of ['minimum','current']) {
                 const flags=['passed','realThunderbirdAPIs','realDownloadsAPI','nativeFilePicker','exportedSavedPolicy','explicitUiImport','previewReadOnly','cancelPreserved','unrelatedDataPreserved','v1Compatible','noConsentOrPermissionGrant','noProviderRequests','appearanceProfileCompatible'];
                 if(!thunderbird.some(r=>validUpgrade(r)&&r.clientMatrixTarget===target&&flags.every(key=>r.protectionProfile?.[key]===true)))throw Error('Missing native protection profile acceptance: '+target+'/'+lang);
             }
+        }
+        if(versionParts[0]>1||versionParts[0]===1&&(versionParts[1]>25||versionParts[1]===25&&versionParts[2]>=9))for(const target of ['minimum','current']){
+            if(!thunderbird.some(r=>r.passed===true&&!r.error&&r.extensionVersion===identity.extensionVersion&&r.xpiSha256===identity.packageSha256&&r.clientMatrixTarget===target&&(r.uiLanguage||'').split('-')[0]===lang&&['passed','realThunderbirdAPIs','linkVisible','overviewVisible','popupVisible','noExternalServices'].every(key=>r.localScoreVisibility?.[key]===true)))throw Error('Missing native local score visibility: '+target+'/'+lang);
         }
         const tb = thunderbird.find(validUpgrade);
         if (!tb) throw new Error('Missing package-bound real Thunderbird upgrade/crash evidence: ' + lang);

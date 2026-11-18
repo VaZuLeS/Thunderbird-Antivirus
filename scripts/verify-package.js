@@ -40,15 +40,24 @@ const ALLOWED_FILES = [
   'api.js',
   'api_gateway.js',
   'api_diagnostics.js',
+  'api_debug.html',
+  'api_debug.js',
+  'api_debug.css',
   'provider_results.js',
   'provider_registry.js',
   'security.js',
   'security_links.js',
   'security_client.js',
   'security_page.js',
+  'attachment_download.js',
+  'attachment_download.html',
+  'attachment_download_page.js',
   'security.html',
   'security.css',
   'analysis_status.js',
+  'hybrid_report.js',
+  'hybrid_report.html',
+  'hybrid_report.css',
   'source_export.js',
   'source_export.html',
   'options.html',
@@ -95,15 +104,24 @@ const REQUIRED_FILES = [
   'api.js',
   'api_gateway.js',
   'api_diagnostics.js',
+  'api_debug.html',
+  'api_debug.js',
+  'api_debug.css',
   'provider_results.js',
   'provider_registry.js',
   'security.js',
   'security_links.js',
   'security_client.js',
   'security_page.js',
+  'attachment_download.js',
+  'attachment_download.html',
+  'attachment_download_page.js',
   'security.html',
   'security.css',
   'analysis_status.js',
+  'hybrid_report.js',
+  'hybrid_report.html',
+  'hybrid_report.css',
   'source_export.js',
   'source_export.html',
   'options.html',
@@ -140,7 +158,8 @@ const FORBIDDEN = [
 // First-install wizard adds six-language instructions, UI and bundled fallback.
 // 1.24.6 ships 47 allowlisted files including analysis_status, source_export and remote provider parsers.
 // Generator sources stay excluded; retain a small, explicit size budget.
-const MAX_UNCOMPRESSED_BYTES = 1400 * 1024;
+// Includes the dedicated diagnostic viewer and six-language flow labels.
+const MAX_UNCOMPRESSED_BYTES = 1640 * 1024;
 
 /**
  * Picks the artifact to check. `web-ext` writes one ZIP per version into the
