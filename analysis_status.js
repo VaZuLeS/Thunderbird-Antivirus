@@ -192,7 +192,7 @@ const ThundyAnalysis = (() => {
             const hvVerdict = ({MALICIOUS:'malicious',SUSPICIOUS:'suspicious',CLEAN:'none'})[item.hybrid_verdict?.status];
             if (hvVerdict && item.url) {
                 const info = { provider: 'hybridanalysis', scope: 'url', resource };
-                if (!documented.has(rowKey(info))) model.event({ ...info, phase: 'cache', state: 'checked', verdict: hvVerdict, observedAt: Number.isFinite(item.hybrid_verdict.observedAt) ? item.hybrid_verdict.observedAt : null });
+                if (!documented.has(rowKey(info))) model.event({ ...info, phase: 'cache', state: item.hybrid_verdict.completion === 'incomplete' ? 'incomplete' : 'checked', verdict: hvVerdict, observedAt: Number.isFinite(item.hybrid_verdict.observedAt) ? item.hybrid_verdict.observedAt : null });
             }
             // A URL verdict and a pending raw report are distinct observations.
             if (report || !(hvVerdict && item.url) && ['KNOWN', 'UPLOADED'].includes(item.state)) {

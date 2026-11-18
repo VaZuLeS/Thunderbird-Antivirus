@@ -220,16 +220,17 @@ test('a live Hybrid Analysis link verdict is persisted and restored into the pro
     const context = vm.createContext({ Logger: { error() {} }, getSharedDB: async () => ({}), updateStore: async (_db, _store, _key, edit) => edit(record) });
     loadUrlContract(context);
     loadSlice('background.js', 'persistHybridLinkVerdict', context);
-    await context.persistHybridLinkVerdict({ headerMessageId: 'm' }, 'https://x.invalid/', { status: 'MALICIOUS', check: { observedAt: 1234 } });
-    assert.deepEqual(JSON.parse(JSON.stringify(record.links[0].hybrid_verdict)), { status: 'MALICIOUS', observedAt: 1234 });
+    await context.persistHybridLinkVerdict({ headerMessageId: 'm' }, 'https://x.invalid/', { status: 'MALICIOUS', check: { outcome:'incomplete', observedAt: 1234 } });
+    assert.deepEqual(JSON.parse(JSON.stringify(record.links[0].hybrid_verdict)), { status: 'MALICIOUS', observedAt: 1234, completion:'incomplete' });
     assert.equal(record.links[1].hybrid_verdict, undefined);
 
     const statusContext = vm.createContext({ console });
     vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('analysis_status.js', 'utf8')), statusContext);
     const analysis = vm.runInContext('typeof ThundyAnalysis !== "undefined" ? ThundyAnalysis : this.ThundyAnalysis', statusContext);
-    const data = analysis.legacy({ links: [{ url: 'https://x.invalid/', state: 'UPLOADED', hybrid_verdict: { status: 'MALICIOUS', observedAt: 1234 } }] });
+    const data = analysis.legacy({ links: [{ url: 'https://x.invalid/', state: 'UPLOADED', hybrid_verdict: record.links[0].hybrid_verdict }] });
     const row = data.rows.find(r => r.provider === 'hybridanalysis');
     assert.equal(row.verdict, 'malicious');
+    assert.equal(row.state, 'incomplete');
     assert.equal(row.scope, 'url');
 });
 
