@@ -1440,28 +1440,53 @@ def check_hybrid_popup(m, base, out, report, display, baseline=False, actions=Fa
 
 def check_stored_sources(m, base, out, report, display, baseline=False):
     """Actual source RPCs and both views, synthetic stored metadata, no provider calls."""
+    # A response with no verdict must not share the report-bearing message:
+    # normal display preparation may legitimately rebind its verified findings.
+    fixture=out/'responses-without-verdict.eml'
+    mail=EmailMessage(policy=SMTP)
+    mail['From']='responses@example.invalid';mail['To']='receiver@example.invalid'
+    mail['Subject']='Thundy responses without verdict'
+    mail['Message-ID']='<responses-without-verdict@example.invalid>'
+    mail.set_content('Synthetic response accounting fixture without resources.')
+    fixture.write_bytes(mail.as_bytes())
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      const root=MailServices.accounts.localFoldersServer.rootFolder;root.createSubfolder("Response Accounting",null);
+      const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+      MailServices.copy.copyFileMessage(file,root.getChildNamed("Response Accounting"),null,false,0,"",null,null);''',[str(fixture)])
+    wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Response Accounting").getTotalMessages(false)===1;'''))
+    open_page(m,base+'options.html')
+    response_id=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,message=(await b.messages.query({subject:"Thundy responses without verdict"})).messages.find(row=>row.subject==="Thundy responses without verdict");await b.messageDisplay.open({messageId:message.id,location:"tab"});return message.id;})();''')
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status");'))
     open_page(m,base+'options.html')
     prepared=m.page('''return (async()=>{
       const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
-      const message=(await b.messages.query({subject:"Thundy hybrid popup"})).messages.find(row=>row.subject==="Thundy hybrid popup");
-      let tabId=null;for(const tab of await b.tabs.query({})){try{const list=await b.messageDisplay.getDisplayedMessages(tab.id);if(list.messages?.some(row=>row.id===message.id)){tabId=tab.id;break;}}catch{}}
-      if(tabId===null)throw new Error("Fixture message tab missing");
+      const original=(await b.messages.query({subject:"Thundy hybrid popup"})).messages.find(row=>row.subject==="Thundy hybrid popup"),message=await b.messages.get(arguments[1]);
+      let tabId=null,originalTabId=null;for(const tab of await b.tabs.query({})){try{const list=await b.messageDisplay.getDisplayedMessages(tab.id);if(list.messages?.some(row=>row.id===message.id))tabId=tab.id;if(list.messages?.some(row=>row.id===original.id))originalTabId=tab.id;}catch{}}
+      if(tabId===null||originalTabId===null)throw new Error("Fixture message tab missing");
       await b.runtime.sendMessage({action:"clearMemoryCaches"});
       const ready=await bg.getMessageAnalysisContext(message,tabId),context=ready.wrappedJSObject||ready;
       for(const provider of ["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"]){context.event({provider,scope:"url",resource:null,phase:"finish",state:"failed",verdict:"unknown",responded:false,observedAt:null});context.event({provider,scope:"url",resource:null,phase:"finish",state:"received",verdict:"unknown",responded:true,observedAt:1000});}
       await b.runtime.sendMessage({action:"getLocalRisk",messageId:message.id});await context.flush();
-      return {messageId:message.id,expectedPhase:b.i18n.getMessage(arguments[0]?"analysisModePartial":"analysisModeResponsesFailed"),warning:b.i18n.getMessage("analysisStoredDataIncomplete")};
-    })();''',[baseline])
+      return {messageId:original.id,originalTabId,responseMessageId:message.id,responseTabId:tabId,expectedPhase:b.i18n.getMessage(arguments[0]?"analysisModePartial":"analysisModeResponsesFailed"),warning:b.i18n.getMessage("analysisStoredDataIncomplete")};
+    })();''',[baseline,response_id])
     m.js('window.gTabmail.switchToTab(window.gTabmail.tabInfo.filter(tab=>tab.mode.name==="mailMessageTab").at(-1));')
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(".phase")?.textContent===arguments[0];',[prepared['expectedPhase']]))
     m.screenshot(out/'responses-without-verdict.png')
     open_page(m,base+'options.html')
+    response_snapshot=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[response_id]) if not baseline else None
+    if not baseline:
+        rows=response_snapshot['rows']
+        assert prepared['messageId']!=response_id and len(rows)==5,response_snapshot
+        assert {row['provider'] for row in rows}=={'hybridanalysis','virustotal','urlhaus','abuseipdb','urlscan'},rows
+        assert all(row['verdict']=='unknown' and row['responses']==1 and row['failures']==1 and row['observedAt']==1000 for row in rows),rows
+    m.page('return window.wrappedJSObject.browser.tabs.remove(arguments[0]);',[prepared['responseTabId']])
     original=m.page('''return (async()=>{
       const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]),db=await bg.getSharedDB();
       await bg.updateStore(db,"hybridanalysis",message.headerMessageId,old=>({...old,attachments:[null,...old.attachments],links:{unreadable:true},analysisStatusLegacy:{schemaVersion:2,rows:[null,...["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"].map(provider=>({provider,scope:"report",state:"checked",verdict:"malicious",responses:1,observedAt:10}))]}}));
       if(!arguments[1]){
         await bg.pruneStore(db,"hybridanalysis");
-        const ready=await bg.getMessageAnalysisContext(message),context=ready.wrappedJSObject||ready;
+        const ready=await bg.getMessageAnalysisContext(message,arguments[2]),context=ready.wrappedJSObject||ready;
+        for(const provider of ["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"])context.event({provider,scope:"url",resource:null,phase:"finish",state:"received",verdict:"unknown",responded:true,observedAt:1000});
         for(const attachment of await b.messages.listAttachments(message.id)){
           const file=await b.messages.getAttachmentFile(message.id,attachment.partName);
           const bytes=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsArrayBuffer(file);});
@@ -1471,7 +1496,7 @@ def check_stored_sources(m, base, out, report, display, baseline=False):
       }
       const stored=await bg.getFromStore(db,"hybridanalysis",message.headerMessageId);
       return JSON.stringify({attachments:stored.attachments,links:stored.links,legacy:stored.analysisStatusLegacy});
-    })();''',[prepared['messageId'],baseline])
+    })();''',[prepared['messageId'],baseline,prepared['originalTabId']])
     result=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysisRecord",messageId:arguments[0]});',[prepared['messageId']])
     assert result['success'] != baseline,result
     m.js('window.gTabmail.switchToTab(window.gTabmail.tabInfo.filter(tab=>tab.mode.name==="mailMessageTab").at(-1));')
@@ -1492,7 +1517,7 @@ def check_stored_sources(m, base, out, report, display, baseline=False):
     open_page(m,base+'options.html')
     after=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]),stored=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId);return JSON.stringify({attachments:stored.attachments,links:stored.links,legacy:stored.analysisStatusLegacy});})();''',[prepared['messageId']])
     assert original==after
-    report['storedSources']={'passed':True,'baseline':baseline,'genericPopupError':baseline,'rpcSuccess':not baseline,'reportsAndLegacyUnchanged':True,'externalConsent':False,'syntheticObservations':True,'phaseWithoutVerdict':prepared['expectedPhase']}
+    report['storedSources']={'passed':True,'baseline':baseline,'genericPopupError':baseline,'rpcSuccess':not baseline,'reportsAndLegacyUnchanged':True,'externalConsent':False,'syntheticObservations':True,'realThunderbirdAPIs':True,'isolatedResponseMessage':prepared['messageId']!=response_id,'responsesWithoutVerdict':not baseline,'phaseWithoutVerdict':prepared['expectedPhase']}
 
 
 def probe_source_export_navigation(m, base, invalidate=False):
