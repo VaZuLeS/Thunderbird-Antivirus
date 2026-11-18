@@ -31,6 +31,14 @@ Quellfingerprint der paketierten Dateien:
 
 Die Prüfrunner besitzen eigene Prüfsummen; ein identisches XPI macht einen früheren fehlgeschlagenen Prüflauf nicht erfolgreich. Neue Abnahmen bleiben mit ihrem tatsächlichen Runner und Client verbunden. Windows/macOS, Screenreader, echte Anbieterkonten und automatische Updates sind weiterhin gesondert offen.
 
+## Zusätzliche Prüfpfade
+
+Der automatische Anbieterprüflauf konnte im Popup zu früh versuchen, noch nicht geladene Detailbereiche zu öffnen. Der lokale Bereich und der Ansichtsschalter werden absichtlich vor der asynchronen Anbieterantwort bereitgestellt. Der Prüflauf wartet nun auf die tatsächlichen urlscan-Detailsteuerelemente, bevor er sie einmalig öffnet. Die Anforderungen an sichtbare Fehlergründe, erhaltene Befunde und unveränderte POST-Zähler bleiben bestehen. Der vollständige automatische Anbieterprüflauf besteht damit lokal auf 140.12.0 und 153.7.0 ESR, jeweils mit synthetischem Transport.
+
+Der optionale Performance-Helfer wechselte vor seinem API-Aufruf nicht zuverlässig aus der Nachrichtenansicht in eine eigene Add-on-Seite. Er öffnet dafür nun ausdrücklich die vorhandenen Einstellungen. Die Messung verändert keine Produktionsberechtigungen.
+
+Eine lokale Stichprobe mit 266.343 Nachrichtenbytes und sechs `getLocalRisk`-Rundwegen ergibt 74–100 ms auf Thunderbird 153.7.0 ESR und 58–115 ms auf 140.12.0 ESR, jeweils Score 0. Das Rendern von 50 sichtbaren Zeilen aus 2.000 synthetischen Auditdatensätzen dauerte einschließlich Navigation und Automation 427 beziehungsweise 268 ms. Das sind Einzelprofil-Messungen auf dieser Linux-Testmaschine; keine Aussage über reale Verbreitung, RAM-Obergrenzen oder generelle Plattformleistung. Das historische Feld `coldMs` bezeichnet nur den ersten gemessenen Aufruf, keinen Kaltstart des Prozesses.
+
 ## Reihenfolge der Fortführung
 
 1. Diese konkrete Abnahme schließen und den bestehenden PR anhand der vollständigen aktuellen CI bewerten.

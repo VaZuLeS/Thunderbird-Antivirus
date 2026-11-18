@@ -2158,6 +2158,10 @@ def check_provider_results(m, base, out, report, display, message_id):
     m.screenshot(out/'urlscan-deleted-result-message.png')
     native_click(display,point['x'],point['y']);wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     expert_view(m,popup)
+    # The local card mounts before the async provider snapshot. Wait for the
+    # actual provider controls before expanding them; an empty early view has
+    # no details to open and must not be mistaken for missing error text.
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector("[data-provider=urlscan] details");',browser=popup))
     m.page('for(const detail of document.getElementById("thundy-analysis-status").shadowRoot.querySelectorAll("details"))detail.open=true;',browser=popup)
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes(arguments[0]);',[deleted['reason']],browser=popup))
     m.screenshot(out/'urlscan-deleted-result-popup.png');m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
@@ -2650,6 +2654,8 @@ def main():
                                                       'controlledLocalPageRequested': True,
                                                       'scope': 'real isolated Chromium process; localhost HTTPS fixture, not an external website'}
                     if args.performance_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        open_page(m,base+'options.html')
                         report['performance'] = m.page('''return (async()=>{
                             const samples=[]; let score=null;
                             for(let i=0;i<6;i++){
