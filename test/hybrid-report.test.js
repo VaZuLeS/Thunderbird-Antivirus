@@ -84,3 +84,8 @@ test('compact inline keeps warnings and score visible while preserving focused c
   assert.ok(!root.textContent.includes('MISSING:'));dom.window.close();
  }
 });
+
+test('bound target URLs preserve encoded characters, query and fragment instead of stripping control-like Unicode',()=>{
+ const {reportModel:m}=setup(),item=sample();item.url='https://example.invalid/\u202e?value=1#fragment';
+ assert.equal(m.project(item,'link:0').resource.url,new URL(item.url).href);
+});

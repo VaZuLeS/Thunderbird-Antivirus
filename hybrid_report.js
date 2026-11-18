@@ -23,10 +23,10 @@ const ThundyHybridReport = (() => {
             budget -= length;reports.push(report);
         }
         if (!reports.length) throw Error('REPORT_UNAVAILABLE');
-        let target = null;
-        try { const url = new URL(item.url);if (['http:','https:'].includes(url.protocol)) target = clean(item.url); } catch (_) { /* attachment */ }
+        let target = null, urlTruncated = false;
+        try { const url = new URL(item.url);if (['http:','https:'].includes(url.protocol)) {target = clean(url.href);urlTruncated = url.href.length > 8192;} } catch (_) { /* attachment */ }
         return {schemaVersion:2,kind:'thundy-hybrid-report',resourceRef,
-            resource:{name:clean(item.attachment_name),url:target,quickScanId:typeof item.hybrid_quick_scan_id==='string' && /^[a-z0-9_-]{1,128}$/i.test(item.hybrid_quick_scan_id) ? item.hybrid_quick_scan_id : null,urlTruncated:typeof item.url === 'string' && item.url.length > 8192,sha256:expected},
+            resource:{name:clean(item.attachment_name),url:target,quickScanId:typeof item.hybrid_quick_scan_id==='string' && /^[a-z0-9_-]{1,128}$/i.test(item.hybrid_quick_scan_id) ? item.hybrid_quick_scan_id : null,urlTruncated,sha256:expected},
             local:local && Number.isFinite(local.score) ? {score:local.score,state:local.state} : null,
             capturedAt:Date.now(),reports,truncated};
     }
