@@ -1,6 +1,7 @@
 // Original-file downloads from Thundy. No provider requests are made here.
 const ThundyAttachmentDownload = (() => {
     const hashLimit = 25 * 1024 * 1024;
+    const assessmentWait = 5000;
     const partPattern = /^[0-9]+(?:\.[0-9]+)*$/;
     const validScore = value => Number.isFinite(value) && value >= 0 && value <= 100;
     const fail = code => Object.assign(new Error(code), {code});
@@ -135,6 +136,16 @@ const ThundyAttachmentDownload = (() => {
                 signature:JSON.stringify([policy.revision,details,saved.approval?.hash])};
         }
 
+        function boundedAssessment(target, resource) {
+            let timer;
+            // A stalled read must release the shared settings and approval queue.
+            // Only the caller commits a download after the read wins this race.
+            const timeout = new Promise((_,reject) => {
+                timer = setTimeout(() => reject(fail('ATTACHMENT_CHECK_TIMEOUT')),assessmentWait);
+            });
+            return Promise.race([evaluate(target,resource),timeout]).finally(() => clearTimeout(timer));
+        }
+
         async function download(file, name) {
             const url = URL.createObjectURL(file);
             try {
@@ -168,7 +179,7 @@ const ThundyAttachmentDownload = (() => {
             try {
                 const resource = await readFile(target);
                 const result = await deps.security.serialized(async () => {
-                    const assessment = await evaluate(target,resource);
+                    const assessment = await boundedAssessment(target,resource);
                     if (attempt.invalidated || assessment.revision !== deps.revision(target.messageId)) {
                         throw fail('ATTACHMENT_CONTEXT_CHANGED');
                     }
@@ -200,13 +211,13 @@ const ThundyAttachmentDownload = (() => {
                     throw fail('ATTACHMENT_CONTEXT_CHANGED');
                 }
                 if (request.op === 'report') {
-                    const assessment = await evaluate(entry.target,next);
+                    const assessment = await boundedAssessment(entry.target,next);
                     if (challenges.get(id) !== entry || entry.until <= Date.now()) throw fail('ATTACHMENT_DIALOG_EXPIRED');
                     if (!assessment.details.report) throw fail('REPORT_UNAVAILABLE');
                     return deps.openReport(entry.target,next,sender);
                 }
                 const result = await deps.security.serialized(async () => {
-                    let assessment = await evaluate(entry.target,next);
+                    let assessment = await boundedAssessment(entry.target,next);
                     if (entry.assessment.signature !== assessment.signature) {
                         entry.assessment = assessment;
                         return {success:false,changed:true,details:assessment.details};
@@ -215,7 +226,7 @@ const ThundyAttachmentDownload = (() => {
                     if (assessment.details.mode === 'approval') {
                         if (!assessment.approval) throw fail('APPROVAL_NOT_CONFIGURED');
                         await deps.security.verify(request.password,assessment.approval,'approval');
-                        assessment = await evaluate(entry.target,next);
+                        assessment = await boundedAssessment(entry.target,next);
                         if (entry.assessment.signature !== assessment.signature) {
                             entry.assessment = assessment;
                             return {success:false,changed:true,details:assessment.details};

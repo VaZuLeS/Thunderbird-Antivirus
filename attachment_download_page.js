@@ -6,6 +6,7 @@
         ATTACHMENT_CONTEXT_CHANGED:'attachmentContextChanged',
         ATTACHMENT_DIALOG_EXPIRED:'securityExpired',
         ATTACHMENT_READ_FAILED:'attachmentReadFailed',
+        ATTACHMENT_CHECK_TIMEOUT:'scanFailure_timeout',
         ATTACHMENT_BLOCKED:'attachmentBlocked',
         APPROVAL_NOT_CONFIGURED:'securityApprovalMissing',
         PASSWORD_WAIT:'securityWait',

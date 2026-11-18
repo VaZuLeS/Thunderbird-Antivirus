@@ -550,7 +550,8 @@ const ThundyAnalysis = (() => {
                             status.textContent = result.saved ? t('attachmentSaveRequested') : '';
                         } catch (error) {
                             status.textContent = t(error.message === 'ATTACHMENT_CONTEXT_CHANGED' ? 'attachmentContextChanged' :
-                                error.message === 'ATTACHMENT_READ_FAILED' ? 'attachmentReadFailed' : 'attachmentFailed');
+                                error.message === 'ATTACHMENT_READ_FAILED' ? 'attachmentReadFailed' :
+                                error.message === 'ATTACHMENT_CHECK_TIMEOUT' ? 'scanFailure_timeout' : 'attachmentFailed');
                         } finally {button.removeAttribute('aria-disabled');}
                     });
                     item.append(button,status);

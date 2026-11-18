@@ -14,6 +14,7 @@ const basePolicy = {mode:'block',unknown:'warn',threshold:70,revision:1};
 function fixture() {
     const downloads = [], opened = [], reportRequests = [];
     let notifyDisplayed;
+    let securityWork = Promise.resolve();
     const state = {record:{attachments:[]},application:{attachmentPolicy:basePolicy},current:target.messageId,
         contents:'abc',revision:'r1',pending:false};
     const browser = {
@@ -33,12 +34,21 @@ function fixture() {
             return downloads.length;
         }}
     };
-    const context = vm.createContext({crypto:webcrypto,Date,URL,setTimeout:() => 1,clearTimeout,Uint8Array});
+    const timers = new Map();
+    const context = vm.createContext({crypto:webcrypto,Date,URL,Uint8Array,
+        setTimeout:(run,delay)=>{const id = Symbol();timers.set(id,{run,delay});return id;},
+        clearTimeout:id=>{timers.delete(id);}
+    });
     vm.runInContext(sources+'\nglobalThis.moduleApi=ThundyAttachmentDownload;',context);
     const deps = {
         security:{
             attachmentDefaults:{mode:'off',unknown:'warn',threshold:70,revision:0},read:async ()=>state.application,
-            serialized:task=>task(),verify:async value=>{if(value!=='correct password')throw Error('PASSWORD_INVALID');}
+            serialized:task=>{
+                const job = securityWork.then(task);
+                securityWork = job.catch(()=>{});
+                return job;
+            },
+            verify:async value=>{if(value!=='correct password')throw Error('PASSWORD_INVALID');}
         },
         hash,record:async ()=>state.record,revision:()=>state.revision,pending:()=>state.pending,
         openReport:async (request, resource)=>{reportRequests.push({request,digest:resource.digest});return {success:true};}
@@ -50,7 +60,7 @@ function fixture() {
     };
     const withScore = (score,report={},sha=digest('abc'),partName='1.2') =>
         ({partName,attachment_name:'same.pdf',hybrid_sha256:sha,report:{sha256:sha,state:'SUCCESS',threat_score:score,...report}});
-    return {state,downloads,opened,browser,module,gate,command,withScore,reportRequests,deps,
+    return {state,downloads,opened,browser,module,gate,command,withScore,reportRequests,deps,timers,
         display:id=>{state.current=id;notifyDisplayed({id:target.tabId},{messages:[{id}]});}};
 }
 
@@ -157,6 +167,29 @@ test('a manual result replaces earlier evidence and navigation during the lookup
     };
     await assert.rejects(f.gate.start(target),{code:'ATTACHMENT_CONTEXT_CHANGED'});
     assert.equal(f.downloads.length,0);
+});
+
+test('a stalled local assessment expires without saving late bytes or blocking a retry', async () => {
+    const f = fixture();
+    let release;
+    const stalled = new Promise(resolve=>{release = resolve;});
+    f.deps.record = () => stalled;
+    const attempt = f.gate.start(target);
+    await new Promise(setImmediate);
+    const deadline = [...f.timers.values()].find(timer=>timer.delay===5000);
+    const expired = assert.rejects(attempt,{code:'ATTACHMENT_CHECK_TIMEOUT'});
+    const nextSecurityOperation = f.deps.security.serialized(()=>true);
+    deadline.run();
+    await expired;
+    assert.equal(await nextSecurityOperation,true);
+    release({attachments:[f.withScore(20)]});
+    await new Promise(setImmediate);
+    assert.equal(f.downloads.length,0);
+    assert.equal(f.opened.length,0);
+
+    f.deps.record = async () => ({attachments:[f.withScore(20)]});
+    assert.equal((await f.gate.start(target)).saved,true);
+    assert.equal(f.downloads.length,1);
 });
 
 test('attachment dialog hides save for a hard block and focuses cancel without sending on close', async () => {
