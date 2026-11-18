@@ -2083,6 +2083,19 @@ def check_provider_results(m, base, out, report, display, message_id):
     assert m.page('return window.wrappedJSObject.__providerCalls.filter(c=>c.method==="POST").length;',browser=options)==before
     assert any(r['provider']=='hybridanalysis' and r['verdict']=='malicious' for r in refreshed['rows']),refreshed
     def expert_details(browser='window.gTabmail.currentTabInfo.browser'):
+        inline=m.page('return document.getElementById("thundy-analysis-status").dataset.surface==="message";',browser=browser)
+        if inline:
+            message_tab=m.js('return window.gTabmail.tabInfo.indexOf(window.gTabmail.currentTabInfo);')
+            m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector(".hybrid-report-link button").click();',browser=browser)
+            wait_for(lambda:m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.startsWith(arguments[0]);',[base+'hybrid_report.html#']))
+            wait_for(lambda:m.page('return document.getElementById("hybridReportContent")?.textContent.includes("T1059");'))
+            result=m.page('const panel=document.getElementById("hybridReportContent");return {text:panel.textContent,activeContent:panel.querySelectorAll("script,img,a").length};')
+            assert 'Synthetic expert signature' in result['text'] and 'total_processes' in result['text'] and result['activeContent']==0,result
+            m.page('const section=document.querySelector("[data-section=mitre]");section.open=true;section.scrollIntoView({block:"center"});')
+            wait_for(lambda:m.page('const node=document.querySelector("[data-section=mitre]");node.scrollIntoView({block:"center"});const r=node.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;'))
+            m.screenshot(out/'hybrid-expert-report-tab.png')
+            m.js('window.gTabmail.switchToTab(arguments[0]);',[message_tab])
+            return
         m.page('const root=document.getElementById("thundy-analysis-status").shadowRoot;const panel=root.querySelector(".hybrid-expert");if(!panel)throw Error("Missing Hybrid expert panel");panel.open=true;for(const group of panel.querySelectorAll("details"))group.open=true;',browser=browser)
         wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.querySelector(".hybrid-expert").textContent.includes("T1059");',browser=browser))
         result=m.page('const panel=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(".hybrid-expert");return {text:panel.textContent,activeContent:panel.querySelectorAll("script,img,a").length};',browser=browser)
@@ -2121,6 +2134,7 @@ def check_provider_results(m, base, out, report, display, message_id):
     assert any(r.get('retryAt',0)>0 and r.get('quotaAction')=='submit-unlisted' for r in limited['rows']),limited
     def quota_details(browser='window.gTabmail.currentTabInfo.browser'):
         expert_view(m,browser)
+        m.page('const node=document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-key=provider-technical]");if(node)node.open=true;',browser=browser)
         wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes("This attempt was deferred locally; no new provider request was sent.");',browser=browser))
         assert m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes("quotaRemaining: 0");',browser=browser)
         wait_for(lambda:m.page('const node=Array.from(document.getElementById("thundy-analysis-status").shadowRoot.querySelectorAll("p")).find(p=>p.textContent==="This attempt was deferred locally; no new provider request was sent.");node.scrollIntoView({block:"center"});const r=node.getBoundingClientRect();return r.height>0&&r.top>=0&&r.bottom<=innerHeight;',browser=browser))
