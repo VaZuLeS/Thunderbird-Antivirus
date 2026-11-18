@@ -3066,6 +3066,33 @@ const ThundyI18n = (() => {
   },
   "hybridReportCopyUtc": {
     "message": "Copy UTC"
+  },
+  "hybridReportWhy": {
+    "message": "Why this assessment?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Other assessment signals"
+  },
+  "hybridReportCompare": {
+    "message": "Compare analysis runs"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Sections with data"
+  },
+  "hybridReportAssessment": {
+    "message": "Thundy assessment from Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Source and timestamps"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Finding available · completion unconfirmed"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Open Hybrid report"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Show finding details"
   }
 };
     function get(key, params = []) {

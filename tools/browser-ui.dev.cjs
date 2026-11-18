@@ -285,7 +285,12 @@ async function interaction(page, c) {
     else {
       assert.equal(await page.locator('#hybridReportSelect option').count(),2);
       assert.ok((await page.locator('#hybridReportOverview').textContent()).includes('?value=1#fragment'));
-      await page.locator('#hybridReportSelect').selectOption('1');
+      const comparison = page.locator('#hybridReportComparison');
+      await comparison.locator('summary').press('Enter');
+      await comparison.locator('button[data-run="1"]').press('Enter');
+      assert.equal(await page.locator('#hybridReportSelect').inputValue(),'1');
+      assert.equal(await page.locator('#hybridReportOverview h2').evaluate(el=>el===document.activeElement),true);
+      assert.ok((await page.locator('.report-explanation').textContent()).includes('90'));
       await page.locator('#hybridReportSearch').fill('indicator-1');
       assert.ok((await page.locator('#hybridReportContent').textContent()).includes('indicator-1.invalid'));
       assert.equal(await page.locator('#hybridReportContent a').count(),0);

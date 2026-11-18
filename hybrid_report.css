@@ -13,8 +13,8 @@
 .report-value .report-identity { flex: 1 1 220px; min-width: 0; }
 .report-time { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
 
-:is(#hybridReportOverview, #hybridReportContent) .card { margin: 12px 0; overflow-wrap: anywhere; }
-:is(#hybridReportOverview, #hybridReportContent) summary {
+:is(#hybridReportOverview, #hybridReportContent, #hybridReportComparison) .card { margin: 12px 0; overflow-wrap: anywhere; }
+:is(#hybridReportOverview, #hybridReportContent, #hybridReportComparison) summary {
     cursor: pointer;
     font-weight: 650;
     min-height: 24px;
@@ -30,9 +30,9 @@
     grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr);
     gap: 4px 12px;
 }
-:is(#hybridReportOverview, #hybridReportContent) dt { font-weight: 600; }
+:is(#hybridReportOverview, #hybridReportContent, #hybridReportComparison) dt { font-weight: 600; }
 #hybridReportContent dt code { display: block; color: var(--text-muted); font-weight: 400; }
-:is(#hybridReportOverview, #hybridReportContent) dd {
+:is(#hybridReportOverview, #hybridReportContent, #hybridReportComparison) dd {
     margin: 0;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
@@ -42,8 +42,20 @@
 #hybridReportContent li { margin: 12px 0; }
 #hybridReportContent code { overflow-wrap: anywhere; }
 .warning { color: var(--color-danger); }
+.report-explanation h3 { margin-block-end: 4px; }
+.report-explanation ul { margin-block: 4px; }
+.report-overview details { margin-block-start: 6px; }
+.report-comparison ol { list-style: none; margin-block-end: 0; padding: 0; }
+.report-comparison li { border-block-start: 1px solid var(--card-border); padding-block: 8px; }
+.report-comparison dl {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px 12px;
+    margin-block-end: 0;
+}
+.report-comparison button[aria-current="true"] { border-color: var(--link-color); font-weight: 700; }
 
 @media (max-width: 600px) {
-    .report-overview dl, #hybridReportContent dl { grid-template-columns: minmax(0, 1fr); }
-    :is(#hybridReportOverview, #hybridReportContent) dd { margin-bottom: 8px; }
+    .report-overview dl, #hybridReportContent dl, .report-comparison dl { grid-template-columns: minmax(0, 1fr); }
+    :is(#hybridReportOverview, #hybridReportContent, #hybridReportComparison) dd { margin-bottom: 8px; }
 }

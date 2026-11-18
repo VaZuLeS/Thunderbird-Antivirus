@@ -376,19 +376,25 @@ const ThundyAnalysis = (() => {
         const conflicting = flagged.some(row => comparable(row) &&
             [...(cleanFindings.get(row.resource) || [])].some(provider => provider !== row.provider));
 
+        const openFinding = entry => {
+            entry.open = true;
+            hydrate(entry);
+            entry.querySelector('summary').focus();
+        };
         const inlineReports = new Set();
-        const reportAction = ref => {
-            const row = n('div','','hybrid-report-link');
-            const button = n('button',t('hybridReportOpen'));
+        const reportAction = (ref, inOverview = false) => {
+            const row = n('div','',inOverview ? 'overview-report-link' : 'hybrid-report-link');
+            const label = t(inOverview ? 'analysisOverviewOpenReport' : 'hybridReportOpen');
+            const button = n('button',label);
             button.type = 'button';
-            button.dataset.focusKey = 'hybrid-report:'+ref;
-            button.setAttribute('aria-label', t('hybridReportOpen')+' · '+resourceName({resource:ref}));
+            button.dataset.focusKey = (inOverview ? 'overview-hybrid-report:' : 'hybrid-report:')+ref;
+            button.setAttribute('aria-label', label+' · '+resourceName({resource:ref}));
             const status = n('span','');
             status.setAttribute('role','status');
             row.append(button,status);
             button.addEventListener('click', async () => {
-                if (button.disabled) return;
-                button.disabled = true;
+                if (button.getAttribute('aria-disabled') === 'true') return;
+                button.setAttribute('aria-disabled','true');
                 try {
                     const result = await browser.runtime.sendMessage({
                         action:'openHybridReport', messageId:data.messageId, contextToken:data.contextToken, resourceRef:ref
@@ -396,7 +402,7 @@ const ThundyAnalysis = (() => {
                     if (!result?.success) throw Error('report');
                     status.textContent = '';
                 } catch (_) { status.textContent = t('hybridReportUnavailable'); }
-                finally { button.disabled = false; }
+                finally { button.removeAttribute('aria-disabled'); }
             });
             return row;
         };
@@ -441,7 +447,7 @@ const ThundyAnalysis = (() => {
             card.style.borderColor = 'var(--color-danger,#b32642)';card.append(n('p', inline ? [t('analysisVerdict_'+strongest),brands[warningRow.provider],resourceName(warningRow)].join(' · ') : t('analysisVerdict_'+strongest), 'warning'));
             if (warningTargets[strongest]) {
                 const jump=n('button',t('analysisCurrentFindWarning'));jump.type='button';jump.dataset.focusKey='current-find-warning';
-                jump.addEventListener('click',() => {const entry=warningTargets[strongest];entry.open=true;hydrate(entry);entry.querySelector('summary').focus();});card.append(jump);
+                jump.addEventListener('click',() => openFinding(warningTargets[strongest]));card.append(jump);
             }
         }
         card.append(list);
@@ -580,7 +586,23 @@ const ThundyAnalysis = (() => {
         overview.append(n('h2',t(title)),n('p',localScoreText,'local-score'));
         if (inline && warningRow) {
             const focus = n('p',[brands[warningRow.provider],resourceName(warningRow),t('analysisVerdict_'+warningRow.verdict)].join(' · '),'warning finding-summary');
-            overview.append(focus);
+            const summary = n('div','','finding-overview');
+            summary.append(focus);
+            if (warningRow.provider === 'hybridanalysis' && comparable(warningRow) && hasReport(warningRow.resource)) {
+                summary.append(reportAction(warningRow.resource,true));
+            } else if (warningTargets[strongest] && (hasBoundResource(warningRow) || warningRow.resource === 'message') &&
+                rows.filter(row => row.provider === warningRow.provider && row.scope === warningRow.scope &&
+                    row.resource === warningRow.resource).length === 1) {
+                const jump = n('button',t('analysisOverviewOpenFinding'));
+                jump.type = 'button';
+                jump.dataset.focusKey = 'overview-find-warning';
+                jump.addEventListener('click',() => {
+                    showView('expert');
+                    openFinding(warningTargets[strongest]);
+                });
+                summary.append(jump);
+            }
+            overview.append(summary);
         }
         const countProviders = predicate => new Set(rows.filter(predicate).map(row => row.provider)).size;
         const findings = countProviders(row => ['none','suspicious','malicious'].includes(row.verdict));
@@ -627,7 +649,13 @@ const ThundyAnalysis = (() => {
         }
         if(!host.dataset.view)host.dataset.view=document.body.dataset.thundyAnalysisView==='expert'?'expert':'simple';
         const applyView=()=>{const expert=host.dataset.view==='expert';card.hidden=!expert;overview.hidden=expert;switcher.textContent=t(expert?'analysisSimple':'analysisExpert');switcher.setAttribute('aria-expanded',String(expert));document.body.dataset.thundyAnalysisView=expert?'expert':'simple';};
-        switcher.addEventListener('click',()=>{host.dataset.viewChosen='true';host.dataset.view=host.dataset.view==='expert'?'simple':'expert';applyView();});applyView();
+        function showView(view) {
+            host.dataset.viewChosen = 'true';
+            host.dataset.view = view;
+            applyView();
+        }
+        switcher.addEventListener('click',()=>showView(host.dataset.view==='expert'?'simple':'expert'));
+        applyView();
         style.textContent+='[hidden]{display:none!important}.scan-actions{font:14px/1.5 system-ui;color:var(--text-color,#192b40);background:var(--card-bg,#fff);overflow-wrap:anywhere;padding:12px;border:1px solid var(--card-border,#cbd5e1);border-radius:10px;margin-bottom:12px}.scan-actions button{margin:4px;max-width:100%;white-space:normal;overflow-wrap:anywhere}';
         const actions=n('section','','scan-actions');actions.setAttribute('aria-label',t('scanActions'));
         if(data.scanJob){
@@ -664,7 +692,7 @@ const ThundyAnalysis = (() => {
             const reasons=n('ul','');for(const [id,value] of Object.entries(job.providers||{})){const unique=[...new Set((value.checks||[]).map(c=>c.reason).filter(reason=>reason&&(reason!=='no_resources'||!value.checks.some(c=>!c.reason))))];if(value.state==='failed')unique.push(value.error==='rate_limited'?'quota':'provider_error');if(unique.length)reasons.append(n('li',(brands[id]||id)+': '+unique.map(reason=>t('analysisReason_'+reason)).join(' · ')));}if(reasons.childElementCount)actions.append(reasons);
         }
         if (inline) {
-            style.textContent += ':host([data-surface="message"]){--inline-pad:calc(var(--surface-pad,24px) / 2);font:14px/1.4 system-ui}.inline-toolbar{background:var(--card-bg,#fff);border:1px solid var(--card-border,#cbd5e1);border-radius:8px;padding:4px 8px;display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font:14px/1.4 system-ui;color:var(--text-color,#192b40);margin-bottom:6px}.inline-toolbar>.local-score{font-weight:700;margin:0}.inline-toolbar>.scan-actions{display:flex;align-items:center;flex:1;flex-wrap:wrap;gap:4px 8px;border:0;padding:0;margin:0;background:transparent;min-width:0}.inline-toolbar>.scan-actions>p{margin:0}.inline-toolbar>.scan-actions>ul,.inline-toolbar>.scan-actions>.warning{flex-basis:100%}.inline-toolbar button{margin:0}.card{padding:var(--inline-pad);font:14px/1.4 system-ui;border-radius:8px}h2{font-size:15px;margin:0 0 4px}p{margin:4px 0}li,details{margin:4px 0}summary{min-height:24px;padding-block:2px}ul{margin:4px 0}.services{gap:6px}.services>li{padding:8px}.service-results,.service-origin{margin:4px 0}.service-results{gap:4px}.service-verdict{padding:1px 6px}button{min-height:var(--control-size,44px);padding:4px 10px}.hybrid-report-link{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0}.hybrid-report-link>span{overflow-wrap:anywhere;min-width:0}.service-resource{min-width:0}.finding-summary{font-weight:650}.inline-explanation{color:var(--text-muted,#536579)}';
+            style.textContent += ':host([data-surface="message"]){--inline-pad:calc(var(--surface-pad,24px) / 2);font:14px/1.4 system-ui}.inline-toolbar{background:var(--card-bg,#fff);border:1px solid var(--card-border,#cbd5e1);border-radius:8px;padding:4px 8px;display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font:14px/1.4 system-ui;color:var(--text-color,#192b40);margin-bottom:6px}.inline-toolbar>.local-score{font-weight:700;margin:0}.inline-toolbar>.scan-actions{display:flex;align-items:center;flex:1;flex-wrap:wrap;gap:4px 8px;border:0;padding:0;margin:0;background:transparent;min-width:0}.inline-toolbar>.scan-actions>p{margin:0}.inline-toolbar>.scan-actions>ul,.inline-toolbar>.scan-actions>.warning{flex-basis:100%}.inline-toolbar button{margin:0}.card{padding:var(--inline-pad);font:14px/1.4 system-ui;border-radius:8px}h2{font-size:15px;margin:0 0 4px}p{margin:4px 0}li,details{margin:4px 0}summary{min-height:24px;padding-block:2px}ul{margin:4px 0}.services{gap:6px}.services>li{padding:8px}.service-results,.service-origin{margin:4px 0}.service-results{gap:4px}.service-verdict{padding:1px 6px}button{min-height:var(--control-size,44px);padding:4px 10px}.hybrid-report-link{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0}.hybrid-report-link>span{overflow-wrap:anywhere;min-width:0}.service-resource{min-width:0}.finding-summary{font-weight:650}.finding-overview,.overview-report-link{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}.finding-overview p,.overview-report-link span{overflow-wrap:anywhere;min-width:0}.overview-report-link span:empty{display:none}button[aria-disabled=true]{opacity:.65;cursor:wait}.inline-explanation{color:var(--text-muted,#536579)}';
             const toolbar=n('div','','inline-toolbar');toolbar.append(n('p',localScoreText,'local-score'));
             if(data.scanJob)toolbar.append(actions);toolbar.append(switcher);
             const explanationTexts = new Set([t('analysisLimit'),t('analysisScoreExplanation'),t('analysisExportSensitive')]);
@@ -696,7 +724,7 @@ const ThundyAnalysis = (() => {
         } };
     }
     function labels(get) {
-        const keys = ['analysisLocalOnly','analysisProviderFindingsCount','analysisProviderPendingCount','analysisProviderErrorsCount','hybridReportOpen','hybridReportUnavailable','hybridReportTechnical','hybridReportExplanation','localScoreMessage','apiDebugOpen','apiDebugFailureHint',...['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes','storage_failed'].map(reason=>'analysisPersistence_'+reason),'analysisQuotaReset','analysisRetryAt','analysisLocalBackoff','hybridExpertEmpty','hybridExpertTitle','hybridExpertScope','hybridExpertMissing','hybridExpertYes','hybridExpertNo','hybridExpert_identity','hybridExpert_assessment','hybridExpert_scanners','hybridExpert_antivirus','hybridExpert_reports','hybridExpert_counts','hybridExpert_signatures','hybridExpert_mitre','hybridExpert_network','hybridExpert_processes','hybridExpert_extracted','hybridExpert_certificates','assessmentCompletion','assessmentCompletion_pending','assessmentCompletion_complete','assessmentCompletion_unknown','assessmentCompletion_failed','assessmentConflict','assessmentSignals','assessmentJob',...['verdict','scanner','threat_score','multiscan_result','threat_level','whitelist','overall','urlscan','engines','brand','report'].map(c=>'assessmentSignal_'+c),'scanCoverage','scanCoverageAttachments','scanCoverageLinks','scanCoverage_read_failed','scanCoverage_size_limit','scanCoverage_resource_limit','scanCoverage_inventory_incomplete','scanFailure_source_capacity','scanFailure_cancelled','scanFailure_timeout','scanFailure_scan_failed','scanActions','scanStart','scanRepeat','scanRefresh','scanRunning','scanProgress','scanMigrationNotice','scanState_idle','scanState_queued','scanState_running','scanState_completed','scanState_pending','scanState_incomplete','scanState_failed','scanState_blocked','scanState_deferred','bannerOpenOptions','auditLocalScore','analysisProviderConfigured','analysisProviderNoKey','analysisSimple','analysisExpert','analysisSimpleDocumentationIncomplete','analysisSimpleNone','analysisSimpleCaution','analysisSimpleDanger','analysisSimpleIncomplete','analysisSimpleBasis','analysisScoreExplanation','analysisApprovalRequired','analysisContinueWarning','analysisConflict','analysisExportSensitive','analysisModeResponses','analysisModeResponsesFailed','analysisCurrentAvailability','analysisStoredDataIncomplete','analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
+        const keys = ['analysisOverviewOpenReport','analysisOverviewOpenFinding','analysisLocalOnly','analysisProviderFindingsCount','analysisProviderPendingCount','analysisProviderErrorsCount','hybridReportOpen','hybridReportUnavailable','hybridReportTechnical','hybridReportExplanation','localScoreMessage','apiDebugOpen','apiDebugFailureHint',...['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes','storage_failed'].map(reason=>'analysisPersistence_'+reason),'analysisQuotaReset','analysisRetryAt','analysisLocalBackoff','hybridExpertEmpty','hybridExpertTitle','hybridExpertScope','hybridExpertMissing','hybridExpertYes','hybridExpertNo','hybridExpert_identity','hybridExpert_assessment','hybridExpert_scanners','hybridExpert_antivirus','hybridExpert_reports','hybridExpert_counts','hybridExpert_signatures','hybridExpert_mitre','hybridExpert_network','hybridExpert_processes','hybridExpert_extracted','hybridExpert_certificates','assessmentCompletion','assessmentCompletion_pending','assessmentCompletion_complete','assessmentCompletion_unknown','assessmentCompletion_failed','assessmentConflict','assessmentSignals','assessmentJob',...['verdict','scanner','threat_score','multiscan_result','threat_level','whitelist','overall','urlscan','engines','brand','report'].map(c=>'assessmentSignal_'+c),'scanCoverage','scanCoverageAttachments','scanCoverageLinks','scanCoverage_read_failed','scanCoverage_size_limit','scanCoverage_resource_limit','scanCoverage_inventory_incomplete','scanFailure_source_capacity','scanFailure_cancelled','scanFailure_timeout','scanFailure_scan_failed','scanActions','scanStart','scanRepeat','scanRefresh','scanRunning','scanProgress','scanMigrationNotice','scanState_idle','scanState_queued','scanState_running','scanState_completed','scanState_pending','scanState_incomplete','scanState_failed','scanState_blocked','scanState_deferred','bannerOpenOptions','auditLocalScore','analysisProviderConfigured','analysisProviderNoKey','analysisSimple','analysisExpert','analysisSimpleDocumentationIncomplete','analysisSimpleNone','analysisSimpleCaution','analysisSimpleDanger','analysisSimpleIncomplete','analysisSimpleBasis','analysisScoreExplanation','analysisApprovalRequired','analysisContinueWarning','analysisConflict','analysisExportSensitive','analysisModeResponses','analysisModeResponsesFailed','analysisCurrentAvailability','analysisStoredDataIncomplete','analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
         for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded','manual','sender','links_disabled','no_resources','quota','running','provider_error']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
         return Object.fromEntries(keys.map(key => [key, get(key)]));
     }

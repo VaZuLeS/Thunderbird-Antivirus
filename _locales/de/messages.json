@@ -3064,5 +3064,32 @@
   },
   "hybridReportCopyUtc": {
     "message": "UTC kopieren"
+  },
+  "hybridReportWhy": {
+    "message": "Warum diese Bewertung?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Weitere Bewertungssignale"
+  },
+  "hybridReportCompare": {
+    "message": "Analyseläufe vergleichen"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Fachbereiche mit Daten"
+  },
+  "hybridReportAssessment": {
+    "message": "Thundys Bewertung aus Hybrid-Analysis-Daten"
+  },
+  "hybridReportProvenance": {
+    "message": "Herkunft und Zeitpunkte"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Befund verfügbar · Abschluss nicht bestätigt"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Hybrid-Bericht öffnen"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Befunddetails anzeigen"
   }
 }

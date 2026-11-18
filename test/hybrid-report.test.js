@@ -128,6 +128,8 @@ test('report search spans sections, pagination stays within a section and a reta
  const dom = new JSDOM(fs.readFileSync('hybrid_report.html','utf8'),{url:'https://extension.invalid/hybrid_report.html#'+token});
  const c = setup({ThundyI18n:{get:key=>key}});
  const item = sample();
+ item.report[0].analysis_start_time = '2026-11-18T07:30:00Z';
+ Object.assign(item.report[1],{state:undefined,verdict:'clean',scanners_v2:{Test:{positives:3,total:22}}});
  const storedWarning = {provider:'hybridanalysis',scope:'report',resource:'link:0',verdict:'malicious',findingAt:123,attemptedAt:456};
  const snapshot = c.reportModel.project(item,'link:0',{score:64,state:'checked'},[storedWarning,{...storedWarning,resource:'link:1',findingAt:999}]);
  snapshot.reports[0].sections.push({id:'signatures',rows:Array.from({length:51},(_,i)=>[{key:'name',value:'signature-'+i}])},{id:'mitre',rows:[[{key:'attck_id',value:'T1059'}]]});
@@ -155,10 +157,69 @@ test('report search spans sections, pagination stays within a section and a reta
    assert.equal(section.querySelector('option[value="'+group+'"]').textContent.endsWith('(1)'),true);
    assert.equal(byId('hybridReportPages').hidden,true);
   }
-  const select = byId('hybridReportSelect');select.value='1';change(select);
+  const comparison = byId('hybridReportComparison').querySelector('details');
+  assert.equal(comparison.open,false);
+  assert.equal(comparison.querySelector('[data-run="0"]').getAttribute('aria-current'),'true');
+  assert.match(comparison.querySelector('li:nth-child(2)').textContent,/analysisTimeUnknown/);
+  assert.equal(overview.querySelector('.report-provenance').open,false);
+  comparison.open = true;
+  comparison.querySelector('[data-run="1"]').click();
+  const select = byId('hybridReportSelect');
+  assert.equal(select.value,'1');
+  assert.equal(d.activeElement,overview.querySelector('h2'));
+  assert.equal(comparison.querySelector('[data-run="1"]').getAttribute('aria-current'),'true');
+  assert.match(overview.querySelector('.report-explanation > ul').textContent,/assessmentSignal_scanner.*3 \/ 22/);
+  assert.match(overview.querySelector('.report-explanation details').textContent,/assessmentSignal_verdict/);
+  assert.match(overview.textContent,/hybridReportProcessing_unconfirmed/);
   assert.equal(overview.querySelector('.retained-finding'),null);
   select.value='0';change(select);
   assert.ok(overview.querySelector('.retained-finding'));
   assert.equal(requests,1);
  } finally {view.dispose();dom.window.close();}
+});
+
+test('hybrid reports separate explicit provider completion from a finding inferred from scanner data', () => {
+ const {reportModel} = setup();
+ const item = sample();
+ item.report = [
+  {state:'SUCCESS',verdict:'clean'},
+  {scanners_v2:{Test:{positives:3,total:22}}},
+  {finished:false,scanners_v2:{Test:{positives:3,total:22}}},
+  {finished:true,state:'FAILED',verdict:'clean'}
+ ];
+ const reports = reportModel.project(item,'link:0').reports;
+ assert.deepEqual(Array.from(reports,r=>r.completion),['complete','complete','pending','failed']);
+ assert.deepEqual(Array.from(reports,r=>r.completionConfirmed),[true,false,false,false]);
+ assert.equal(reports[2].verdict,'malicious');
+ assert.equal(reports[2].signals.find(s=>s.code==='scanner').total,22);
+});
+
+test('inline evidence action opens only the bound Hybrid report or focuses the exact detail row', async () => {
+ const dom = new JSDOM('<html><body></body></html>');
+ try {
+  const calls = [];
+  const c = setup({document:dom.window.document,browser:{runtime:{sendMessage:async request=>{calls.push(request);return {success:true};}}}});
+  vm.runInContext(fs.readFileSync('analysis_status.js','utf8')+'\nglobalThis.analysis=ThundyAnalysis;',c);
+  const labels = c.analysis.labels(key=>key);
+  const warning = {provider:'hybridanalysis',resource:'attachment:1',scope:'file',verdict:'malicious',state:'checked'};
+  const data = {messageId:42,contextToken:'bound',local:{state:'checked',score:0},rows:[warning],
+   resourceLabels:{'attachment:1':'fixture.zip'},hybridReports:{'attachment:1':{schemaVersion:1,sections:[]}}};
+  const render = () => c.analysis.render(data,labels,'',{surface:'message'}).shadowRoot;
+  const root = render();
+  root.querySelector('.overview-report-link button').click();
+  await new Promise(setImmediate);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls)),[{action:'openHybridReport',messageId:42,contextToken:'bound',resourceRef:'attachment:1'}]);
+  data.rows = [{...warning,provider:'virustotal',scope:'hash'}];
+  render();
+  assert.equal(root.querySelector('.overview-report-link'),null);
+  root.querySelector('[data-focus-key=overview-find-warning]').click();
+  assert.equal(root.activeElement.dataset.focusKey,'virustotal:hash:attachment:1');
+  assert.equal(root.activeElement.parentElement.open,true);
+  assert.equal(calls.length,1);
+  root.querySelector('[data-focus-key=view-switch]').click();
+  data.rows = [{...warning,resource:null}];
+  render();
+  assert.equal(root.querySelector('[data-focus-key=overview-find-warning]'),null);
+  assert.equal(root.querySelector('.overview-report-link'),null);
+ } finally {dom.window.close();}
 });

@@ -3061,5 +3061,32 @@
   },
   "hybridReportCopyUtc": {
     "message": "Copiar en UTC"
+  },
+  "hybridReportWhy": {
+    "message": "¿Por qué esta valoración?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Otras señales de evaluación"
+  },
+  "hybridReportCompare": {
+    "message": "Comparar análisis"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Secciones con datos"
+  },
+  "hybridReportAssessment": {
+    "message": "Valoración de Thundy con datos de Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Fuente y fechas"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Resultado disponible · finalización sin confirmar"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Abrir informe Hybrid"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Ver detalles del hallazgo"
   }
 }

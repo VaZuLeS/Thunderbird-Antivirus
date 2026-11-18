@@ -3061,5 +3061,32 @@
   },
   "hybridReportCopyUtc": {
     "message": "Copier en UTC"
+  },
+  "hybridReportWhy": {
+    "message": "Pourquoi ce résultat ?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Autres indices"
+  },
+  "hybridReportCompare": {
+    "message": "Comparer les analyses"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Rubriques avec données"
+  },
+  "hybridReportAssessment": {
+    "message": "Évaluation Thundy à partir des données Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Source et horodatages"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Résultat disponible · fin non confirmée"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Ouvrir le rapport Hybrid"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Afficher le détail du résultat"
   }
 }

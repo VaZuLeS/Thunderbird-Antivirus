@@ -15,6 +15,9 @@ var ThundyProviderResults = (function () {
         return {assessmentVersion:1,state:invalid?'failed':completion==='pending'?receipt?'submitted':'incomplete':completion==='failed'?'failed':verdict==='unknown'?'received':'checked',verdict,completion,
             signals:[...new Set([...verdicts.slice().reverse().map(v=>signals.find(s=>s.verdict===v)).filter(Boolean),...signals])].slice(0,128),conflicts:new Set(observed.map(s=>s.verdict)).size>1?['mixed_verdicts']:[],...(invalid?{errorCode:'invalid_response'}:{})};
     }
+    function hybridCompletionConfirmed(data) {
+        return data?.finished === true || complete.includes(word(data?.state));
+    }
     function hybrid(data,scope='report'){
         if(Array.isArray(data)){
             if(!data.length)return result([],'unknown');
@@ -41,7 +44,7 @@ var ThundyProviderResults = (function () {
         const state=word(data.state),isPending=pending.includes(state)||data.finished===false||scanners.some(s=>pending.includes(word(s.status)));
         const failed=['ERROR','FAILED','FAILURE'].includes(state);
         const receipt=['file','url'].includes(scope)&&!!(data.id||data.submission_id||data.job_id)&&data.finished!==true&&!complete.includes(state)&&!signals.some(s=>s.verdict!=='unknown');
-        const completion=isPending||receipt?'pending':failed?'failed':data.finished===true||complete.includes(state)||signals.some(s=>s.verdict!=='unknown')?'complete':'unknown';
+        const completion=isPending||receipt?'pending':failed?'failed':hybridCompletionConfirmed(data)||signals.some(s=>s.verdict!=='unknown')?'complete':'unknown';
         const valid=signals.length||scanners.length||data.finished!==undefined||state||data.verdict!==undefined||data.id||data.submission_id||data.job_id||data.sha256;
         return result(signals,completion,receipt,!valid);
     }
@@ -194,5 +197,5 @@ var ThundyProviderResults = (function () {
         if(scanners.some(s=>Array.isArray(s.anti_virus_results))&&scanners.filter(s=>Array.isArray(s.anti_virus_results)).every(s=>s.anti_virus_results.length===0))emptySections.push('antivirus');
         return {schemaVersion:1,sections,emptySections,truncated};
     }
-    return {evaluate,project,merge,stored,resource,legacy,hybridDetails,urlscanStatus,urlscanPending,urlscanRejection,projectQuota};
+    return {evaluate,project,merge,stored,resource,legacy,hybridDetails,hybridCompletionConfirmed,urlscanStatus,urlscanPending,urlscanRejection,projectQuota};
 }());

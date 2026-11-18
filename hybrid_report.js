@@ -15,7 +15,9 @@ const ThundyHybridReport = (() => {
             const details = ThundyProviderResults.hybridDetails(root, expected);
             const evaluation = ThundyProviderResults.evaluate('hybridanalysis', root);
             const report = {index:reports.length + 1,sections:details.sections,emptySections:details.emptySections,
-                truncated:details.truncated,verdict:evaluation.verdict,completion:evaluation.completion,conflicts:evaluation.conflicts,
+                truncated:details.truncated,verdict:evaluation.verdict,completion:evaluation.completion,
+                completionConfirmed:evaluation.completion === 'complete' && ThundyProviderResults.hybridCompletionConfirmed(root),
+                signals:evaluation.signals,conflicts:evaluation.conflicts,
                 observedAt:Number.isFinite(Date.parse(item.report_fetched_at)) ? Date.parse(item.report_fetched_at) : null,
                 origin:'stored',referenceBinding:expected && root.sha256 ? 'hash' : 'resource',
                 missingSections:groups.filter(id => !details.sections.some(s => s.id === id) && !details.emptySections.includes(id))};
@@ -74,6 +76,7 @@ const ThundyHybridReport = (() => {
         const get = id => document.getElementById(id), t = key => ThundyI18n.get(key);
         const status = get('hybridReportStatus');
         const overview = get('hybridReportOverview'), content = get('hybridReportContent');
+        const comparison = get('hybridReportComparison');
         const filters = get('hybridReportFilters'), select = get('hybridReportSelect');
         const search = get('hybridReportSearch'), sectionFilter = get('hybridReportSection');
         const previous = get('hybridReportPrevious'), next = get('hybridReportNext');
@@ -91,6 +94,16 @@ const ThundyHybridReport = (() => {
         const date = value => new Date(value).toLocaleString(document.documentElement.lang || undefined);
         const activeReport = () => snapshot.reports[Number(select.value) || 0];
         const assessment = report => report.sections.find(section => section.id === 'assessment')?.rows?.[0] || [];
+        const reportField = (report,key) => assessment(report).find(field => field.key === key)?.value;
+        const environment = report => reportField(report,'environment_description') ?? reportField(report,'environment_id');
+        const verdictText = verdict => t('analysisVerdict_'+(verdict || 'unknown'));
+        const analysisStart = report => {
+            const value = reportField(report,'analysis_start_time');
+            // A date from the viewer's time zone must not be inferred from a provider value.
+            if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)) return null;
+            const time = Date.parse(value.replace(' ','T'));
+            return Number.isFinite(time) ? time : null;
+        };
         const appendField = (list,label,value) => list.append(text('dt',label),text('dd',value));
         const appendTime = (list,label,value) => {
             if (!Number.isFinite(value) || Number.isNaN(new Date(value).getTime())) return;
@@ -115,32 +128,106 @@ const ThundyHybridReport = (() => {
             });
             return button;
         };
+        function explain(report) {
+            const signals = [...new Map((report.signals || []).map(signal => [
+                JSON.stringify([signal.code,signal.verdict,signal.value,signal.total]),signal
+            ])).values()];
+            if (!signals.length) return null;
+
+            const decisive = [];
+            const seenCodes = new Set();
+            for (const signal of signals) {
+                if (signal.verdict !== report.verdict || seenCodes.has(signal.code)) continue;
+                decisive.push(signal);
+                seenCodes.add(signal.code);
+                if (decisive.length === 3) break;
+            }
+            const section = text('section','','report-explanation');
+            section.append(text('h3',t('hybridReportWhy')));
+            const list = entries => {
+                const ul = text('ul','');
+                for (const signal of entries) {
+                    const values = [t('assessmentSignal_'+signal.code),verdictText(signal.verdict)];
+                    if (Number.isFinite(signal.value)) {
+                        values.push(Number.isFinite(signal.total) ? signal.value+' / '+signal.total : signal.value);
+                    }
+                    ul.append(text('li',values.join(' · ')));
+                }
+                return ul;
+            };
+            if (decisive.length) section.append(list(decisive));
+            const more = signals.filter(signal => !decisive.includes(signal));
+            if (more.length) {
+                const disclosure = text('details','');
+                disclosure.append(text('summary',t('hybridReportMoreSignals')),list(more));
+                section.append(disclosure);
+            }
+            return section;
+        }
+        function paintComparison() {
+            if (snapshot.reports.length < 2) return;
+            const panel = text('details','','card report-comparison');
+            panel.append(text('summary',t('hybridReportCompare')+' · '+snapshot.reports.length));
+            const list = text('ol','');
+            for (const [index,report] of snapshot.reports.entries()) {
+                const row = text('li','');
+                const button = text('button',t('hybridReportRun')+' '+(index+1));
+                button.type = 'button';
+                button.dataset.run = String(index);
+                button.addEventListener('click', () => {
+                    select.value = String(index);
+                    selectRun();
+                    overview.querySelector('h2')?.focus();
+                });
+                const fields = text('dl','');
+                const add = (label,value) => {
+                    const cell = text('div','');
+                    appendField(cell,label,value);
+                    fields.append(cell);
+                };
+                const start = analysisStart(report);
+                const scope = report.sections.filter(section => section.rows.length).length;
+                add(t('hybridField_environment_description'),environment(report) ?? t('auditUnavailable'));
+                add(t('hybridField_analysis_start_time'),start === null ? t('analysisTimeUnknown') : date(start));
+                add(t('hybridField_verdict'),reportField(report,'verdict') ?? t('auditUnavailable'));
+                add(t('hybridReportAssessment'),verdictText(report.verdict));
+                add(t('hybridReportSectionsWithData'),scope+' / '+groups.length);
+                row.append(button,fields);
+                list.append(row);
+            }
+            panel.append(list);
+            comparison.replaceChildren(panel);
+        }
         function paintOverview() {
             const report = activeReport();
             const card = text('section','','card report-overview');
             const identity = snapshot.resource.url || snapshot.resource.name;
             const identityRow = text('div','','report-value');
-            identityRow.append(text('h2',identity || t('hybridExpert_identity'),'report-identity'));
+            const heading = text('h2',identity || t('hybridExpert_identity'),'report-identity');
+            heading.tabIndex = -1;
+            identityRow.append(heading);
             if (identity) {
                 const label = t(snapshot.resource.url ? 'hybridReportResource_url' : 'hybridReportResource_name');
                 identityRow.append(copy(identity,label));
             }
             card.append(identityRow);
-            const verdict = text('p','Hybrid Analysis · '+t('analysisVerdict_'+(report.verdict || 'unknown')),
+            const verdict = text('p',t('hybridReportAssessment')+' · '+verdictText(report.verdict),
                 Object.hasOwn(warningRank,report.verdict) ? 'report-verdict warning' : 'report-verdict');
             card.append(verdict,text('p',t('hybridReportSaved')+' · '+select.options[Number(select.value) || 0].textContent,'report-run'));
             const fields = text('dl','');
-            appendField(fields,t('assessmentCompletion'),t('hybridReportProcessing_'+(report.completion || 'unknown')));
+            const processing = report.completion === 'complete' && !report.completionConfirmed
+                ? 'unconfirmed' : report.completion || 'unknown';
+            appendField(fields,t('assessmentCompletion'),t('hybridReportProcessing_'+processing));
             const local = snapshot.local;
             appendField(fields,t('localScoreMessage'),local?.state !== 'failed' && Number.isFinite(local?.score)
                 ? local.score+' / 100' : t('auditUnavailable'));
-            for (const key of ['verdict','threat_score','threat_level','vx_family','analysis_start_time']) {
+            for (const key of ['verdict','threat_score','threat_level','vx_family']) {
                 const field = assessment(report).find(field => field.key === key);
                 if (field) appendField(fields,fieldLabel(key),valueText(field.value));
             }
-            appendTime(fields,t('hybridReportRetrievedAt'),report.observedAt);
-            appendTime(fields,t('hybridReportCapturedAt'),snapshot.capturedAt);
             card.append(fields);
+            const explanation = explain(report);
+            if (explanation) card.append(explanation);
             const retained = snapshot.retainedFinding;
             if (retained && warningRank[retained.verdict] > (warningRank[report.verdict] || 0)) {
                 const notice = text('div','','warning retained-finding');
@@ -151,6 +238,17 @@ const ThundyHybridReport = (() => {
                 if (times.childElementCount) notice.append(times);
                 card.append(notice);
             }
+            const provenance = text('details','','report-provenance');
+            provenance.open = !!overview.querySelector('.report-provenance[open]');
+            provenance.append(text('summary',t('hybridReportProvenance')));
+            const dates = text('dl','');
+            const start = analysisStart(report);
+            if (start === null) appendField(dates,t('hybridField_analysis_start_time'),t('analysisTimeUnknown'));
+            else appendTime(dates,t('hybridField_analysis_start_time'),start);
+            appendTime(dates,t('hybridReportRetrievedAt'),report.observedAt);
+            appendTime(dates,t('hybridReportCapturedAt'),snapshot.capturedAt);
+            provenance.append(dates);
+            card.append(provenance);
             if (report.conflicts?.includes('mixed_verdicts')) card.append(text('p',t('assessmentConflict'),'warning'));
             if (snapshot.truncated || report.truncated || snapshot.resource.urlTruncated) card.append(text('p',t('analysisTruncated'),'warning'));
             if (report.missingSections.length || report.emptySections.length) {
@@ -241,7 +339,15 @@ const ThundyHybridReport = (() => {
             pageIndex = 0;
             paintSections();
         }
-        select.addEventListener('change',() => {paintOverview();restartSections();});
+        function selectRun() {
+            for (const button of comparison.querySelectorAll('button[data-run]')) {
+                if (button.dataset.run === select.value) button.setAttribute('aria-current','true');
+                else button.removeAttribute('aria-current');
+            }
+            paintOverview();
+            restartSections();
+        }
+        select.addEventListener('change',selectRun);
         search.addEventListener('input',restartSections);
         sectionFilter.addEventListener('change',restartSections);
         function movePage(step) {
@@ -258,6 +364,7 @@ const ThundyHybridReport = (() => {
             snapshot = null;
             copyGeneration++;
             overview.replaceChildren();
+            comparison.replaceChildren();
             content.replaceChildren();
             select.replaceChildren();
             sectionFilter.replaceChildren();
@@ -278,7 +385,7 @@ const ThundyHybridReport = (() => {
                 snapshot = result.report;
                 for (const [index,report] of snapshot.reports.entries()) {
                     const metadata = assessment(report);
-                    const env = metadata.find(f => f.key === 'environment_description')?.value ?? metadata.find(f => f.key === 'environment_id')?.value;
+                    const env = environment(report);
                     const job = metadata.find(f => f.key === 'job_id')?.value;
                     const label = [t('hybridReportRun')+' '+(index+1),env,job].filter(value => value != null && value !== '').join(' · ');
                     const option = text('option',label);
@@ -289,8 +396,8 @@ const ThundyHybridReport = (() => {
                 filters.hidden = false;
                 search.disabled = false;
                 status.textContent = '';
-                paintOverview();
-                restartSections();
+                paintComparison();
+                selectRun();
             } catch (_) {if(!disposed)reset();}
         })();
         const dispose=()=>{disposed=true;reset();api.runtime.onMessage.removeListener(listener);};document.defaultView.addEventListener('pagehide',dispose,{once:true});

@@ -3061,5 +3061,32 @@
   },
   "hybridReportCopyUtc": {
     "message": "Kopiuj UTC"
+  },
+  "hybridReportWhy": {
+    "message": "Skąd ta ocena?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Pozostałe sygnały oceny"
+  },
+  "hybridReportCompare": {
+    "message": "Porównaj przebiegi analizy"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Sekcje z danymi"
+  },
+  "hybridReportAssessment": {
+    "message": "Ocena Thundy na podstawie danych Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Źródło i znaczniki czasu"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Wynik dostępny · zakończenie niepotwierdzone"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Otwórz raport Hybrid"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Pokaż szczegóły ustalenia"
   }
 }
