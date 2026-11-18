@@ -2411,14 +2411,16 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
     formData.append('scan_type', 'all');
     // Send exactly the bytes whose hash was checked, with Thunderbird's actual filename.
     formData.append('file', new File([bytes], file.name || attachmentName, {type:file.type || 'application/octet-stream'}));
-    const options = getHybridAnalysisOptions('POST', formData);
-    options.analysisContext = {...analysisContext, validateResponse};
-    options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
-    assertExternalAnalysisAllowed();
-    if (!tierAtLeast('balanced')) throw typedError(TIER_BLOCKS_UPLOAD, msg('errorTierUploadBlocked'));
-    await requireHostPermission(options.url);
+    const url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
+    await requireHostPermission(url);
     const beforeSend = matching(await getFromStore(db, 'hybridanalysis', key));
     if (messageContext?.disposed || beforeSend.length !== 1 || reference(beforeSend[0]) !== originalReference) throw changed();
+    // Read policy and credentials after preflight awaits, immediately before queuing.
+    assertExternalAnalysisAllowed();
+    if (!tierAtLeast('balanced')) throw typedError(TIER_BLOCKS_UPLOAD, msg('errorTierUploadBlocked'));
+    const options = getHybridAnalysisOptions('POST', formData);
+    options.analysisContext = {...analysisContext, validateResponse};
+    options.url = url;
     const response = await apiGateway.fetchWithTimeout(options.url, options, 60000);
     const data = await response.json();
     if (response.status !== 200 && response.status !== 201) throw new Error(uiText('ui_060', 'Fehler beim Upload: ') + String(response.status));

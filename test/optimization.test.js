@@ -1324,3 +1324,15 @@ test('a newer resource reference during manual hashing prevents the POST',async(
  s.records.get(s.message.headerMessageId).attachments[0].hybrid_quick_scan_id='newer-before-send';release();
  await assert.rejects(upload,{code:'MESSAGE_CONTEXT_CHANGED'});assert.equal(s.posts.length,0);
 });
+
+test('manual uploads use current credentials and policy after the last storage wait',async()=>{
+ for(const change of ['key','removed-key','consent','tier']){
+  const s=await manualUploadFixture(),get=s.context.getFromStore;let reads=0,release;
+  s.context.getFromStore=async(...args)=>{if(++reads===2)await new Promise(resolve=>{release=resolve;});return get(...args);};
+  const upload=s.upload();while(!release)await new Promise(setImmediate);
+  const assignments={key:"apikey_hybridanalysis='rotated-key'",'removed-key':"apikey_hybridanalysis=''",consent:'externalAnalysisConsent=false',tier:"privacyTier='strict'"};
+  vm.runInContext(assignments[change],s.context);release();
+  if(change==='key'){await upload;assert.equal(s.posts.length,1);assert.equal(s.posts[0].options.headers['api-key'],'rotated-key');}
+  else{await assert.rejects(upload);assert.equal(s.posts.length,0,change);}
+ }
+});
