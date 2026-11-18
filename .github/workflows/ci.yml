@@ -159,12 +159,18 @@ jobs:
       - name: Download pinned previous release for upgrade checks
         run: |
           python3 - <<'PYTHON'
-          import hashlib, pathlib, urllib.request
-          url = 'https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.25.7/thundy-av-1.25.7.xpi'
+          import hashlib, io, json, pathlib, urllib.request, zipfile
+          version = json.loads(pathlib.Path('manifest.json').read_text())['version']
+          baseline = json.loads(pathlib.Path('scripts/release-upgrade-baselines.json').read_text())[version]
+          previous = baseline['version']
+          url = f'https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v{previous}/thundy-av-{previous}.xpi'
           with urllib.request.urlopen(url, timeout=30) as response:
               data = response.read()
-          if hashlib.sha256(data).hexdigest() != '4d397e08bf3d27e038221ea0222b90b0d135ef46d5572152dcf014fb16be55c7':
+          if hashlib.sha256(data).hexdigest() != baseline['sha256']:
               raise SystemExit('Previous release hash mismatch')
+          with zipfile.ZipFile(io.BytesIO(data)) as package:
+              if json.loads(package.read('manifest.json'))['version'] != previous:
+                  raise SystemExit('Previous release manifest version mismatch')
           pathlib.Path('build/previous.xpi').write_bytes(data)
           PYTHON
           chmod 644 build/previous.xpi

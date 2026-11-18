@@ -14,7 +14,11 @@ function audit(record) {
 function native(report) {
     const restart=value=>value?{...pick(value,['storagePreserved','auditRecordsPreserved']),uiLanguage:language(value.uiLanguage),addon:{version:version(value.addon?.version),...(typeof value.addon?.active==='boolean'?{active:value.addon.active}:{})}}:undefined;
     const recovery=value=>value?{...pick(value,['storagePreserved','decisionNotInvented','extraOsDispatches']),...(value.record?{record:audit(value.record)}:{})}:undefined;
+    const restore = report.backupRestore;
     return {...pick(report,['extensionVersion','xpiSha256','passed','gracefulRestarts','forcedRestarts']),
+        previousXpiSha256:typeof report.previousXpiSha256==='string' && /^[0-9a-f]{64}$/.test(report.previousXpiSha256) ? report.previousXpiSha256 : undefined,
+        backupRestore:restore?{...booleans(restore,['passed']),restoredVersion:version(restore.restoredVersion),
+            ...(Number.isSafeInteger(restore.snapshotRecordsPreserved)?{snapshotRecordsPreserved:restore.snapshotRecordsPreserved}:{})}:undefined,
         clientMatrixTarget:['minimum','current'].includes(report.clientMatrixTarget)?report.clientMatrixTarget:undefined,
         uiLanguage:language(report.uiLanguage),client:{capabilities:{browserName:report.client?.capabilities?.browserName==='thunderbird'?'thunderbird':undefined,browserVersion:version(report.client?.capabilities?.browserVersion)}},
         previousInstallation:{extensionVersion:version(report.previousInstallation?.extensionVersion),

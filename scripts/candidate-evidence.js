@@ -62,6 +62,7 @@ function validateReports(identity, thunderbird, browserUi) {
     const { matrix } = require('../tools/browser-ui.dev.cjs');
     const expected = matrix({ matrix: 'full', zoom: 1 }, ['alerts', 'capacity-alerts', 'capacity', 'cases', 'events', 'health', 'heartbeats', 'storage']);
     const versionParts=identity.extensionVersion.split('.').map(Number);
+    const baseline = require('./release-upgrade-baselines.json')[identity.extensionVersion];
     if(versionParts[0]>1 || versionParts[0]===1 && (versionParts[1]>25 || versionParts[1]===25 && versionParts[2]>=1)) {
         const automatic=thunderbird.some(r=>r.passed===true&&!r.error&&r.extensionVersion===identity.extensionVersion&&r.xpiSha256===identity.packageSha256&&r.automaticScans?.passed===true&&r.automaticScans.bothProvidersWithoutLinkClick===true&&r.automaticScans.popupClosedDuringRetry===true&&r.automaticScans.duplicateDisplayReused===true&&r.automaticScans.unlisted===true&&r.automaticScans.syntheticTransport===true&&r.providerResults?.passed===true&&r.providerResults.partialMaliciousBlocks===true&&r.providerResults.terminalUnknownRetainsFinding===true&&r.providerResults.brandDoesNotEscalate===true&&r.providerResults.refreshWithoutSubmission===true&&r.providerResults.bothViewsAgree===true);
         if(!automatic)throw new Error('Missing package-bound automatic scan acceptance');
@@ -103,11 +104,21 @@ function validateReports(identity, thunderbird, browserUi) {
                 report.client?.capabilities?.browserName === 'thunderbird' && Number.isInteger(report.gracefulRestarts) && report.gracefulRestarts >= 2 && Number.isInteger(report.forcedRestarts) && report.forcedRestarts >= 2 && historicalRecordsPreserved(report) &&
                 report.previousRestart?.storagePreserved === true && current?.storagePreserved === true && current.addon?.version === identity.extensionVersion && current.addon.active === true &&
                 report.previousRestart?.addon?.version === report.previousInstallation?.extensionVersion && report.previousRestart.addon.version !== identity.extensionVersion && current.auditRecordsPreserved >= 3 &&
+                (!baseline || (report.previousInstallation.extensionVersion === baseline.version && report.previousXpiSha256 === baseline.sha256 &&
+                    report.backupRestore?.passed === true && report.backupRestore.restoredVersion === baseline.version &&
+                    Number.isInteger(report.backupRestore.snapshotRecordsPreserved) && report.backupRestore.snapshotRecordsPreserved >= 3)) &&
                 report.acknowledgedCrashRecovery?.storagePreserved === true && report.acknowledgedCrashRecovery.extraOsDispatches === 0 &&
                 pending?.storagePreserved === true && pending.decisionNotInvented === true && pending.extraOsDispatches === 0 &&
                 pending.record?.outcome === 'PENDING' && pending.record.decidedAt === null && pending.record.openAttempts === 0 &&
                 Array.isArray(report.finalAuditRecords) && report.finalAuditRecords.some(record => record.id === pending.record.id && record.outcome === 'PENDING' && record.decidedAt === null);
         };
+        if (baseline) {
+            for (const target of ['minimum','current']) {
+                if (!thunderbird.some(report => validUpgrade(report) && report.clientMatrixTarget === target)) {
+                    throw Error('Missing pinned upgrade/crash/restore evidence from '+baseline.version+': '+target+'/'+lang);
+                }
+            }
+        }
         if(versionParts[0]>1||versionParts[0]===1&&(versionParts[1]>25||versionParts[1]===25&&versionParts[2]>=5)) {
             for(const target of ['minimum','current']) {
                 const flags=['passed','realThunderbirdAPIs','realDownloadsAPI','nativeFilePicker','exportedSavedPolicy','explicitUiImport','previewReadOnly','cancelPreserved','unrelatedDataPreserved','v1Compatible','noConsentOrPermissionGrant','noProviderRequests','appearanceProfileCompatible'];
