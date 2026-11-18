@@ -18,9 +18,13 @@
 | L05 | Lokaler Lesefehler und fehlender Quellenkontext werden getrennt behandelt | OK | test/optimization.test.js, Fehler injiziert |
 | L06 | Ungültige oder fehlende Zahlen werden nicht zu 0 | OK | test/popup-loading.test.js, ungültige Antworten |
 | L07 | Zeitüberschreitung und Antworten nach Schließen ändern die Anzeige nicht verspätet | OK | test/popup-loading.test.js, kontrollierte Antwortreihenfolge |
+| L09 | Versionierte Scores: ältere Antworten und verspätete Quelle nach Timeout verworfen | OK | test/popup-loading.test.js, kontrollierte Reihenfolge und Runtimewechsel |
+| L10 | Vollständige URL-Ziele unabhängig von Anbieterfiltern; exakte Befundzuordnung | OK | test/optimization.test.js, tatsächliche Parser und simulierte Thunderbird-APIs |
+| L11 | Anhangabgleich liest nur relevante Teile und prüft tatsächliche Bytes | OK | test/optimization.test.js, Dateiaufrufe gezählt und Bytes geändert |
+| L12 | Auditwartezeiten begrenzt, reale Schreibreihenfolge und PENDING erhalten | OK | test/optimization.test.js, virtuelle Zeit und verspätete Commits |
 | L08 | Scorezeile und Fehlerzustand in beiden Ansichten, sechs Sprachen | OK | test/analysis-sources.test.js, simulierter DOM |
 
-**Summe:** 13 OK / 0 FAIL / 0 N/A / 4 OFFEN
+**Summe:** 17 OK / 0 FAIL / 0 N/A / 4 OFFEN
 
 API-Antworten sind synthetisch. Der konkrete Speicherfehler im Nutzerprofil ist noch nicht diagnostiziert. Keine Neuinterpretation historischer Entscheidungen und keine automatische Datenlöschung.
 

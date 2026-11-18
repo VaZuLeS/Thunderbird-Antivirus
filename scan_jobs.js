@@ -91,9 +91,9 @@ const ThundyScans=(()=>{
     async function link(job,url,patch){await record(job,old=>{const values=[...(old.links||[])];const index=values.findIndex(l=>l.url===url);const previous=index<0?{}:values[index];if(patch.urlscan&&previous.urlscan?.uuid===patch.urlscan.uuid&&previous.urlscan?.assessment&&!patch.urlscan.assessment)patch={...patch,urlscan:{...previous.urlscan,...patch.urlscan}};if(patch.urlscan?.assessment&&previous.urlscan?.uuid===patch.urlscan.uuid&&previous.urlscan?.assessment){const assessed=ThundyProviderResults.merge(previous.urlscan.assessment,patch.urlscan.assessment);patch={...patch,urlscan:{...patch.urlscan,assessment:assessed,status:['ERROR','TIMEOUT'].includes(patch.urlscan.status)?patch.urlscan.status:ThundyProviderResults.urlscanStatus(assessed,patch.urlscan.status==='MALICIOUS_VISUAL')}};}if(patch.assessment){patch={...patch,assessment:(previous.assessmentScanId===job.id||job.options.refresh||previous.state==='UPLOADED'&&patch.hybrid_submission_id===undefined)?ThundyProviderResults.merge(previous.assessment,patch.assessment):patch.assessment,assessmentScanId:job.id};patch.hybrid_verdict={status:({malicious:'MALICIOUS',suspicious:'SUSPICIOUS',none:'CLEAN',unknown:'UNKNOWN'})[patch.assessment.verdict],observedAt:Date.now()};}const value={...previous,url,created:index<0?new Date().toISOString():values[index].created,...patch};if(index<0)values.push(value);else values[index]=value;return {...old,links:values};});job.revision=crypto.randomUUID();scheduleRisk(job);}
     function pending(job,resource,value){job.pendingResources ||= new Set();if(value)job.pendingResources.add(resource);else job.pendingResources.delete(resource);job.pending=job.pendingResources.size>0;}
     async function updateRisk(job){
-        coordinator.assert(job);const p=job.prepared,text=extractTextFromParts(p.full.parts||p.full);
+        coordinator.assert(job);const p=job.prepared,text=extractTextFromParts(p.full.parts||p.full),assessment=typeof beginLocalAssessment==='function'?beginLocalAssessment(p.message.id):null;
         const risk=await collectThreatEvaluationOptions({message:p.message,fullMessage:p.full,filteredUrls:p.urls,messageText:text,allowExternal:false});coordinator.assert(job);
-        risk.urlhausDomains=job.domains||[];risk.maliciousIps=job.ips||[];const threat=calculateThreatScore(p.message.author,p.urls,risk);threat.coverage=localContentCoverage(p.full);recordLocalCoverage(p.context,threat.coverage,threat);
+        risk.urlhausDomains=job.domains||[];risk.maliciousIps=job.ips||[];const threat=calculateThreatScore(p.message.author,p.localUrls||p.urls,risk);threat.coverage=localContentCoverage(p.full);if(assessment)threat.assessment={...assessment,observedAt:Date.now()};if(recordLocalCoverage(p.context,threat.coverage,threat)===false)return;
         for(const tab of p.context.tabs){const current=await getFirstDisplayedMessage(tab);coordinator.assert(job);if(current?.id===p.message.id)await injectThreatBanner(tab,threat);}
     }
     function scheduleRisk(job){if(job.riskTimer)return;job.riskTimer=setTimeout(()=>{job.riskTimer=null;if(coordinator.active(job))updateRisk(job).catch(()=>{});},300);}
@@ -200,7 +200,8 @@ const ThundyScans=(()=>{
             let full=options.full||await readFullForAnalysis(message),attachments=options.attachments;
             if(!attachments)try{attachments=await browser.messages.listAttachments(message.id);}catch(_){attachments=[];full={...full,thundyInputStatus:'incomplete',thundyInventoryIncomplete:true};}
             guard();
-            const allUrls=[...new Set(filterUrls(extractUrls(extractTextFromParts(full.parts||full))))];
+            const localUrls=typeof messageUrlInventory==='function'?messageUrlInventory(full):extractUrls(extractTextFromParts(full.parts||full));
+            const allUrls=[...new Set(filterUrls(localUrls))];
             const coverage={schemaVersion:1,inventoryIncomplete:full.thundyInventoryIncomplete===true,
                 attachments:{total:attachments.length,selected:Math.min(100,attachments.length),prepared:0,readFailed:0,sizeLimited:0,omitted:Math.max(0,attachments.length-100)},
                 urls:{total:allUrls.length,selected:Math.min(100,allUrls.length),omitted:Math.max(0,allUrls.length-100)},incomplete:false};
@@ -232,7 +233,7 @@ const ThundyScans=(()=>{
             const meta=record?.scanJobMeta, same=meta?.fingerprint===fingerprint;
             const pending=record?.links?.some(l=>urls.includes(l.url)&&(l.state==='UPLOADED'||ThundyProviderResults.urlscanPending(l.urlscan)))||record?.attachments?.some(a=>hashes[a.partName]===a.hybrid_sha256&&a.state==='UPLOADED');
             const reusable=same&&!pending&&meta.state==='completed'&&Date.now()-meta.finishedAt<900000?{...meta,providers,pending:false}:!options.manual&&pending&&!Object.values(providers).some(p=>p.checks.some(c=>!c.reason))?{state:meta?.errors?'incomplete':'pending',errors:meta?.errors||0,providers,pending:true,finishedAt:Date.now(),total:meta?.total||0,completed:meta?.completed||0}:null;
-            return {diagnosticRun,reusable,pending:!!pending,message:{...message,headerMessageId:key},settings,full,attachments,urls,key,context,hashes,record,fingerprint,providers,coverage};
+            return {diagnosticRun,reusable,pending:!!pending,message:{...message,headerMessageId:key},settings,full,attachments,urls,localUrls,key,context,hashes,record,fingerprint,providers,coverage};
             }catch(error){if(typeof ThundyApiDiagnostics!=='undefined'){const cancelled=error?.code==='SCAN_CANCELLED'||error?.message==='SCAN_CANCELLED';ThundyApiDiagnostics.event(diagnosticRun,cancelled?'cancelled':'precondition',{state:'failed',reason:cancelled?'cancelled':error?.message==='SCAN_PREPARATION_TIMEOUT'?'timeout':'preparation_failed'});ThundyApiDiagnostics.endRun(diagnosticRun,'failed');}throw error;}
         },
         async begin(job){const p=job.prepared;if(!Object.values(p.providers).some(v=>v.checks.some(c=>!c.reason)))return;
@@ -262,9 +263,9 @@ const ThundyScans=(()=>{
         let attachments;try{attachments=await browser.messages.listAttachments(message.id);}catch(_){attachments=[];full={...full,thundyInputStatus:'incomplete',thundyInventoryIncomplete:true};}
         await injectIntoMessageDisplay(tab.id,function(id){document.documentElement.dataset.thundyAnalysisMessage=String(id);},[message.id]);
         const context=await getMessageAnalysisContext(message,tab.id,{fullMessage:full,attachments});
-        if(!full.thundyInventoryIncomplete)await processAttachments(message,false,false,context);const text=extractTextFromParts(full.parts||full),urls=filterUrls(extractUrls(text));await indexedDB_save_links_to_db(message,urls);
+        if(!full.thundyInventoryIncomplete)await processAttachments(message,false,false,context);const text=extractTextFromParts(full.parts||full),urls=typeof messageUrlInventory==='function'?messageUrlInventory(full):extractUrls(text),eligibleUrls=filterUrls(urls);await indexedDB_save_links_to_db(message,eligibleUrls);
         await injectTimeOfClickProtection(tab.id,urls,message.id);
-        await evaluateAndInjectThreats({tab,message,fullMessage:full,urls,filteredUrls:urls,messageText:text,allowExternal:false,analysisContext:context});
+        await evaluateAndInjectThreats({tab,message,fullMessage:full,urls,filteredUrls:eligibleUrls,messageText:text,allowExternal:false,analysisContext:context});
         await coordinator.start(message,{tabId:tab.id,full,attachments,manual:false});
     }
     async function request(request,sender){

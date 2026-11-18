@@ -6,12 +6,12 @@ const {JSDOM}=require('jsdom');
 async function popup(record, lang='de', overrides={}) {
  const dom=new JSDOM(fs.readFileSync('popup.html','utf8'),{url:'https://addon.invalid/popup.html'});
  const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json'));
- const requests=[],reads=[],messages=[];
+ const requests=[],reads=[],messages=[],listeners=[];
  const browser={
   tabs:{query:async()=>[{id:1}]},messageDisplay:{getDisplayedMessages:async()=>({messages:[{id:7,headerMessageId:'fixture',subject:'Fixture',author:'sender@example.invalid'}]})},
   storage:{local:{get:async()=>overrides.localOnly?{externalAnalysisConsent:false}:{apikey:'fixture',externalAnalysisConsent:true}},onChanged:{addListener(){}}},
   permissions:{contains:async()=>true},
-  runtime:{onMessage:{addListener(){}},getURL:p=>'https://addon.invalid/'+p,openOptionsPage(){},sendMessage:async request=>{
+  runtime:{onMessage:{addListener:fn=>listeners.push(fn)},getURL:p=>'https://addon.invalid/'+p,openOptionsPage(){},sendMessage:async request=>{
    reads.push(request.action);
    if(overrides[request.action])return await overrides[request.action](request);
    messages.push(structuredClone(request));
@@ -35,7 +35,7 @@ async function popup(record, lang='de', overrides={}) {
  vm.runInContext(source,context);
  await context.initializePopup();
  await new Promise(setImmediate);
- return {dom,context,requests,reads,messages,catalog,close:()=>{dom.window.dispatchEvent(new dom.window.Event('pagehide'));dom.window.close();}};
+ return {dom,context,requests,reads,messages,catalog,notify:async()=>{for(const fn of listeners)fn({action:"analysisStatusChanged",messageId:7});await new Promise(setImmediate);},close:()=>{dom.window.dispatchEvent(new dom.window.Event('pagehide'));dom.window.close();}};
 }
 
 test('opening the popup tolerates optional Hybrid Analysis field shapes without losing other stored results',async()=>{
@@ -209,4 +209,33 @@ test('a local popup timeout stays unavailable after its delayed answer arrives',
  let expire,release;const pending=new Promise(resolve=>release=resolve);
  const f=await popup({},'de',{getMessageAnalysis:async()=>({success:false}),getLocalRisk:()=>pending,setTimeout:(fn,ms)=>ms===5000?(expire=fn,'local-deadline'):setTimeout(fn,ms),clearTimeout:id=>{if(id!=='local-deadline')clearTimeout(id);}});
  try{expire();await new Promise(setImmediate);const card=f.dom.window.document.querySelector('.local-risk');assert.equal(card.dataset.state,'failed');assert.ok(!card.textContent.includes('0 / 100'));release({threat:{score:100,reasons:[]}});await new Promise(setImmediate);assert.equal(card.dataset.state,'failed');}finally{f.close();}
+});
+
+function localAssessment(revision,runtimeId='runtime-a',extra={}){return {runtimeId,revision,messageId:7,observedAt:Date.now(),...extra};}
+function localSource(score,revision,runtimeId='runtime-a',extra={}){return {success:true,messageId:7,rows:[],availability:{},local:{state:'checked',score,reasons:[],assessment:localAssessment(revision,runtimeId,extra)}};}
+
+test('source-only score changes update the popup without a job or provider-row change',async()=>{
+ let source=localSource(0,1),calls=0;
+ const f=await popup({},'de',{getMessageAnalysis:async()=>source,getLocalRisk:async()=>{calls++;return {threat:{score:0,reasons:[],assessment:localAssessment(1)}};},setTimeout:(fn,ms)=>ms===150?'refresh-suppressed':setTimeout(fn,ms),clearTimeout:id=>{if(id!=='refresh-suppressed')clearTimeout(id);}});
+ try{const card=f.dom.window.document.querySelector('.local-risk');assert.equal(card.querySelector('progress').value,0);source=localSource(100,2);await f.notify();assert.equal(card.querySelector('progress').value,100);assert.equal(calls,1);
+  source=localSource(0,1);await f.notify();assert.equal(card.querySelector('progress').value,100);
+  const root=f.dom.window.document.getElementById('thundy-analysis-status').shadowRoot;assert.ok(root.textContent.includes('100'));
+ }finally{f.close();}
+});
+
+test('older successful and failed replies cannot replace a newer source assessment',async()=>{
+ for(const failed of [false,true]){
+  let release,source=localSource(100,3);
+  const f=await popup({},'de',{getMessageAnalysis:async()=>source,getLocalRisk:()=>new Promise(resolve=>{release=resolve;}),setTimeout:(fn,ms)=>ms===150?'refresh-suppressed':setTimeout(fn,ms),clearTimeout:id=>{if(id!=='refresh-suppressed')clearTimeout(id);}});
+  try{release(failed?{status:'error',assessment:localAssessment(1)}:{threat:{score:0,reasons:[],assessment:localAssessment(1)}});await new Promise(setImmediate);const card=f.dom.window.document.querySelector('.local-risk');assert.equal(card.dataset.state,'checked');assert.equal(card.querySelector('progress').value,100);
+   source=localSource(40,1,'runtime-b');await f.notify();assert.equal(card.querySelector('progress').value,40);source=localSource(0,99,'runtime-a');await f.notify();assert.equal(card.querySelector('progress').value,40);
+  }finally{f.close();}
+ }
+});
+
+test('a timed-out local request cannot reappear through the source event channel',async()=>{
+ let expire,request,source={success:false};
+ const f=await popup({},'de',{getMessageAnalysis:async()=>source,getLocalRisk:r=>{request=r;return new Promise(()=>{});},setTimeout:(fn,ms)=>ms===5000?(expire=fn,'deadline'):ms===150?'refresh-suppressed':setTimeout(fn,ms),clearTimeout:id=>{if(!['deadline','refresh-suppressed'].includes(id))clearTimeout(id);}});
+ try{expire();await new Promise(setImmediate);const card=f.dom.window.document.querySelector('.local-risk');assert.equal(card.dataset.state,'failed');source=localSource(0,1,'runtime-a',{requestId:request.requestId});await f.notify();assert.equal(card.dataset.state,'failed');source=localSource(100,2);await f.notify();assert.equal(card.querySelector('progress').value,100);}
+ finally{f.close();}
 });

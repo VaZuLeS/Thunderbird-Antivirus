@@ -1,6 +1,6 @@
 # Lokaler Score ohne externe Dienste — Entwicklung 1.25.9
 
-Stand: 17. November 2026. Veröffentlicht bleibt 1.25.8. Diese Korrektur betrifft den unveröffentlichten Kandidaten 1.25.9.
+Stand: 18. November 2026. Veröffentlicht bleibt 1.25.8. Diese Korrektur betrifft den unveröffentlichten Kandidaten 1.25.9.
 
 ## Befund und Korrektur
 
@@ -28,9 +28,9 @@ Bewertungsgewichte, Adminschwellen, Einwilligungen und Hostberechtigungen werden
 
 Neue native Nachweise gelten erst nach dem erfolgreichen aktuellen Lauf. Frühere grüne Linux-Läufe für `e621af5` bestätigen nicht die geänderten Paketbytes. Windows/macOS, Screenreader und echte Anbieterabnahmen bleiben getrennt.
 
-## Getrennte Folgeaufgaben zur URL-Erkennung
+## Folgeprüfung der URL-Erkennung
 
-Diese Gegenfälle wurden bei der Untersuchung ebenfalls reproduziert. Sie werden durch die Anzeigeänderung nicht als behoben bezeichnet; eine eigene Korrektur muss Ressourcenbindung und Fehlalarme berücksichtigen.
+Die nachfolgenden Gegenfälle wurden zunächst getrennt von der Anzeigeänderung untersucht. Der aktuelle Entwicklungsstand korrigiert URL-F01, URL-F02 und URL-F04 durch ein eigenes Nachrichteninventar mit tatsächlich dekodierten HTML-Linkzielen. URL-F03 bleibt offen; Bewertungsgewichte und die Abhängigkeit der Markenregel von der Absenderdomain werden nicht geändert. [Vertrag, Grenzen und Abnahme](SCORE_URL_AUDIT_1_25_9.md).
 
 | ID | Befund | Reproduzierbarer Umfang |
 | --- | --- | --- |

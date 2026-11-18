@@ -181,9 +181,21 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
 }
 
 async function injectThreatBanner(tabId, threat) {
-    if (threat.score >= 50 || threat.authStatus === 'pass') {
+    {
         const theme = typeof ThundyTheme !== 'undefined' ? await ThundyTheme.snapshot() : null;
-        await injectIntoMessageDisplay(tabId, function(score, reasons, authStatus, localized, theme) {
+        await injectIntoMessageDisplay(tabId, function(score, reasons, authStatus, localized, theme, assessment) {
+                if (assessment) {
+                    const currentMessage=document.documentElement.dataset.thundyAnalysisMessage;
+                    if(currentMessage && currentMessage!==String(assessment.messageId))return;
+                    const previous=document.__thundyLocalAssessment;
+                    const retired=previous?.retired || [];
+                    if(retired.includes(assessment.runtimeId))return;
+                    if(previous?.messageId===assessment.messageId && previous.runtimeId===assessment.runtimeId && previous.revision>=assessment.revision)return;
+                    if(previous && previous.runtimeId!==assessment.runtimeId)retired.push(previous.runtimeId);
+                    document.__thundyLocalAssessment={...assessment,retired};
+                }
+                document.getElementById('thundy-threat-banner')?.remove();
+                document.getElementById('thundy-auth-badge')?.remove();
                 const t = (key, fallback, subs) => {
                     try {
                         return localized[key] || browser.i18n.getMessage(key, subs) || fallback;
@@ -216,8 +228,6 @@ async function injectThreatBanner(tabId, threat) {
                     }
                     banner.appendChild(reasonList);
 
-                    document.getElementById('thundy-threat-banner')?.remove();
-                    document.getElementById('thundy-auth-badge')?.remove();
                     document.body.prepend(banner);
                 } else if (authStatus === 'pass') {
                     const badge = document.createElement('div');
@@ -238,7 +248,7 @@ async function injectThreatBanner(tabId, threat) {
 
                     document.body.prepend(badge);
                 }
-        }, [threat.score, threat.reasons, threat.authStatus, Object.fromEntries(Object.keys(I18N_FALLBACKS).map(key => [key, msg(key, key === 'bannerThreatScore' ? [String(threat.score)] : [])])), theme]);
+        }, [threat.score, threat.reasons, threat.authStatus, Object.fromEntries(Object.keys(I18N_FALLBACKS).map(key => [key, msg(key, key === 'bannerThreatScore' ? [String(threat.score)] : [])])), theme, threat.assessment || null]);
     }
 }
 

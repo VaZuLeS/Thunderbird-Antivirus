@@ -8,7 +8,7 @@ const ThundyLinkSecurity = (() => {
         if(!message||message.id!==session.messageId)throw Error('MESSAGE_CONTEXT_CHANGED');
         const full=await readFullForAnalysis(message);
         const text=extractTextFromParts(full.parts||full);
-        const urls=filterUrls(extractUrls(text));
+        const urls=typeof messageUrlInventory==='function'?messageUrlInventory(full):extractUrls(text);
         if(!urls.some(value=>{try{return new URL(value).href===new URL(session.url).href;}catch(_){return false;}}))throw Error('LINK_CONTEXT_CHANGED');
         const options=await collectThreatEvaluationOptions({message,fullMessage:full,filteredUrls:[session.url],messageText:text,allowExternal:false});
         const threat=calculateThreatScore(message.author,[session.url],options);

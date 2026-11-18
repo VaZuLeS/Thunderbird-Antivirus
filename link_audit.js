@@ -13,19 +13,35 @@ function pruneLinkAudit(records, now = Date.now()) {
     return retained.filter(record => { size += new TextEncoder().encode(JSON.stringify(record)).length + 1; return size <= LINK_AUDIT_BYTES; });
 }
 
-function editLinkAudit(edit, { readOnly = false } = {}) {
+const LINK_AUDIT_WAIT = 5000;
+function auditTimeout() { return Object.assign(new Error('Local audit storage timed out'), {code:'AUDIT_STORAGE_TIMEOUT'}); }
+function withinAuditDeadline(work, deadline, fallback) {
+    let timer;
+    return Promise.race([work, new Promise((resolve, reject) => {
+        timer = setTimeout(() => fallback ? resolve(fallback()) : reject(auditTimeout()), Math.max(0, deadline - Date.now()));
+    })]).finally(() => clearTimeout(timer));
+}
+
+function editLinkAudit(edit, { readOnly = false, deadline = Date.now() + LINK_AUDIT_WAIT } = {}) {
+    let expired = false;
+    const check = () => { if (expired || Date.now() >= deadline) throw auditTimeout(); };
     const job = linkAuditQueue.then(async () => {
+        check();
         const stored = await browser.storage.local.get([LINK_AUDIT_KEY, 'linkAuditProfileId']);
+        check();
         const original = Array.isArray(stored[LINK_AUDIT_KEY]) ? stored[LINK_AUDIT_KEY] : [];
         const records = pruneLinkAudit(original);
         const result = edit(records);
         const profileId = stored.linkAuditProfileId || crypto.randomUUID();
         const unchanged = readOnly && stored.linkAuditProfileId && original.length === records.length && records.every((record, index) => record === original[index]);
+        check();
         if (!unchanged) await browser.storage.local.set({ [LINK_AUDIT_KEY]: readOnly ? records : pruneLinkAudit(records), linkAuditProfileId: profileId });
         return { result, profileId };
     });
     linkAuditQueue = job.catch(() => {});
-    return job;
+    // Keep the real write in the queue even if its caller times out. A second
+    // write must never race a delayed first commit and replace newer history.
+    return withinAuditDeadline(job, deadline).catch(error => { expired = true; throw error; });
 }
 
 function reportLinkAuditFailure() {
@@ -38,42 +54,50 @@ function auditSessionKey(request, sender) {
     return sender.tab.id + ':' + request.interactionId;
 }
 
-async function updateLinkAudit(id, changes) {
+async function updateLinkAudit(id, changes, options) {
+    changes = copyAuditValue(changes);
     const { result } = await editLinkAudit(records => {
         const record = records.find(record => record.id === id);
         if (!record) return false; // Retention or explicit deletion removed this interaction.
         Object.assign(record, changes);
         return pruneLinkAudit(records).some(retained => retained.id === id);
-    });
+    }, options);
     return result;
 }
 
 async function handleAuditedLinkCheck(request, sender) {
     const clickedAt = Date.now();
+    const deadline = clickedAt + LINK_AUDIT_WAIT;
+    const bounded = (work, fallback) => withinAuditDeadline(work, deadline, () => fallback);
     const key = auditSessionKey(request, sender);
     if (!key || linkAuditSessions.has(key)) return { status: 'ERROR', auditSaved: false };
     if (linkAuditSessions.size >= LINK_AUDIT_LIMIT) linkAuditSessions.delete(linkAuditSessions.keys().next().value);
     const session = { auditSaved: true, url: request.url, messageId: request.messageId, checked: false, terminal: false, opening: false, score: null, local: {state:'pending',score:null,reasons:[],observedAt:null,scope:'link-in-message'} };
     linkAuditSessions.set(key, session);
-    session.ready = (async () => {
+    session.ready = withinAuditDeadline((async () => {
         const url = new URL(request.url);
         if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Invalid link scheme');
         const message = await getFirstDisplayedMessage(sender.tab.id, { throwOnError: true });
         if (!message || message.id !== request.messageId) throw new Error('Message context changed');
         const record = { id: crypto.randomUUID(), clickedAt, decidedAt: null, messageId: message.id, url: url.href, score: null, scoreSource: 'local-message-and-link', scoreAtDecision: null, verdict: 'UNKNOWN', verdictAtDecision: null, providerAtDecision: null, provider: 'none', reasons: [], outcome: 'PENDING', cancelReason: null, openAttempts: 0, extensionVersion: browser.runtime.getManifest().version };
         session.record = record;
-        try {
+        session.auditReady = (async () => { try {
             if (new TextEncoder().encode(JSON.stringify(record)).length + 2 > LINK_AUDIT_BYTES) throw new Error('Audit event exceeds retention budget');
-            await editLinkAudit(records => records.unshift(record));
+            const initial = copyAuditValue(record);
+            await editLinkAudit(records => records.unshift(initial), {deadline});
+            return true;
         }
-        catch (error) { session.auditSaved = false; reportLinkAuditFailure(); }
+        catch (error) { session.auditSaved = false; reportLinkAuditFailure(); return false; } })();
         return message;
-    })();
+    })(), deadline);
     try {
         const message = await session.ready;
+        // Read policy while checks are running. Starting it only at the end
+        // would incorrectly exhaust its budget after a provider timeout.
+        const securityEnabled = typeof ThundyLinkSecurity === 'undefined' ? Promise.resolve(false) : bounded(
+            Promise.resolve().then(() => ThundySecurity.read()).then(saved => saved.policy?.enabled === true).catch(() => 'unavailable'), 'unavailable');
         // Provider availability is not a prerequisite for an explicit warning
         // confirmation. Keep the click dialog bounded; background scans may continue.
-        const bounded=(work,fallback)=>{let timer;return Promise.race([work,new Promise(resolve=>{timer=setTimeout(()=>resolve(fallback),5000);})]).finally(()=>clearTimeout(timer));};
         let localActive=true;
         const localCheck = (async () => {
             try {
@@ -87,10 +111,6 @@ async function handleAuditedLinkCheck(request, sender) {
                 session.local = {state:session.score===null?'failed':typeof localContentCoverage==='function'?localContentCoverage(fullMessage).state:'checked',score:session.score,reasons:copyAuditValue((threat.reasons||[]).slice(0,20)),reasonDetails:copyAuditValue((threat.reasonDetails||[]).slice(0,20)),observedAt:session.scoredAt,scope:'link-in-message'};
                 session.reasons = copyAuditValue((threat.reasons || []).slice(0, 20));
                 session.reasonDetails = copyAuditValue((threat.reasonDetails || []).slice(0, 20));
-                try {
-                    const saved = await updateLinkAudit(session.record.id, { score: session.score, scoredAt: session.scoredAt, reasons: (threat.reasons || []).slice(0, 20), reasonDetails: (threat.reasonDetails || []).slice(0, 20) });
-                    if (!saved) session.auditSaved = false;
-                } catch (error) { session.auditSaved = false; reportLinkAuditFailure(); }
             } catch (error) { if(localActive){session.score = null;session.local={state:'failed',score:null,reasons:[],observedAt:null,scope:'link-in-message'};} }
         })();
         const localReady=bounded(localCheck,null).finally(()=>{localActive=false;if(session.local.state==='pending')session.local={...session.local,state:'failed',reason:'timeout'};});
@@ -101,7 +121,9 @@ async function handleAuditedLinkCheck(request, sender) {
         session.verdict = verdict.status || 'UNKNOWN'; session.provider = verdict.provider || 'none'; session.checked = true; session.providerCheckedAt = Date.now();
         await localReady;
         let saved = false;
-        try { saved = await updateLinkAudit(session.record.id, {
+        try { if (await session.auditReady) saved = await updateLinkAudit(session.record.id, {
+            score: session.score, scoredAt: session.scoredAt || null,
+            reasons: session.reasons || [], reasonDetails: session.reasonDetails || [],
             verdict: session.verdict,
             provider: session.provider,
             checkedAt: verdict.check?.origin === 'live' ? verdict.check.observedAt : null,
@@ -110,10 +132,14 @@ async function handleAuditedLinkCheck(request, sender) {
             errorDetails: verdict.check?.errorDetails || verdict.errorDetails || null,
             retryAfter: verdict.check?.retryAfter || verdict.retryAfter || null,
             providerReasons: (verdict.reasons || []).slice(0, 20)
-        }); }
+        }, {deadline}); }
         catch (error) { reportLinkAuditFailure(); }
         let protection=null;
-        if(typeof ThundyLinkSecurity !== 'undefined' && (await ThundySecurity.read()).policy?.enabled) { try {protection=(await ThundyLinkSecurity.evaluate(session,sender)).decision;}catch(_){protection={required:true,reason:'context_changed'};} }
+        const enabled = await securityEnabled;
+        if (enabled === true) protection = await bounded(
+            Promise.resolve().then(() => ThundyLinkSecurity.evaluate(session,sender)).then(value => value.decision).catch(() => ({required:true,reason:'context_changed'})),
+            {required:true,reason:'context_changed'});
+        else if (enabled !== false) protection = {required:true,reason:'context_changed'};
         return { ...verdict, score: session.score, local: copyAuditValue(session.local), protection, auditSaved: saved && session.auditSaved };
     } catch (error) {
         // Consume ready rejection even when cancellation arrives while initialising.
@@ -138,10 +164,13 @@ async function handleCancelAuditedLink(request, sender) {
     if (!session || session.url !== request.url || session.messageId !== request.messageId || session.opening || session.terminal) return { success: false };
     const decidedAt = Date.now();
     session.terminal = true;
+    const deadline = decidedAt + LINK_AUDIT_WAIT;
+    const reason = ['cancel', 'escape', 'destination_changed', 'context_closed'].includes(request.reason) ? request.reason : 'cancel';
+    const changes = { outcome:'ABORTED', decidedAt, cancelReason:reason, scoreAtDecision:session.scoredAt <= decidedAt ? session.score : null, verdictAtDecision:session.verdict || 'UNKNOWN', providerAtDecision:session.provider || 'none', ...decisionReasons(session, decidedAt) };
     try {
-        await session.ready;
-        const reason = ['cancel', 'escape', 'destination_changed', 'context_closed'].includes(request.reason) ? request.reason : 'cancel';
-        const saved = await updateLinkAudit(session.record.id, { outcome: 'ABORTED', decidedAt, cancelReason: reason, scoreAtDecision: session.scoredAt <= decidedAt ? session.score : null, verdictAtDecision: session.verdict || 'UNKNOWN', providerAtDecision: session.provider || 'none', ...decisionReasons(session, decidedAt) });
+        await withinAuditDeadline(session.ready, deadline);
+        if (!await withinAuditDeadline(session.auditReady, deadline)) return {success:false};
+        const saved = await updateLinkAudit(session.record.id, changes, {deadline});
         return { success: saved };
     } catch (error) { reportLinkAuditFailure(); return { success: false }; }
 }
@@ -151,14 +180,17 @@ async function handleOpenAuditedLink(request, sender) {
     if (!session || session.url !== request.url || session.messageId !== request.messageId || !session.checked || session.opening || session.terminal) return { success: false };
     session.opening = true;
     try {
-        await session.ready;
+        await withinAuditDeadline(session.ready, Date.now() + LINK_AUDIT_WAIT);
         const result = await handleOpenCheckedLink(request, sender);
         if (result.required || ['LINK_CHECK_REQUIRED','LINK_CONTEXT_CHANGED'].includes(result.code)) return {...result,auditSaved:session.auditSaved};
         session.record.openAttempts++;
         session.terminal = result.success;
         const decidedAt = Date.now();
+        const deadline = decidedAt + LINK_AUDIT_WAIT;
+        const changes = { outcome:result.success ? 'OPENED' : 'OPEN_ERROR', decidedAt, openAttempts:session.record.openAttempts, scoreAtDecision:session.score, verdictAtDecision:session.verdict || 'UNKNOWN', providerAtDecision:session.provider || 'none', ...decisionReasons(session, decidedAt) };
         try {
-            const saved = await updateLinkAudit(session.record.id, { outcome: result.success ? 'OPENED' : 'OPEN_ERROR', decidedAt, openAttempts: session.record.openAttempts, scoreAtDecision: session.score, verdictAtDecision: session.verdict || 'UNKNOWN', providerAtDecision: session.provider || 'none', ...decisionReasons(session, decidedAt) });
+            if (!await withinAuditDeadline(session.auditReady, deadline)) return {...result,auditSaved:false};
+            const saved = await updateLinkAudit(session.record.id, changes, {deadline});
             if (!saved) return { ...result, auditSaved: false };
         } catch (error) { reportLinkAuditFailure(); return { ...result, auditSaved: false }; }
         return { ...result, auditSaved: true };

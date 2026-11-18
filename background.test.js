@@ -2078,7 +2078,7 @@ describe('background.js', () => {
             assert.strictEqual(executedWarningScripts[0].args[0], 100); // 100 score
         });
 
-        it('does not inject warning banner if score < 50', async () => {
+        it('clears an obsolete warning without rendering a warning if score < 50', async () => {
             let executedWarningScripts = [];
             context.browser.scripting.executeScript = async (opts) => {
                 executedWarningScripts.push(opts);
@@ -2095,10 +2095,15 @@ describe('background.js', () => {
             // This will trigger a score of 20 because of the "Action required" subject and no other reasons.
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'User <user@example.com>', subject: 'Action required' });
 
-            assert.strictEqual(executedWarningScripts.length, 0);
+            const dom=new JSDOM('<body><div id="thundy-threat-banner">Earlier warning</div><div id="thundy-auth-badge">Earlier badge</div></body>');
+            try {
+                for(const script of executedWarningScripts)vm.runInNewContext('('+script.func.toString()+')(...args)',{document:dom.window.document,args:script.args});
+                assert.strictEqual(dom.window.document.getElementById('thundy-threat-banner'),null);
+                assert.strictEqual(dom.window.document.getElementById('thundy-auth-badge'),null);
+            } finally { dom.window.close(); }
         });
 
-        it('does not inject warning banner if score === 0', async () => {
+        it('clears an obsolete warning without rendering a warning if score === 0', async () => {
             let executedWarningScripts = [];
             context.browser.scripting.executeScript = async (opts) => {
                 executedWarningScripts.push(opts);
@@ -2114,7 +2119,12 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Friend <friend@domain.com>', subject: 'Hello' });
 
-            assert.ok(executedWarningScripts.length === 0);
+            const dom=new JSDOM('<body><div id="thundy-threat-banner">Earlier warning</div><div id="thundy-auth-badge">Earlier badge</div></body>');
+            try {
+                for(const script of executedWarningScripts)vm.runInNewContext('('+script.func.toString()+')(...args)',{document:dom.window.document,args:script.args});
+                assert.strictEqual(dom.window.document.getElementById('thundy-threat-banner'),null);
+                assert.strictEqual(dom.window.document.getElementById('thundy-auth-badge'),null);
+            } finally { dom.window.close(); }
         });
     });
 

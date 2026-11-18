@@ -118,10 +118,21 @@ let refreshStoredResults = null, refreshLocalAssessment = null;
 let refreshTimer = null, lastJobState = null;
 // Mount the local assessment before starting cache/source requests. Neither
 // those requests nor stored report refreshes own this independent result.
-let localGeneration=0,localResult=null,renderLocalSourceState=()=>{};
+let localGeneration=0,localResult=null,renderLocalSourceState=()=>{},latestLocalAssessment=null;
+const retiredLocalRuntimes=new Set(),timedOutLocalRequests=new Set();
 const localCard=document.createElement('section');localCard.className='card local-risk';localCard.setAttribute('role','status');
 document.querySelector('.grid-container').before(localCard);
-function renderLocalAssessment(threat,state){
+function renderLocalAssessment(threat,state,fromSource=false){
+    const candidate=threat?.assessment;
+    const assessment=candidate&&typeof candidate.runtimeId==='string'&&candidate.messageId===message.id&&Number.isSafeInteger(candidate.revision)&&candidate.revision>0&&Number.isFinite(candidate.observedAt)?candidate:null;
+    if(fromSource&&!assessment)return false;
+    if(assessment){
+        if(retiredLocalRuntimes.has(assessment.runtimeId)||timedOutLocalRequests.has(assessment.requestId))return false;
+        if(latestLocalAssessment?.runtimeId===assessment.runtimeId&&latestLocalAssessment.revision>=assessment.revision)return false;
+        if(latestLocalAssessment&&latestLocalAssessment.runtimeId!==assessment.runtimeId)retiredLocalRuntimes.add(latestLocalAssessment.runtimeId);
+        latestLocalAssessment=assessment;
+    }else if(fromSource)return false;
+    if(fromSource)localGeneration++;
     const valid=state!=='failed'&&typeof threat?.score==='number'&&Number.isFinite(threat.score)&&threat.score>=0&&threat.score<=100;
     const risk=valid?threat.score:null;
     localCard.className='card local-risk'+(valid?' '+(risk>=50?'risk-high':risk>=25?'risk-medium':'risk-low'):'');
@@ -138,17 +149,17 @@ function renderLocalAssessment(threat,state){
     if(valid&&reasons.length){const list=document.createElement('ul');list.className='risk-reasons';for(const reason of reasons.slice(0,3)){const item=document.createElement('li');item.textContent=String(reason);list.append(item);}content.push(list);}
     const note=document.createElement('p');note.className='risk-note';note.textContent=uiText('popupLocalExplanation','Local indicators only. This score is not an antivirus verdict or a guarantee of safety.');content.push(note);
     localCard.replaceChildren(...content);
-    localResult={state:state==='pending'?'unrecorded':state,score:valid?risk:null,reasons:valid?reasons.slice(0,20):[],source:'local',observedAt:state==='pending'?null:Date.now()};renderLocalSourceState();
+    localResult={state:state==='pending'?'unrecorded':state,score:valid?risk:null,reasons:valid?reasons.slice(0,20):[],source:'local',observedAt:assessment?.observedAt||null,...(assessment?{assessment}:{})};if(!fromSource)renderLocalSourceState();return true;
 }
 renderLocalAssessment(null,'pending');
 refreshLocalAssessment=async()=>{
-    const own=++localGeneration;let timer;
+    const own=++localGeneration,requestId=Date.now().toString(36)+'_'+Math.random().toString(36).slice(2)+'_'+own;let timer;
     const current=()=>!hybridReportDisposed&&popupMessageId===message.id&&own===localGeneration;
     try{
-        const result=await Promise.race([browser.runtime.sendMessage({action:'getLocalRisk',messageId:message.id}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('LOCAL_RISK_TIMEOUT')),5000);})]);
+        const result=await Promise.race([browser.runtime.sendMessage({action:'getLocalRisk',messageId:message.id,requestId}),new Promise((_,reject)=>{timer=setTimeout(()=>{timedOutLocalRequests.add(requestId);reject(Error('LOCAL_RISK_TIMEOUT'));},5000);})]);
         if(!current())return;
         const threat=result?.threat,state=threat?.coverage?.state||'checked';
-        if(!threat||!Number.isFinite(threat.score)||threat.score<0||threat.score>100||state==='failed')renderLocalAssessment(null,'failed');
+        if(!threat||!Number.isFinite(threat.score)||threat.score<0||threat.score>100||state==='failed')renderLocalAssessment({assessment:result?.assessment||threat?.assessment},'failed');
         else renderLocalAssessment(threat,state==='incomplete'?'incomplete':'checked');
     }catch(_){if(current())renderLocalAssessment(null,'failed');}finally{clearTimeout(timer);}
 };
@@ -161,7 +172,7 @@ if (typeof ThundyAnalysis !== 'undefined') {
     const sourceTheme = typeof ThundyTheme !== 'undefined' ? (await ThundyTheme.snapshot())?.css || '' : '';
     const noSources = { messageId: message.id, local: { state: 'unrecorded' }, rows: [], availability: {} };
     let sourceView=noSources;
-    const renderSourceState=data=>{if(data)sourceView=data;ThundyAnalysis.render({...sourceView,...(localResult?{local:localResult}:{})},sourceLabels,sourceTheme);};
+    const renderSourceState=data=>{if(data){sourceView=data;if(data.local)renderLocalAssessment(data.local,data.local.state,true);}ThundyAnalysis.render({...sourceView,...(localResult?{local:localResult}:{})},sourceLabels,sourceTheme);};
     renderLocalSourceState=()=>renderSourceState();renderSourceState(noSources);
     const refreshSources = async () => {
         const own = ++sourceGeneration;

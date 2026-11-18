@@ -1,10 +1,10 @@
-# Aktueller Produktstand — 17. November 2026
+# Aktueller Produktstand — 18. November 2026
 
 **Veröffentlicht: 1.25.8.** [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.8), XPI-SHA-256 `12f6f4f19ea9950f3ccd318f4b7df7c73abcb4cc10dadbf9914dcb7d51b416c4`. Alle drei öffentlichen Assets sind unabhängig geprüft. [Veröffentlichungsnachweis](VEROEFFENTLICHUNG_1_25_8.md), [Abnahme](live_test_1_25_8.md).
 
 Gespeicherte Anbieterfehler blockieren neuere belegte Befunde nicht mehr. API-Diagnose korrigiert Ablauf paralleler Aufzeichnungen, sichere Protokollwerte und UTF-8-Größen. Der gepinnte Vendorbestand ist abgeglichen. [Fünf Korrekturen](FEHLERKORREKTUREN_1_25_8.md), [Releaseumfang](releases/1.25.8.md). Keine Identitätsmigration oder zusätzliche Anbieteranfragen. Der ursprüngliche Live-Anbieterfall bleibt ohne tatsächliche Diagnosedaten offen. [1.25.7](VEROEFFENTLICHUNG_1_25_7.md) bleibt historische Veröffentlichung.
 
-**Entwicklung: 1.25.9**, noch unveröffentlicht. Eine [sichtbare lokale Scoreanzeige](LOKALER_SCORE_1_25_9.md) ohne externe Dienste, begrenzte Linkwartezeit und sichere Speicherfehlercodes werden um eine [eigene API-Diagnoseansicht](API_DIAGNOSEANSICHT_1_25_9.md) mit Ablaufkorrelation, Filter, Pause und Adminschutz ergänzt. Lokale und synthetische Nachweise ersetzen keine aktuelle native Paketabnahme.
+**Entwicklung: 1.25.9**, noch unveröffentlicht. Eine [sichtbare lokale Scoreanzeige](LOKALER_SCORE_1_25_9.md) ohne externe Dienste, begrenzte Linkwartezeit und sichere Speicherfehlercodes werden um eine [eigene API-Diagnoseansicht](API_DIAGNOSEANSICHT_1_25_9.md) mit Ablaufkorrelation, Filter, Pause und Adminschutz ergänzt. Die [Fortführung für Score-Aktualität, URL-Zuordnung, Anhangabgleich und Auditwartezeiten](SCORE_URL_AUDIT_1_25_9.md) gehört ebenfalls zum Entwicklungskandidaten. Lokale und synthetische Nachweise ersetzen keine aktuelle native Paketabnahme.
 
 ## Funktionen und nachgewiesene Grenzen
 
