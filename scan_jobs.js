@@ -279,5 +279,13 @@ const ThundyScans=(()=>{
     }
     let restartTimer=null;
     function reconfigure(){coordinator.invalidate();if(restartTimer)clearTimeout(restartTimer);restartTimer=setTimeout(async()=>{const seen=new Set();for(const tab of await browser.tabs.query({}).catch(()=>[])){try{const message=await getFirstDisplayedMessage(tab.id);if(message&&!seen.has(message.id)){seen.add(message.id);await display(tab,message);}}catch(_){}}},200);}
-    return {...coordinator,reconfigure,display,request,mode,plan};
+    function attachmentPending(messageId, partName) {
+        const job = coordinator.get(messageId);
+        return !!job && ['queued','running'].includes(job.state) && job.providers?.hybridanalysis?.checks.some(check =>
+            check.kind === 'hash' && !check.reason) && !!coordinator.contextFor(messageId)?.model.data.rows.some(row =>
+            row.provider === 'hybridanalysis' && row.resource === 'attachment:'+partName &&
+            (row.state === 'running' || row.completion === 'pending'));
+    }
+
+    return {...coordinator,reconfigure,display,request,mode,plan,attachmentPending};
 })();

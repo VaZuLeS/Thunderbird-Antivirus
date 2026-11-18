@@ -3088,5 +3088,74 @@
   },
   "analysisOverviewOpenFinding": {
     "message": "Pokaż szczegóły ustalenia"
+  },
+  "attachmentProtectionTitle": {
+    "message": "Ochrona załączników"
+  },
+  "attachmentProtectionScope": {
+    "message": "Reguła dotyczy zapisywania z Thundy. Własne polecenia Thunderbirda pozostają dostępne."
+  },
+  "attachmentPolicyMode": {
+    "message": "Po osiągnięciu progu"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Próg wyniku Hybrid Analysis"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Załączniki bez potwierdzonego wyniku"
+  },
+  "attachmentModeOff": {
+    "message": "Wyłączone"
+  },
+  "attachmentModeWarn": {
+    "message": "Ostrzegaj"
+  },
+  "attachmentModeApproval": {
+    "message": "Wymagaj zgody"
+  },
+  "attachmentModeBlock": {
+    "message": "Blokuj"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Zapisz z Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "Zapisz załącznik"
+  },
+  "attachmentCancelSave": {
+    "message": "Anuluj"
+  },
+  "attachmentThresholdReached": {
+    "message": "Wynik Hybrid osiągnął ustawiony próg."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis oznaczył plik jako złośliwy."
+  },
+  "attachmentUnknown": {
+    "message": "Brak potwierdzonego wyniku dla tego załącznika."
+  },
+  "attachmentBlocked": {
+    "message": "Zapisywanie z Thundy jest zablokowane."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Wpisz hasło zgody, aby zapisać plik."
+  },
+  "attachmentFailed": {
+    "message": "Nie udało się rozpocząć zapisywania załącznika."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy nie mógł odczytać tego załącznika."
+  },
+  "attachmentContextChanged": {
+    "message": "Wiadomość lub załącznik uległ zmianie. Wybierz załącznik ponownie."
+  },
+  "attachmentDecisionChanged": {
+    "message": "Wynik lub reguła uległy zmianie. Sprawdź nową decyzję."
+  },
+  "attachmentSaveRequested": {
+    "message": "Rozpoczęto żądanie zapisu."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Anulowano zapisywanie."
   }
 }

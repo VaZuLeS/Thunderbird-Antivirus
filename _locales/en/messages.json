@@ -3091,5 +3091,74 @@
   },
   "analysisOverviewOpenFinding": {
     "message": "Show finding details"
+  },
+  "attachmentProtectionTitle": {
+    "message": "Attachment protection"
+  },
+  "attachmentProtectionScope": {
+    "message": "This rule applies when saving with Thundy. Thunderbird’s own attachment commands remain available."
+  },
+  "attachmentPolicyMode": {
+    "message": "When threshold is reached"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Hybrid Analysis score threshold"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Attachments without a confirmed score"
+  },
+  "attachmentModeOff": {
+    "message": "Off"
+  },
+  "attachmentModeWarn": {
+    "message": "Warn"
+  },
+  "attachmentModeApproval": {
+    "message": "Require approval"
+  },
+  "attachmentModeBlock": {
+    "message": "Block"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Save with Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "Save attachment"
+  },
+  "attachmentCancelSave": {
+    "message": "Cancel"
+  },
+  "attachmentThresholdReached": {
+    "message": "Hybrid score reaches the configured threshold."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis classified this file as malicious."
+  },
+  "attachmentUnknown": {
+    "message": "No confirmed score for this attachment."
+  },
+  "attachmentBlocked": {
+    "message": "Saving with Thundy is blocked."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Enter the approval password to save this file."
+  },
+  "attachmentFailed": {
+    "message": "Could not start saving the attachment."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy could not read this attachment."
+  },
+  "attachmentContextChanged": {
+    "message": "The message or attachment changed. Select the attachment again."
+  },
+  "attachmentDecisionChanged": {
+    "message": "The result or policy changed. Review the updated decision."
+  },
+  "attachmentSaveRequested": {
+    "message": "Save request started."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Save cancelled."
   }
 }

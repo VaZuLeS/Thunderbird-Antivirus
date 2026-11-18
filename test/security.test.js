@@ -208,3 +208,18 @@ test('a capacity-deferred analysis remains incomplete even without an admitted j
  assert.equal(evaluated.input.coverage,'incomplete');assert.equal(evaluated.decision.reason,'incomplete');
  assert.equal((await f.l.open(f.request,f.sender)).code,'APPROVAL_REQUIRED');assert.equal(f.getOpened(),0);
 });
+
+test('attachment settings are opt-in, validated and protected by the administrator', async()=>{
+ const {s,sender}=fixture();
+ assert.equal((await s.status(sender)).attachmentPolicy.mode,'off');
+ assert.equal((await s.status(sender)).attachmentPolicy.threshold,70);
+ const attachmentPolicy={mode:'block',unknown:'warn',threshold:70};
+ await assert.rejects(s.command({op:'configure',policy,attachmentPolicy:{...attachmentPolicy,threshold:101}},sender),/POLICY_INVALID/);
+ await s.command({op:'configure',policy,adminPassword:'administrator-123',attachmentPolicy},sender);
+ assert.equal((await s.status(sender)).attachmentPolicy.revision,1);
+ await assert.rejects(s.command({op:'configure',policy,attachmentPolicy:{...attachmentPolicy,mode:'off'}},sender),/ADMIN_LOCKED/);
+ const {token}=await s.command({op:'unlock',password:'administrator-123'},sender);
+ await s.command({op:'configure',token,policy,attachmentPolicy:{...attachmentPolicy,mode:'warn'}},sender);
+ assert.equal((await s.status(sender)).attachmentPolicy.mode,'warn');
+ assert.equal((await s.status(sender)).attachmentPolicy.revision,2);
+});

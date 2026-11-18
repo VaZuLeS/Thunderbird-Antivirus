@@ -30,6 +30,45 @@ const ThundySettings = (() => {
         const threshold=field('securityThreshold','number');threshold.required=true;threshold.min='0';threshold.max='100';threshold.value='50';
         const enabled=field('securityEnablePolicy','checkbox');
         const unknown=field('securityUnknownApproval','checkbox');
+        const attachmentControls = [];
+        let attachmentMode, attachmentThreshold, attachmentUnknown;
+        if (location.pathname.endsWith('/options.html')) {
+            const group = document.createElement('fieldset');
+            const legend = document.createElement('legend');
+            legend.textContent = t('attachmentProtectionTitle');
+            const scope = document.createElement('p');
+            scope.textContent = t('attachmentProtectionScope');
+            group.append(legend,scope);
+            const choices = (key,entries) => {
+                const label = document.createElement('label'), select = document.createElement('select');
+                label.textContent = t(key);
+                select.dataset.security = key;
+                for (const [value,message] of entries) {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = t(message);
+                    select.append(option);
+                }
+                label.append(select);
+                group.append(label);
+                return select;
+            };
+            attachmentMode = choices('attachmentPolicyMode',[
+                ['off','attachmentModeOff'],['warn','attachmentModeWarn'],
+                ['approval','attachmentModeApproval'],['block','attachmentModeBlock']
+            ]);
+            attachmentThreshold = field('attachmentScoreThreshold','number');
+            attachmentThreshold.required = true;
+            attachmentThreshold.min = '0';
+            attachmentThreshold.max = '100';
+            attachmentThreshold.value = '70';
+            group.append(attachmentThreshold.parentElement);
+            attachmentUnknown = choices('attachmentUnknownSetting',[
+                ['warn','attachmentModeWarn'],['block','attachmentModeBlock']
+            ]);
+            attachmentControls.push(attachmentMode,attachmentThreshold,attachmentUnknown);
+            form.append(group);
+        }
         const unlock=document.createElement('button');unlock.type='button';unlock.dataset.security='unlock';unlock.textContent=t('securityUnlock');form.append(unlock);
         const save=document.createElement('button');save.type='submit';save.textContent=t('securitySave');form.append(save);
         const lock=document.createElement('button');lock.type='button';lock.dataset.security='lock';lock.textContent=t('securityLock');form.append(lock);
@@ -105,19 +144,27 @@ const ThundySettings = (() => {
         const refresh=async()=>{
             try{current=await command('status');shell.hidden=hideShell&&!current.unlocked;
                 state.textContent=t(current.protected?current.unlocked?'securityUnlocked':'securityLocked':'securityOptional');
-                for(const input of [approval,adminConfirm,approvalConfirm,threshold,enabled,unknown,save,view,showDetails,displaySave,...debugControls])if(input)input.disabled=!current.unlocked;
+                for(const input of [approval,adminConfirm,approvalConfirm,threshold,enabled,unknown,save,view,showDetails,displaySave,...debugControls,...attachmentControls])if(input)input.disabled=!current.unlocked;
                 adminConfirm.parentElement.hidden=!current.unlocked;approvalConfirm.parentElement.hidden=!current.unlocked;
                 admin.autocomplete=current.unlocked?'new-password':'current-password';admin.parentElement.firstChild.textContent=t(current.unlocked?'securityAdminPassword':'securityUnlockPassword');
                 disable.hidden=!current.protected||!current.unlocked;lock.hidden=!current.protected||!current.unlocked;unlock.hidden=!current.protected||current.unlocked;recoveryGroup.hidden=!current.protected||current.unlocked;
                 approvalState.textContent=t(current.approvalConfigured?'securityApprovalConfigured':'securityApprovalMissing');
                 threshold.value=current.policy.threshold;enabled.checked=current.policy.enabled;unknown.checked=current.policy.unknown==='approval';
+                if (attachmentMode) {
+                    const policy = current.attachmentPolicy || {mode:'off',threshold:70,unknown:'warn'};
+                    attachmentMode.value = policy.mode;
+                    attachmentThreshold.value = policy.threshold;
+                    attachmentUnknown.value = policy.unknown;
+                }
                 await debugRefresh();
-            }catch(_){shell.hidden=hideShell;debugHide();for(const input of debugControls)input.disabled=true;state.textContent=t('securityError');}
+            }catch(_){shell.hidden=hideShell;debugHide();for(const input of [...debugControls,...attachmentControls])input.disabled=true;state.textContent=t('securityError');}
         };
         const run=async fn=>{if(busy)return;busy=true;output.textContent='';try{await fn();await refresh();}catch(e){output.textContent=t(e.code==='PASSWORD_WAIT'?'securityWait':['PASSWORD_LENGTH','PASSWORDS_DISTINCT'].includes(e.code)?'securityLength':e.code==='PASSWORD_CONFIRM'?'securityConfirmMismatch':'securityError');if(e.code==='ADMIN_LOCKED')await refresh();}finally{busy=false;for(const input of [admin,adminConfirm,approval,approvalConfirm,recovery,recoveryAdmin,recoveryConfirm])input.value='';}};
         const confirm=(password,repeated)=>{if(password!==repeated)throw Object.assign(Error('PASSWORD_CONFIRM'),{code:'PASSWORD_CONFIRM'});};
         unlock.onclick=()=>run(async()=>{token=(await command('unlock',{password:admin.value})).token;connect();});
-        form.onsubmit=event=>{event.preventDefault();run(async()=>{confirm(admin.value,adminConfirm.value);confirm(approval.value,approvalConfirm.value);const result=await command('configure',{adminPassword:admin.value||undefined,approvalPassword:approval.value||undefined,policy:{enabled:enabled.checked,threshold:Number(threshold.value),unknown:unknown.checked?'approval':'warn'}});token=null;output.textContent=result.recovery?t('securityRecoverySave')+' '+result.recovery:t('securitySaved');});};
+        form.onsubmit=event=>{event.preventDefault();run(async()=>{confirm(admin.value,adminConfirm.value);confirm(approval.value,approvalConfirm.value);const result=await command('configure',{adminPassword:admin.value||undefined,approvalPassword:approval.value||undefined,policy:{enabled:enabled.checked,threshold:Number(threshold.value),unknown:unknown.checked?'approval':'warn'},
+            ...(attachmentMode ? {attachmentPolicy:{mode:attachmentMode.value,threshold:Number(attachmentThreshold.value),unknown:attachmentUnknown.value}} : {})
+        });token=null;output.textContent=result.recovery?t('securityRecoverySave')+' '+result.recovery:t('securitySaved');});};
         lock.onclick=()=>run(async()=>{await command('lock');token=null;});
         disable.onclick=()=>run(async()=>{if(!window.confirm(t('securityDisableConfirm')))return;await command('disableAdmin');token=null;});
         recover.onclick=()=>run(async()=>{confirm(recoveryAdmin.value,recoveryConfirm.value);const result=await command('recover',{recovery:recovery.value,password:recoveryAdmin.value});token=null;output.textContent=t('securityRecoverySave')+' '+result.recovery;});

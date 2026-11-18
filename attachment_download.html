@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title data-i18n="attachmentProtectionTitle">Attachment protection</title>
+<link rel="stylesheet" href="theme.css"><link rel="stylesheet" href="security.css">
+<script src="design_system.js"></script><script src="theme.js"></script><script src="i18n.js"></script>
+<script src="attachment_download_page.js" defer></script>
+</head>
+<body><main class="security-controls">
+<h1 data-i18n="attachmentProtectionTitle">Attachment protection</h1>
+<p data-i18n="attachmentProtectionScope"></p>
+<section id="attachmentDecision" hidden>
+<h2 id="attachmentName"></h2>
+<dl>
+<dt data-i18n="hybridField_threat_score">Hybrid Analysis score</dt><dd id="attachmentScore"></dd>
+<dt data-i18n="attachmentScoreThreshold">Attachment score threshold</dt><dd id="attachmentThreshold"></dd>
+<dt data-i18n="assessmentCompletion">Processing status</dt><dd id="attachmentState"></dd>
+</dl>
+<p id="attachmentReason"></p>
+</section>
+<form id="attachmentSaveForm" hidden>
+<label id="attachmentPasswordLabel" hidden><span data-i18n="securityApprovalPassword">Approval password</span>
+<input id="attachmentPassword" type="password" autocomplete="off" maxlength="1024"></label>
+<button type="submit" id="attachmentConfirm" data-i18n="attachmentConfirmSave">Save attachment</button>
+</form>
+<button type="button" id="attachmentReport" data-i18n="hybridReportOpen" hidden>View Hybrid report</button>
+<button type="button" id="attachmentCancel" data-i18n="attachmentCancelSave" autofocus>Cancel</button>
+<p id="attachmentStatus" role="status" aria-live="polite" tabindex="-1"></p>
+</main></body></html>

@@ -3088,5 +3088,74 @@
   },
   "analysisOverviewOpenFinding": {
     "message": "Mostra dettagli del riscontro"
+  },
+  "attachmentProtectionTitle": {
+    "message": "Protezione degli allegati"
+  },
+  "attachmentProtectionScope": {
+    "message": "Questa regola vale per il salvataggio con Thundy. I comandi di Thunderbird restano disponibili."
+  },
+  "attachmentPolicyMode": {
+    "message": "Al raggiungimento della soglia"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Soglia del punteggio Hybrid Analysis"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Allegati senza punteggio confermato"
+  },
+  "attachmentModeOff": {
+    "message": "Disattivato"
+  },
+  "attachmentModeWarn": {
+    "message": "Avvisa"
+  },
+  "attachmentModeApproval": {
+    "message": "Richiedi approvazione"
+  },
+  "attachmentModeBlock": {
+    "message": "Blocca"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Salva con Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "Salva allegato"
+  },
+  "attachmentCancelSave": {
+    "message": "Annulla"
+  },
+  "attachmentThresholdReached": {
+    "message": "Il punteggio Hybrid raggiunge la soglia configurata."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis ha classificato il file come dannoso."
+  },
+  "attachmentUnknown": {
+    "message": "Nessun punteggio confermato per questo allegato."
+  },
+  "attachmentBlocked": {
+    "message": "Il salvataggio con Thundy è bloccato."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Inserisci la password di approvazione per salvare il file."
+  },
+  "attachmentFailed": {
+    "message": "Impossibile avviare il salvataggio dell’allegato."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy non ha potuto leggere questo allegato."
+  },
+  "attachmentContextChanged": {
+    "message": "Il messaggio o l’allegato è cambiato. Seleziona di nuovo l’allegato."
+  },
+  "attachmentDecisionChanged": {
+    "message": "Il risultato o la regola è cambiato. Verifica la decisione aggiornata."
+  },
+  "attachmentSaveRequested": {
+    "message": "Richiesta di salvataggio avviata."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Salvataggio annullato."
   }
 }

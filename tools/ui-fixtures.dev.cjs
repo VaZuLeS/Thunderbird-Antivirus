@@ -179,6 +179,15 @@ function addonMock({
       openOptionsPage: async () => {},
       onMessage: { addListener: fn => runtimeCallbacks.push(fn), removeListener: fn => {const i=runtimeCallbacks.indexOf(fn);if(i>=0)runtimeCallbacks.splice(i,1);} },
       sendMessage: async (p) => {
+        if (p.action === 'attachmentDownloadCommand') {
+          if (p.op === 'status') return {success:true,details:{name:'fixture.pdf',score:70,threshold:70,
+            state:'complete',mode:scenario==='blocked'?'block':'warn',reason:'threshold',report:true}};
+          if (p.op === 'save') {
+            uiTest.attachmentSaves=(uiTest.attachmentSaves||0)+1;
+            return {success:true,saved:true};
+          }
+          return {success:true};
+        }
         if(p.action === 'readHybridReport') {
           uiTest.reportReads=(uiTest.reportReads||0)+1;
           if(scenario==='unavailable')return {success:false};
@@ -195,7 +204,9 @@ function addonMock({
           : p.op==='apiDebugClear' ? (uiTest.debugCleared=true,{success:true})
           : p.op==='apiDebugStatus' ? {success:true,enabled:uiTest.debugEnabled===true}
           : p.op==='apiDebugSet' ? (uiTest.debugEnabled=p.enabled,{success:true,enabled:p.enabled})
-          : {success:true,protected:false,unlocked:true,approvalConfigured:false,policy:{enabled:false,threshold:50,unknown:'warn',revision:0}}
+          : p.op==='configure' ? (uiTest.attachmentPolicy=p.attachmentPolicy,{success:true})
+          : {success:true,protected:false,unlocked:true,approvalConfigured:false,policy:{enabled:false,threshold:50,unknown:'warn',revision:0},
+            attachmentPolicy:uiTest.attachmentPolicy}
           : p.action === 'securitySettingsWrite'
           ? (await window.browser.storage.local.set(p.values),{success:true})
           : p.action === "getLinkAudit"

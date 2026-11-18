@@ -3088,5 +3088,74 @@
   },
   "analysisOverviewOpenFinding": {
     "message": "Afficher le détail du résultat"
+  },
+  "attachmentProtectionTitle": {
+    "message": "Protection des pièces jointes"
+  },
+  "attachmentProtectionScope": {
+    "message": "Cette règle s’applique à l’enregistrement via Thundy. Les commandes de Thunderbird restent disponibles."
+  },
+  "attachmentPolicyMode": {
+    "message": "Si le seuil est atteint"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Seuil du score Hybrid Analysis"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Pièces jointes sans score confirmé"
+  },
+  "attachmentModeOff": {
+    "message": "Désactivé"
+  },
+  "attachmentModeWarn": {
+    "message": "Avertir"
+  },
+  "attachmentModeApproval": {
+    "message": "Exiger une autorisation"
+  },
+  "attachmentModeBlock": {
+    "message": "Bloquer"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Enregistrer avec Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "Enregistrer la pièce jointe"
+  },
+  "attachmentCancelSave": {
+    "message": "Annuler"
+  },
+  "attachmentThresholdReached": {
+    "message": "Le score Hybrid atteint le seuil configuré."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis a classé ce fichier comme malveillant."
+  },
+  "attachmentUnknown": {
+    "message": "Aucun score confirmé pour cette pièce jointe."
+  },
+  "attachmentBlocked": {
+    "message": "L’enregistrement avec Thundy est bloqué."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Saisissez le mot de passe d’autorisation pour enregistrer ce fichier."
+  },
+  "attachmentFailed": {
+    "message": "Impossible de démarrer l’enregistrement de la pièce jointe."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy n’a pas pu lire cette pièce jointe."
+  },
+  "attachmentContextChanged": {
+    "message": "Le message ou la pièce jointe a changé. Sélectionnez de nouveau la pièce jointe."
+  },
+  "attachmentDecisionChanged": {
+    "message": "Le résultat ou la règle a changé. Vérifiez la décision mise à jour."
+  },
+  "attachmentSaveRequested": {
+    "message": "Demande d’enregistrement lancée."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Enregistrement annulé."
   }
 }

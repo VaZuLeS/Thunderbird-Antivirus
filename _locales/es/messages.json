@@ -3088,5 +3088,74 @@
   },
   "analysisOverviewOpenFinding": {
     "message": "Ver detalles del hallazgo"
+  },
+  "attachmentProtectionTitle": {
+    "message": "Protección de archivos adjuntos"
+  },
+  "attachmentProtectionScope": {
+    "message": "Esta regla se aplica al guardar con Thundy. Los comandos de Thunderbird siguen disponibles."
+  },
+  "attachmentPolicyMode": {
+    "message": "Al alcanzar el umbral"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Umbral del puntaje Hybrid Analysis"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Adjuntos sin puntaje confirmado"
+  },
+  "attachmentModeOff": {
+    "message": "Desactivado"
+  },
+  "attachmentModeWarn": {
+    "message": "Advertir"
+  },
+  "attachmentModeApproval": {
+    "message": "Requerir autorización"
+  },
+  "attachmentModeBlock": {
+    "message": "Bloquear"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Guardar con Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "Guardar adjunto"
+  },
+  "attachmentCancelSave": {
+    "message": "Cancelar"
+  },
+  "attachmentThresholdReached": {
+    "message": "El puntaje Hybrid alcanza el umbral configurado."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis clasificó este archivo como malicioso."
+  },
+  "attachmentUnknown": {
+    "message": "No hay puntaje confirmado para este adjunto."
+  },
+  "attachmentBlocked": {
+    "message": "Está bloqueado guardar con Thundy."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Introduzca la contraseña de autorización para guardar el archivo."
+  },
+  "attachmentFailed": {
+    "message": "No se pudo iniciar el guardado del adjunto."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy no pudo leer este adjunto."
+  },
+  "attachmentContextChanged": {
+    "message": "Cambió el mensaje o el adjunto. Seleccione el adjunto de nuevo."
+  },
+  "attachmentDecisionChanged": {
+    "message": "Cambió el resultado o la regla. Revise la decisión actualizada."
+  },
+  "attachmentSaveRequested": {
+    "message": "Se inició la solicitud de guardado."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Guardado cancelado."
   }
 }

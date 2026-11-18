@@ -3091,5 +3091,74 @@
   },
   "analysisOverviewOpenFinding": {
     "message": "Befunddetails anzeigen"
+  },
+  "attachmentProtectionTitle": {
+    "message": "Dateianhänge"
+  },
+  "attachmentProtectionScope": {
+    "message": "Diese Regel gilt beim Speichern mit Thundy. Thunderbirds eigene Anhangaktionen bleiben verfügbar."
+  },
+  "attachmentPolicyMode": {
+    "message": "Bei erreichtem Grenzwert"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Grenzwert für den Hybrid-Score"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Anhänge ohne bestätigten Score"
+  },
+  "attachmentModeOff": {
+    "message": "Aus"
+  },
+  "attachmentModeWarn": {
+    "message": "Warnen"
+  },
+  "attachmentModeApproval": {
+    "message": "Freigabe erforderlich"
+  },
+  "attachmentModeBlock": {
+    "message": "Sperren"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Mit Thundy speichern"
+  },
+  "attachmentConfirmSave": {
+    "message": "Anhang speichern"
+  },
+  "attachmentCancelSave": {
+    "message": "Abbrechen"
+  },
+  "attachmentThresholdReached": {
+    "message": "Der Hybrid-Score erreicht den eingestellten Grenzwert."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis hat diese Datei als schädlich eingestuft."
+  },
+  "attachmentUnknown": {
+    "message": "Für diesen Anhang liegt kein bestätigter Score vor."
+  },
+  "attachmentBlocked": {
+    "message": "Speichern mit Thundy ist gesperrt."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Zum Speichern dieser Datei das Freigabepasswort eingeben."
+  },
+  "attachmentFailed": {
+    "message": "Das Speichern des Anhangs konnte nicht gestartet werden."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy konnte diesen Anhang nicht lesen."
+  },
+  "attachmentContextChanged": {
+    "message": "Nachricht oder Anhang hat sich geändert. Anhang erneut auswählen."
+  },
+  "attachmentDecisionChanged": {
+    "message": "Befund oder Richtlinie hat sich geändert. Bitte die neue Entscheidung prüfen."
+  },
+  "attachmentSaveRequested": {
+    "message": "Speicheranforderung gestartet."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Speichern abgebrochen."
   }
 }

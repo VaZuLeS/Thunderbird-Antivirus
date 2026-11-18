@@ -114,7 +114,7 @@ class Marionette:
             'WebDriver:TakeScreenshot', {'full': True})['value']))
 
 
-def native_click(display, x, y):
+def native_click(display, x, y, button=1):
     """XTest sends a real X11 button event, needed for native popup activation."""
     x11 = ctypes.CDLL('libX11.so.6')
     xtest = ctypes.CDLL('libXtst.so.6')
@@ -131,8 +131,8 @@ def native_click(display, x, y):
         raise RuntimeError('Cannot connect to isolated Xvfb display')
     try:
         for result in [xtest.XTestFakeMotionEvent(connection, -1, round(x), round(y), 0),
-                       xtest.XTestFakeButtonEvent(connection, 1, 1, 0),
-                       xtest.XTestFakeButtonEvent(connection, 1, 0, 0)]:
+                       xtest.XTestFakeButtonEvent(connection, button, 1, 0),
+                       xtest.XTestFakeButtonEvent(connection, button, 0, 0)]:
             if not result:
                 raise RuntimeError('XTest event failed')
         x11.XFlush(connection)
@@ -2719,6 +2719,7 @@ def main():
                         if args.report_actions_check and not args.report_actions_baseline:
                             runpy.run_path(str(ROOT/'tools/manual-upload-binding.dev.py'))['check'](m,base,out,report,wait_for,open_page)
                             runpy.run_path(str(ROOT/'tools/hybrid-report-view.dev.py'))['check'](m,base,out,report,wait_for,open_page)
+                            runpy.run_path(str(ROOT/'tools/attachment-download.dev.py'))['check'](m,base,out,report,display,wait_for,open_page,native_click,native_dialogs,native_download)
                         if args.stored_source_check:
                             check_stored_sources(m,base,out,report,display,args.stored_source_baseline)
                             if tuple(map(int, report['extensionVersion'].split('.'))) >= (1,25,6) and not args.stored_source_baseline:

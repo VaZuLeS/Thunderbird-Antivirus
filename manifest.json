@@ -68,6 +68,7 @@
       "security_links.js",
       "scan_jobs.js",
       "hybrid_report.js",
+      "attachment_download.js",
       "background.js"
     ]
   },

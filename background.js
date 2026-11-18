@@ -260,7 +260,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     }
                     const security = typeof ThundySecurity !== 'undefined' ? await ThundySecurity.read() : null;
                     const protection = security ? ThundySecurity.decision({...ThundySecurity.defaults,...security.policy},{score:model.data.local.score,coverage:model.data.local.state,verdict:model.data.rows.some(row=>row.verdict==='malicious')?'MALICIOUS':model.data.rows.length && model.data.rows.every(row=>['none','suspicious'].includes(row.verdict)&&row.state==='checked')?model.data.rows.some(row=>row.verdict==='suspicious')?'SUSPICIOUS':'CLEAN':'UNKNOWN'}) : null;
-                    return { ...JSON.parse(JSON.stringify(model.data)), displayPreferences, hybridReports, hybridReportsTruncated, scanJob:context.scanJob || {state:'idle',migration:(await browser.storage.local.get('scanMode')).scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, sourcePersistenceFailed:context.persistenceFailed, sourcePersistenceReason:context.persistenceReason || null, sourcePersistenceError:context.persistenceError || null, diagnosticRun:context.diagnosticRun||null, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
+                    return { ...JSON.parse(JSON.stringify(model.data)), displayPreferences, hybridReports, hybridReportsTruncated, scanJob:context.scanJob || {state:'idle',migration:(await browser.storage.local.get('scanMode')).scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, attachmentActions:typeof ThundyAttachmentDownload !== 'undefined', sourcePersistenceFailed:context.persistenceFailed, sourcePersistenceReason:context.persistenceReason || null, sourcePersistenceError:context.persistenceError || null, diagnosticRun:context.diagnosticRun||null, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
                 },
                 async flush() {
                     if (context.disposed) return;
@@ -315,6 +315,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
 }
 function clearAnalysisMemory() {
     hybridReportBroker?.clear();
+    attachmentDownloads?.clear();
     if(typeof ThundyScans !== 'undefined')ThundyScans.invalidate({silent:true,clear:true});
     if(typeof clearReportArchiveWarnings === 'function')clearReportArchiveWarnings();
     apiGateway?.clearBackoffs?.();
@@ -1665,6 +1666,11 @@ function createContextMenus() {
             contexts: ["message_display_action"]
         }
     ];
+    if (typeof ThundyAttachmentDownload !== 'undefined') menus.push({
+        id: 'save-attachment-thundy',
+        title: msg('attachmentSaveWithThundy'),
+        contexts: ['message_attachments']
+    });
     for (const menu of menus) {
         try {
             // menus.create is asynchronous: a synchronous try/catch cannot catch
@@ -1734,7 +1740,39 @@ async function scanLinksOfDisplayedMessage(tabId) {
 
 createContextMenus();
 
+// Attachment menus can report the internal about:message tab instead of the
+// enclosing API tab. Bind that menu to its active message before a click.
+let attachmentMenuOrigin = null;
+browser.menus?.onShown?.addListener((info,tab) => {
+    if (!info.contexts?.includes('message_attachments')) return;
+    attachmentMenuOrigin = null;
+    if (!info.menuIds?.includes('save-attachment-thundy') || info.attachments?.length !== 1) return;
+    attachmentMenuOrigin = {
+        eventTabId:tab?.id,
+        partName:info.attachments[0].partName,
+        target:(async () => {
+            const [active] = await browser.tabs.query({active:true,lastFocusedWindow:true});
+            const tabId = ['mail','messageDisplay'].includes(tab?.type) ? tab.id : active?.id;
+            if (!Number.isSafeInteger(tabId) || tabId !== active?.id) return null;
+            const message = await getFirstDisplayedMessage(tabId);
+            return message ? {tabId,messageId:message.id,partName:info.attachments[0].partName} : null;
+        })().catch(() => null)
+    };
+});
+
 if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListener(async (info, tab) => {
+    if (info.menuItemId === 'save-attachment-thundy' && attachmentDownloads) {
+        const origin = attachmentMenuOrigin;
+        attachmentMenuOrigin = null;
+        try {
+            if (!origin || origin.eventTabId !== tab?.id || info.attachments?.length !== 1 ||
+                origin.partName !== info.attachments[0].partName) throw Error('ATTACHMENT_CONTEXT_CHANGED');
+            const target = await origin.target;
+            if (!target) throw Error('ATTACHMENT_CONTEXT_CHANGED');
+            await attachmentDownloads.start(target);
+        } catch (_) {notify('attachmentProtectionTitle','attachmentFailed');}
+        return;
+    }
     if (info.menuItemId === "scan-message-links-thundy") {
         await scanLinksOfDisplayedMessage(tab && tab.id);
         return;
@@ -2097,6 +2135,23 @@ var hybridReportBroker = typeof ThundyHybridReport === 'undefined' ? null : Thun
     return ThundyHybridReport.project(candidates[0], request.resourceRef, snapshot.local, snapshot.rows);
 });
 
+// The download dialog uses the same resource-bound report broker as the message view.
+var attachmentDownloads = typeof ThundyAttachmentDownload === 'undefined' ? null : ThundyAttachmentDownload.create(browser,{
+    security:ThundySecurity,
+    hash:get_sha256_hash,
+    record:async message => getFromStore(await getSharedDB(),'hybridanalysis',resolveMessageStorageKey(message)),
+    revision:id => typeof ThundyScans === 'undefined' ? null : ThundyScans.revision(id),
+    pending:(id,part) => typeof ThundyScans !== 'undefined' && ThundyScans.attachmentPending(id,part),
+    openReport:async (target,resource,sender) => {
+        const message = await getFirstDisplayedMessage(target.tabId);
+        if (message?.id !== target.messageId) throw Error('ATTACHMENT_CONTEXT_CHANGED');
+        const context = await getMessageAnalysisContext(message);
+        context.forAttachment(target.partName,resource.file.name,resource.digest);
+        return hybridReportBroker.command({action:'openHybridReport',messageId:message.id,
+            contextToken:context.snapshotId,resourceRef:'attachment:'+target.partName},sender);
+    }
+});
+
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Harden the message boundary: only our own extension contexts may drive the
     // background script (P3-25 in docs/PROBLEMANALYSE_STORE_READINESS.md).
@@ -2137,6 +2192,16 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             else { clearAnalysisMemory(); }
             sendResponse({success:true,status:'success'});
         }).catch(()=>sendResponse({success:false,code:'ADMIN_LOCKED'}));
+        return true;
+    }
+    if (['startAttachmentDownload','attachmentDownloadCommand'].includes(request.action) && attachmentDownloads) {
+        (async () => {
+            if (sender?.id !== browser.runtime.id) throw Error('ATTACHMENT_CONTEXT_CHANGED');
+            if (request.action === 'attachmentDownloadCommand') return attachmentDownloads.command(request,sender);
+            const tabId = ThundySecurity.page(sender,'popup.html')
+                ? (await browser.tabs.query({active:true,currentWindow:true}))[0]?.id : sender.tab?.id;
+            return attachmentDownloads.start({tabId,messageId:request.messageId,partName:request.partName});
+        })().then(sendResponse).catch(error => sendResponse({success:false,code:error.code || 'ATTACHMENT_DOWNLOAD_FAILED'}));
         return true;
     }
     if (['openHybridReport','readHybridReport'].includes(request.action) && hybridReportBroker) {

@@ -152,14 +152,14 @@ function matrix(o, kinds) {
         });
       }
   // Dedicated state matrices exercise the real page scripts with synthetic APIs.
-  for (const file of ['security.html','source_export.html','hybrid_report.html'])
+  for (const file of ['security.html','source_export.html','hybrid_report.html','attachment_download.html'])
     for (const lang of langs)
       for (const width of o.matrix === 'smoke' ? [360] : [320,1280])
         for (const scheme of o.matrix === 'smoke' ? ['dark'] : ['light','dark'])
           for (const density of ['comfortable','compact'])
-            for (const scenario of file === 'security.html' ? ['ready','pending','failed','expired','opened'] : file === 'hybrid_report.html' ? ['ready','unavailable'] : ['empty','ready','pending','unavailable','changed','saved','failed'])
+            for (const scenario of file === 'security.html' ? ['ready','pending','failed','expired','opened'] : file === 'hybrid_report.html' ? ['ready','unavailable'] : file === 'attachment_download.html' ? ['ready','blocked'] : ['empty','ready','pending','unavailable','changed','saved','failed'])
               cases.push({id:`addon-${file}-${scenario}-${lang}-${width}-${scheme}-${density}`,kind:'addon',view:file,
-                url:'/'+file+(file === 'security.html' ? '?approval=synthetic-challenge' : file === 'hybrid_report.html' ? '#12345678-1234-4234-8234-123456789abc' : '?messageId=42&contextToken=synthetic-context'),
+                url:'/'+file+(file === 'security.html' ? '?approval=synthetic-challenge' : ['hybrid_report.html','attachment_download.html'].includes(file) ? '#12345678-1234-4234-8234-123456789abc' : '?messageId=42&contextToken=synthetic-context'),
                 lang,width,scheme,density,scenario});
   const selected = (o.view ? cases.filter((c) => c.view === o.view) : cases).filter(c => o.zoom === 1 || c.width >= 600);
   if (selected.length === 0) throw Error("UI_VIEW_INVALID");
@@ -279,6 +279,18 @@ async function interaction(page, c) {
         "complete export changed after filter",
       );
     }
+  } else if (c.view === 'attachment_download.html') {
+    await page.locator('#attachmentDecision').waitFor();
+    assert.equal(await page.locator('#attachmentName').textContent(),'fixture.pdf');
+    assert.equal(await page.locator('#attachmentSaveForm').isVisible(),c.scenario!=='blocked');
+    assert.equal(await page.locator('#attachmentCancel').evaluate(el=>el===document.activeElement),true);
+    if (c.scenario === 'blocked') {
+      assert.equal(await page.locator('#attachmentConfirm').isVisible(),false);
+      assert.equal(await page.evaluate(()=>uiTest.attachmentSaves || 0),0);
+    } else {
+      await page.locator('#attachmentConfirm').press('Enter');
+      await page.waitForFunction(()=>uiTest.attachmentSaves===1);
+    }
   } else if (c.view === 'hybrid_report.html') {
     await page.waitForFunction(()=>!document.getElementById('hybridReportFilters').hidden || !!document.getElementById('hybridReportStatus').textContent);
     if(c.scenario==='unavailable')assert.equal(await page.locator('#hybridReportContent').textContent(),'');
@@ -393,6 +405,17 @@ async function interaction(page, c) {
     assert.equal(await page.evaluate(()=>uiTest.permissionRequests),0);
   } else if (c.view === "options.html") {
     await page.locator('#analysisDisplayForm').waitFor();
+    const attachmentMode=page.locator('select[data-security="attachmentPolicyMode"]');
+    const attachmentThreshold=page.locator('input[data-security="attachmentScoreThreshold"]');
+    const attachmentUnknown=page.locator('select[data-security="attachmentUnknownSetting"]');
+    assert.equal(await attachmentMode.inputValue(),'off');
+    assert.equal(await attachmentThreshold.inputValue(),'70');
+    await attachmentMode.selectOption('block');
+    await attachmentThreshold.fill('83');
+    await attachmentUnknown.selectOption('block');
+    await page.locator('#securitySettingsForm button[type="submit"]').click();
+    await page.waitForFunction(()=>uiTest.attachmentPolicy?.threshold===83);
+    assert.deepEqual(await page.evaluate(()=>uiTest.attachmentPolicy),{mode:'block',threshold:83,unknown:'block'});
     await page.locator('#analysisDefaultView').selectOption('expert');
     assert.equal(await page.locator('#settingsDirty').evaluate(el=>el.hidden),true,'display preferences marked unrelated settings as unsaved');
     await page.locator('#analysisShowHybridDetails').uncheck();
@@ -805,7 +828,7 @@ async function main() {
           if (o.zoom !== 1) await page.evaluate(zoom => { document.documentElement.style.zoom = String(zoom); }, o.zoom);
           Object.assign(result, await checks(page, c));
           await interaction(page, c);
-          if (["security.html","source_export.html","api_debug.html","hybrid_report.html"].includes(c.view)) Object.assign(result,await checks(page,c));
+          if (["security.html","source_export.html","api_debug.html","hybrid_report.html","attachment_download.html"].includes(c.view)) Object.assign(result,await checks(page,c));
           // The options interaction explicitly imports a light appearance profile.
           if (c.view === "options.html") Object.assign(result,await checks(page,{...c,scheme:'light'}));
           if (c.kind === "message")
