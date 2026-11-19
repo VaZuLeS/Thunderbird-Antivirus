@@ -973,7 +973,10 @@ function hasExternalAnalysisConsent() {
 const HYBRID_QUICK_SCAN_ID = /^[A-Za-z0-9_-]{1,128}$/;
 
 async function fetch_hybrid_report(hybrid_sha, resource = null, quickScanId = null) {
-    const reportContext = popupAnalysisContext ? {diagnosticContext:popupAnalysisContext,scopeOverride:'report', event:event => { if (event.phase === 'finish' && event.state !== 'failed' && Number.isFinite(event.observedAt)) ThundyAnalysis.cacheTime('hybridanalysis','report',hybrid_sha,event.observedAt); return popupAnalysisContext.event({...event,resource}); }} : null;
+    const rawId = typeof quickScanId === 'string' ? quickScanId : '';
+    const qsId = HYBRID_QUICK_SCAN_ID.test(rawId) && !['MANUAL_CHECK', 'PENDING_UPLOAD', 'N/A'].includes(rawId) ? rawId : null;
+    const cacheKey = qsId ? JSON.stringify([hybrid_sha, qsId]) : hybrid_sha;
+    const reportContext = popupAnalysisContext ? {diagnosticContext:popupAnalysisContext,scopeOverride:'report', event:event => { if (event.phase === 'finish' && event.state !== 'failed' && Number.isFinite(event.observedAt)) ThundyAnalysis.cacheTime('hybridanalysis','report',cacheKey,event.observedAt); return popupAnalysisContext.event({...event,resource}); }} : null;
     if (!hasExternalAnalysisConsent()) {
         if(typeof ThundyApiDiagnostics!=='undefined')await ThundyApiDiagnostics.note(popupAnalysisContext,'hybridanalysis','precondition',{state:'blocked',reason:'disabled'});
         throw new Error('external-analysis-disabled');
@@ -982,12 +985,12 @@ async function fetch_hybrid_report(hybrid_sha, resource = null, quickScanId = nu
         const current = await browser.storage.local.get('externalAnalysisConsent');
         if (current.externalAnalysisConsent !== true || !await browser.permissions.contains({ origins: ['https://hybrid-analysis.com/*'] })) {if(typeof ThundyApiDiagnostics!=='undefined')await ThundyApiDiagnostics.note(popupAnalysisContext,'hybridanalysis','precondition',{state:'blocked',reason:current.externalAnalysisConsent!==true?'disabled':'permission'});throw new Error(uiText('errorHostPermissionMissing', 'Host permission missing'));}
     }
-    if (hybrid_report_cache.has(hybrid_sha)) {
-        const cached = await hybrid_report_cache.get(hybrid_sha);
+    if (hybrid_report_cache.has(cacheKey)) {
+        const cached = await hybrid_report_cache.get(cacheKey);
         if(typeof ThundyApiDiagnostics!=='undefined')await ThundyApiDiagnostics.note(popupAnalysisContext,'hybridanalysis','cache',{state:'complete'});
         if (popupAnalysisContext && typeof ThundyAnalysis !== 'undefined') {
             const classified = ThundyAnalysis.response({ provider: 'hybridanalysis', scope: 'report' }, cached.response.status, cached.json_data);
-            reportContext.event({ phase: 'cache', provider: 'hybridanalysis', scope: 'report', ...classified, observedAt: ThundyAnalysis.cacheTime('hybridanalysis', 'report', hybrid_sha) }).catch(() => {});
+            reportContext.event({ phase: 'cache', provider: 'hybridanalysis', scope: 'report', ...classified, observedAt: ThundyAnalysis.cacheTime('hybridanalysis', 'report', cacheKey) }).catch(() => {});
         }
         return cached;
     }
@@ -1015,25 +1018,23 @@ async function fetch_hybrid_report(hybrid_sha, resource = null, quickScanId = nu
             let result = await request(options.url);
             // A fresh quick-scan submission is often not yet known to the
             // overview endpoint. Its scanner state lives under /quick-scan/{id}.
-            const qsId = quickScanId != null ? String(quickScanId) : '';
-            if (result.response.status === 404 && HYBRID_QUICK_SCAN_ID.test(qsId) && !['MANUAL_CHECK', 'PENDING_UPLOAD', 'N/A'].includes(qsId)) {
+            if (result.response.status === 404 && qsId) {
                 const quick = await request('https://hybrid-analysis.com/api/v2/quick-scan/' + encodeURIComponent(qsId));
                 if (quick.response.status === 200 && quick.json_data && typeof quick.json_data === 'object' && !Array.isArray(quick.json_data)) {
                     result = { response: quick.response, json_data: { ...quick.json_data, sha256: quick.json_data.sha256 || hybrid_sha }, source: 'quick-scan' };
                 }
             }
-            if (result.response.status !== 200) {
-                hybrid_report_cache.delete(hybrid_sha);
-            }
+            const complete = result.response.status === 200 && ThundyProviderResults.evaluate('hybridanalysis', result.json_data).completion === 'complete';
+            if (!complete && hybrid_report_cache.get(cacheKey) === fetchPromise) hybrid_report_cache.delete(cacheKey);
 
             return result;
         } catch (error) {
-            hybrid_report_cache.delete(hybrid_sha);
+            if (hybrid_report_cache.get(cacheKey) === fetchPromise) hybrid_report_cache.delete(cacheKey);
             throw error;
         }
     })();
 
-    hybrid_report_cache.set(hybrid_sha, fetchPromise);
+    hybrid_report_cache.set(cacheKey, fetchPromise);
     return fetchPromise;
 }
 

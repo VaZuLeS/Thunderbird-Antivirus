@@ -94,6 +94,30 @@ test('a 404 overview for a fresh submission falls back to GET /quick-scan/{id}',
     } finally { state.dom.window.close(); }
 });
 
+test('pending Hybrid reports are requested again and finished reports stay with their submission', async () => {
+    const state = popup();
+    try {
+        const sha = 'c'.repeat(64);
+        let firstRequests = 0;
+        state.context.fetch = async url => {
+            state.requests.push(url);
+            if (url.includes('/overview/')) return {status: 404, json: async () => ({})};
+            const first = url.endsWith('/qs-first');
+            const finished = !first || ++firstRequests > 1;
+            return {status: 200, json: async () => ({finished, verdict: finished ? (first ? 'malicious' : 'clean') : 'unknown'})};
+        };
+        const first = () => state.context.fetch_hybrid_report(sha, null, 'qs-first');
+        const second = () => state.context.fetch_hybrid_report(sha, null, 'qs-second');
+        assert.equal((await first()).json_data.finished, false);
+        assert.equal((await second()).json_data.verdict, 'clean');
+        assert.equal((await first()).json_data.verdict, 'malicious');
+        assert.equal((await first()).json_data.verdict, 'malicious');
+        assert.equal((await second()).json_data.verdict, 'clean');
+        assert.equal(state.requests.filter(url => url.endsWith('/qs-first')).length, 2);
+        assert.equal(state.requests.filter(url => url.endsWith('/qs-second')).length, 1);
+    } finally { state.dom.window.close(); }
+});
+
 test('no quick-scan fallback without a usable submission id and non-JSON errors keep their status', async () => {
     const state = popup();
     try {

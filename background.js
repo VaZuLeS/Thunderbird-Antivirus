@@ -285,7 +285,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                             if (new TextEncoder().encode(JSON.stringify(snapshots)).length > MAX_SOURCE_SNAPSHOT_BYTES) throw Object.assign(new Error('Source snapshot byte capacity reached'),{code:'snapshot_bytes'});
                             // Additive area: never overwrite legacy snapshots under reused IDs.
                             return {...(old || {messageHeader:key}),analysisSourceSnapshots:snapshots,updatedAt:Date.now()};
-                        });
+                        },messageReportOptions(message));
                         snapshotCreated = true;
                         context.persistenceFailed = false; context.persistenceReason = null; context.persistenceError = null;if(typeof ThundyApiDiagnostics!=='undefined')ThundyApiDiagnostics.event(context.diagnosticRun,'persistence',{state:'complete'});
                       }
