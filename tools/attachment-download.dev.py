@@ -12,14 +12,14 @@ def check(m, base, out, report, display, wait_for, open_page, native_click, nati
       const hash=await bg.get_sha256_hash(bytes),key=bg.resolveMessageStorageKey(message),db=await bg.getSharedDB();
       const original=await bg.getFromStore(db,'hybridanalysis',key),settings=await b.storage.local.get(['externalAnalysisConsent','thundySecurityV1']);
       const sec=settings.thundySecurityV1||{schemaVersion:1,policy:{enabled:false,threshold:50,unknown:'warn',revision:0}};
-      const p=w.__attachTest={bg,b,db,key,original,settings,sec,fetch:bg.fetch,providerCalls:0};
+      const p=w.__attachTest={bg,b,db,key,original,scope:bg.messageReportOptions(message),settings,sec,fetch:bg.fetch,providerCalls:0};
       p.onMenu=(info,tab)=>{if(info.menuItemId==='save-attachment-thundy')p.menu={tabId:tab?.id,parts:info.attachments?.map(item=>item.partName)};};
       b.menus.onClicked.addListener(p.onMenu);
       bg.fetch=async()=>{p.providerCalls++;throw Error('Unexpected provider request');};
       const policy={mode:'block',threshold:70,unknown:'warn',revision:1};
       await b.storage.local.set({externalAnalysisConsent:false,thundySecurityV1:{...sec,attachmentPolicy:policy}});await bg.loadSettings();
       await bg.updateStore(db,'hybridanalysis',key,old=>({...old,analysisReportArchive:{schemaVersion:1,entries:[]},attachments:old.attachments.map(a=>a.partName===part.partName?
-        {...a,hybrid_sha256:hash,state:'KNOWN',assessment:null,report:{state:'SUCCESS',sha256:hash,threat_score:70}}:a)}));
+        {...a,hybrid_sha256:hash,state:'KNOWN',assessment:null,report:{state:'SUCCESS',sha256:hash,threat_score:70}}:a)}),p.scope);
       const downloads=(await b.downloads.search({})).map(item=>item.id);
       await b.messageDisplay.open({messageId:message.id,location:'tab'});
       return {hash,part:part.partName,downloads};
@@ -96,7 +96,7 @@ def check(m, base, out, report, display, wait_for, open_page, native_click, nati
         m.js('window.gTabmail.switchToTab(arguments[0]);',[options_index])
         m.page("""return (async()=>{const p=window.wrappedJSObject.__attachTest;
           await p.bg.updateStore(p.db,'hybridanalysis',p.key,old=>({...old,attachments:old.attachments.map(a=>a.partName===arguments[0]
-            ? {...a,hybrid_sha256:'f'.repeat(64),report:{state:'SUCCESS',sha256:'f'.repeat(64),threat_score:5}} : a)}),{preserveReports:true});
+            ? {...a,hybrid_sha256:'f'.repeat(64),report:{state:'SUCCESS',sha256:'f'.repeat(64),threat_score:5}} : a)}),{...p.scope,preserveReports:true});
         })();""",[arrangement['part']])
         switch_message()
         wait_for(lambda:m.page(button_click,[arrangement['part']]))

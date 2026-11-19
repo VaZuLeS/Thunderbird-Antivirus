@@ -63,6 +63,66 @@ function preserveReportRevisions(before, updated, now = Date.now()) {
     return {...updated,analysisReportArchive:archive};
 }
 
+const occurrenceReportFields = ['attachments','links','analysisReportArchive'];
+function projectOccurrenceReports(record, scope, includeHistory = false) {
+    if (!record || !scope) return record;
+    const area=record.analysisOccurrenceReports;
+    const current=area?.schemaVersion===1 && Object.hasOwn(area.entries || {},scope) ? area.entries[scope] : null;
+    const view={...record};
+    delete view.analysisOccurrenceReports;
+    for (const field of occurrenceReportFields) {
+        delete view[field];
+        if (current?.[field] != null) view[field]=current[field];
+    }
+    if (includeHistory) {
+        // Stored reports can still warn about verified resources. They cannot
+        // supply submission identities to this occurrence.
+        const prior=Array.isArray(view.analysisReportArchive?.entries) ? [...view.analysisReportArchive.entries] : [];
+        const currentRuntime=JSON.parse(scope)[0];
+        const append=source=>{
+            for (const [kind,field] of [['attachment','attachments'],['link','links']]) {
+                for (const resource of Array.isArray(source?.[field])?source[field]:[]) {
+                    if (prior.length>=REPORT_ARCHIVE_ENTRIES) return;
+                    if (resource && (resource.report || resource.hybrid_verdict || resource.urlscan || resource.virustotal_stats)) prior.push({kind,resource});
+                }
+            }
+            for (const entry of Array.isArray(source?.analysisReportArchive?.entries)?source.analysisReportArchive.entries:[]) {
+                if (prior.length>=REPORT_ARCHIVE_ENTRIES) return;
+                prior.push(entry);
+            }
+        };
+        append(record);
+        if (area?.schemaVersion===1) for (const [key,previous] of Object.entries(area.entries || {}).slice(0,64)) {
+            try { if (JSON.parse(key)[0]!==currentRuntime) append(previous); }
+            catch (_) { /* An invalid key cannot prove a previous runtime. */ }
+        }
+        if (prior.length) view.analysisReportArchive={schemaVersion:1,entries:prior.slice(0,REPORT_ARCHIVE_ENTRIES)};
+    }
+    return view;
+}
+
+function commitOccurrenceReports(original, scoped, scope) {
+    const area=original?.analysisOccurrenceReports;
+    if (area!=null && (area.schemaVersion!==1 || !area.entries || typeof area.entries!=='object' || Array.isArray(area.entries))) throw reportArchiveError();
+    const entries=area?.entries || {};
+    const previous=entries[scope];
+    if (Object.hasOwn(entries,scope) && (!previous || typeof previous!=='object' || Array.isArray(previous))) throw reportArchiveError();
+    const updated={...scoped};
+    delete updated.analysisOccurrenceReports;
+    const reports={...previous};
+    for (const field of occurrenceReportFields) {
+        if (Object.hasOwn(scoped,field)) reports[field]=scoped[field];
+        else delete reports[field];
+        if (Object.hasOwn(original || {},field)) updated[field]=original[field];
+        else delete updated[field];
+    }
+    if (!previous && !Object.keys(reports).length) return area ? {...updated,analysisOccurrenceReports:area} : updated;
+    if (!previous && Object.keys(entries).length>=64) throw reportArchiveError();
+    const next={...entries,[scope]:reports};
+    reportJsonCopy(next,REPORT_CAPTURE_BYTES);
+    return {...updated,analysisOccurrenceReports:{...area,schemaVersion:1,entries:next}};
+}
+
 class DatabaseDAO {
     constructor(dbName = "thunderbird_av", version = 3) {
         this.dbName = dbName;
@@ -112,13 +172,16 @@ class DatabaseDAO {
             transaction.onerror = transaction.onabort = failed;
 
             request.onsuccess = function () {
-                const record = request.result;
+                const original = request.result;
                 let updatedRecord;
                 try {
+                    const scope=storeName==='hybridanalysis' ? options.reportScope : null;
+                    const record=projectOccurrenceReports(original,scope);
                     const before = options.preserveReports && storeName === 'hybridanalysis' ? captureReportState(record) : null;
                     preservationNeeded = !!before && (before.resources.length > 0 || before.archive != null);
                     updatedRecord = updateFn(record);
                     if (before && updatedRecord) updatedRecord = preserveReportRevisions(before, updatedRecord);
+                    if (scope && updatedRecord) updatedRecord=commitOccurrenceReports(original,updatedRecord,scope);
                 }
                 catch (error) { if (preservationNeeded || error?.code === 'REPORT_ARCHIVE_BLOCKED') noteReportArchiveBlocked(key); reject(error); transaction.abort(); return; }
                 if (!updatedRecord) { reject(new Error('Cannot update a missing record')); transaction.abort(); return; }
@@ -142,14 +205,16 @@ class DatabaseDAO {
         return storePromise;
     }
 
-    getFromStore(db, storeName, key) {
+    getFromStore(db, storeName, key, options = {}) {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([storeName], "readonly");
             const store = transaction.objectStore(storeName);
             const request = store.get(key);
 
             request.onsuccess = function () {
-                resolve(request.result);
+                try {
+                    resolve(projectOccurrenceReports(request.result,storeName==='hybridanalysis' ? options.reportScope : null,options.includeHistory));
+                } catch (error) { reject(error); }
             };
 
             request.onerror = function (e) {
@@ -211,8 +276,8 @@ function updateStore(db, storeName, key, updateFn, options = {}) {
     return defaultDAO.updateStore(db, storeName, key, updateFn, options);
 }
 
-function getFromStore(db, storeName, key) {
-    return defaultDAO.getFromStore(db, storeName, key);
+function getFromStore(db, storeName, key, options = {}) {
+    return defaultDAO.getFromStore(db, storeName, key, options);
 }
 
 function putToStore(db, storeName, item) {

@@ -559,7 +559,7 @@ def check_followup(m, base, out, report, display, source_catalog):
         try {risk=await b.runtime.sendMessage({action:"getLocalRisk",messageId:message.id});}
         finally {if(previous.trustedAuthServers===undefined)await b.storage.local.remove("trustedAuthServers");else await b.storage.local.set(previous);}
         await bg.processAttachments(message,false,false);
-        const db=await bg.getSharedDB();const stored=await bg.getFromStore(db,"hybridanalysis",message.headerMessageId);
+        const db=await bg.getSharedDB();const stored=await bg.getFromStore(db,"hybridanalysis",message.headerMessageId,bg.messageReportOptions?.(message) || {});
         const auditBefore=await b.storage.local.get("linkAuditLog");
         const benchmark=[];
         try {
@@ -606,7 +606,7 @@ def check_followup(m, base, out, report, display, source_catalog):
           const raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject || raw;
           const tabs=await b.tabs.query({active:true,currentWindow:true});
           const message=(await b.messageDisplay.getDisplayedMessages(tabs[0].id)).messages[0];
-          const record=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId);
+          const record=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,bg.messageReportOptions?.(message) || {});
           window.wrappedJSObject.sourceProbe={id:message.id,resource:"attachment:"+record.attachments[0].partName,observedAt:Date.parse("2026-10-15T08:00:00Z")};
           const result=await b.runtime.sendMessage({action:"recordAnalysisEvent",messageId:message.id,event:{provider:"hybridanalysis",scope:"report",resource:window.wrappedJSObject.sourceProbe.resource,phase:"start"}});
           return result.success;
@@ -639,7 +639,7 @@ def check_followup(m, base, out, report, display, source_catalog):
           await bg.updateStore(db,"hybridanalysis",message.headerMessageId,old=>({...old,
             attachments:old.attachments.map((item,index)=>index<(modern?2:1)?{...item,report:{verdict:modern && index===0?"malicious":"no specific threat"},report_fetched_at:"2026-10-15T08:00:00Z"}:item),
             links:modern?(old.links || []).map((item,index)=>({...item,report:{verdict:index===0?"malicious":"no specific threat"},report_fetched_at:"2026-10-15T08:00:00Z"})):old.links
-          }));
+          }),bg.messageReportOptions?.(message) || {});
           await b.runtime.sendMessage({action:"getLocalRisk",messageId:message.id});
           return true;
         })();''', browser=popup_browser)
@@ -919,27 +919,34 @@ def check_identity_lifecycle(m, base, out, report, restart):
       await bg.indexedDB_save_batch_hybrid_data_to_db(a,result(aPart,arguments[2],'malicious'));
       const original=await bg.collectAttachmentFindings(a),guarded=await bg.collectAttachmentFindings(other);
       await bg.indexedDB_save_batch_hybrid_data_to_db(other,result(otherPart,arguments[3],'clean'));
-      const after=await bg.collectAttachmentFindings(a),record=await bg.getFromStore(await bg.getSharedDB(),'hybridanalysis',bg.resolveMessageStorageKey(a));
+      const after=await bg.collectAttachmentFindings(a),record=await bg.getFromStore(await bg.getSharedDB(),'hybridanalysis',bg.resolveMessageStorageKey(a),bg.messageReportOptions(a));
       const currentOther=await bg.collectAttachmentFindings(other);
+      const sharedUrl='https://identity.example.invalid/shared';
+      const links=verdict=>{const value=new bg.Object(),report=new bg.Object(),rows=new bg.Array();
+        Object.assign(report,{state:'COMPLETE',verdict});Object.assign(value,{url:sharedUrl,state:'KNOWN',report});rows.push(value);return rows;};
+      await bg.indexedDB_save_links_objects_to_db(a,links('malicious'));
+      await bg.indexedDB_save_links_objects_to_db(other,links('clean'));
+      const storedLink=async message=>(await bg.getFromStore(await bg.getSharedDB(),'hybridanalysis',bg.resolveMessageStorageKey(message),bg.messageReportOptions(message))).links[0];
+      const separateLinks=(await storedLink(a)).report.verdict==='malicious'&&(await storedLink(other)).report.verdict==='clean';
       const coverage=(await b.messages.listAttachments(a.id)).length;
       await bg.persistScanCoverage(a,'attachments',bg.scanCoverage(coverage,coverage,coverage,0,'attachment_limit_100_or_25MiB'));
       await bg.persistScanCoverage(other,'attachments',bg.scanCoverage(coverage,coverage,0,coverage,'attachment_limit_100_or_25MiB'));
       const first=await b.runtime.sendMessage({action:'getMessageAnalysisRecord',messageId:a.id});
       const second=await b.runtime.sendMessage({action:'getMessageAnalysisRecord',messageId:other.id});
       return {realThunderbirdAPIs:true,syntheticReports:true,liveProviderCalls:false,
-        sameStorageKey:bg.resolveMessageStorageKey(a)===bg.resolveMessageStorageKey(other),
+        separateLinks,sameStorageKey:bg.resolveMessageStorageKey(a)===bg.resolveMessageStorageKey(other),
         foreignAttachmentFindingRejected:guarded.length===0,originalFindingsBefore:original.length,originalFindingsAfter:after.length,
         originalScoreBefore:score(original),originalScoreAfter:score(after),
-        historicProvenance:after.length===1&&after[0].source==='archive',
+        occurrenceReportStillCurrent:after.length===1&&after[0].source!=='archive',
         siblingRemainsUnflagged:currentOther.length===0,
         separateCoverage:first?.success===true&&second?.success===true&&
           first.record?.scanCoverage?.attachments?.processed===coverage&&second.record?.scanCoverage?.attachments?.failed===coverage,
-        priorReportArchived:record.analysisReportArchive.entries.some(entry=>entry.resource.report?.verdict==='malicious'),
+        originalReportPreserved:record.attachments.some(item=>item.report?.verdict==='malicious'),
         auditUnchanged:beforeAudit===JSON.stringify((await b.storage.local.get('linkAuditLog')).linkAuditLog)};
     })();''',[initial[0]['id'],initial[1]['id'],initial[0]['attachments'][0]['sha256'],initial[1]['attachments'][0]['sha256']])
     consequences=probe['runtimeConsequences']
-    assert all(consequences[key] for key in ['auditUnchanged','priorReportArchived','foreignAttachmentFindingRejected',
-                                            'historicProvenance','siblingRemainsUnflagged','separateCoverage']),consequences
+    assert all(consequences[key] for key in ['auditUnchanged','originalReportPreserved','foreignAttachmentFindingRejected',
+                                            'occurrenceReportStillCurrent','siblingRemainsUnflagged','separateCoverage','separateLinks']),consequences
     assert consequences['originalScoreBefore']==consequences['originalScoreAfter']==80,consequences
     keys=m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
       return Array.from(MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Identity Source").messages).map(h=>h.messageKey).sort((a,b)=>a-b);''')
@@ -1253,7 +1260,7 @@ def check_active_sources(m, base, out, report, display, baseline=False):
     options='window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).browser'
     measured=m.page('''return (async()=>{
       const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]);
-      await bg.updateStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,old=>({...old,messageHeader:message.headerMessageId,links:arguments[1].map(url=>({url,state:"UNKNOWN"})),updatedAt:Date.now()}));
+      await bg.updateStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,old=>({...old,messageHeader:message.headerMessageId,links:arguments[1].map(url=>({url,state:"UNKNOWN"})),updatedAt:Date.now()}),bg.messageReportOptions?.(message) || {});
       const ready=await bg.getMessageAnalysisContext(message),context=ready.wrappedJSObject||ready;
       for(let index=0;index<1200;index++)context.event({provider:["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"][index%5],scope:["report","hash","domain","ip","url"][index%5],resource:"link:"+Math.floor(index/5),phase:"cache",state:"checked",verdict:index===1199?"malicious":"none",observedAt:1790000000000+index*1000});
       const samples=[];for(let run=0;run<3;run++){const start=performance.now();await context.flush();samples.push(performance.now()-start);}
@@ -1365,7 +1372,7 @@ def check_history_pages(m, base, out, report, display):
     subprocess.run(['import','-window','root',str(out/'history-pages-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
     open_page(m,base+'options.html')
-    preserved=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]),record=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId);return JSON.stringify(record.analysisStatusLegacy)===arguments[1];})();''',[seeded['id'],seeded['legacy']])
+    preserved=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]),record=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,bg.messageReportOptions?.(message) || {});return JSON.stringify(record.analysisStatusLegacy)===arguments[1];})();''',[seeded['id'],seeded['legacy']])
     assert preserved
     report['historyPages']={'passed':True,'syntheticObservations':True,'liveProviderCalls':False,'storedHistoryUnchanged':preserved,'realX11Keyboard':True,'popupKeys':['Return','space','Tab'],'popupKeyboardSetup':'Explicit chrome browser focus before X11 keys','firstMessagePage':first,'keyboardMessagePage':keyboard,'lastMessagePage':last,'afterRefresh':refreshed,'firstPopupPage':popup_first,'lastPopupPage':popup_last,'scope':'Real message and popup, 1200 unbound history observations; no current threat inherited, no screen reader acceptance.'}
 
@@ -1395,9 +1402,9 @@ def check_hybrid_popup(m, base, out, report, display, baseline=False, actions=Fa
       const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]);
       const ready=await bg.getMessageAnalysisContext(message),context=ready.wrappedJSObject||ready;
       await bg.processAttachments(message,false,false,context);
-      await bg.updateStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,record=>({...record,attachments:record.attachments.map((item,i)=>({...item,state:"KNOWN",report:i===0?{state:"COMPLETE",threat_score:95,verdict:"malicious",tags:"phishing",scanners:[null,{name:"fixture",anti_virus_results:{}}]}:{state:"COMPLETE",threat_score:20,verdict:"clean",tags:["fixture"]}}))}));
+      await bg.updateStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,record=>({...record,attachments:record.attachments.map((item,i)=>({...item,state:"KNOWN",report:i===0?{state:"COMPLETE",threat_score:95,verdict:"malicious",tags:"phishing",scanners:[null,{name:"fixture",anti_virus_results:{}}]}:{state:"COMPLETE",threat_score:20,verdict:"clean",tags:["fixture"]}}))}),bg.messageReportOptions?.(message) || {});
       for(const provider of ["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"])context.event({provider,scope:"report",resource:"message",phase:"finish",state:provider==="urlscan"?"submitted":"checked",verdict:provider==="hybridanalysis"?"malicious":provider==="urlscan"?"unknown":"none",responded:true,observedAt:1000});
-      await context.flush();return JSON.stringify((await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId)).attachments.map(item=>item.report));
+      await context.flush();return JSON.stringify((await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,bg.messageReportOptions?.(message) || {})).attachments.map(item=>item.report));
     })();''',[target])
     options='window.gTabmail.tabInfo.filter(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).at(-1).browser'
     if actions:
@@ -1449,7 +1456,7 @@ def check_hybrid_popup(m, base, out, report, display, baseline=False, actions=Fa
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
     m.screenshot(out/'hybrid-message.png')
     open_page(m,base+'options.html')
-    after=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]);return JSON.stringify((await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId)).attachments.map(item=>item.report));})();''',[target])
+    after=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]);return JSON.stringify((await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,bg.messageReportOptions?.(message) || {})).attachments.map(item=>item.report));})();''',[target])
     assert before==after
     report['hybridPopup']={'passed':True,'baseline':baseline,'syntheticReports':True,'externalConsent':False,'storedReportsUnchanged':True,**result}
 
@@ -1499,7 +1506,7 @@ def check_stored_sources(m, base, out, report, display, baseline=False):
     m.page('return window.wrappedJSObject.browser.tabs.remove(arguments[0]);',[prepared['responseTabId']])
     original=m.page('''return (async()=>{
       const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]),db=await bg.getSharedDB();
-      await bg.updateStore(db,"hybridanalysis",message.headerMessageId,old=>({...old,attachments:[null,...old.attachments],links:{unreadable:true},analysisStatusLegacy:{schemaVersion:2,rows:[null,...["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"].map(provider=>({provider,scope:"report",state:"checked",verdict:"malicious",responses:1,observedAt:10}))]}}));
+      await bg.updateStore(db,"hybridanalysis",message.headerMessageId,old=>({...old,attachments:[null,...old.attachments],links:{unreadable:true},analysisStatusLegacy:{schemaVersion:2,rows:[null,...["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"].map(provider=>({provider,scope:"report",state:"checked",verdict:"malicious",responses:1,observedAt:10}))]}}),bg.messageReportOptions?.(message) || {});
       if(!arguments[1]){
         await bg.pruneStore(db,"hybridanalysis");
         const ready=await bg.getMessageAnalysisContext(message,arguments[2]),context=ready.wrappedJSObject||ready;
@@ -1511,7 +1518,7 @@ def check_stored_sources(m, base, out, report, display, baseline=False):
         }
         await context.flush();
       }
-      const stored=await bg.getFromStore(db,"hybridanalysis",message.headerMessageId);
+      const stored=await bg.getFromStore(db,"hybridanalysis",message.headerMessageId,bg.messageReportOptions?.(message) || {});
       return JSON.stringify({attachments:stored.attachments,links:stored.links,legacy:stored.analysisStatusLegacy});
     })();''',[prepared['messageId'],baseline,prepared['originalTabId']])
     result=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysisRecord",messageId:arguments[0]});',[prepared['messageId']])
@@ -1532,7 +1539,7 @@ def check_stored_sources(m, base, out, report, display, baseline=False):
     subprocess.run(['import','-window','root',str(out/'stored-source-recovery.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
     open_page(m,base+'options.html')
-    after=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]),stored=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId);return JSON.stringify({attachments:stored.attachments,links:stored.links,legacy:stored.analysisStatusLegacy});})();''',[prepared['messageId']])
+    after=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]),stored=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,bg.messageReportOptions?.(message) || {});return JSON.stringify({attachments:stored.attachments,links:stored.links,legacy:stored.analysisStatusLegacy});})();''',[prepared['messageId']])
     assert original==after
     report['storedSources']={'passed':True,'baseline':baseline,'genericPopupError':baseline,'rpcSuccess':not baseline,'reportsAndLegacyUnchanged':True,'externalConsent':False,'syntheticObservations':True,'realThunderbirdAPIs':True,'isolatedResponseMessage':prepared['messageId']!=response_id,'responsesWithoutVerdict':not baseline,'phaseWithoutVerdict':prepared['expectedPhase']}
 
@@ -1657,18 +1664,19 @@ def check_report_archive(m, base, out, report, restart, display):
       const a=await find("A"),target=await find("B"),part=(await b.messages.listAttachments(a.id))[0];
       const hashed=await bg.process_single_attachment(a,part,false,false),db=await bg.getSharedDB();
       const old={partName:part.partName,attachment_name:"same.bin",hybrid_sha256:hashed.hybrid_data.sha256,hybrid_job_id:"job-A",hybrid_submission_id:"submission-A",state:"KNOWN",report:{state:"COMPLETE",verdict:"malicious",created:"provider-original",details:{nested:[1,"original",{retained:true}]}},report_fetched_at:"2026-10-02T08:00:00.000Z",virustotal_stats:{malicious:2,undetected:5},created:new Date()};
-      await bg.updateStore(db,"hybridanalysis",a.headerMessageId,()=>({messageHeader:a.headerMessageId,attachments:[old],updatedAt:Date.now()}));
+      await bg.updateStore(db,"hybridanalysis",a.headerMessageId,()=>({messageHeader:a.headerMessageId,attachments:[old],updatedAt:Date.now()}),bg.messageReportOptions(a));
       await bg.processAttachments(a,false,false);
-      const same=await bg.getFromStore(db,"hybridanalysis",a.headerMessageId);
+      const same=await bg.getFromStore(db,"hybridanalysis",a.headerMessageId,bg.messageReportOptions(a));
       const offlineKeptReport=JSON.stringify(same.attachments[0].report)===JSON.stringify(old.report)&&same.attachments[0].report_fetched_at===old.report_fetched_at&&same.attachments[0].hybrid_job_id==="job-A"&&!same.analysisReportArchive;
       await bg.processAttachments(target,false,false);
-      const changed=await bg.getFromStore(db,"hybridanalysis",a.headerMessageId),entry=changed.analysisReportArchive.entries[0];
-      const exactOriginal=JSON.stringify(entry.resource.report)===JSON.stringify(old.report)&&entry.resource.hybrid_sha256===old.hybrid_sha256&&entry.resource.report_fetched_at===old.report_fetched_at&&entry.resource.virustotal_stats.malicious===2&&entry.resource.hybrid_submission_id==="submission-A";
+      const afterA=await bg.getFromStore(db,"hybridanalysis",a.headerMessageId,bg.messageReportOptions(a));
+      const changed=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId,bg.messageReportOptions(target));
+      const exactOriginal=JSON.stringify(afterA.attachments[0])===JSON.stringify(same.attachments[0]);
       const current=changed.attachments[0];
-      await bg.updateStore(db,"hybridanalysis",a.headerMessageId,record=>{record.attachments[0]={...current,state:"KNOWN",hybrid_job_id:"job-B",report:{state:"COMPLETE",verdict:"malicious",details:{originalB:true}},report_fetched_at:"2026-10-03T08:00:00.000Z"};return record;});
-      return {offlineKeptReport,exactOriginal,newContentClearedCurrentReport:current.report===null,differentHashes:current.hybrid_sha256!==old.hybrid_sha256,archiveEntries:changed.analysisReportArchive.entries.length};
+      await bg.updateStore(db,"hybridanalysis",target.headerMessageId,record=>{record.attachments[0]={...current,state:"KNOWN",hybrid_job_id:"job-B",report:{state:"COMPLETE",verdict:"malicious",details:{originalB:true}},report_fetched_at:"2026-10-03T08:00:00.000Z"};return record;},bg.messageReportOptions(target));
+      return {offlineKeptReport,exactOriginal,newContentClearedCurrentReport:current.report===null,differentHashes:current.hybrid_sha256!==old.hybrid_sha256,archiveEntries:changed.analysisReportArchive?.entries.length||0,scopeA:bg.messageReportOptions(a).reportScope,scopeB:bg.messageReportOptions(target).reportScope};
     })();''')
-    assert all(before[key] for key in ['offlineKeptReport', 'exactOriginal', 'newContentClearedCurrentReport', 'differentHashes']) and before['archiveEntries'] == 1, before
+    assert all(before[key] for key in ['offlineKeptReport', 'exactOriginal', 'newContentClearedCurrentReport', 'differentHashes']) and before['archiveEntries'] == 0, before
     m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
       const {MailUtils}=ChromeUtils.importESModule("resource:///modules/MailUtils.sys.mjs");
       MailUtils.displayMessage(Array.from(MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Report Archive").messages).find(h=>h.subject==="Thundy report archive B"));''')
@@ -1683,20 +1691,21 @@ def check_report_archive(m, base, out, report, restart, display):
     saved = m.page('''return (async()=>{
       const w=window.wrappedJSObject,b=w.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
       const target=(await b.messages.query({subject:"Thundy report archive B"})).messages.find(item=>item.subject==="Thundy report archive B");
-      const db=await bg.getSharedDB(),record=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId),item=record.attachments[0];
-      const write=async(report,fetchedAt)=>{const popupDb=await w.openDB();try{return await w.updateStore(popupDb,"hybridanalysis",target.headerMessageId,record=>{record.attachments[0].report=report;record.attachments[0].report_fetched_at=fetchedAt;return record;},{preserveReports:true}).then(()=>true,()=>false);}finally{popupDb.close();}};
+      const db=await bg.getSharedDB(),record=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId,bg.messageReportOptions(target)),item=record.attachments[0];
+      const write=async report=>(await b.runtime.sendMessage({action:'savePopupHybridReport',messageId:target.id,headerMessageId:target.headerMessageId,
+        reportScope:bg.messageReportOptions(target).reportScope,sha256:item.hybrid_sha256,partName:item.partName,jobId:'job-B',report})).success;
       const success=await write({state:"COMPLETE",verdict:"clean",details:{newB:true}},"2026-11-03T08:00:00.000Z");
-      const saved=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId);
+      const saved=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId,bg.messageReportOptions(target));
       const oldB=saved.analysisReportArchive.entries.find(entry=>entry.resource.report?.details?.originalB);
       await bg.updateStore(db,"hybridanalysis",target.headerMessageId,record=>{
         while(record.analysisReportArchive.entries.length<128)record.analysisReportArchive.entries.push({id:crypto.randomUUID(),archivedAt:Date.now(),kind:"link",slot:record.analysisReportArchive.entries.length,resource:{url:"https://archive.example.invalid/"+record.analysisReportArchive.entries.length,report:{state:"COMPLETE",verdict:"unknown"}}});return record;
-      });
-      const full=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId);
+      },bg.messageReportOptions(target));
+      const full=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId,bg.messageReportOptions(target));
       const refused=await write({state:"COMPLETE",verdict:"malicious",details:{mustNotCommit:true}},new Date().toISOString());
-      const after=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId);
+      const after=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId,bg.messageReportOptions(target));
       return {popupSaved:success,oldBRetained:!!oldB&&oldB.resource.report_fetched_at==="2026-10-03T08:00:00.000Z",archiveEntriesBeforeLimit:saved.analysisReportArchive.entries.length,capacityRefused:refused===false,protocolUnchanged:JSON.stringify(after.attachments)===JSON.stringify(full.attachments),archiveUnchanged:JSON.stringify(after.analysisReportArchive)===JSON.stringify(full.analysisReportArchive)};
     })();''', browser=popup)
-    assert all(saved[key] for key in ['popupSaved', 'oldBRetained', 'capacityRefused', 'protocolUnchanged', 'archiveUnchanged']) and saved['archiveEntriesBeforeLimit'] == 2, saved
+    assert all(saved[key] for key in ['popupSaved', 'oldBRetained', 'capacityRefused', 'protocolUnchanged', 'archiveUnchanged']) and saved['archiveEntriesBeforeLimit'] == 1, saved
     warning = 'A report update could not be saved. Earlier protocols were retained.'
     wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);', [warning], browser=popup))
     subprocess.run(['import', '-window', 'root', str(out / 'report-archive-popup.png')], env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
@@ -1710,12 +1719,13 @@ def check_report_archive(m, base, out, report, restart, display):
     after = m.page('''return (async()=>{
       const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
       const target=(await b.messages.query({subject:"Thundy report archive B"})).messages.find(item=>item.subject==="Thundy report archive B");
-      const record=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",target.headerMessageId);
+      const raw=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",target.headerMessageId);
+      const record=raw.analysisOccurrenceReports.entries[arguments[1]],original=raw.analysisOccurrenceReports.entries[arguments[0]];
       const snapshot=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:target.id});
-      return {archiveEntries:record.analysisReportArchive.entries.length,originalA:record.analysisReportArchive.entries.some(entry=>entry.resource.report?.details?.nested?.[2]?.retained),originalB:record.analysisReportArchive.entries.some(entry=>entry.resource.report?.details?.originalB),currentClean:record.attachments[0].report.verdict==="clean",activeRows:snapshot.rows.length,historicalUnbound:snapshot.sourceHistory.rows.every(row=>row.resource===null),originalTimeInHistory:snapshot.sourceHistory.rows.some(row=>row.observedAt===Date.parse("2026-10-02T08:00:00Z"))};
-    })();''')
+      return {archiveEntries:record.analysisReportArchive.entries.length,originalA:original.attachments[0].report.details.nested[2].retained,originalB:record.analysisReportArchive.entries.some(entry=>entry.resource.report?.details?.originalB),currentClean:record.attachments[0].report.verdict==="clean",activeRows:snapshot.rows.length,historicalUnbound:snapshot.sourceHistory.rows.every(row=>row.resource===null),originalTimeInHistory:snapshot.sourceHistory.rows.some(row=>row.observedAt===Date.parse("2026-10-02T08:00:00Z"))};
+    })();''',[before['scopeA'],before['scopeB']])
     assert after['archiveEntries'] == 128 and after['activeRows'] == 0 and all(after[key] for key in ['originalA', 'originalB', 'currentClean', 'historicalUnbound', 'originalTimeInHistory']), after
-    report['reportArchive'] = {'passed': True, 'syntheticProtocols': True, 'liveProviderCalls': False, 'realMimeIndexedDBPopupRestart': True, 'popupWriteScope': 'Actual protected DAO in the native popup with fixture callback; module-private persistHybridReport is covered separately by Node integration.', 'before': before, 'popupAndCapacity': saved, 'afterRestart': after, 'warningVisibleInMessageAndPopup': True, 'scope': 'Bounded revisions in the existing header cache; no independent durable archive.'}
+    report['reportArchive'] = {'passed': True, 'syntheticProtocols': True, 'liveProviderCalls': False, 'realMimeIndexedDBPopupRestart': True, 'popupWriteScope': 'Native popup RPC and scoped DAO', 'before': before, 'popupAndCapacity': saved, 'afterRestart': after, 'warningVisibleInMessageAndPopup': True, 'scope': 'Bounded revisions of a single live occurrence, retained as history after a restart.'}
     return m
 
 
@@ -2067,7 +2077,7 @@ def check_provider_results(m, base, out, report, display, message_id):
       await bg.updateStore(await bg.getSharedDB(),'hybridanalysis',bg.resolveMessageStorageKey(message),old=>{
         if(!old?.links?.length)throw Error('Missing synthetic resource inventory');
         return {...old,links:old.links.map(link=>({...link,urlscan:{status:'SUBMITTED',uuid:'provider-urlscan-job'}}))};
-      },{preserveReports:true});return true;
+      },bg.messageReportOptions(message,{preserveReports:true}));return true;
     })();''',[message_id],browser=options)
     def snapshot():
         return m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[message_id],browser=options)
@@ -2172,7 +2182,7 @@ def check_provider_results(m, base, out, report, display, message_id):
       const accepted=new Map(arguments[1].map(link=>[link.url,link.urlscan])),message=await b.messages.get(arguments[0]);
       await bg.updateStore(await bg.getSharedDB(),'hybridanalysis',bg.resolveMessageStorageKey(message),old=>({...old,links:old.links.map(link=>{
         const saved=accepted.get(link.url);if(!saved?.uuid)throw Error('Missing accepted UUID fixture');return {...link,urlscan:saved};
-      })}),{preserveReports:true});
+      })}),bg.messageReportOptions(message,{preserveReports:true}));
       bg.fetch=async(url,options={})=>{if(String(url).includes('urlscan.io/api/v1/result/')){w.__providerCalls.push({url:String(url),method:options.method||'GET'});return new bg.Response('{}',{status:410});}return fetch(url,options);};
       const result=await bg.handleRequestScan({messageId:arguments[0],tabId:(await b.tabs.query({active:true,currentWindow:true}))[0].id,operation:'refresh'},{});
       if(!result.success)throw Error(result.code||'Deleted result probe rejected');

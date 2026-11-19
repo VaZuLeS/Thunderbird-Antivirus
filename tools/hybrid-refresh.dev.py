@@ -16,7 +16,7 @@ def check(m, base, out, report, display, wait, open_page, native_click):
       await b.runtime.sendMessage({action:'clearMemoryCaches'});
       const full=await bg.getAnalysisFull(message.id),urls=bg.filterUrls(bg.extractUrls(bg.extractTextFromParts(full.parts||full)));if(!urls.length)throw Error('Missing fixture URL');
       const link={url:urls[0],state:'UPLOADED',report:{id:'synthetic-quick-scan',finished:false},report_fetched_at:'2026-11-10T10:00:00Z'};
-      await bg.updateStore(db,'hybridanalysis',key,old=>({...old,messageHeader:key,links:[link],analysisSourceSnapshots:{}}));
+      await bg.updateStore(db,'hybridanalysis',key,old=>({...old,messageHeader:key,links:[link],analysisSourceSnapshots:{}}),bg.messageReportOptions(message));
       const ready=await bg.getMessageAnalysisContext(message,tabId),context=ready.wrappedJSObject||ready;w.__lateHybridProbe.context=context;
       const before=await context.snapshot();if(!before.rows.some(row=>row.provider==='hybridanalysis'&&row.resource==='link:0'&&row.completion==='pending'))throw Error('Missing pending baseline');
       await bg.persistHybridLinkVerdict(message,urls[0],{status:'MALICIOUS',check:{origin:'live',outcome:'success',observedAt:Date.parse('2026-11-10T10:00:30Z')}});
@@ -27,7 +27,7 @@ def check(m, base, out, report, display, wait, open_page, native_click):
       if(!separate.rows.some(row=>row.provider==='hybridanalysis'&&row.scope==='url'&&row.verdict==='malicious')||!separate.rows.some(row=>row.provider==='hybridanalysis'&&row.scope==='report'&&row.completion==='pending')||!findings.some(row=>row.url===urls[0]&&row.verdict==='malicious'))throw Error('Saved URL verdict and unfinished report disagree');
       const snapshots=Object.fromEntries(Array.from({length:64},(_,i)=>['synthetic-history-'+i,{savedAt:10,snapshot:{schemaVersion:2,rows:[]}}]));
       w.__lateHybridProbe.history=JSON.stringify(snapshots);
-      await bg.updateStore(db,'hybridanalysis',key,old=>({...old,links:old.links.map(item=>({...item,state:'KNOWN',report:{finished:true,state:'COMPLETE',verdict:'malicious',threat_score:85},report_fetched_at:'2026-11-10T10:01:00Z'})),analysisSourceSnapshots:snapshots}));
+      await bg.updateStore(db,'hybridanalysis',key,old=>({...old,links:old.links.map(item=>({...item,state:'KNOWN',report:{finished:true,state:'COMPLETE',verdict:'malicious',threat_score:85},report_fetched_at:'2026-11-10T10:01:00Z'})),analysisSourceSnapshots:snapshots}),bg.messageReportOptions(message));
       await context.flush();const after=await context.snapshot(),again=await context.snapshot(),row=after.rows.find(row=>row.provider==='hybridanalysis'&&row.resource==='link:0');
       if(row?.verdict!=='malicious'||row.completion!=='complete'||after.sourcePersistenceReason!=='snapshot_count'||!after.sourcePersistenceFailed)throw Error('Stored result or capacity reason not exposed');
       if(JSON.stringify(after.rows)!==JSON.stringify(again.rows))throw Error('Repeated read changed response counts');

@@ -89,12 +89,12 @@ test('real popup persistence archives an earlier protocol and ignores mismatched
 });
 
 function loadBackgroundFunction(c,name){
- const source=(fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('background.js','utf8')),start=source.indexOf('async function '+name+'('),end=source.indexOf('\n}',start)+2;
+ const source=fs.readFileSync('background.js','utf8'),start=source.search(new RegExp('(?:async )?function '+name+'\\(')),end=source.indexOf('\n}',start)+2;
  assert.ok(start>=0 && end>start);vm.runInContext(source.slice(start,end),c);
 }
 test('actual batch writers keep an offline report and archive changed content and link submissions',async()=>{
  const original={messageHeader:'mail',attachments:[item()],links:[{url:'https://old.invalid/',state:'KNOWN',report:{state:'COMPLETE',verdict:'malicious'},report_fetched_at:'2026-10-02T08:00:00Z'}]};
- const s=setup(original);Object.assign(s.c,{getSharedDB:async()=>s.db,Logger:{error(){}}});
+ const s=setup(original);Object.assign(s.c,{getSharedDB:async()=>s.db,messageReportOptions:(_message, options)=>options,Logger:{error(){}}});
  for(const name of ['indexedDB_save_batch_hybrid_data_to_db','indexedDB_save_links_objects_to_db'])loadBackgroundFunction(s.c,name);
  const result=hash=>({attachmentName:'same.bin',hybrid_data:{partName:'1.2',sha256:hash,state:'MANUAL_CHECK_PENDING',job_id:'MANUAL_CHECK',submission_id:'MANUAL_CHECK'}});
  await s.c.indexedDB_save_batch_hybrid_data_to_db({headerMessageId:'mail'},[result('a'.repeat(64))]);
@@ -111,7 +111,7 @@ test('manual URL and file paths preserve protocols and never repeat an accepted 
   const original={messageHeader:'mail',attachments:[attachment],links:[{url:'https://old.invalid/',state:'KNOWN',report:{state:'COMPLETE',verdict:'malicious'}}]};
   if(full)original.analysisReportArchive={schemaVersion:1,entries:Array.from({length:128},(_,i)=>({id:String(i),kind:'attachment',slot:0,resource:item('previous-'+i)}))};
   const s=setup(original);let requests=0;
-  Object.assign(s.c,{getSharedDB:async()=>s.db,Logger:{error(){}},URLSearchParams,File,FormData,apikey_hybridanalysis:'key',assertExternalAnalysisAllowed(){},tierAtLeast:()=>true,requireHostPermissionFor:async()=>true,requireHostPermission:async()=>{},getHybridAnalysisOptions:()=>({}),getMessageAnalysisContext:async()=>null,get_sha256_hash:async()=>hash,browser:{messages:{get:async()=>({id:7,headerMessageId:'mail'}),getAttachmentFile:async()=>new File(['bytes'],'same.bin')}},apiGateway:{fetchWithTimeout:async()=>{requests++;return {status:201,json:async()=>({job_id:'new-job',submission_id:'new-submission',sha256:name==='handleManualUpload'?hash:'b'.repeat(64)})};}}});
+  Object.assign(s.c,{getSharedDB:async()=>s.db,messageReportOptions:(_message, options)=>options,Logger:{error(){}},URLSearchParams,File,FormData,apikey_hybridanalysis:'key',assertExternalAnalysisAllowed(){},tierAtLeast:()=>true,requireHostPermissionFor:async()=>true,requireHostPermission:async()=>{},getHybridAnalysisOptions:()=>({}),getMessageAnalysisContext:async()=>null,get_sha256_hash:async()=>hash,browser:{messages:{get:async()=>({id:7,headerMessageId:'mail'}),getAttachmentFile:async()=>new File(['bytes'],'same.bin')}},apiGateway:{fetchWithTimeout:async()=>{requests++;return {status:201,json:async()=>({job_id:'new-job',submission_id:'new-submission',sha256:name==='handleManualUpload'?hash:'b'.repeat(64)})};}}});
   loadBackgroundFunction(s.c,name);
   const before=JSON.stringify(s.records.get('mail'));
   if(name==='handleUrlScan')await s.c.handleUrlScan('https://old.invalid/','mail');else await s.c.handleManualUpload(7,'1.2','same.bin',hash,'mail');
@@ -119,6 +119,75 @@ test('manual URL and file paths preserve protocols and never repeat an accepted 
   if(full){assert.equal(JSON.stringify(s.records.get('mail')),before);assert.equal(s.c.wasReportArchiveBlocked('mail'),true);}
   else {const entries=s.records.get('mail').analysisReportArchive.entries;assert.equal(entries.length,1);assert.equal(entries[0].resource.report.verdict,'malicious');}
  }
+});
+
+test('colliding message IDs keep provider writes scoped, including popup refresh and rollback', async () => {
+ const url = 'https://target.invalid/path?value=7#view';
+ const legacy = {messageHeader: 'mail', attachments: [item()], links: [{url, report: {verdict: 'malicious'}}]};
+ const s = setup(legacy);
+ const first = {id: 7, headerMessageId: 'mail'}, second = {...first, id: 8};
+ let runtime = 'first-runtime';
+ Object.assign(s.c, {
+    URL, getAnalysisRuntimeId: () => runtime, getSharedDB: async () => s.db,
+    Logger: {error() {}}, browser: {messages: {get: async id => id === first.id ? first : second}}
+ });
+ vm.runInContext(fs.readFileSync('runtime.js', 'utf8') + '\n' + fs.readFileSync('provider_results.js', 'utf8'), s.c);
+ for (const name of ['messageReportOptions', 'canonicalHttpUrl', 'sameAnalysisUrl', 'attachmentFindingStrength',
+     'savedLinkAssessments', 'indexedDB_save_batch_hybrid_data_to_db', 'indexedDB_save_links_objects_to_db', 'savePopupHybridReport']) {
+    loadBackgroundFunction(s.c, name);
+ }
+ const digest = 'b'.repeat(64), twinDigest = 'c'.repeat(64);
+ const link = verdict => ({url, state: 'KNOWN', report: {state: 'COMPLETE', verdict}});
+ const attachment = (sha256, verdict) => ({
+    attachmentName: 'same.bin',
+    hybrid_data: {partName: '1.2', sha256, job_id: 'job', state: 'KNOWN'}, report: {state: 'COMPLETE', verdict}
+ });
+ const view = (message, options) => s.c.getFromStore(s.db, 'hybridanalysis', 'mail', s.c.messageReportOptions(message, options));
+ await s.c.indexedDB_save_batch_hybrid_data_to_db(first, [attachment(digest, 'malicious')]);
+ await s.c.indexedDB_save_batch_hybrid_data_to_db(second, [attachment(twinDigest, 'clean')]);
+ await s.c.indexedDB_save_links_objects_to_db(first, [link('malicious')]);
+ await s.c.indexedDB_save_links_objects_to_db(second, [link('clean')]);
+ assert.equal((await view(first)).attachments[0].report.verdict, 'malicious');
+ assert.equal((await view(second)).attachments[0].report.verdict, 'clean');
+ assert.equal(s.c.savedLinkAssessments(await view(first)).get(url).verdict, 'malicious');
+ assert.equal(s.c.savedLinkAssessments(await view(second)).get(url).verdict, 'none');
+ const reportScope = s.c.messageReportOptions(first).reportScope;
+ const request = {messageId: first.id, headerMessageId: 'mail', reportScope, sha256: digest, partName: '1.2', jobId: 'job',
+    report: {state: 'COMPLETE', verdict: 'suspicious', sha256: digest}};
+ const before = JSON.stringify(s.records.get('mail'));
+ assert.equal(await s.c.savePopupHybridReport({...request, messageId: second.id}), false);
+ assert.equal(await s.c.savePopupHybridReport({...request, jobId: 'previous-job'}), false);
+ assert.equal(await s.c.savePopupHybridReport({...request, report: {state: 'IN_PROGRESS', sha256: digest}}), false);
+ assert.equal(await s.c.savePopupHybridReport({...request, report: {...request.report, sha256: twinDigest}}), false);
+ assert.equal(JSON.stringify(s.records.get('mail')), before);
+ s.control.abortNext = true;
+ await assert.rejects(s.c.savePopupHybridReport(request), /late abort/);
+ assert.equal(JSON.stringify(s.records.get('mail')), before);
+ assert.equal(await s.c.savePopupHybridReport(request), true);
+ assert.equal((await view(first)).attachments[0].report.verdict, 'suspicious');
+ assert.equal((await view(first)).analysisReportArchive.entries[0].resource.report.verdict, 'malicious');
+ assert.equal((await view(second)).analysisReportArchive, undefined);
+ assert.deepEqual(s.records.get('mail').attachments, legacy.attachments);
+ assert.deepEqual(s.records.get('mail').links, legacy.links);
+
+ runtime = 'second-runtime';
+ const afterRestart = await view(first, {includeHistory: true});
+ assert.equal(afterRestart.links, undefined);
+ const assessments = s.c.savedLinkAssessments(afterRestart);
+ assert.equal(assessments.get(url).source, 'archive');
+ assert.equal(assessments.get(url).verdict, 'malicious');
+ assert.equal(assessments.has('https://target.invalid/path?value=8#view'), false);
+ assert.equal(await s.c.savePopupHybridReport(request), false);
+});
+
+test('report scope capacity refuses a new occurrence while preserving old data', async () => {
+ const entries = Object.fromEntries(Array.from({length: 64}, (_, i) => [JSON.stringify(['session', i + 1]), {attachments: [item()]}]));
+ const s = setup({messageHeader: 'mail', analysisOccurrenceReports: {schemaVersion: 1, entries}});
+ const before = JSON.stringify(s.records.get('mail'));
+ await assert.rejects(s.c.updateStore(s.db, 'hybridanalysis', 'mail', record => ({...record, attachments: [item()]}), {
+    reportScope: JSON.stringify(['session', 65]), preserveReports: true
+ }), {code: 'REPORT_ARCHIVE_BLOCKED'});
+ assert.equal(JSON.stringify(s.records.get('mail')), before);
 });
 
 test('an unfinished submission identity is retained without inventing a completed report',async()=>{

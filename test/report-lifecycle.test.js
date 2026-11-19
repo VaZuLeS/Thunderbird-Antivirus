@@ -160,6 +160,8 @@ test('provider error messages and rate limits are shown to the tester', () => {
 
 // Phase 4.3/4.4: stored sandbox verdicts feed the in-mail warning and provider matrix.
 function loadSlice(file, name, context) {
+    // These isolated function checks use a single mocked record.
+    context.messageReportOptions ??= (_message, options = {}) => options;
     const source = fs.readFileSync(file, 'utf8');
     const start = source.search(new RegExp('(async )?function ' + name + '\\(')), end = source.indexOf('\n}', start) + 2;
     assert.ok(start >= 0, name);
@@ -376,6 +378,8 @@ test('collectLinkFindings and evaluateLinkFindings incorporate Hybrid Analysis a
     loadSlice('background.js', 'extractHybridVerdictFromOverview', bgContext);
     Object.assign(bgContext,{readFullForAnalysis:async()=>({parts:[{contentType:'text/plain',body:'fixture'}]}),extractTextFromParts:()=>'',extractUrls:()=>['https://a.invalid/','https://b.invalid/','https://c.invalid/','https://d.invalid/'],filterUrls:urls=>urls});
     loadUrlContract(bgContext);
+    loadSlice('background.js', 'attachmentFindingStrength', bgContext);
+    loadSlice('background.js', 'savedLinkAssessments', bgContext);
     loadSlice('background.js', 'collectLinkFindings', bgContext);
     const findings = await bgContext.collectLinkFindings({ headerMessageId: 'm' });
     assert.deepEqual(JSON.parse(JSON.stringify(findings)), [
