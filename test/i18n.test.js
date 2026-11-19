@@ -8,7 +8,7 @@ const source = fs.readFileSync('i18n.js', 'utf8');
 function substitute(item, values = []) {
     return item.message.replace(/\$([A-Z0-9_]+)\$/g, (all, key) => {
         const content = item.placeholders[key.toLowerCase()].content;
-        return content.replace(/\$(\d+)/g, (_, index) => String(values[index - 1]));
+        return content.replace(/\$(\d+)/g, (_, index) => String(values[index - 1] ?? ''));
     });
 }
 
@@ -58,8 +58,9 @@ test('English fallback substitutes dynamic values without markup parsing', () =>
 test('the bundled fallback covers every catalog key and placeholder', () => {
     const context = vm.createContext({ browser: { i18n: { getMessage: () => '' } } });
     vm.runInContext(fs.readFileSync('i18n.js', 'utf8') + '\nglobalThis.translate = ThundyI18n.get;', context);
+    const values = ['one', 'two', 'three'];
     for (const [key, item] of Object.entries(catalogs.en)) {
-        assert.equal(context.translate(key, ['one', 'two']), substitute(item, ['one', 'two']), key);
+        assert.equal(context.translate(key, values), substitute(item, values), key);
     }
 });
 
