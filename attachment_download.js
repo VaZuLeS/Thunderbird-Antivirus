@@ -9,12 +9,9 @@ const ThundyAttachmentDownload = (() => {
 
     function evidence(item, digest) {
         if (!digest || item?.hybrid_sha256?.toLowerCase?.() !== digest) return unavailable();
-        const raw = (Array.isArray(item.report) ? item.report : [item.report])
-            .filter(report => report && typeof report === 'object' && !Array.isArray(report));
-        const matching = raw.filter(report => report.sha256 == null ||
-            (typeof report.sha256 === 'string' && report.sha256.toLowerCase() === digest));
+        const {bound:matching,fullyBound} = ThundyProviderResults.boundAttachmentReports(item.report,digest);
         // A mixed legacy payload may also have produced an unbound composite assessment.
-        const stored = matching.length === raw.length ? ThundyProviderResults.project(item.assessment) : {};
+        const stored = fullyBound ? ThundyProviderResults.project(item.assessment) : {};
         const evaluated = matching.map(report => ThundyProviderResults.evaluate('hybridanalysis',report));
         const signals = [...(stored.signals || []), ...evaluated.flatMap(report => report.signals)];
         const scores = signals.filter(s => s.code === 'threat_score' && validScore(s.value)).map(s => s.value);
@@ -23,8 +20,9 @@ const ThundyAttachmentDownload = (() => {
         const state = item.state === 'UPLOADED' || stored.completion === 'pending' ||
             evaluated.some(report => report.completion === 'pending') ? 'pending' :
             stored.completion === 'failed' || evaluated.some(report => report.completion === 'failed') ? 'failed' :
-            matching.some((report,i) => evaluated[i].completion === 'complete' &&
-                ThundyProviderResults.hybridCompletionConfirmed(report)) ? 'complete' : 'unknown';
+            matching.length > 0 && fullyBound &&
+                matching.every((report,i) => evaluated[i].completion === 'complete' &&
+                    ThundyProviderResults.hybridCompletionConfirmed(report)) ? 'complete' : 'unknown';
         return {score, malicious, state};
     }
 
@@ -44,11 +42,10 @@ const ThundyAttachmentDownload = (() => {
         const result = evidence(current,digest);
         if (pending) result.state = 'pending';
         const observed = item => {
-            const time = Date.parse(item?.report_fetched_at);
+            const time = typeof item?.report_fetched_at === 'string' ? Date.parse(item.report_fetched_at) : NaN;
             return Number.isFinite(time) ? time : null;
         };
         const selection = {item:current,result,source:current ? 'current' : null,observedAt:observed(current)};
-        if (result.state === 'complete' && (result.malicious || validScore(result.score))) return selection;
         const entries = record?.analysisReportArchive?.entries;
         if (!Array.isArray(entries)) return selection;
         const stronger = (a,b) => Number(a.malicious)-Number(b.malicious) || (a.score ?? -1)-(b.score ?? -1);
@@ -57,8 +54,10 @@ const ThundyAttachmentDownload = (() => {
             const item = entry?.resource;
             if (entry?.kind !== 'attachment' || !matches(item)) continue;
             const archived = evidence(item,digest);
+            const time = observed(item);
+            if (result.state === 'complete' && (result.malicious || validScore(result.score)) &&
+                selection.observedAt !== null && time !== null && selection.observedAt > time) continue;
             if (archived.malicious || validScore(archived.score) && archived.score >= policy.threshold) {
-                const time = observed(item);
                 const rank = stronger(archived,best.result);
                 if (rank > 0 || rank === 0 && best.source === 'archive' && (time ?? 0) > (best.observedAt ?? 0)) {
                     best = {item,result:archived,currentState:result.state,source:'archive',observedAt:time};

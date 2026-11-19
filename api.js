@@ -150,7 +150,7 @@ function renderLocalAssessment(threat,state,fromSource=false){
     if(valid&&reasons.length){const list=document.createElement('ul');list.className='risk-reasons';for(const reason of reasons.slice(0,3)){const item=document.createElement('li');item.textContent=String(reason);list.append(item);}content.push(list);}
     const note=document.createElement('p');note.className='risk-note';note.textContent=uiText('popupLocalExplanation','Local indicators only. This score is not an antivirus verdict or a guarantee of safety.');content.push(note);
     localCard.replaceChildren(...content);
-    localResult={state:state==='pending'?'unrecorded':state,score:valid?threat.score:null,heuristicScore:valid?risk:null,riskModelVersion:threat?.riskModelVersion,reasons:valid?(threat.reasons||reasons).slice(0,20):[],source:'local',observedAt:assessment?.observedAt||null,...(assessment?{assessment}:{})};if(!fromSource)renderLocalSourceState();return true;
+    localResult={state:state==='pending'?'unrecorded':state,score:valid?threat.score:null,heuristicScore:valid?risk:null,riskModelVersion:threat?.riskModelVersion,reasons:valid?(threat.reasons||reasons).slice(0,20):[],archivedAttachmentReasons:valid?threat.archivedAttachmentReasons:[],source:'local',observedAt:assessment?.observedAt||null,...(assessment?{assessment}:{})};if(!fromSource)renderLocalSourceState();return true;
 }
 renderLocalAssessment(null,'pending');
 refreshLocalAssessment=async()=>{

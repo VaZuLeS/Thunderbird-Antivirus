@@ -18,6 +18,12 @@ var ThundyProviderResults = (function () {
     function hybridCompletionConfirmed(data) {
         return data?.finished === true || complete.includes(word(data?.state));
     }
+    function boundAttachmentReports(value,digest) {
+        const reports = value == null ? [] : Array.isArray(value) ? value : [value];
+        const bound = reports.filter(report => object(report) && (report.sha256 == null ||
+            (typeof report.sha256 === 'string' && report.sha256.toLowerCase() === digest)));
+        return {bound,fullyBound:bound.length === reports.length};
+    }
     function hybrid(data,scope='report'){
         if(Array.isArray(data)){
             if(!data.length)return result([],'unknown');
@@ -215,5 +221,5 @@ var ThundyProviderResults = (function () {
         if(scanners.some(s=>Array.isArray(s.anti_virus_results))&&scanners.filter(s=>Array.isArray(s.anti_virus_results)).every(s=>s.anti_virus_results.length===0))emptySections.push('antivirus');
         return {schemaVersion:1,sections,emptySections,truncated};
     }
-    return {evaluate,project,merge,stored,resource,legacy,hybridDetails,hybridCompletionConfirmed,urlscanStatus,urlscanRecord,urlscanPending,urlscanRejection,projectQuota};
+    return {evaluate,project,merge,stored,resource,legacy,hybridDetails,hybridCompletionConfirmed,boundAttachmentReports,urlscanStatus,urlscanRecord,urlscanPending,urlscanRejection,projectQuota};
 }());

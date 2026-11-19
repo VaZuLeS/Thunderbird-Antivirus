@@ -1909,6 +1909,34 @@
   "hybridRateLimited": {
     "message": "The Hybrid Analysis rate limit or quota was reached. Please try again later."
   },
+  "reasonArchivedMaliciousAttachment": {
+    "message": "Historical finding ($OBSERVED$). $PROVIDER$ classified attachment “$NAME$” as malicious.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonArchivedSuspiciousAttachment": {
+    "message": "Historical finding ($OBSERVED$). $PROVIDER$ classified attachment “$NAME$” as suspicious.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
   "reasonMaliciousAttachment": {
     "message": "Attachment \"$NAME$\" was classified as malicious by $PROVIDER$.",
     "placeholders": {
