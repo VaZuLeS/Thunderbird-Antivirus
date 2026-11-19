@@ -43,3 +43,7 @@ Die [native Speicherabnahme](SPEICHERABNAHME_2026_11_10.md) liefert inzwischen a
 Die anschließende [IMAP-Lifecycleprobe](audits/imap-lifecycle-2026-11-10.json) beobachtet Kopieren, Verschieben, Flags, Löschen, Komprimieren und Neustart im realen Client am isolierten Dovecot. Änderungen erfolgen durch privilegierte Testautomation, nicht durch zusätzliche Add-on-Rechte. Laufzeit-IDs unterscheiden gleichzeitige Kopien; eine Wiederbindung über Neustart wird daraus weiterhin nicht abgeleitet. Die drei Vorkommensereignisse bleiben tatsächlich nicht verfügbar. Netz-/UIDVALIDITY-Wechsel und die weitere Clientmatrix sind noch nicht abgenommen.
 
 Die [Parallelitäts-/Wiederanlaufprobe](SPEICHERWIEDERANLAUF_2026_11_10.md) bestätigt atomare Berichtsrevisionen und Abort-/Folgewriterverhalten im bestehenden Store. Sie konkretisiert AVN-009.d, ersetzt aber weder eine künftige Transaktion über mehrere Stores noch idempotente Migrationsmarker.
+
+## Erste Umsetzung für laufende Sitzungen
+
+`analysisOccurrenceMetadata` speichert Prüfstatistiken, Domain- und IP-Befunde sowie den Auftragsstand additiv nach Hintergrundlaufzeit und Thunderbird-Nachrichten-ID. Zwei Nachrichten mit demselben bisherigen Schlüssel behalten dadurch ihre eigenen Metadaten. Nach einem Neustart beginnt ein neuer Gültigkeitsbereich. Altbestände behalten ihre ursprünglichen Felder. Angaben ohne nachweisbare Bindung erscheinen außerhalb der aktuellen Prüfung. Das betrifft ausschließlich Metadaten. Für die dauerhafte Zuordnung von Nachrichtenvorkommen und Ressourcendatensätzen gilt der obige Vertrag.

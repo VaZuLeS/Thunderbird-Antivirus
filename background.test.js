@@ -88,6 +88,7 @@ describe('background.js', () => {
             URL: globalThis.URL,
             DOMParser: dom.window.DOMParser,
             TextDecoder: globalThis.TextDecoder,
+            TextEncoder: globalThis.TextEncoder,
             Blob: globalThis.Blob,
             indexedDB: {
                 open: () => ({
@@ -129,7 +130,7 @@ describe('background.js', () => {
         const gatewayCode = fs.readFileSync(path.join(__dirname, 'api_gateway.js'), 'utf8');
         const riskCode = fs.readFileSync(path.join(__dirname, 'risk.js'), 'utf8');
         const sanitizeCode = fs.readFileSync(path.join(__dirname, 'sanitize.js'), 'utf8');
-        const extraCode = ['scan_policy.js', 'providers.js', 'message_ui.js', 'vendor/tldts.js'].map(file => fs.readFileSync(path.join(__dirname, file), 'utf8')).join('\n');
+        const extraCode = ['runtime.js', 'scan_policy.js', 'providers.js', 'message_ui.js', 'vendor/tldts.js'].map(file => fs.readFileSync(path.join(__dirname, file), 'utf8')).join('\n');
         const wrappedCode = `
             globalThis.customBlacklist = new Set();
             globalThis.customWhitelist = new Set();

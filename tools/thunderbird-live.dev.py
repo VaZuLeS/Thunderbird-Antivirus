@@ -569,7 +569,8 @@ def check_followup(m, base, out, report, display, source_catalog):
             benchmark.push({count,meanReadMs:(performance.now()-start)/3});
           }
         } finally {await b.storage.local.set(auditBefore);}
-        return {authStatus:risk.threat.authStatus,attachmentsListed:(await b.messages.listAttachments(message.id)).length,coverage:stored.scanCoverage.attachments,storedAttachments:stored.attachments.length,benchmark};
+        const metadata=bg.readOccurrenceMetadata(stored,bg.getAnalysisRuntimeId(),message.id);
+        return {authStatus:risk.threat.authStatus,attachmentsListed:(await b.messages.listAttachments(message.id)).length,coverage:metadata.scanCoverage.attachments,storedAttachments:stored.attachments.length,benchmark};
     })();''')
     assert probe['authStatus'] == 'neutral', probe
     assert probe['attachmentsListed'] == 101 and probe['storedAttachments'] == 100
@@ -920,18 +921,24 @@ def check_identity_lifecycle(m, base, out, report, restart):
       await bg.indexedDB_save_batch_hybrid_data_to_db(other,result(otherPart,arguments[3],'clean'));
       const after=await bg.collectAttachmentFindings(a),record=await bg.getFromStore(await bg.getSharedDB(),'hybridanalysis',bg.resolveMessageStorageKey(a));
       const currentOther=await bg.collectAttachmentFindings(other);
+      const coverage=(await b.messages.listAttachments(a.id)).length;
+      await bg.persistScanCoverage(a,'attachments',bg.scanCoverage(coverage,coverage,coverage,0,'attachment_limit_100_or_25MiB'));
+      await bg.persistScanCoverage(other,'attachments',bg.scanCoverage(coverage,coverage,0,coverage,'attachment_limit_100_or_25MiB'));
+      const first=await (await bg.getMessageAnalysisContext(a)).resourceRecord();
+      const second=await (await bg.getMessageAnalysisContext(other)).resourceRecord();
       return {realThunderbirdAPIs:true,syntheticReports:true,liveProviderCalls:false,
         sameStorageKey:bg.resolveMessageStorageKey(a)===bg.resolveMessageStorageKey(other),
         foreignAttachmentFindingRejected:guarded.length===0,originalFindingsBefore:original.length,originalFindingsAfter:after.length,
         originalScoreBefore:score(original),originalScoreAfter:score(after),
         historicProvenance:after.length===1&&after[0].source==='archive',
         siblingRemainsUnflagged:currentOther.length===0,
+        separateCoverage:first?.scanCoverage?.attachments?.processed===coverage&&second?.scanCoverage?.attachments?.failed===coverage,
         priorReportArchived:record.analysisReportArchive.entries.some(entry=>entry.resource.report?.verdict==='malicious'),
         auditUnchanged:beforeAudit===JSON.stringify((await b.storage.local.get('linkAuditLog')).linkAuditLog)};
     })();''',[initial[0]['id'],initial[1]['id'],initial[0]['attachments'][0]['sha256'],initial[1]['attachments'][0]['sha256']])
     consequences=probe['runtimeConsequences']
     assert all(consequences[key] for key in ['auditUnchanged','priorReportArchived','foreignAttachmentFindingRejected',
-                                            'historicProvenance','siblingRemainsUnflagged']),consequences
+                                            'historicProvenance','siblingRemainsUnflagged','separateCoverage']),consequences
     assert consequences['originalScoreBefore']==consequences['originalScoreAfter']==80,consequences
     keys=m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
       return Array.from(MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Identity Source").messages).map(h=>h.messageKey).sort((a,b)=>a-b);''')

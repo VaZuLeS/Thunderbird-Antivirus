@@ -647,6 +647,55 @@ function sourceRecords(state, initial = null) {
     return records;
 }
 
+test('coverage and threat observations stay with their own live occurrence despite a colliding key',async()=>{
+ const s=setup({},true);await s.context.configure();
+ const a=s.message,b={...a,id:8},legacy={
+  messageHeader:a.headerMessageId,
+  threatIntel:{maliciousIps:['legacy']},scanJobMeta:{state:'completed'},
+  scanCoverage:{attachments:{detected:99}},analysisSourceSnapshots:{kept:{snapshot:{rows:[]}}}
+ };
+ const records=sourceRecords(s,legacy);
+ const ctxA=await s.context.getMessageAnalysisContext(a),ctxB=await s.context.getMessageAnalysisContext(b);
+ try {
+  const old=await ctxA.resourceRecord();
+  assert.equal(old.threatIntel,undefined);assert.equal(old.scanJobMeta,undefined);assert.equal(old.scanCoverage,undefined);
+  await s.context.persistScanCoverage(a,'attachments',{detected:1});
+  await s.context.persistScanCoverage(b,'attachments',{detected:8});
+  await s.context.persistScanCoverage(a,'domains',{detected:2});
+  await s.context.persistThreatIntelSummary(a,{maliciousIps:['fixture-a']});
+  await s.context.persistThreatIntelSummary(b,{maliciousIps:['fixture-b']});
+  const first=await ctxA.resourceRecord(),second=await ctxB.resourceRecord();
+  assert.equal(first.scanCoverage.attachments.detected,1);
+  assert.equal(first.scanCoverage.domains.detected,2);
+  assert.equal(second.scanCoverage.attachments.detected,8);
+  assert.equal(second.scanCoverage.domains,undefined);
+  assert.equal(first.threatIntel.maliciousIps[0],'fixture-a');
+  assert.equal(second.threatIntel.maliciousIps[0],'fixture-b');
+  const record=records.get(a.headerMessageId);
+  for(const key of Object.keys(legacy))assert.deepEqual(record[key],legacy[key]);
+  assert.equal(Object.keys(record.analysisOccurrenceMetadata.entries).length,2);
+  const restart=setup({},true);await restart.context.configure();sourceRecords(restart,record);
+  const next=await restart.context.getMessageAnalysisContext(restart.message);
+  try {
+   assert.equal((await next.resourceRecord()).scanCoverage,undefined);
+   assert.equal((await next.resourceRecord()).threatIntel,undefined);
+  } finally {next.dispose();}
+  assert.equal(s.requests.length,0);
+ } finally {ctxA.dispose();ctxB.dispose();}
+});
+
+test('full occurrence metadata refuses a new locator without replacing an existing entry',()=>{
+ const s=setup(),runtimeId=s.context.getAnalysisRuntimeId();
+ let record={messageHeader:'fixture'};
+ for(let id=1;id<=64;id++)record=s.context.updateOccurrenceMetadata(record,runtimeId,id,{scanJobMeta:{state:'completed',id}});
+ const before=JSON.stringify(record);
+ assert.throws(()=>s.context.updateOccurrenceMetadata(record,runtimeId,65,{scanJobMeta:{state:'failed'}}),{code:'OCCURRENCE_METADATA_CAPACITY'});
+ assert.equal(JSON.stringify(record),before);
+ const updated=s.context.updateOccurrenceMetadata(record,runtimeId,1,{scanJobMeta:{state:'failed'}});
+ assert.equal(s.context.readOccurrenceMetadata(updated,runtimeId,1).scanJobMeta.state,'failed');
+ assert.equal(s.context.readOccurrenceMetadata(updated,runtimeId,2).scanJobMeta.state,'completed');
+});
+
 test('an existing source context exposes a later stored Hybrid URL result without another request',async()=>{
  const s=setup({},true);await s.context.configure();const records=sourceRecords(s,{messageHeader:s.message.headerMessageId,links:[{url:'https://example.com/',state:'UPLOADED',report:{id:'synthetic-quickscan',finished:false}}]});
  const ctx=await s.context.getMessageAnalysisContext(s.message);
