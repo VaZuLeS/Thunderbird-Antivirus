@@ -25,6 +25,7 @@ def check(m, base, out, report, display, wait_for, open_page, native_click, nati
       return {hash,part:part.partName,downloads};
     })();''')
     message_index=m.js('return window.gTabmail.tabInfo.indexOf(window.gTabmail.currentTabInfo);')
+    settings_browser='window.gTabmail.tabInfo['+str(options_index)+'].browser'
     all_checks={}
     try:
         def switch_message():
@@ -35,6 +36,13 @@ def check(m, base, out, report, display, wait_for, open_page, native_click, nati
           if(!section)return false;
           const suffix=':save:attachment:'+arguments[0],button=[...section.querySelectorAll('button')].find(b=>b.dataset.focusKey.endsWith(suffix));
           if(!button)return false;section.open=true;button.click();return true;'''
+
+        def replace_score(score):
+            m.page('''return (async()=>{
+              const p=window.wrappedJSObject.__attachTest;
+              await p.bg.updateStore(p.db,'hybridanalysis',p.key,old=>({...old,attachments:old.attachments.map(a=>a.partName===arguments[0]?
+                {...a,assessment:null,report:{state:'SUCCESS',sha256:arguments[1],threat_score:arguments[2]}}:a)}));
+            })();''',[arrangement['part'],arrangement['hash'],score],browser=settings_browser)
 
         def check_block(name):
             wait_for(lambda:m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.startsWith(arguments[0]);',[base+'attachment_download.html#']))
@@ -59,6 +67,13 @@ def check(m, base, out, report, display, wait_for, open_page, native_click, nati
                 })();''',[arrangement['hash'],arrangement['part']]))
                 all_checks['linkedReport']=True
                 m.js('window.gTabmail.switchToTab(arguments[0]);',[dialog_index])
+                replace_score(12)
+                m.page('document.getElementById("attachmentRefresh").click();')
+                wait_for(lambda:m.page('''return !document.getElementById("attachmentSaveForm").hidden&&
+                  document.getElementById("attachmentScore").textContent==="12 / 100";'''))
+                assert native_dialogs(display)==dialogs_before, 'A refresh opened an OS save picker'
+                assert m.page('return document.activeElement?.id;')=='attachmentRefresh'
+                replace_score(70)
             m.page('document.getElementById("attachmentCancel").click();')
             switch_message()
 
@@ -88,7 +103,6 @@ def check(m, base, out, report, display, wait_for, open_page, native_click, nati
         m.js('''const doc=window.gTabmail.currentTabInfo.chromeBrowser.contentDocument,popup=doc.getElementById('attachmentItemContext');
           [...popup.querySelectorAll('menuitem')].find(item=>item.getAttribute('label')==='Save with Thundy').doCommand();
           popup.hidePopup();''')
-        settings_browser='window.gTabmail.tabInfo['+str(options_index)+'].browser'
         menu=wait_for(lambda:m.page('return window.wrappedJSObject.__attachTest.menu||null;',browser=settings_browser))
         assert menu['parts']==[arrangement['part']] and isinstance(menu.get('tabId'),int),menu
         check_block('menu')
