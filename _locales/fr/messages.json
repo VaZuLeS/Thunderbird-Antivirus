@@ -3149,6 +3149,12 @@
   "attachmentContextChanged": {
     "message": "Le message ou la pièce jointe a changé. Sélectionnez de nouveau la pièce jointe."
   },
+  "attachmentRefresh": {
+    "message": "Vérifier à nouveau le résultat enregistré"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "Le résultat enregistré est inchangé."
+  },
   "attachmentDecisionChanged": {
     "message": "Le résultat ou la règle a changé. Vérifiez la décision mise à jour."
   },

@@ -68,7 +68,7 @@ function links(){
  const session={...request,checked:true,terminal:false,verdict:'CLEAN',record:{id:'audit'},score:50,check:{origin:'live'}};sessions.set('7:click-1',session);
  const c=vm.createContext({URL,TextEncoder,crypto:webcrypto,setTimeout,clearTimeout,Date:class extends Date{static now(){return now;}},ThundySecurity:{read:async()=>config,defaults:f.s.defaults,decision:f.s.decision,serialized:f.s.serialized,page:(s,p)=>s.id==='addon'&&s.url==='moz-extension://addon/'+p,verify:async password=>{verified++;if(password!=='approval-secret-123')throw Error('PASSWORD_INVALID');}},browser:{runtime:{getURL:p=>'moz-extension://addon/'+p},tabs:{create:async value=>{created=value.url;return {id:99};}},windows:{openDefaultBrowser:async()=>opened++}},auditSessionKey:(r,s)=>s.tab.id+':'+r.interactionId,linkAuditSessions:sessions,getFirstDisplayedMessage:async()=>({id:4}),readFullForAnalysis:async()=>({parts:[],body}),extractTextFromParts:x=>body,filterUrls:x=>x,extractUrls:()=>[request.url],collectThreatEvaluationOptions:async()=>({}),calculateThreatScore:()=>({score,reasons:['reason']}),localContentCoverage:()=>({state:'checked'}),updateLinkAudit:async(id,value)=>{logs.push(value);return true;}});
  vm.runInContext(fs.readFileSync('security_links.js','utf8')+'\nglobalThis.links=ThundyLinkSecurity;',c);
- c.handleOpenAuditedLink=async(r,s)=>{const result=await c.links.open(r,s);if(result.success)session.terminal=true;return result;};
+ c.handleOpenAuditedLink=async(r,s,options)=>{const result=await c.links.open(r,s,options);if(result.success)session.terminal=true;return result;};
  const approvalSender={id:'addon',url:'moz-extension://addon/security.html',tab:{id:99}};
  return {...f,c,l:c.links,request,sender,session,logs,approvalSender,getOpened:()=>opened,getVerified:()=>verified,config,advance:ms=>now+=ms,setScore:x=>score=x,setBody:x=>body=x,challenge:()=>new URL(created).searchParams.get('approval')};
 }
@@ -180,6 +180,50 @@ test('a report revision changing during the last opening check consumes no OS op
  const l=links();let revision=1,calls=0;l.c.ThundyScans={revision:()=>revision};await l.l.start(l.request,l.sender);const challenge=l.challenge();
  l.c.getFirstDisplayedMessage=async()=>{if(++calls===3)revision++;return {id:4};};
  const result=await l.l.command({op:'approve',challenge,password:'approval-secret-123',confirmed:true},l.approvalSender);assert.equal(result.success,false);assert.equal(result.code,'APPROVAL_CHANGED');assert.equal(l.getOpened(),0);
+});
+
+test('approval shows and records one current assessment, including the reasons used for its score', async()=>{
+ const f=links();
+ f.session.score=3;f.session.reasons=['preliminary finding'];
+ f.c.calculateThreatScore=()=>({score:74,heuristicScore:9,reasons:['current finding'],reasonDetails:[{code:'current'}]});
+ await f.l.start(f.request,f.sender);
+ const challenge=f.challenge();
+ const shown=await f.l.command({op:'status',challenge},f.approvalSender);
+ assert.equal(shown.score,74);
+ assert.equal(shown.heuristicScore,9);
+ assert.equal((await f.l.command({op:'approve',challenge,password:'approval-secret-123',confirmed:true},f.approvalSender)).success,true);
+ assert.equal(f.session.score,74);
+ assert.equal(f.session.heuristicScore,9);
+ assert.deepEqual(Array.from(f.session.reasons),['current finding']);
+ assert.equal(f.session.reasonDetails[0].code,'current');
+ assert.ok(Number.isFinite(f.session.scoredAt));
+});
+
+test('a scan update during score collection requires a new check before any handoff', async()=>{
+ const f=links();f.setScore(2);
+ let revision=1;
+ f.c.ThundyScans={revision:()=>revision};
+ f.c.collectThreatEvaluationOptions=async()=>{revision++;return {};};
+ assert.equal((await f.l.open(f.request,f.sender)).code,'APPROVAL_CHANGED');
+ assert.equal(f.getOpened(),0);
+});
+
+test('only the approving command can use its authorization, and a later rule change invalidates it', async()=>{
+ const f=links();
+ await f.l.start(f.request,f.sender);
+ const challenge=f.challenge();
+ let parallel;
+ const handleOpen=f.c.handleOpenAuditedLink;
+ f.c.handleOpenAuditedLink=async(request,sender,options)=>{
+  parallel=await f.l.open(f.request,f.sender);
+  f.config.policy={...f.config.policy,revision:2,enabled:false};
+  return handleOpen(request,sender,options);
+ };
+ const result=await f.l.command({op:'approve',challenge,password:'approval-secret-123',confirmed:true},f.approvalSender);
+ assert.equal(parallel.code,'APPROVAL_REQUIRED');
+ assert.equal(result.code,'APPROVAL_CHANGED');
+ assert.equal(f.getOpened(),0);
+ assert.equal(f.logs.some(row=>row.approvalDecision==='granted'),false);
 });
 
 test('incomplete shared provider analysis also enforces the unknown-result approval policy',async()=>{

@@ -3149,6 +3149,12 @@
   "attachmentContextChanged": {
     "message": "Cambió el mensaje o el adjunto. Seleccione el adjunto de nuevo."
   },
+  "attachmentRefresh": {
+    "message": "Volver a comprobar el resultado guardado"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "El resultado guardado no ha cambiado."
+  },
   "attachmentDecisionChanged": {
     "message": "Cambió el resultado o la regla. Revise la decisión actualizada."
   },

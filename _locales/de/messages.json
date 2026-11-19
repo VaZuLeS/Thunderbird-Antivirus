@@ -3152,6 +3152,12 @@
   "attachmentContextChanged": {
     "message": "Nachricht oder Anhang hat sich geändert. Anhang erneut auswählen."
   },
+  "attachmentRefresh": {
+    "message": "Gespeicherten Befund erneut prüfen"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "Der gespeicherte Befund ist unverändert."
+  },
   "attachmentDecisionChanged": {
     "message": "Befund oder Richtlinie hat sich geändert. Bitte die neue Entscheidung prüfen."
   },
