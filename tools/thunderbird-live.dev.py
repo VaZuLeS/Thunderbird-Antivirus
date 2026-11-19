@@ -924,15 +924,16 @@ def check_identity_lifecycle(m, base, out, report, restart):
       const coverage=(await b.messages.listAttachments(a.id)).length;
       await bg.persistScanCoverage(a,'attachments',bg.scanCoverage(coverage,coverage,coverage,0,'attachment_limit_100_or_25MiB'));
       await bg.persistScanCoverage(other,'attachments',bg.scanCoverage(coverage,coverage,0,coverage,'attachment_limit_100_or_25MiB'));
-      const first=await (await bg.getMessageAnalysisContext(a)).resourceRecord();
-      const second=await (await bg.getMessageAnalysisContext(other)).resourceRecord();
+      const first=await b.runtime.sendMessage({action:'getMessageAnalysisRecord',messageId:a.id});
+      const second=await b.runtime.sendMessage({action:'getMessageAnalysisRecord',messageId:other.id});
       return {realThunderbirdAPIs:true,syntheticReports:true,liveProviderCalls:false,
         sameStorageKey:bg.resolveMessageStorageKey(a)===bg.resolveMessageStorageKey(other),
         foreignAttachmentFindingRejected:guarded.length===0,originalFindingsBefore:original.length,originalFindingsAfter:after.length,
         originalScoreBefore:score(original),originalScoreAfter:score(after),
         historicProvenance:after.length===1&&after[0].source==='archive',
         siblingRemainsUnflagged:currentOther.length===0,
-        separateCoverage:first?.scanCoverage?.attachments?.processed===coverage&&second?.scanCoverage?.attachments?.failed===coverage,
+        separateCoverage:first?.success===true&&second?.success===true&&
+          first.record?.scanCoverage?.attachments?.processed===coverage&&second.record?.scanCoverage?.attachments?.failed===coverage,
         priorReportArchived:record.analysisReportArchive.entries.some(entry=>entry.resource.report?.verdict==='malicious'),
         auditUnchanged:beforeAudit===JSON.stringify((await b.storage.local.get('linkAuditLog')).linkAuditLog)};
     })();''',[initial[0]['id'],initial[1]['id'],initial[0]['attachments'][0]['sha256'],initial[1]['attachments'][0]['sha256']])
