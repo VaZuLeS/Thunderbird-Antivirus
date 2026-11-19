@@ -1,4 +1,4 @@
-# Abnahmeprotokoll 1.25.9 — Entwicklung
+# Abnahmeprotokoll 1.25.9
 
 | ID | Verhalten | Status | Nachweis |
 | --- | --- | --- | --- |
@@ -7,11 +7,11 @@
 | C03 | Anbieterzustände, Polling und abgebrochene Vorbereitung | OK | test/scan-jobs.test.js, virtuelle Zeit |
 | C04 | Ursprünglicher Schreibfehler und atomarer Abbruch | OK | db.test.js; Fehler injiziert |
 | D01 | Diagnoseansicht: eigener Adminzugriff, Filter/Pause, Export und Lösch-/Sperrrennen | OK | test/api-debug-view.test.js, test/api-diagnostics.test.js; simulierte APIs/DOM |
-| D02 | Neuer Diagnosetab in sechs Sprachen, Themes, Dichten und schmalen Ansichten | OK | [Kandidatenlauf 44417415369](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/44417415369), Browserprüfung |
-| D03 | Eigener Diagnosetab in beiden Linux-Thunderbird-Linien | OK | Derselbe Kandidatenlauf, native Prüfung mit synthetischem Transport |
-| C05 | Vollständige native Linux- und Browsermatrix des geprüften XPI | OK | Derselbe Kandidatenlauf, Upgrade-/Crashmatrix ausgehend von 1.25.7 |
-| C06 | Öffentliche Releaseassets | OFFEN | Entwicklungskandidat, nicht veröffentlicht |
-| C07 | Direktes Upgrade von 1.25.8, Absturzprüfung und Vor-Upgrade-Profilrestore | OFFEN | Erneute Abnahme mit Hashbindung auf beide Linux-Linien und sechs Sprachen erforderlich |
+| D02 | Neuer Diagnosetab in sechs Sprachen, Themes, Dichten und schmalen Ansichten | OK | [Release-CI](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/44425122989), Browserprüfung |
+| D03 | Eigener Diagnosetab in beiden Linux-Thunderbird-Linien | OK | Release-CI, native Prüfung mit synthetischem Transport |
+| C05 | Vollständige native Linux- und Browsermatrix des geprüften XPI | OK | Release-CI mit paketgebundenem Freigabegate |
+| C06 | Öffentliche Release-Dateien | OK | [Unabhängiger HTTPS-Abruf und Abgleich](audits/release-1.25.9.json) |
+| C07 | Direktes Upgrade von 1.25.8, Absturzprüfung und Vor-Upgrade-Profilrestore | OK | Beide Linux-Linien und sechs Sprachen mit dem durch SHA-256 gebundenen veröffentlichten 1.25.8-Paket |
 | L01 | Gültige 0 Punkte ohne externe Dienste bleiben sichtbar | OK | test/optimization.test.js, lokale Funktionen und simulierte APIs |
 | L02 | 40/100 Punkte und lokale Gründe erreichen den Linkdialog | OK | test/optimization.test.js, synthetische Nachrichten |
 | L03 | Score bleibt in einfacher Ansicht und Fachansicht sichtbar | OK | test/optimization.test.js; versteckte Vorfahren geprüft |
@@ -28,10 +28,10 @@
 | S01 | Unbekannte Antworten und erhaltene gespeicherte Berichte in getrennten Nachrichten | OK | Echte lokale Prüfungen auf Thunderbird 140.12.0 und 153.7.0 ESR; [Vertrag und Grenzen](QUELLENABNAHME_1_25_9.md) |
 | L08 | Scorezeile und Fehlerzustand in beiden Ansichten, sechs Sprachen | OK | test/analysis-sources.test.js, simulierter DOM |
 
-**Summe:** 23 OK / 0 FAIL / 0 N/A / 2 OFFEN
+**Summe:** 25 OK / 0 FAIL / 0 N/A / 0 OFFEN
 
 API-Antworten sind synthetisch. Der konkrete Speicherfehler im Nutzerprofil ist noch nicht diagnostiziert. Keine Neuinterpretation historischer Entscheidungen und keine automatische Datenlöschung.
 
-Der erfolgreiche [Kandidatenlauf 44417415369](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/44417415369) prüfte das XPI mit SHA‑256 `21c4df27b24211268f7a96873c43da26eba93b28be84b6d7f9f37cebc388c661`. Er umfasst auch den nativen Anhangschutz mit archiviertem Warnbefund und die Linkübergabe. Die neue Abnahme bindet das unmittelbare Vorgängerpaket 1.25.8 an dasselbe Release-Gate.
+Die Release-CI prüfte das veröffentlichte XPI mit SHA‑256 `21c4df27b24211268f7a96873c43da26eba93b28be84b6d7f9f37cebc388c661`. Sie deckt den Thundy-Anhangschutz mit archiviertem Warnbefund, die Linkübergabe und den direkten Upgradepfad ab. Frühere Kandidatenläufe bleiben gesondert nachvollziehbar. [Veröffentlichung](VEROEFFENTLICHUNG_1_25_9.md) · [Kandidatenlauf mit direktem Upgrade](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/44422645695)
 
 Der frühere Lauf 44254960616 scheiterte auf beiden Linuxlinien an einer vermischten Quellenfixture. Die [isolierte Quellenabnahme](QUELLENABNAHME_1_25_9.md) dokumentiert die Korrektur. [Lokale Scores und Folgeaufgaben](LOKALER_SCORE_1_25_9.md)

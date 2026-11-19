@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "kind": "thundy-published-release-verification",
+  "verified": true,
+  "releaseTag": "v1.25.9",
+  "releaseId": 450716056,
+  "releaseUrl": "https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.9",
+  "githubImmutableRelease": false,
+  "publishedAt": "2026-11-19T00:14:45Z",
+  "verifiedAt": "2026-11-19T00:15:50.044Z",
+  "releaseRun": 44425122989,
+  "tagCommit": "45039acc8a412483e7e8a966f20b420896cfafbb",
+  "xpiSha256": "21c4df27b24211268f7a96873c43da26eba93b28be84b6d7f9f37cebc388c661",
+  "sourceFingerprint": "2f47d5450c7d8b086b2ea939175e968f348df4521c7c44f87aa17b0f862b72ad",
+  "assets": [
+    {
+      "name": "acceptance-1.25.9.json",
+      "bytes": 818501,
+      "sha256": "7fbc930917e567a38839f76145f8f22a5ee5580a21ff81417afd4dfa7d0ec9ec",
+      "githubAssetId": 765540762
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "bytes": 87,
+      "sha256": "bd1b5f184375c2ef5864f647f2b7d2bcf15271f0975f5538a65adb9cb901336f",
+      "githubAssetId": 765540761
+    },
+    {
+      "name": "thundy-av-1.25.9.xpi",
+      "bytes": 433852,
+      "sha256": "21c4df27b24211268f7a96873c43da26eba93b28be84b6d7f9f37cebc388c661",
+      "githubAssetId": 765540760
+    }
+  ],
+  "previousRelease": {
+    "version": "1.25.8",
+    "sha256": "12f6f4f19ea9950f3ccd318f4b7df7c73abcb4cc10dadbf9914dcb7d51b416c4"
+  },
+  "upgradeAndRestoreCases": 12,
+  "clientTargets": [
+    {
+      "target": "current",
+      "version": "153.7.0",
+      "platform": "Linux CI"
+    },
+    {
+      "target": "minimum",
+      "version": "140.12.0",
+      "platform": "Linux CI"
+    }
+  ],
+  "browserLanguages": [
+    "de",
+    "en",
+    "es",
+    "fr",
+    "it",
+    "pl"
+  ],
+  "limits": {
+    "unsignedEvidence": true,
+    "syntheticProviderResponses": true,
+    "realProviderAccountsVerified": false,
+    "windowsVerified": false,
+    "macosVerified": false,
+    "screenReadersVerified": false,
+    "automaticUpdateChannelVerified": false
+  },
+  "verificationScope": "Independent public HTTPS download, XPI entries and manifest checked against the tagged source, SHA256SUMS.txt and GitHub asset digests matched, complete redacted acceptance revalidated."
+}
