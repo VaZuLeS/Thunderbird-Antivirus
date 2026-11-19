@@ -17,7 +17,7 @@ async function injectIntoMessageDisplay(tabId, func, args = []) {
 async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null) {
     const forced = typeof ThundySecurity !== 'undefined' && (await ThundySecurity.read()).policy?.enabled;
     if (!timeOfClickProtection && !forced) return;
-    const labels = { scoreLabel:msg('localScoreLink'), localPending:msg('analysisLocalPending'), localFailed:msg('analysisLocalUnavailable'), localIncomplete:msg('analysisLocalIncomplete'), localNone:msg('localScoreNoIndicators'), localIndicators:msg('localScoreIndicators'), simple:msg('analysisSimple'), expert:msg('analysisExpert'), approval:msg('analysisApprovalRequired'), explanation:msg('analysisScoreExplanation'), incomplete:msg('analysisSimpleIncomplete'), danger:msg('analysisSimpleDanger'), caution:msg('analysisSimpleCaution'), waiting: msg('linkChecking'), warning: msg('linkWarning'), unknown: msg('linkUnknown'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel'), title: msg('linkDialogTitle'), destination: msg('linkDestination'), details: msg('linkUrlDetails'), open: msg('linkOpenBrowser'), opening: msg('linkOpening'), failed: msg('linkOpenFailed'), limited: msg('linkCheckLimited'), score: msg('auditLocalScore'), unavailable: msg('auditUnavailable'), decisionScore:msg('auditDecisionScore'), handoffPending:msg('linkHandoffPending'), preflightTimeout:msg('linkPreflightTimeout'), auditFailed: msg('auditFailure'), origins: { live: msg('checkOrigin_live'), stored: msg('checkOrigin_stored'), none: msg('checkOrigin_none') }, outcomes: {incomplete:msg('analysisSimpleIncomplete'), rate_limited:msg('checkOutcome_rate_limited'), invalid_key:msg('checkOutcome_invalid_key'),success: msg('checkOutcome_success'), failed: msg('checkOutcome_failed'), disabled: msg('checkOutcome_disabled'), permission_denied: msg('checkOutcome_permission_denied'), missing_key: msg('checkOutcome_missing_key'), missing_reference: msg('checkOutcome_missing_reference'), not_requested: msg('checkOutcome_not_requested'), no_result: msg('checkOutcome_no_result')}, observed: msg('checkObserved'), attempted: msg('checkAttempted') };
+    const labels = { scoreLabel:msg('localScoreLink'), localPending:msg('analysisLocalPending'), localFailed:msg('analysisLocalUnavailable'), localIncomplete:msg('analysisLocalIncomplete'), localNone:msg('localScoreNoIndicators'), localIndicators:msg('localScoreIndicators'), simple:msg('analysisSimple'), expert:msg('analysisExpert'), approval:msg('analysisApprovalRequired'), approvalMissing:msg('securityApprovalMissing'), approvalExpired:msg('securityExpired'), explanation:msg('analysisScoreExplanation'), incomplete:msg('analysisSimpleIncomplete'), danger:msg('analysisSimpleDanger'), caution:msg('analysisSimpleCaution'), waiting: msg('linkChecking'), warning: msg('linkWarning'), unknown: msg('linkUnknown'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel'), title: msg('linkDialogTitle'), destination: msg('linkDestination'), details: msg('linkUrlDetails'), open: msg('linkOpenBrowser'), opening: msg('linkOpening'), failed: msg('linkOpenFailed'), limited: msg('linkCheckLimited'), score: msg('auditLocalScore'), unavailable: msg('auditUnavailable'), decisionScore:msg('auditDecisionScore'), handoffPending:msg('linkHandoffPending'), preflightTimeout:msg('linkPreflightTimeout'), auditFailed: msg('auditFailure'), origins: { live: msg('checkOrigin_live'), stored: msg('checkOrigin_stored'), none: msg('checkOrigin_none') }, outcomes: {incomplete:msg('analysisSimpleIncomplete'), rate_limited:msg('checkOutcome_rate_limited'), invalid_key:msg('checkOutcome_invalid_key'),success: msg('checkOutcome_success'), failed: msg('checkOutcome_failed'), disabled: msg('checkOutcome_disabled'), permission_denied: msg('checkOutcome_permission_denied'), missing_key: msg('checkOutcome_missing_key'), missing_reference: msg('checkOutcome_missing_reference'), not_requested: msg('checkOutcome_not_requested'), no_result: msg('checkOutcome_no_result')}, observed: msg('checkObserved'), attempted: msg('checkAttempted') };
     const theme = typeof ThundyTheme !== 'undefined' ? await ThundyTheme.snapshot() : null;
     await injectIntoMessageDisplay(tabId, function(labels, messageId, theme, forced) {
         document.documentElement.dataset.thundyForcedProtection = forced ? 'true' : 'false';
@@ -173,15 +173,24 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                 card.focus();
                 // Keep the dialog on failure, so the user can retry or cancel.
                 try {
-                    const opened = await browser.runtime.sendMessage({ action: 'openCheckedLink', url, messageId, interactionId });
-                    if (opened?.code === 'APPROVAL_NOT_CONFIGURED') { error.textContent=labels.approval;opening=false;cancel.disabled=false;proceed.disabled=true;return; }
-                    if (opened?.code === 'APPROVAL_REQUIRED') { await browser.runtime.sendMessage({action:'startLinkApproval',url,messageId,interactionId}); opening=false;cancel.disabled=false;proceed.disabled=false;proceed.removeAttribute('aria-busy');proceed.textContent=buttonLabel;return; }
+                    let opened = await browser.runtime.sendMessage({ action: 'openCheckedLink', url, messageId, interactionId });
+                    if (opened?.code === 'APPROVAL_REQUIRED') {
+                        opened = await browser.runtime.sendMessage({action:'startLinkApproval',url,messageId,interactionId});
+                        if (opened?.success) {
+                            opening=false;cancel.disabled=false;proceed.disabled=false;
+                            proceed.removeAttribute('aria-busy');proceed.textContent=buttonLabel;return;
+                        }
+                    }
+                    if (opened?.code === 'APPROVAL_NOT_CONFIGURED') {
+                        error.textContent=labels.approvalMissing;opening=false;cancel.disabled=false;proceed.hidden=true;cancel.focus();return;
+                    }
                     if (opened?.code === 'LINK_HANDOFF_PENDING') {
                         error.textContent=labels.handoffPending;opening=false;awaitingHandoff=true;cancel.disabled=false;
                         proceed.hidden=true;cancel.focus();return;
                     }
-                    if (opened?.code === 'LINK_PREFLIGHT_TIMEOUT' || opened?.code === 'LINK_CONTEXT_CHANGED') {
-                        error.textContent=labels.preflightTimeout;opening=false;cancel.disabled=false;
+                    if (['LINK_PREFLIGHT_TIMEOUT','LINK_CONTEXT_CHANGED','MESSAGE_CONTEXT_CHANGED','APPROVAL_CHANGED','LINK_CHECK_REQUIRED'].includes(opened?.code)) {
+                        error.textContent=opened.code==='LINK_PREFLIGHT_TIMEOUT'?labels.preflightTimeout:labels.approvalExpired;
+                        opening=false;cancel.disabled=false;
                         proceed.hidden=true;cancel.focus();return;
                     }
                     if (opened && opened.success) { close('opened'); return; }

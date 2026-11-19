@@ -4,6 +4,7 @@ const ThundyLinkSecurity = (() => {
     const failure=code=>({success:false,code});
     const fingerprint=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(value)))),b=>b.toString(16).padStart(2,'0')).join('');
     async function evaluate(session,sender) {
+        const scanRevision=typeof ThundyScans!=='undefined'?ThundyScans.revision(session.messageId):null;
         const message=await getFirstDisplayedMessage(sender.tab.id,{throwOnError:true});
         if(!message||message.id!==session.messageId)throw Error('MESSAGE_CONTEXT_CHANGED');
         const full=await readFullForAnalysis(message);
@@ -19,8 +20,12 @@ const ThundyLinkSecurity = (() => {
         const input={score:threat.score,coverage:scan?.assessmentIncomplete?'incomplete':localContentCoverage(full).state,verdict:session.verdict||'UNKNOWN',check:session.check,malicious:[...(options.linkFindings||[]),...(options.attachmentFindings||[])].some(x=>x.verdict==='malicious')};
         const saved=await ThundySecurity.read();
         const policy={...ThundySecurity.defaults,...saved.policy};
-        const scanRevision=typeof ThundyScans !== 'undefined' ? ThundyScans.revision(message.id) : null;
-        return {policy,input,heuristicScore:threat.heuristicScore,scanRevision,decision:ThundySecurity.decision(policy,input),fingerprint:await fingerprint({scanRevision,messageId:message.id,url:session.url,text,parts:full,score:input.score,coverage:input.coverage,verdict:input.verdict,check:session.check,reasons:threat.reasons,revision:policy.revision})};
+        const reasons=(threat.reasons||[]).slice(0,20);
+        const reasonDetails=(threat.reasonDetails||[]).slice(0,20);
+        const token=await fingerprint({scanRevision,messageId:message.id,url:session.url,text,parts:full,score:input.score,coverage:input.coverage,verdict:input.verdict,check:session.check,reasons,reasonDetails,revision:policy.revision});
+        if (typeof ThundyScans!=='undefined'&&ThundyScans.revision(message.id)!==scanRevision) throw Error('APPROVAL_CHANGED');
+        return {policy,input,heuristicScore:threat.heuristicScore,scanRevision,reasons,reasonDetails,
+            decision:ThundySecurity.decision(policy,input),fingerprint:token};
     }
     function boundedValidation(work) {
         let timer;
@@ -43,40 +48,43 @@ const ThundyLinkSecurity = (() => {
         if (!message || message.id !== request.messageId) return failure('MESSAGE_CONTEXT_CHANGED');
         return {saved,current,url,messageId:message.id};
     }
-    async function open(request,sender,{deferHandoff=false}={}) {
+    async function open(request,sender,{deferHandoff=false,approval=null}={}) {
         const key=auditSessionKey(request,sender), session=key&&linkAuditSessions.get(key);
         const prepared=await ThundySecurity.serialized(async()=>{
             let ready;
             try { ready=await boundedValidation(prepareOpening(request,sender,session)); }
-            catch (error) { return failure(error.message==='LINK_PREFLIGHT_TIMEOUT' ? error.message : 'LINK_CONTEXT_CHANGED'); }
+            catch (error) { return failure(['LINK_PREFLIGHT_TIMEOUT','APPROVAL_CHANGED'].includes(error.message) ? error.message : 'LINK_CONTEXT_CHANGED'); }
             if (!ready.url) return ready;
             const {saved,current,url,messageId}=ready;
             const destination=JSON.stringify([sender.tab.id,messageId,url.href]);
             if (handoffs.has(destination)) return failure('LINK_HANDOFF_PENDING');
             if (handoffs.size >= 100) return failure('LINK_PREFLIGHT_TIMEOUT');
+            if (approval && (!current?.decision.required || !saved.approval || approval.until<=Date.now() ||
+                approval.fingerprint!==current.fingerprint || approval.revision!==current.policy.revision)) {
+                return failure('APPROVAL_CHANGED');
+            }
             if (current) {
                 if (typeof ThundyScans!=='undefined'&&ThundyScans.revision(messageId)!==current.scanRevision) {
                     return failure('APPROVAL_CHANGED');
                 }
                 const d=current.decision;
-                if (d.required) {
-                    const approval=session.approval;
-                    delete session.approval;
-                    const approved=approval&&approval.until>Date.now()&&approval.fingerprint===current.fingerprint&&approval.revision===current.policy.revision;
-                    if (!approved) {
-                        void updateLinkAudit(session.record.id,{blockedAt:Date.now(),blockReason:d.reason,policyRevision:current.policy.revision,approvalDecision:'required'}).catch(()=>{});
-                        return {...failure(saved.approval?'APPROVAL_REQUIRED':'APPROVAL_NOT_CONFIGURED'),required:true,reason:d.reason};
-                    }
+                if (d.required && !approval) {
+                    void updateLinkAudit(session.record.id,{blockedAt:Date.now(),blockReason:d.reason,policyRevision:current.policy.revision,approvalDecision:'required'}).catch(()=>{});
+                    return {...failure(saved.approval?'APPROVAL_REQUIRED':'APPROVAL_NOT_CONFIGURED'),required:true,reason:d.reason};
                 }
                 session.score=current.input.score;
                 session.heuristicScore=current.heuristicScore;
+                session.reasons=current.reasons;
+                session.reasonDetails=current.reasonDetails;
+                session.scoredAt=Date.now();
             }
             // Dispatch inside the protected decision; waiting for its reply belongs to the caller.
             const handoff=Promise.resolve(browser.windows.openDefaultBrowser(url.href))
                 .then(()=>({success:true}),()=>failure('LINK_OPEN_FAILED'))
                 .finally(()=>handoffs.delete(destination));
             handoffs.set(destination,handoff);
-            return {handoff};
+            const granted=approval ? {approvalDecision:'granted',approvedAt:Date.now(),policyRevision:current.policy.revision} : null;
+            return {handoff,granted};
         });
         if (!prepared.handoff || deferHandoff) return prepared;
         return prepared.handoff;
@@ -89,7 +97,8 @@ const ThundyLinkSecurity = (() => {
         for(const [id,c] of challenges)if(c.until<Date.now())challenges.delete(id);
         if(challenges.size>=100)throw Error('APPROVAL_CAPACITY');
         const id=crypto.randomUUID();
-        const challenge={session,request:{...request},sender:{...sender},fingerprint:current.fingerprint,revision:current.policy.revision,until:Date.now()+60000,busy:false};
+        const challenge={session,request:{...request},sender:{...sender},fingerprint:current.fingerprint,revision:current.policy.revision,
+            score:current.input.score,heuristicScore:current.heuristicScore,until:Date.now()+60000,busy:false};
         challenges.set(id,challenge);
         try{const tab=await browser.tabs.create({url:browser.runtime.getURL('security.html')+'?approval='+id});challenge.tabId=tab.id;return {success:true};}
         catch(e){challenges.delete(id);throw e;}
@@ -98,16 +107,16 @@ const ThundyLinkSecurity = (() => {
         if(!ThundySecurity.page(sender,'security.html'))throw Error('APPROVAL_PAGE_REQUIRED');
         const c=challenges.get(request.challenge);
         if(!c||c.until<Date.now()||c.tabId!==sender.tab?.id||c.session.terminal||c.busy)throw Error('APPROVAL_EXPIRED');
-        if(request.op==='status')return {url:c.session.url,score:c.session.score,until:c.until};
+        if(request.op==='status')return {url:c.session.url,score:c.score,heuristicScore:c.heuristicScore,until:c.until};
         if(request.op!=='approve'||request.confirmed!==true)throw Error('APPROVAL_CONFIRM_REQUIRED');
         c.busy=true;
         try{
             await boundedValidation(ThundySecurity.read().then(saved=>ThundySecurity.verify(request.password,saved.approval,'approval')));
             const current=await boundedValidation(evaluate(c.session,c.sender));
             if(c.until<=Date.now()||current.fingerprint!==c.fingerprint||current.policy.revision!==c.revision)throw Error('APPROVAL_CHANGED');
-            c.session.approval={fingerprint:c.fingerprint,revision:c.revision,until:c.until};challenges.delete(request.challenge);
-            try{await updateLinkAudit(c.session.record.id,{approvalDecision:'granted',approvedAt:Date.now(),policyRevision:c.revision});}catch(_){}
-            return await handleOpenAuditedLink(c.request,c.sender);
+            const approval={fingerprint:c.fingerprint,revision:c.revision,until:c.until};
+            challenges.delete(request.challenge);
+            return await handleOpenAuditedLink(c.request,c.sender,{approval});
         }finally{c.busy=false;}
     }
     return {open,start,command,evaluate};

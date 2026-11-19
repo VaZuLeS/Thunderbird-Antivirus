@@ -229,7 +229,7 @@ const ThundyAttachmentDownload = (() => {
                 entry.until <= Date.now()) throw fail('ATTACHMENT_DIALOG_EXPIRED');
             if (request.op === 'cancel') {forget(id);return {success:true};}
             if (request.op === 'status') return {success:true,details:entry.assessment.details};
-            if (entry.busy || !['save','report'].includes(request.op)) throw fail('ATTACHMENT_CONTEXT_CHANGED');
+            if (entry.busy || !['save','report','refresh'].includes(request.op)) throw fail('ATTACHMENT_CONTEXT_CHANGED');
             entry.busy = true;
             try {
                 const next = await readFile(entry.target);
@@ -237,9 +237,15 @@ const ThundyAttachmentDownload = (() => {
                     forget(id);
                     throw fail('ATTACHMENT_CONTEXT_CHANGED');
                 }
-                if (request.op === 'report') {
+                if (request.op === 'report' || request.op === 'refresh') {
                     const assessment = await boundedAssessment(entry.target,next);
                     if (challenges.get(id) !== entry || entry.until <= Date.now()) throw fail('ATTACHMENT_DIALOG_EXPIRED');
+                    if (assessment.revision !== deps.revision(entry.target.messageId)) throw fail('ATTACHMENT_CONTEXT_CHANGED');
+                    if (request.op === 'refresh') {
+                        const changed = entry.assessment.signature !== assessment.signature;
+                        entry.assessment = assessment;
+                        return {success:true,changed,details:assessment.details};
+                    }
                     if (!assessment.details.report) throw fail('REPORT_UNAVAILABLE');
                     return deps.openReport(entry.target,next,sender,assessment.details.source === 'archive' ? assessment.item : null);
                 }

@@ -328,6 +328,20 @@ test('cancel and Escape never open links; a changed destination cannot be confir
     }
 });
 
+test('failure to start a stale approval is visible and returns focus to cancel', async () => {
+    const dialog = await clickDialog('MALICIOUS', async request => ({
+        success:false, code:request.action === 'openCheckedLink' ? 'APPROVAL_REQUIRED' : 'APPROVAL_CHANGED'
+    }));
+    const proceed = dialog.root.querySelector('.primary');
+    proceed.click();
+    await new Promise(setImmediate);
+    assert.equal(dialog.sent.at(-1).action,'startLinkApproval');
+    assert.ok(dialog.root.querySelector('[role="alert"]').textContent.trim().length > 0);
+    assert.equal(proceed.hidden,true);
+    assert.equal(dialog.root.activeElement,dialog.root.querySelector('footer button'));
+    dialog.dom.window.close();
+});
+
 test('context/right clicks and non-web links retain their native behavior', async () => {
     const state = setup(); await state.context.configure(); await state.context.injectTimeOfClickProtection(1, [], 7);
     const injected = state.injections.at(-1);
@@ -1353,15 +1367,23 @@ test('a delayed OS acknowledgement leaves PENDING, prevents replay and resolves 
  const s=setup();await s.context.configure();const clock=auditClock(s),req=auditRequest('delayed_native');
  await s.context.handleAuditedLinkCheck(req,auditSender);
  let resolve,dispatches=0;
- s.context.handleOpenCheckedLink=async()=>{dispatches++;return {handoff:new Promise(done=>{resolve=done;})};};
- const opening=s.context.handleOpenAuditedLink(req,auditSender);
+ const approval={fingerprint:'bound',revision:4,until:Date.now()+60000};
+ s.context.handleOpenCheckedLink=async(_request,_sender,options)=>{
+  assert.equal(options.approval,approval);
+  dispatches++;
+  return {handoff:new Promise(done=>{resolve=done;}),granted:{approvalDecision:'granted',policyRevision:4}};
+ };
+ const opening=s.context.handleOpenAuditedLink(req,auditSender,{approval});
  while(!resolve)await new Promise(setImmediate);
  await clock.advance(5000);
  assert.equal((await opening).code,'LINK_HANDOFF_PENDING');
  assert.equal(s.config.linkAuditLog[0].outcome,'PENDING');assert.equal(s.config.linkAuditLog[0].decidedAt,null);
+ assert.equal(s.config.linkAuditLog[0].approvalDecision,undefined);
  assert.equal((await s.context.handleOpenAuditedLink(req,auditSender)).success,false);
  assert.equal((await s.context.handleCancelAuditedLink(req,auditSender)).success,false);
  resolve({success:true});await new Promise(setImmediate);
  assert.equal(dispatches,1);assert.equal(s.config.linkAuditLog[0].outcome,'OPENED');
  assert.equal(s.config.linkAuditLog[0].openAttempts,1);
+ assert.equal(s.config.linkAuditLog[0].approvalDecision,'granted');
+ assert.equal(s.config.linkAuditLog[0].policyRevision,4);
 });
