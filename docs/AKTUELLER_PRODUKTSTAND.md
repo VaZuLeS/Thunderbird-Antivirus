@@ -1,10 +1,8 @@
-# Aktueller Produktstand — 18. November 2026
+# Aktueller Produktstand — 19. November 2026
 
-**Veröffentlicht: 1.25.8.** [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.8), XPI-SHA-256 `12f6f4f19ea9950f3ccd318f4b7df7c73abcb4cc10dadbf9914dcb7d51b416c4`. Alle drei öffentlichen Assets sind unabhängig geprüft. [Veröffentlichungsnachweis](VEROEFFENTLICHUNG_1_25_8.md), [Abnahme](live_test_1_25_8.md).
+**Version 1.25.9 ist auf GitHub veröffentlicht.** XPI-SHA-256 `21c4df27b24211268f7a96873c43da26eba93b28be84b6d7f9f37cebc388c661`. Alle drei öffentlichen Release-Dateien sind unabhängig geprüft. [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.9) · [Veröffentlichungsnachweis](VEROEFFENTLICHUNG_1_25_9.md) · [Abnahme](live_test_1_25_9.md)
 
-Gespeicherte Anbieterfehler blockieren neuere belegte Befunde nicht mehr. API-Diagnose korrigiert Ablauf paralleler Aufzeichnungen, sichere Protokollwerte und UTF-8-Größen. Der gepinnte Vendorbestand ist abgeglichen. [Fünf Korrekturen](FEHLERKORREKTUREN_1_25_8.md), [Releaseumfang](releases/1.25.8.md). Keine Identitätsmigration oder zusätzliche Anbieteranfragen. Der ursprüngliche Live-Anbieterfall bleibt ohne tatsächliche Diagnosedaten offen. [1.25.7](VEROEFFENTLICHUNG_1_25_7.md) bleibt historische Veröffentlichung.
-
-**Entwicklung: 1.25.9**, noch unveröffentlicht. Eine [sichtbare lokale Scoreanzeige](LOKALER_SCORE_1_25_9.md) ohne externe Dienste, begrenzte Linkwartezeit und sichere Speicherfehlercodes werden um eine [eigene API-Diagnoseansicht](API_DIAGNOSEANSICHT_1_25_9.md) mit Ablaufkorrelation, Filter, Pause und Adminschutz ergänzt. Die [Fortführung für Score-Aktualität, URL-Zuordnung, Anhangabgleich und Auditwartezeiten](SCORE_URL_AUDIT_1_25_9.md) gehört ebenfalls zum Entwicklungskandidaten. Die [gebundene manuelle Anhangprüfung](MANUELLE_ANHANGBINDUNG_1_25_9.md) schützt zusätzlich Schlüssel, tatsächliche Datei-Bytes und verspätete Auftragsantworten. Die [native Quellenabnahme](QUELLENABNAHME_1_25_9.md) isoliert einen reproduzierten Fixturekonflikt; die vollständige aktuelle CI bleibt Freigabevoraussetzung. Lokale und synthetische Nachweise ersetzen keine aktuelle native Paketabnahme.
+1.25.9 zeigt den lokalen Score auch ohne externe Dienste an und begrenzt die Wartezeit bei Link- und Auditvorgängen. Dazu kommen eine Admin-geschützte API-Diagnoseansicht, kompaktere Inline-Ansichten, ein eigener Hybrid-Analysis-Berichtstab und ein konfigurierbarer Schutz für Anhangaktionen. Die Abnahme bestätigt das direkte Upgrade von 1.25.8, die Wiederherstellung nach Prozessverlust und die Rückkehr zum gesicherten Thunderbird-Profil auf beiden Linux-Clientlinien. [Releaseumfang](releases/1.25.9.md) · [Lokaler Score](LOKALER_SCORE_1_25_9.md) · [API-Diagnose](API_DIAGNOSEANSICHT_1_25_9.md) · [Manuelle Anhangprüfung](MANUELLE_ANHANGBINDUNG_1_25_9.md)
 
 ## Funktionen und nachgewiesene Grenzen
 
@@ -27,9 +25,9 @@ Gespeicherte Anbieterfehler blockieren neuere belegte Befunde nicht mehr. API-Di
 
 ## Nachweise richtig lesen
 
-Aktueller Veröffentlichungsnachweis: [Paket und Releaseassets](audits/release-1.25.8.json), [Release-CI 43842985011](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/43842985011). Frühere Kandidatenberichte behalten ihre eigenen Paketidentitäten. Eine automatische Updateversorgung wird daraus nicht abgeleitet. Er trennt getestete Paketbytes, Quellfingerprints, Simulationen und echte Clientprüfungen. Historische Testzahlen, Tags, Dokumenttitel und erfolgreiche Deployments sind keine aktuelle Inhalts- oder Plattformfreigabe.
+Der Veröffentlichungsnachweis verknüpft die geprüften Paketbytes und den Quellfingerprint mit den simulierten Anbieterprüfungen und den echten Thunderbird-Läufen. ATN-Signierung und automatische Updates bleiben offen. Frühere Kandidatenberichte behalten ihre eigenen Paketidentitäten. [Paket und Release-Dateien](audits/release-1.25.9.json) · [Release-CI](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/44425122989)
 
-Historischer Nachweis: Die Pages-Bereitstellung für `90df6607` war erfolgreich. Ein öffentlicher Seiten-/Downloadkettenlauf wurde in dieser Umgebung nicht bestätigt: Der Proxy verweigerte den HTTPS-Zugriff. Daraus folgt weder Websiteausfall noch erfolgreiche öffentliche Inhaltsabnahme. Lokale Version-/Linkprüfungen sind davon getrennt.
+Nach dem GitHub-Pages-Deployment prüft der Workflow den öffentlichen Spracheinstieg, die aktuelle Dokumentation und die Downloadlinks aller sechs Sprachseiten. Er lädt das verlinkte XPI und die Prüfsummendatei per HTTPS und vergleicht beide mit der veröffentlichten Paketidentität. [Pages-Workflow](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/workflows/pages.yml)
 
 ## Historische Entwicklung
 
@@ -37,4 +35,4 @@ Die bisherigen [Aufgabenpläne](PRODUKTANALYSE_AUFGABENPLAN_2026-11-04.md), [Aus
 
 Die [Fortführung vom 10. November](IDENTITAETSVERTRAG_2026_11_10.md) konkretisiert AVN-009.f ohne Migration. AVN-019.b ergänzt explizite Ressourcenauslassungen und Startfehler. Öffentliche Downloads folgen `distribution.json`, nicht automatisch der Entwicklungsversion.
 
-Vorbereitet für 1.25.9: [kompaktere Inline-Ansichten und ressourcengebundener Hybrid-Analysis-Berichtstab](KOMPAKTE_INLINE_UND_HYBRIDBERICHT_1_25_9.md). Keine zusätzliche Anbieterabnahme oder Identitätsmigration.
+[1.25.8](VEROEFFENTLICHUNG_1_25_8.md) und [1.25.7](VEROEFFENTLICHUNG_1_25_7.md) dokumentieren die früheren Veröffentlichungen.
