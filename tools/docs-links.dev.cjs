@@ -41,6 +41,18 @@ for (const file of files) {
 assert.deepEqual(missing, [], 'broken current documentation links');
 const version = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8')).version;
 const {publishedVersion}=require('../scripts/distribution-state.js').readDistribution(root,version);
+const releaseNoteFile = path.join(root, 'docs', 'releases', version + '.md');
+const releaseNotes = fs.readFileSync(releaseNoteFile, 'utf8').replace(/```[\s\S]*?```/g, '');
+const site = new URL(require('../package.json').homepage);
+for (const [, href] of releaseNotes.matchAll(/\]\(([^)]+)\)/g)) {
+    assert.match(href, /^(?:https:\/\/|#)/i, 'Release note links must also work on the GitHub release page: ' + href);
+    if (href.startsWith(site.href)) {
+        const relative = new URL(href).pathname.slice(site.pathname.length);
+        const target = path.resolve(root, 'docs', relative);
+        const source = target.endsWith('.html') ? target.slice(0, -5) + '.md' : target;
+        assert.ok(fs.existsSync(target) || fs.existsSync(source) || permalinks.has(relative), 'Missing Pages target: ' + href);
+    }
+}
 const tagPages = ['README.md', 'README.de.md', 'docs/index.md', 'docs/index.html', ...['en', 'de', 'fr', 'es', 'it', 'pl'].map(lang => 'docs/index_' + lang + '.html')];
 for (const page of tagPages) {
     const content = fs.readFileSync(path.join(root, page), 'utf8');
