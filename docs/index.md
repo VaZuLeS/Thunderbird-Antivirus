@@ -7,6 +7,7 @@ permalink: /documentation.html
 
 Version **1.25.9**, unsigned GitHub distribution: [release status and download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.9). [Release scope](VEROEFFENTLICHUNG_1_25_9.md).
 
+- [Release notes and feature documentation for 1.25.9](releases/1.25.9.md)
 - [Current product status](AKTUELLER_PRODUKTSTAND.md)
 - [Detailed tasks and execution evidence](AUSFUEHRUNG_AUFGABEN_2026-11-02.md)
 - [Languages and downloads](index.html)
