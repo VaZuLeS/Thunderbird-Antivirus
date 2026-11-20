@@ -36,13 +36,18 @@ test('cache clearing invalidates an opening report even while resource resolutio
  let release;const f=brokerFixture(()=>new Promise(r=>release=r));const open=f.open();f.b.clear();release(setup().reportModel.project(sample(),'link:0'));
  await assert.rejects(open);assert.equal(f.created.length,0);
 });
-test('actual background resolver refuses stale context, ambiguous resources and disabled details',async()=>{
- const s=fs.readFileSync('background.js','utf8'),snippet=s.slice(s.indexOf('var hybridReportBroker ='),s.indexOf('browser.runtime.onMessage.addListener((request, sender, sendResponse) => {'));
- for(const problem of ['none','stale','ambiguous','disabled','disposed']){
-  const context={disposed:problem==='disposed',snapshotId:'bound',isCached:()=>true,snapshot:async()=>({displayPreferences:{hybridDetails:problem!=='disabled'},local:{score:12,state:'checked'}}),resourceRecord:async()=>({links:problem==='ambiguous'?[{...sample(),analysisResourceRef:'link:0'},{...sample(),analysisResourceRef:'link:0'}]:[{...sample(),analysisResourceRef:'link:0'}]})};
+test('actual background resolver requires the selected resource token and a single bound report',async()=>{
+ const s=fs.readFileSync('background.js','utf8'),snippet=s.slice(s.indexOf('function resolveScopedHybridReport('),s.indexOf('browser.runtime.onMessage.addListener((request, sender, sendResponse) => {'));
+ for(const problem of ['none','stale','ambiguous','disabled','disposed','changed-resource','missing-token']){
+  const item={...sample(),analysisResourceRef:'link:0'};
+  const context={disposed:problem==='disposed',snapshotId:'bound',isCached:()=>true,snapshot:async project=>project({
+    displayPreferences:{hybridDetails:problem!=='disabled'},local:{score:12,state:'checked'},
+    hybridReports:{'link:0':{resourceToken:problem==='changed-resource'?'other-resource':token}}
+  },{links:problem==='ambiguous'?[item,item]:[item]})};
   let created=0;const c=setup({browser:{runtime:{id:'own',getURL:p=>'moz-extension://own/'+p},messages:{get:async()=>({id:42})},tabs:{create:async()=>({id:++created})}},getMessageAnalysisContext:async()=>context});
   vm.runInContext(snippet,c);
-  const req={action:'openHybridReport',messageId:42,resourceRef:'link:0',contextToken:problem==='stale'?'old':'bound'};
+  const req={action:'openHybridReport',messageId:42,resourceRef:'link:0',contextToken:problem==='stale'?'old':'bound',
+   resourceToken:problem==='missing-token'?undefined:token};
   const promise=c.hybridReportBroker.command(req,{id:'own'});if(problem==='none'){assert.equal((await promise).success,true);assert.equal(created,1);}else{await assert.rejects(promise);assert.equal(created,0);}
  }
 });
@@ -73,7 +78,7 @@ test('compact inline keeps warnings and score visible while preserving focused c
  for(const lang of ['en','de','fr','es','it','pl']){
   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),dom=new JSDOM('<html><body></body></html>');let requests=[];
   const c=setup({document:dom.window.document,browser:{runtime:{sendMessage:async req=>{requests.push(req);return {success:true};}}}});vm.runInContext(source+'\nglobalThis.analysis=ThundyAnalysis;',c);
-  const labels=c.analysis.labels(key=>catalog[key]?.message||'MISSING:'+key),data={messageId:42,contextToken:'bound',local:{state:'checked',score:0},scanJob:{state:'failed',reason:'source_capacity',manualAllowed:false},sourcePersistenceFailed:true,sourcePersistenceReason:'storage_failed',rows:[],hybridReports:{'attachment:1':{schemaVersion:1,sections:[]}}};
+  const labels=c.analysis.labels(key=>catalog[key]?.message||'MISSING:'+key),data={messageId:42,contextToken:'bound',local:{state:'checked',score:0},scanJob:{state:'failed',reason:'source_capacity',manualAllowed:false},sourcePersistenceFailed:true,sourcePersistenceReason:'storage_failed',rows:[],hybridReports:{'attachment:1':{schemaVersion:1,sections:[],resourceToken:token}}};
   const render=()=>c.analysis.render(data,labels,'',{surface:'message'}),host=render(),root=host.shadowRoot;
   assert.ok(root.querySelector('.inline-toolbar .local-score').textContent.includes('0 / 100'));
   assert.ok(root.querySelector('.card:not([hidden])').textContent.includes(catalog.analysisPersistenceFailed.message));
@@ -106,7 +111,7 @@ test('inline names the strongest resource and attributes only comparable cross-p
   const clean = {provider:'urlscan',resource:'link:0',scope:'url',verdict:'none',state:'checked'};
   const domain = {provider:'urlhaus',resource:'link:0',scope:'domain',verdict:'suspicious',state:'submitted'};
   data.rows = [malicious,clean,domain];
-  data.hybridReports = {'attachment:1':{schemaVersion:1,sections:[]}};
+  data.hybridReports = {'attachment:1':{schemaVersion:1,sections:[],resourceToken:token}};
   const root = render(), simple = visibleCard(root);
   assert.match(simple.querySelector('.finding-summary').textContent,/Hybrid Analysis.*fixture\.zip/);
   assert.match(simple.querySelector('.provider-counts').textContent,/analysisProviderFindingsCount: 3.*analysisProviderPendingCount: 1.*analysisProviderErrorsCount: 1/);
@@ -203,12 +208,12 @@ test('inline evidence action opens only the bound Hybrid report or focuses the e
   const labels = c.analysis.labels(key=>key);
   const warning = {provider:'hybridanalysis',resource:'attachment:1',scope:'file',verdict:'malicious',state:'checked'};
   const data = {messageId:42,contextToken:'bound',local:{state:'checked',score:0},rows:[warning],
-   resourceLabels:{'attachment:1':'fixture.zip'},hybridReports:{'attachment:1':{schemaVersion:1,sections:[]}}};
+   resourceLabels:{'attachment:1':'fixture.zip'},hybridReports:{'attachment:1':{schemaVersion:1,sections:[],resourceToken:token}}};
   const render = () => c.analysis.render(data,labels,'',{surface:'message'}).shadowRoot;
   const root = render();
   root.querySelector('.overview-report-link button').click();
   await new Promise(setImmediate);
-  assert.deepEqual(JSON.parse(JSON.stringify(calls)),[{action:'openHybridReport',messageId:42,contextToken:'bound',resourceRef:'attachment:1'}]);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls)),[{action:'openHybridReport',messageId:42,contextToken:'bound',resourceRef:'attachment:1',resourceToken:token}]);
   data.rows = [{...warning,provider:'virustotal',scope:'hash'}];
   render();
   assert.equal(root.querySelector('.overview-report-link'),null);

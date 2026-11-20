@@ -14,7 +14,7 @@ def check(m, base, out, report, wait_for, open_page):
           const filePart=(await b.messages.listAttachments(message.id))[0],file=await b.messages.getAttachmentFile(message.id,filePart.partName),hash=await bg.get_sha256_hash(await file.arrayBuffer());
           const db=await bg.getSharedDB(),key=bg.resolveMessageStorageKey(message),original=await bg.getFromStore(db,'hybridanalysis',key);
           const settings=await b.storage.local.get(['externalAnalysisConsent','scanMode','analysisShowHybridDetails']);
-          const p=w.__hybridViewerProbe={bg,db,key,original,scope:bg.messageReportOptions(message),settings,fetch:bg.fetch,calls:0,audit:JSON.stringify((await b.storage.local.get('linkAuditLog')).linkAuditLog)};
+          const p=w.__hybridViewerProbe={bg,db,key,original,messageId:message.id,scope:bg.messageReportOptions(message),settings,fetch:bg.fetch,calls:0,audit:JSON.stringify((await b.storage.local.get('linkAuditLog')).linkAuditLog)};
           bg.fetch=async()=>{p.calls++;throw Error('Unexpected provider request in report viewer');};
           await b.storage.local.set({externalAnalysisConsent:false,scanMode:'manual',analysisShowHybridDetails:true});await bg.loadSettings();
           await bg.updateStore(db,'hybridanalysis',key,old=>({...old,attachments:old.attachments.map(a=>a.partName===filePart.partName?{...a,hybrid_sha256:hash,report_fetched_at:'2026-11-18T08:00:00Z',report:[{sha256:hash,job_id:'native-report-one',environment_description:'Native first environment',analysis_start_time:'2026-11-17T14:00:00Z',state:'SUCCESS',verdict:'clean',threat_score:0,processes:[]},{sha256:hash,job_id:'native-report-two',environment_description:'Native second environment',verdict:'unknown',scanners_v2:{Native:{positives:3,total:22}},signatures:[{name:'native-second-only',threat_level:2}]}]}:a)}),p.scope);
@@ -26,6 +26,18 @@ def check(m, base, out, report, wait_for, open_page):
         m.page('const r=document.getElementById("thundy-analysis-status").shadowRoot;if(document.body.dataset.thundyAnalysisView==="expert")r.querySelector("[data-focus-key=view-switch]").click();')
         wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(".overview-report-link button");'))
         inline=m.page('const h=document.getElementById("thundy-analysis-status"),s=h.shadowRoot.querySelector(".inline-toolbar .local-score");return h.dataset.surface==="message"&&s.getClientRects().length>0&&s.textContent.includes("/ 100");')
+        m.js('window.gTabmail.switchToTab(arguments[0]);',[probe_tab])
+        rejected=m.page('''return (async()=>{
+          const w=window.wrappedJSObject,b=w.browser,messageId=w.__hybridViewerProbe.messageId;
+          const view=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId});
+          const [resourceRef,details]=Object.entries(view.hybridReports).find(([,report])=>report.sections.length);
+          const tabs=(await b.tabs.query({})).length;
+          const result=await b.runtime.sendMessage({action:"openHybridReport",messageId,contextToken:view.contextToken,
+            resourceRef,resourceToken:crypto.randomUUID()});
+          return typeof details.resourceToken==="string"&&result.code==="REPORT_UNAVAILABLE"&&(await b.tabs.query({})).length===tabs;
+        })();''')
+        assert rejected
+        m.js('window.gTabmail.switchToTab(window.gTabmail.tabInfo.filter(tab=>tab.mode.name==="mailMessageTab").at(-1));')
         m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector(".overview-report-link button").click();')
         wait_for(lambda:m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.startsWith(arguments[0]);',[base+'hybrid_report.html#']))
         wait_for(lambda:m.page('return document.querySelectorAll("#hybridReportSelect option").length===2;'))
@@ -40,7 +52,8 @@ def check(m, base, out, report, wait_for, open_page):
         m.screenshot(out/'hybrid-report-view.png')
         m.js('window.gTabmail.switchToTab(arguments[0]);',[probe_tab])
         preserved=m.page('''return (async()=>{const w=window.wrappedJSObject,p=w.__hybridViewerProbe,b=w.browser;return {noProviderRequests:p.calls===0,auditPreserved:JSON.stringify((await b.storage.local.get('linkAuditLog')).linkAuditLog)===p.audit,resourcesPreserved:p.content(await p.bg.getFromStore(p.db,'hybridanalysis',p.key,p.scope))===p.fixture};})();''')
-        result={'realThunderbirdAPIs':True,'syntheticStoredData':True,'liveProviderCalls':False,'compactInline':inline,**checks,**preserved}
+        result={'realThunderbirdAPIs':True,'syntheticStoredData':True,'liveProviderCalls':False,'compactInline':inline,
+                'mismatchedResourceRefused':rejected,**checks,**preserved}
         result['passed']=all(v for k,v in result.items() if k!='liveProviderCalls')
         assert result['passed'],result
     finally:

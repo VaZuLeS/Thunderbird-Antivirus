@@ -244,7 +244,7 @@ const ThundyAnalysis = (() => {
         };
         return {diagnosticRun:context.diagnosticRun||null,event:apply, cached(provider,scope,verdict,observedAt) { return apply({provider,scope,verdict,observedAt,phase:'cache',state:verdict === 'unknown' ? 'received' : 'checked'}); }};
     }
-    function history(record, excludeId = null) {
+    function history(record, excludeId = null, unboundRows = []) {
         const result = {rows:[],truncated:false}, seen = new Set();
         if (!record) return result;
         record = resources(record);
@@ -265,6 +265,7 @@ const ThundyAnalysis = (() => {
         };
         add(legacy({attachments:(record.attachments || []).slice(0,100),links:(record.links || []).slice(0,500)}));
         result.truncated ||= (record.attachments?.length || 0) > 100 || (record.links?.length || 0) > 500;
+        add({schemaVersion:2,rows:unboundRows});
         add(record.analysisStatusLegacy);add(record.analysisStatus);
         const archived = record.analysisReportArchive;
         if (archived?.schemaVersion === 1 && Array.isArray(archived.entries)) {
@@ -400,7 +401,8 @@ const ThundyAnalysis = (() => {
                 button.setAttribute('aria-disabled','true');
                 try {
                     const result = await browser.runtime.sendMessage({
-                        action:'openHybridReport', messageId:data.messageId, contextToken:data.contextToken, resourceRef:ref
+                        action:'openHybridReport', messageId:data.messageId, contextToken:data.contextToken, resourceRef:ref,
+                        resourceToken:data.hybridReports[ref].resourceToken
                     });
                     if (!result?.success) throw Error('report');
                     status.textContent = '';
