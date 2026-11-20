@@ -41,7 +41,7 @@ def check(m, base, out, report, display, wait_for, open_page, native_click, nati
             m.page('''return (async()=>{
               const p=window.wrappedJSObject.__attachTest;
               await p.bg.updateStore(p.db,'hybridanalysis',p.key,old=>({...old,attachments:old.attachments.map(a=>a.partName===arguments[0]?
-                {...a,assessment:null,report:{state:'SUCCESS',sha256:arguments[1],threat_score:arguments[2]}}:a)}));
+                {...a,assessment:null,report:{state:'SUCCESS',sha256:arguments[1],threat_score:arguments[2]}}:a)}),p.scope);
             })();''',[arrangement['part'],arrangement['hash'],score],browser=settings_browser)
 
         def check_block(name):
