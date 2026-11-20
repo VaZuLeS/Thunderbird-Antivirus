@@ -242,3 +242,19 @@ test('a bound archived warning survives slot replacement until a new completed s
     assert.equal(update.details.mode,'allow');assert.equal(f.downloads.length,0);
     assert.equal((await f.command('save')).saved,true);
 });
+
+test('a blocked attachment can refresh its saved finding without initiating a save', async () => {
+    const f = fixture();
+    f.state.record.attachments = [f.withScore(90)];
+    await f.gate.start(target);
+    assert.equal((await f.command('refresh')).changed,false);
+    f.state.record.attachments = [f.withScore(12)];
+    const update = await f.command('refresh');
+    assert.equal(update.changed,true);
+    assert.equal(update.details.mode,'allow');
+    assert.equal(update.details.score,12);
+    assert.equal(f.downloads.length,0);
+    assert.equal(f.reportRequests.length,0);
+    assert.equal((await f.command('save')).saved,true);
+    assert.equal(f.downloads[0].contents,'abc');
+});

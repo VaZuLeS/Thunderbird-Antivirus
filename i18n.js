@@ -3182,6 +3182,12 @@ const ThundyI18n = (() => {
   "attachmentContextChanged": {
     "message": "The message or attachment changed. Select the attachment again."
   },
+  "attachmentRefresh": {
+    "message": "Check saved findings again"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "The saved finding is unchanged."
+  },
   "attachmentDecisionChanged": {
     "message": "The result or policy changed. Review the updated decision."
   },

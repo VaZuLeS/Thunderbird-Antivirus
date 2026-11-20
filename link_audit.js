@@ -177,14 +177,15 @@ async function handleCancelAuditedLink(request, sender) {
     } catch (error) { reportLinkAuditFailure(); return { success: false }; }
 }
 
-async function finishLinkHandoff(session, result) {
+async function finishLinkHandoff(session, result, granted) {
     session.record.openAttempts++;
     session.terminal = result.success || session.handoffUnconfirmed === true;
     const decidedAt = Date.now();
     const deadline = decidedAt + LINK_AUDIT_WAIT;
     const changes = {outcome:result.success ? 'OPENED' : 'OPEN_ERROR', decidedAt, openAttempts:session.record.openAttempts,
         scoreAtDecision:session.score, heuristicScoreAtDecision:session.heuristicScore ?? null,
-        verdictAtDecision:session.verdict || 'UNKNOWN', providerAtDecision:session.provider || 'none', ...decisionReasons(session, decidedAt)};
+        verdictAtDecision:session.verdict || 'UNKNOWN', providerAtDecision:session.provider || 'none',
+        ...decisionReasons(session, decidedAt),...granted};
     try {
         if (await withinAuditDeadline(session.auditReady, deadline)) {
             const saved = await updateLinkAudit(session.record.id, changes, {deadline});
@@ -194,18 +195,18 @@ async function finishLinkHandoff(session, result) {
     return {...result,auditSaved:false};
 }
 
-async function handleOpenAuditedLink(request, sender) {
+async function handleOpenAuditedLink(request, sender, {approval} = {}) {
     const session = linkAuditSessions.get(auditSessionKey(request, sender));
     if (!session || session.url !== request.url || session.messageId !== request.messageId || !session.checked || session.opening || session.terminal) return { success: false };
     session.opening = true;
     let dispatched = false;
     try {
         await withinAuditDeadline(session.ready, Date.now() + LINK_AUDIT_WAIT);
-        const result = await handleOpenCheckedLink(request, sender, {deferHandoff:true});
+        const result = await handleOpenCheckedLink(request, sender, {deferHandoff:true,approval});
         if (result.handoff) {
             dispatched = true;
             const deadline = Date.now() + LINK_AUDIT_WAIT;
-            const receipt = result.handoff.then(value=>finishLinkHandoff(session,value))
+            const receipt = result.handoff.then(value=>finishLinkHandoff(session,value,result.granted))
                 .finally(()=>{session.opening=false;});
             const acknowledgement = await withinAuditDeadline(result.handoff,deadline,()=>{
                 session.handoffUnconfirmed = true;

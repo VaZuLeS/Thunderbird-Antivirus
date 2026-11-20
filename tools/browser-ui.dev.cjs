@@ -286,6 +286,11 @@ async function interaction(page, c) {
     assert.equal(await page.locator('#attachmentCancel').evaluate(el=>el===document.activeElement),true);
     if (c.scenario === 'blocked') {
       assert.equal(await page.locator('#attachmentConfirm').isVisible(),false);
+      await page.locator('#attachmentRefresh').press('Enter');
+      await page.locator('#attachmentConfirm').waitFor();
+      assert.equal(await page.locator('#attachmentScore').textContent(),'12 / 100');
+      assert.equal(await page.locator('#attachmentRefresh').evaluate(el=>el===document.activeElement),true);
+      assert.equal(await page.evaluate(()=>uiTest.attachmentRefreshes),1);
       assert.equal(await page.evaluate(()=>uiTest.attachmentSaves || 0),0);
     } else {
       await page.locator('#attachmentConfirm').press('Enter');
@@ -335,6 +340,7 @@ async function interaction(page, c) {
     } else {
       assert.ok((await page.locator('#destination').textContent()).startsWith('https://controlled.example.invalid/'));
       assert.equal(await page.locator('#approvalScore').textContent(),'72/100');
+      assert.equal(await page.locator('#approvalLocalScore').textContent(),'36/100');
       await page.locator('#confirmed').focus();await page.keyboard.press('Space');
       assert.equal(await page.locator('#confirmed').isChecked(),true);
       await page.keyboard.press('Tab');assert.equal(await page.locator('#password').evaluate(el=>el===document.activeElement),true);
@@ -347,10 +353,10 @@ async function interaction(page, c) {
           assert.equal(await page.locator('#approvalForm button').isDisabled(),true);
           await page.evaluate(()=>uiTest.finishApproval());
         }
-        const expected=c.scenario==='failed' ? catalog.securityApprovalFailed.message : catalog.securityOpened.message;
+        const expected=c.scenario==='failed' ? catalog.securityExpired.message : catalog.securityOpened.message;
         await page.waitForFunction(text=>document.getElementById('status').textContent===text,expected);
-        assert.equal(await page.locator('#approvalForm').isVisible(),c.scenario==='failed');
-        if(c.scenario!=='failed')assert.equal(await page.locator('#status').evaluate(el=>el===document.activeElement),true);
+        assert.equal(await page.locator('#approvalForm').isVisible(),false);
+        assert.equal(await page.locator('#status').evaluate(el=>el===document.activeElement),true);
         assert.ok(!(await page.locator('body').textContent()).includes('synthetic-secret-canary'));
       }
     }

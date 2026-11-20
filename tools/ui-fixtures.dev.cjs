@@ -182,6 +182,10 @@ function addonMock({
         if (p.action === 'attachmentDownloadCommand') {
           if (p.op === 'status') return {success:true,details:{name:'fixture.pdf',score:70,threshold:70,
             state:'complete',mode:scenario==='blocked'?'block':'warn',reason:'threshold',report:true}};
+          if (p.op === 'refresh') {
+            uiTest.attachmentRefreshes=(uiTest.attachmentRefreshes||0)+1;
+            return {success:true,changed:true,details:{name:'fixture.pdf',score:12,threshold:70,state:'complete',mode:'allow',report:true}};
+          }
           if (p.op === 'save') {
             uiTest.attachmentSaves=(uiTest.attachmentSaves||0)+1;
             return {success:true,saved:true};
@@ -197,7 +201,7 @@ function addonMock({
         if(p.action === 'getMessageAnalysis' && scenario === 'pending') await new Promise(resolve => {uiTest.finishSource=resolve;});
         return         p.action === 'linkApprovalCommand'
           ? p.op === 'status'
-            ? scenario === 'expired' ? {success:false,code:'APPROVAL_EXPIRED'} : {success:true,url:'https://controlled.example.invalid/'+'long-path-'.repeat(12),score:72,until:Date.now()+60000}
+            ? scenario === 'expired' ? {success:false,code:'APPROVAL_EXPIRED'} : {success:true,url:'https://controlled.example.invalid/'+'long-path-'.repeat(12),score:72,heuristicScore:36,until:Date.now()+60000}
             : (uiTest.approvals++, scenario === 'pending' ? await new Promise(resolve => {uiTest.finishApproval=()=>resolve({success:true});}) : {success:scenario !== 'failed',...(scenario === 'failed'?{code:'APPROVAL_CHANGED'}:{})})
           : p.action === "securityCommand"
           ? p.op==='apiDebugReport' ? {success:true,report:{schemaVersion:2,kind:'thundy-api-debug',runs:uiTest.debugCleared?[]:[{id:1,purpose:'manual',state:'failed',startedAt:Date.now()-1000,events:[{phase:'precondition',at:Date.now()-1000,provider:'hybridanalysis',state:'complete'},{phase:'attempt',at:Date.now()-500,state:'running'},{phase:'response',at:Date.now(),httpStatus:403},{phase:'persistence',at:Date.now(),state:'failed',reason:'storage_failed'}]}],entries:uiTest.debugCleared?[]:[{id:2,runId:1,request:{provider:'hybridanalysis',endpoint:'/api/v2/quick-scan/:reference',method:'GET'},attempts:[{status:403,durationMs:20,contentType:'json'}],networkStarted:true,reason:'permission',bodyState:'json',response:{message:'[redacted string]'}}],pending:[],dropped:0}}

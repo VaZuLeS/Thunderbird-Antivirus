@@ -1953,11 +1953,15 @@ def check_administration(m, base, out, report):
         report['approvalFailure'] = m.page('return {status:document.getElementById("status").textContent,formHidden:document.getElementById("approvalForm").hidden,buttonDisabled:document.querySelector("#approvalForm button").disabled};')
         raise AssertionError('Approval UI did not finish: '+json.dumps(report['approvalFailure']))
     assert m.page('return document.activeElement?.id;')=='status'
-    assert m.page('return document.getElementById("approvalScore").textContent;')
+    displayed_scores=m.page('''return {
+      decision:document.getElementById("approvalScore").textContent,
+      local:document.getElementById("approvalLocalScore").textContent};''')
     snapshot=m.page('return window.wrappedJSObject.browser.storage.local.get("linkAuditLog");')
     approved=[r for r in snapshot['linkAuditLog'] if r.get('approvalDecision')=='granted']
     assert len(approved)==1 and approved[0]['outcome']=='OPENED' and approved[0]['openAttempts']==1,approved
     assert approved[0]['blockReason']=='threshold'
+    assert displayed_scores=={'decision':f"{approved[0]['scoreAtDecision']}/100",
+                              'local':f"{approved[0]['heuristicScoreAtDecision']}/100"}
     report['administration']={'passed':True,'realThunderbirdAPIs':True,'protectedWriteRejected':True,'protectedDisplaySettings':True,'unlockAndRelock':True,'separatePasswordPage':True,'oneApprovedOpening':True,'passwordVerifiers':state,'liveProviderCalls':False}
 
 

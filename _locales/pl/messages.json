@@ -3177,6 +3177,12 @@
   "attachmentContextChanged": {
     "message": "Wiadomość lub załącznik uległ zmianie. Wybierz załącznik ponownie."
   },
+  "attachmentRefresh": {
+    "message": "Sprawdź ponownie zapisany wynik"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "Zapisany wynik się nie zmienił."
+  },
   "attachmentDecisionChanged": {
     "message": "Wynik lub reguła uległy zmianie. Sprawdź nową decyzję."
   },

@@ -15,6 +15,7 @@
     };
     const form = get('attachmentSaveForm'), cancel = get('attachmentCancel'), status = get('attachmentStatus');
     const report = get('attachmentReport'), password = get('attachmentPassword'), submit = get('attachmentConfirm');
+    const refresh = get('attachmentRefresh');
     let busy = false;
     const send = (op,extra) => browser.runtime.sendMessage({action:'attachmentDownloadCommand',op,challenge,...extra});
     function render(details) {
@@ -38,22 +39,25 @@
         get('attachmentPasswordLabel').hidden = !approval;
         password.required = approval;
         report.hidden = !details.report;
+        refresh.hidden = false;
     }
     function finish(key) {
-        form.hidden = report.hidden = cancel.hidden = true;
+        form.hidden = report.hidden = refresh.hidden = cancel.hidden = true;
         status.textContent = t(key);
         status.focus();
     }
     async function run(op, extra) {
         if (busy) return;
-        busy = submit.disabled = report.disabled = cancel.disabled = true;
+        busy = submit.disabled = report.disabled = refresh.disabled = cancel.disabled = true;
         try {
             const result = await send(op,extra);
             if (result?.details) {
                 render(result.details);
                 if (result.changed) status.textContent = t('attachmentDecisionChanged');
-                cancel.disabled = false;
-                cancel.focus();
+                else if (op === 'refresh') status.textContent = t('attachmentFindingUnchanged');
+                const nextFocus = op === 'refresh' ? refresh : cancel;
+                nextFocus.disabled = false;
+                nextFocus.focus();
             } else if (result?.saved) finish('attachmentSaveRequested');
             else if (op === 'cancel') finish('attachmentSaveCancelled');
             else if (!result?.success) {
@@ -61,7 +65,7 @@
                 else status.textContent = t(names[result?.code] || 'attachmentFailed');
             }
         } catch (_) {finish('attachmentFailed');}
-        finally {busy = submit.disabled = report.disabled = cancel.disabled = false;}
+        finally {busy = submit.disabled = report.disabled = refresh.disabled = cancel.disabled = false;}
     }
     form.addEventListener('submit',event => {
         event.preventDefault();
@@ -70,6 +74,7 @@
         void run('save',{password:value});
     });
     report.addEventListener('click',() => run('report'));
+    refresh.addEventListener('click',() => run('refresh'));
     cancel.addEventListener('click',() => run('cancel'));
     document.addEventListener('keydown',event => {
         if (event.key === 'Escape' && !cancel.hidden) void run('cancel');
