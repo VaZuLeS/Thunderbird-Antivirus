@@ -164,6 +164,18 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
             const currentParts = new Map();
             const verifiedHashes = new Map();
             const currentLinks = new Set();
+            const linkRefs = new Map(), usedLinkRefs = new Set();
+            let nextLinkIndex = 0;
+            function linkRef(url, index) {
+                if (!linkRefs.has(url)) {
+                    const slot = 'link:' + index;
+                    const ref = usedLinkRefs.has(slot) ? 'link:' + nextLinkIndex++ : slot;
+                    nextLinkIndex = Math.max(nextLinkIndex,index + 1);
+                    linkRefs.set(url,ref);
+                    usedLinkRefs.add(ref);
+                }
+                return linkRefs.get(url);
+            }
             const snapshotId = crypto.randomUUID();
             let currentCoverage = {state:'failed',reason:'read_failed'};
             try {
@@ -179,7 +191,10 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
             try { record = await getFromStore(await getSharedDB(), 'hybridanalysis', key,messageReportOptions(message)); } catch (_) { /* still expose live state */ }
             const sourceRecord = saved => {
                 if (!saved) return saved;
-                saved = ThundyAnalysis.resources({...saved,links:Array.isArray(saved.links) ? saved.links.map((item,index) => item && typeof item === 'object' && !Array.isArray(item) ? {...item,analysisResourceRef:'link:' + index} : item) : saved.links});
+                saved = ThundyAnalysis.resources({...saved,links:Array.isArray(saved.links) ? saved.links.map((item,index) => {
+                    const url = canonicalHttpUrl(item?.url);
+                    return url && currentLinks.has(url) ? {...item,analysisResourceRef:linkRef(url,index)} : item;
+                }) : saved.links});
                 // Numeric IDs and metadata alone cannot bind historical findings.
                 const attachments = (saved.attachments || []).filter(item => item.partName && currentParts.has(String(item.partName)) && currentParts.get(String(item.partName)) === item.attachment_name && verifiedHashes.has(String(item.partName)) && typeof item.hybrid_sha256 === 'string' && verifiedHashes.get(String(item.partName)) === item.hybrid_sha256.toLowerCase());
                 const links = saved.links.filter(item => currentLinks.has(canonicalHttpUrl(item.url)));
@@ -190,9 +205,10 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
             // Current unreadability must not inherit a historical "checked" state.
             if (currentCoverage.state !== 'checked') model.data.local = {...currentCoverage,source:'local',observedAt:Date.now()};
             let snapshotCreated = false, persistenceQueue = Promise.resolve();
+            let reportBindings = new Map();
             const context = { disposed: false, model, snapshotId, persistenceFailed:false, headerMessageId: key, messageId: message.id, tabs: new Set(), timer: null,
                 isCached() { return messageAnalyses.get(contextKey) === ready; },
-                dispose() { context.disposed = true; if (context.timer) clearTimeout(context.timer); context.timer = null; context.tabs.clear(); },
+                dispose() { context.disposed = true; if (context.timer) clearTimeout(context.timer); context.timer = null; context.tabs.clear(); reportBindings.clear(); linkRefs.clear(); usedLinkRefs.clear(); },
                 event(event) { if (context.disposed || !context.scanJobOwner && messageAnalyses.get(contextKey) !== ready) { context.dispose(); return false; } messageAnalyses.touch?.(contextKey); const valid = model.event(event); if (valid) context.schedule(); return valid; },
                 cached(provider, scope, verdict, observedAt) { context.event({ provider, scope, phase: 'cache', state: verdict === 'unknown' ? 'received' : 'checked', verdict, observedAt }); },
                 forAttachment(partName, name, hash) { if (name != null) currentParts.set(String(partName), name); if (/^[0-9a-f]{64}$/i.test(hash || '')) verifiedHashes.set(String(partName), hash.toLowerCase()); return ThundyAnalysis.bind(context, ['attachment:' + partName]); },
@@ -207,32 +223,16 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     try {
                         const saved = await getFromStore(await getSharedDB(), 'hybridanalysis', key,messageReportOptions(message));
                         const links = Array.isArray(saved?.links) ? saved.links : [];
-                        return ThundyAnalysis.bind(context, urls.map(url => { const index = links.findIndex(item => item && sameAnalysisUrl(item.url,url)); return index < 0 ? null : 'link:' + index; }));
+                        return ThundyAnalysis.bind(context, urls.map(url => {
+                            const index = links.findIndex(item => item && sameAnalysisUrl(item.url,url));
+                            return index < 0 ? null : linkRef(canonicalHttpUrl(url),index);
+                        }));
                     } catch (_) { return ThundyAnalysis.bind(context, []); }
                 },
                 schedule() { if (context.disposed) return; if (!context.timer) context.timer = setTimeout(() => { context.timer = null; context.flush().catch(() => {}); }, 300); },
-                async snapshot() {
-                    const displaySettings=await browser.storage.local.get(['analysisDefaultView','analysisShowHybridDetails']);
+                async snapshot(project = null) {
+                    const displaySettings=await browser.storage.local.get(['analysisDefaultView','analysisShowHybridDetails','scanMode']);
                     const displayPreferences={view:displaySettings.analysisDefaultView==='expert'?'expert':'simple',hybridDetails:displaySettings.analysisShowHybridDetails!==false};
-                    let sourceHistory = {rows:[],truncated:false};
-                    const hybridReports = {};
-                    let hybridReportsTruncated=false,hybridReportBudget=500000;
-                    try {
-                        const original = await getFromStore(await getSharedDB(), 'hybridanalysis', key,messageReportOptions(message,{includeHistory:true})), saved = original ? ThundyAnalysis.resources(original) : null, current = sourceRecord(original);
-                        if (saved) sourceHistory = ThundyAnalysis.history({...saved,attachments:(saved.attachments || []).filter(item => !(current.attachments || []).includes(item)),links:(saved.links || []).filter(item => !currentLinks.has(canonicalHttpUrl(item.url)))},snapshotId);
-                        // Only current, content-bound resources enter the detailed display.
-                        // Raw protocols and these resource details never enter provenance exports.
-                        for(const item of [...(current?.attachments||[]),...(current?.links||[])]){
-                            const ref=item.url?item.analysisResourceRef:'attachment:'+item.partName;
-                            if(displayPreferences.hybridDetails&&item.report&&ThundyAnalysis.validResource(ref)){
-                                const details={...ThundyProviderResults.hybridDetails(item.report,item.hybrid_sha256||null),observedAt:Number.isFinite(Date.parse(item.report_fetched_at))?Date.parse(item.report_fetched_at):null};
-                                const size=JSON.stringify(details).length;
-                                if(Object.keys(hybridReports).length>=100||size>hybridReportBudget){hybridReportsTruncated=true;continue;}
-                                hybridReportBudget-=size;hybridReports[ref]=details;
-                            }
-                        }
-                        if (!context.scanRunId) ThundyAnalysis.refreshStored(model,current);
-                    } catch (_) { /* retain known live metadata */ }
                     const enabled = { hybridanalysis: !!apikey_hybridanalysis, virustotal: !!apikey_virustotal || ipReputationProvider === 'virustotal' && !!ipReputationApiKey, urlhaus: !!urlhausApikey, abuseipdb: ipReputationProvider === 'abuseipdb' && !!ipReputationApiKey, urlscan: !!urlscanApikey };
                     const availability = {};
                     const providerAccess = {};
@@ -243,15 +243,6 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                         availability[provider] = !enabled[provider] ? 'unconfigured' : !mayTransmitExternally() ? 'disabled' : !await hasHostPermissionFor(PROVIDER_ORIGINS[provider]) ? 'permission' : provider === 'urlscan' ? !tierAtLeast('max') ? 'policy' : 'on_action' : !authorized ? 'authorization' : 'unrecorded';
                     }));
                     if (context.scanJob?.providers) for(const [id,value] of Object.entries(context.scanJob.providers)) { const reasons=value.checks.map(c=>c.reason);availability[id]=value.state==='failed'&&value.error==='rate_limited'?'quota':reasons.some(r=>!r)?value.state==='running'?'running':'unrecorded':reasons[0]||'no_resources'; }
-                    const resourceLabels = {};
-                    const clean = text => String(text || '').replace(/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/g,'').slice(0,512);
-                    for (const [partName,name] of currentParts) if (ThundyAnalysis.validResource('attachment:' + partName)) resourceLabels['attachment:' + partName] = clean(name) + ' (' + partName + ')';
-                    try {
-                        const saved = await getFromStore(await getSharedDB(), 'hybridanalysis', key,messageReportOptions(message));
-                        for (const [index,item] of (Array.isArray(saved?.links) ? saved.links : []).entries()) if (item && currentLinks.has(canonicalHttpUrl(item.url))) {
-                            try { const url = new URL(item.url); resourceLabels['link:' + index] = clean(url.origin + url.pathname); } catch (_) { /* no URL guess */ }
-                        }
-                    } catch (_) { /* actual parts remain identifiable without cached links */ }
                     const backoffs = {};
                     if (typeof apiGateway !== 'undefined' && apiGateway.backoffs) {
                         for (const host of apiGateway.backoffs.keys()) {
@@ -262,8 +253,51 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                         }
                     }
                     const security = typeof ThundySecurity !== 'undefined' ? await ThundySecurity.read() : null;
-                    const protection = security ? ThundySecurity.decision({...ThundySecurity.defaults,...security.policy},{score:model.data.local.score,coverage:model.data.local.state,verdict:model.data.rows.some(row=>row.verdict==='malicious')?'MALICIOUS':model.data.rows.length && model.data.rows.every(row=>['none','suspicious'].includes(row.verdict)&&row.state==='checked')?model.data.rows.some(row=>row.verdict==='suspicious')?'SUSPICIOUS':'CLEAN':'UNKNOWN'}) : null;
-                    return { ...JSON.parse(JSON.stringify(model.data)), displayPreferences, hybridReports, hybridReportsTruncated, scanJob:context.scanJob || {state:'idle',migration:(await browser.storage.local.get('scanMode')).scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, attachmentActions:typeof ThundyAttachmentDownload !== 'undefined', sourcePersistenceFailed:context.persistenceFailed, sourcePersistenceReason:context.persistenceReason || null, sourcePersistenceError:context.persistenceError || null, diagnosticRun:context.diagnosticRun||null, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
+                    const resourceLabels = {};
+                    const clean = text => String(text || '').replace(/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/g,'').slice(0,512);
+                    let sourceHistory = {rows:[],truncated:false}, current = null;
+                    let data = null;
+                    const nextBindings = new Map();
+                    const hybridReports = {};
+                    let hybridReportsTruncated=false,hybridReportBudget=500000;
+                    try {
+                        const original = await getFromStore(await getSharedDB(), 'hybridanalysis', key,messageReportOptions(message,{includeHistory:true})), saved = original ? ThundyAnalysis.resources(original) : null;
+                        current = sourceRecord(original);
+                        for (const item of current?.links || []) {
+                            const url = new URL(item.url);
+                            resourceLabels[item.analysisResourceRef] = clean(url.origin + url.pathname);
+                        }
+                        // Only current, content-bound resources enter the detailed display.
+                        // Raw protocols and these resource details never enter provenance exports.
+                        for(const item of [...(current?.attachments||[]),...(current?.links||[])]){
+                            const ref=item.url?item.analysisResourceRef:'attachment:'+item.partName;
+                            if(displayPreferences.hybridDetails&&item.report&&ThundyAnalysis.validResource(ref)){
+                                const details={...ThundyProviderResults.hybridDetails(item.report,item.hybrid_sha256||null),observedAt:Number.isFinite(Date.parse(item.report_fetched_at))?Date.parse(item.report_fetched_at):null};
+                                const size=JSON.stringify(details).length;
+                                if(Object.keys(hybridReports).length>=100||size>hybridReportBudget){hybridReportsTruncated=true;continue;}
+                                hybridReportBudget -= size;
+                                const identity = item.url ? canonicalHttpUrl(item.url) : item.hybrid_sha256.toLowerCase();
+                                const previous = reportBindings.get(ref);
+                                const binding = previous?.identity === identity ? previous : {identity, token:crypto.randomUUID()};
+                                nextBindings.set(ref,binding);
+                                hybridReports[ref] = {...details,resourceToken:binding.token};
+                            }
+                        }
+                        if (!context.scanRunId) ThundyAnalysis.refreshStored(model,current);
+                        data = JSON.parse(JSON.stringify(model.data));
+                        const displaced = row => usedLinkRefs.has(row.resource) && !Object.hasOwn(resourceLabels,row.resource);
+                        const unbound = data.rows.filter(displaced);
+                        data.rows = data.rows.filter(row => !displaced(row));
+                        sourceHistory = ThundyAnalysis.history({...saved,attachments:(saved?.attachments || []).filter(item => !current.attachments.includes(item)),
+                            links:(saved?.links || []).filter(item => !currentLinks.has(canonicalHttpUrl(item.url)))},snapshotId,unbound);
+                    } catch (_) { /* retain known live metadata */ }
+                    for (const [partName,name] of currentParts) if (ThundyAnalysis.validResource('attachment:' + partName)) resourceLabels['attachment:' + partName] = clean(name) + ' (' + partName + ')';
+                    if (!context.disposed) reportBindings = nextBindings;
+                    data ||= JSON.parse(JSON.stringify(model.data));
+                    const {local,rows} = data;
+                    const protection = security ? ThundySecurity.decision({...ThundySecurity.defaults,...security.policy},{score:local.score,coverage:local.state,verdict:rows.some(row=>row.verdict==='malicious')?'MALICIOUS':rows.length && rows.every(row=>['none','suspicious'].includes(row.verdict)&&row.state==='checked')?rows.some(row=>row.verdict==='suspicious')?'SUSPICIOUS':'CLEAN':'UNKNOWN'}) : null;
+                    const view = { ...data, displayPreferences, hybridReports, hybridReportsTruncated, scanJob:context.scanJob || {state:'idle',migration:displaySettings.scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, attachmentActions:typeof ThundyAttachmentDownload !== 'undefined', sourcePersistenceFailed:context.persistenceFailed, sourcePersistenceReason:context.persistenceReason || null, sourcePersistenceError:context.persistenceError || null, diagnosticRun:context.diagnosticRun||null, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
+                    return project ? project(view,current) : view;
                 },
                 async flush() {
                     if (context.disposed) return;
@@ -2221,18 +2255,26 @@ async function handleRequestScan(request, sender) {
     }
 }
 
-// Viewer snapshots never accept a caller-supplied database key or provider request.
+// Resolve the selected resource and its presentation from the same stored view.
+function resolveScopedHybridReport(context, resourceRef, matches) {
+    return context.snapshot((view,record) => {
+        if (context.disposed || !context.isCached() || view.displayPreferences?.hybridDetails === false) throw Error('REPORT_UNAVAILABLE');
+        const candidates = resourceRef.startsWith('attachment:')
+            ? (record?.attachments || []).filter(item => 'attachment:'+item.partName === resourceRef)
+            : (record?.links || []).filter(item => item.analysisResourceRef === resourceRef);
+        if (candidates.length !== 1 || !candidates[0].report || !matches(candidates[0],view.hybridReports[resourceRef])) {
+            throw Error('REPORT_UNAVAILABLE');
+        }
+        return ThundyHybridReport.project(candidates[0],resourceRef,view.local,view.rows);
+    });
+}
+
 var hybridReportBroker = typeof ThundyHybridReport === 'undefined' ? null : ThundyHybridReport.broker(browser, async request => {
     const context = await getMessageAnalysisContext(await browser.messages.get(request.messageId));
-    if (!context || context.disposed || context.snapshotId !== request.contextToken) throw Error('REPORT_UNAVAILABLE');
-    const snapshot = await context.snapshot();
-    if (snapshot.displayPreferences?.hybridDetails === false) throw Error('REPORT_UNAVAILABLE');
-    const record = await context.resourceRecord();
-    const candidates = request.resourceRef.startsWith('attachment:')
-        ? (record?.attachments || []).filter(item => 'attachment:'+item.partName === request.resourceRef)
-        : (record?.links || []).filter(item => item.analysisResourceRef === request.resourceRef);
-    if (context.disposed || !context.isCached() || candidates.length !== 1 || !candidates[0].report) throw Error('REPORT_UNAVAILABLE');
-    return ThundyHybridReport.project(candidates[0], request.resourceRef, snapshot.local, snapshot.rows);
+    if (!context || context.disposed || context.snapshotId !== request.contextToken || typeof request.resourceToken !== 'string') {
+        throw Error('REPORT_UNAVAILABLE');
+    }
+    return resolveScopedHybridReport(context,request.resourceRef,(_item, details) => details?.resourceToken === request.resourceToken);
 });
 
 // The download dialog uses the same resource-bound report broker as the message view.
@@ -2242,7 +2284,7 @@ var attachmentDownloads = typeof ThundyAttachmentDownload === 'undefined' ? null
     record:async message => getFromStore(await getSharedDB(),'hybridanalysis',resolveMessageStorageKey(message),messageReportOptions(message,{includeHistory:'attachment'})),
     revision:id => typeof ThundyScans === 'undefined' ? null : ThundyScans.revision(id),
     pending:(id,part) => typeof ThundyScans !== 'undefined' && ThundyScans.attachmentPending(id,part),
-    openReport:async (target,resource,sender,archived) => {
+    openReport:async (target,resource,_sender,archived) => {
         const message = await getFirstDisplayedMessage(target.tabId);
         if (message?.id !== target.messageId) throw Error('ATTACHMENT_CONTEXT_CHANGED');
         if (archived) {
@@ -2251,8 +2293,10 @@ var attachmentDownloads = typeof ThundyAttachmentDownload === 'undefined' ? null
         }
         const context = await getMessageAnalysisContext(message);
         context.forAttachment(target.partName,resource.file.name,resource.digest);
-        return hybridReportBroker.command({action:'openHybridReport',messageId:message.id,
-            contextToken:context.snapshotId,resourceRef:'attachment:'+target.partName},sender);
+        const report = await resolveScopedHybridReport(context,'attachment:'+target.partName,
+            item => item.hybrid_sha256?.toLowerCase() === resource.digest);
+        if ((await getFirstDisplayedMessage(target.tabId))?.id !== message.id || context.disposed) throw Error('REPORT_UNAVAILABLE');
+        return hybridReportBroker.openBound(report);
     }
 });
 

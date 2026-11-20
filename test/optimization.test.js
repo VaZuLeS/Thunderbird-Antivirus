@@ -1056,6 +1056,36 @@ test('expert report snapshot exposes only current resources and never persists d
  }finally{ctx.dispose();}
 });
 
+test('resource labels and report details use one stored view when a link slot changes', async () => {
+ const s=setup({},true);await s.context.configure();
+ const firstUrl='https://example.com/first?secret=one', secondUrl='https://example.com/second?secret=two';
+ s.full.parts[0].body=firstUrl+' '+secondUrl;
+ const first={links:[{url:firstUrl,report:{finished:true,verdict:'malicious',signatures:[{name:'first report'}]}}]};
+ const second={links:[{url:secondUrl,report:{finished:true,verdict:'clean',signatures:[{name:'second report'}]}}]};
+ sourceRecords(s,first);
+ const ctx=await s.context.getMessageAnalysisContext(s.message);
+ try {
+    let reads=0;
+    s.context.getFromStore=async()=>++reads===1 ? first : second;
+    const snap=await ctx.snapshot();
+    assert.equal(snap.resourceLabels['link:0'],'https://example.com/first');
+    assert.ok(JSON.stringify(snap.hybridReports['link:0']).includes('first report'));
+    assert.equal(reads,1);
+    assert.ok(!JSON.stringify(snap).includes('secret='));
+    const next=await ctx.snapshot();
+    assert.equal(next.resourceLabels['link:0'],undefined);
+    assert.equal(next.resourceLabels['link:1'],'https://example.com/second');
+    assert.notEqual(next.hybridReports['link:1'].resourceToken,snap.hybridReports['link:0'].resourceToken);
+    assert.equal((await ctx.snapshot()).hybridReports['link:1'].resourceToken,next.hybridReports['link:1'].resourceToken);
+    assert.ok(next.rows.some(row=>row.resource==='link:1'&&row.verdict==='none'));
+    assert.ok(next.rows.every(row=>row.resource!=='link:0'));
+    assert.ok(next.sourceHistory.rows.some(row=>row.resource===null&&row.verdict==='malicious'));
+    const bound=await ctx.forLinks([secondUrl]);
+    bound.event({provider:'urlscan',scope:'url',phase:'finish',state:'checked',verdict:'none',responded:true});
+    assert.ok((await ctx.snapshot()).rows.some(row=>row.provider==='urlscan'&&row.resource==='link:1'));
+ } finally {ctx.dispose();}
+});
+
 test('display preference reads suppress only extra report projection and never transmit or change findings',async()=>{
  const s=setup({analysisDefaultView:'expert',analysisShowHybridDetails:false},true);await s.context.configure();
  const records=sourceRecords(s,{links:[{url:'https://example.com/',report:{verdict:'malicious',finished:true,mitre_attcks:[{attck_id:'T1059'}]}}]});

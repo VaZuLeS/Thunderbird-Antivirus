@@ -159,7 +159,7 @@ const FORBIDDEN = [
 // 1.24.6 ships 47 allowlisted files including analysis_status, source_export and remote provider parsers.
 // Generator sources stay excluded; retain a small, explicit size budget.
 // Includes the dedicated diagnostic viewer and six-language flow labels.
-const MAX_UNCOMPRESSED_BYTES = 1650 * 1024;
+const MAX_UNCOMPRESSED_BYTES = 1651 * 1024;
 
 /**
  * Picks the artifact to check. `web-ext` writes one ZIP per version into the
