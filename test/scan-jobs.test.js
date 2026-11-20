@@ -35,15 +35,28 @@ function runtime(overrides={}){
  const b={storage:{local:{get:async keys=>Object.fromEntries((typeof keys==='string'?[keys]:keys).map(k=>[k,settings[k]]))}},messages:{listAttachments:async()=>[],getAttachmentFile:async()=>new Blob(['file'])},tabs:{query:async()=>[{id:7}]}};
  const c=vm.createContext({browser:b,crypto:webcrypto,TextEncoder,URL,URLSearchParams,AbortController,Blob,setTimeout,clearTimeout,console,
  extractEmailAddress:x=>x,extractPublicIPs:()=>[],hasHostPermissionFor:async()=>permission,loadSettings:async()=>{},readFullForAnalysis:async()=>full,extractTextFromParts:parts=>parts[0].body,extractUrls:text=>[text],filterUrls:x=>x,
- resolveMessageStorageKey:m=>m.headerMessageId,getMessageAnalysisContext:async()=>context,getSharedDB:async()=>({}),getFromStore:async(db,store,key)=>structuredClone(stored[key]),updateStore:async(db,store,key,edit)=>{stored[key]=edit(structuredClone(stored[key]));},
+ resolveMessageStorageKey:m=>m.headerMessageId,getAnalysisRuntimeId:()=> 'test-runtime',getMessageAnalysisContext:async()=>context,getSharedDB:async()=>({}),getFromStore:async(db,store,key)=>structuredClone(stored[key]),updateStore:async(db,store,key,edit)=>{stored[key]=edit(structuredClone(stored[key]));},
  apiGateway:{fetchWithTimeout:async(url,options)=>{calls.push({url,method:options.method});return {status:200,json:async()=>({id:'hybrid-job',verdict:'clean'})};},pause:async()=>{}},getHybridAnalysisOptions:(method,body)=>({method,body}),quickScanReport:x=>x,extractHybridVerdictFromOverview:x=>x?.verdict,
  checkUrlscanIo:async(url,key,ctx)=>{calls.push({url,provider:'urlscan',submit:true});await ctx.submitted('urlscan-job');return {uuid:'urlscan-job',status:'CLEAN',assessment:{assessmentVersion:1,completion:'complete',signals:[{code:'overall',verdict:'none'}]}};},pollUrlscanIoResult:async uuid=>{calls.push({uuid,refresh:true});return {status:'CLEAN',assessment:{assessmentVersion:1,completion:'complete',signals:[{code:'overall',verdict:'none'}]}};},
  indexedDB_save_links_to_db:async()=>{},collectThreatEvaluationOptions:async()=>({}),calculateThreatScore:()=>({score:0}),localContentCoverage:()=>({state:'checked'}),recordLocalCoverage:()=>{},injectThreatBanner:async()=>{},getFirstDisplayedMessage:async()=>message,
  injectIntoMessageDisplay:async()=>{},processAttachments:async()=>{},injectTimeOfClickProtection:async()=>{},evaluateAndInjectThreats:async()=>{},vtCache:new Map(),urlhausCache:new Map(),ipReputationCache:new Map(),mayTransmitExternally:()=>settings.externalAnalysisConsent,
  });
- vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('provider_registry.js','utf8'))+'\n'+source+'\nglobalThis.scans=ThundyScans;',c);
+ vm.runInContext(['runtime.js','provider_results.js','provider_registry.js'].map(file=>fs.readFileSync(file,'utf8')).join('\n')+'\n'+source+'\nglobalThis.scans=ThundyScans;',c);
  return {s:c.scans,c,settings,stored,calls,events,context,message,full,permission:value=>permission=value};
 }
+test('a later scan on a colliding storage key retains the first occurrence job metadata',async()=>{
+ const f=runtime();
+ await f.s.request({messageId:1,contextToken:'context'},{tab:{id:7}});await f.s.settled(1);
+ const first=f.c.readOccurrenceMetadata(f.stored.fixture,'test-runtime',1).scanJobMeta;
+ assert.ok(first?.fingerprint);
+ f.message.id=2;
+ await f.s.request({messageId:2,contextToken:'context'},{tab:{id:7}});await f.s.settled(2);
+ const second=f.c.readOccurrenceMetadata(f.stored.fixture,'test-runtime',2).scanJobMeta;
+ assert.ok(second?.fingerprint);
+ assert.notEqual(second.fingerprint,first.fingerprint);
+ assert.equal(JSON.stringify(f.c.readOccurrenceMetadata(f.stored.fixture,'test-runtime',1).scanJobMeta),JSON.stringify(first));
+ assert.equal(f.c.readOccurrenceMetadata(f.stored.fixture,'next-runtime',1).scanJobMeta,undefined);
+});
 for(const failure of ['read','hash','size'])test('scan coverage retains '+failure+' omissions beside successful links',async()=>{
  const f=runtime({scanMode:'manual',apikey:''});
  f.c.browser.messages.listAttachments=async()=>[{partName:'1.2',name:'private-name.bin',size:failure==='size'?26*1024*1024:12}];
@@ -76,7 +89,7 @@ test('full source archives explain refusal and preserve prior revisions without 
 for(const [title,keys,count] of [['Hybrid only',{urlscanApikey:''},1],['urlscan only',{apikey:''},1],['both',{},2]])test('opening a message starts '+title+' without a link click',async()=>{
  const f=runtime(keys);await f.s.display({id:7},f.message);await f.s.settled(1);assert.equal(f.s.get(1).state,'completed');
  assert.equal(f.calls.filter(x=>x.submit||x.method==='POST').length,count);
- assert.equal(f.stored.fixture.scanJobMeta.state,'completed');
+ assert.equal(f.c.readOccurrenceMetadata(f.stored.fixture,'test-runtime',1).scanJobMeta.state,'completed');
  const before=f.calls.length;await f.s.display({id:8},f.message);assert.equal(f.calls.length,before);
 });
 for(const [reason,settings] of [['manual',{scanMode:'manual'}],['sender',{scanMode:'approvedSenders'}],['disabled',{externalAnalysisConsent:false}],['policy',{privacyTier:'strict'}],['links_disabled',{autoScanLinks:false}]])test('start requirements: '+reason,async()=>{
@@ -194,7 +207,7 @@ test('later resources retain an earlier provider failure in the final summary',a
  assert.equal(summary.state,'incomplete');
  assert.equal(summary.providers.urlhaus.state,'failed');
  assert.equal(summary.providers.urlhaus.error,'no_result');
- assert.equal(f.stored.fixture.scanJobMeta.providers.urlhaus.state,'failed');
+ assert.equal(f.c.readOccurrenceMetadata(f.stored.fixture,'test-runtime',1).scanJobMeta.providers.urlhaus.state,'failed');
  f.c.checkURLhaus=async()=>false;
  await f.s.request({messageId:1,contextToken:'context'},{tab:{id:7}});
  await f.s.settled(1);

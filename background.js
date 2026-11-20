@@ -179,9 +179,8 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                 // Numeric IDs and metadata alone cannot bind historical findings.
                 const attachments = (saved.attachments || []).filter(item => item.partName && currentParts.has(String(item.partName)) && currentParts.get(String(item.partName)) === item.attachment_name && verifiedHashes.has(String(item.partName)) && typeof item.hybrid_sha256 === 'string' && verifiedHashes.get(String(item.partName)) === item.hybrid_sha256.toLowerCase());
                 const links = saved.links.filter(item => currentLinks.has(canonicalHttpUrl(item.url)));
-                const scanCoverage = Object.fromEntries(Object.entries(saved.scanCoverage || {}).filter(([kind]) => saved.scanCoverageBindings?.[kind]?.runtimeId === getAnalysisRuntimeId() && saved.scanCoverageBindings[kind].messageId === message.id));
-                const threatIntel = saved.threatIntel && (!saved.threatIntelBinding || (saved.threatIntelBinding.runtimeId === getAnalysisRuntimeId() && saved.threatIntelBinding.messageId === message.id)) ? saved.threatIntel : undefined;
-                return {messageHeader:saved.messageHeader, attachments, links, ...(saved.scanJobMeta ? {scanJobMeta:saved.scanJobMeta}:{}), ...(saved.sourceDataIncomplete ? {sourceDataIncomplete:true} : {}), scanCoverage:Object.keys(scanCoverage).length ? scanCoverage : undefined, ...(threatIntel ? {threatIntel} : {})};
+                const {scanCoverage={},threatIntel,scanJobMeta}=readOccurrenceMetadata(saved,getAnalysisRuntimeId(),message.id);
+                return {messageHeader:saved.messageHeader, attachments, links, ...(scanJobMeta ? {scanJobMeta}:{}), ...(saved.sourceDataIncomplete ? {sourceDataIncomplete:true} : {}), scanCoverage:Object.keys(scanCoverage).length ? scanCoverage : undefined, ...(threatIntel ? {threatIntel} : {})};
             };
             const model = ThundyAnalysis.create(ThundyAnalysis.legacy(sourceRecord(record)));
             // Current unreadability must not inherit a historical "checked" state.
@@ -717,10 +716,13 @@ function scanCoverage(detected, eligible, processed, failed, reason) {
 }
 async function persistScanCoverage(message, kind, coverage) {
     const key = (typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id);
-    await updateStore(await getSharedDB(), 'hybridanalysis', key, existing => ({
-        ...(existing || { messageHeader: key }), scanCoverage: { ...(existing?.scanCoverage || {}), [kind]: coverage },
-        ...(typeof ThundyAnalysis !== 'undefined' ? {scanCoverageBindings:{...(existing?.scanCoverageBindings || {}),[kind]:{runtimeId:getAnalysisRuntimeId(),messageId:message.id}}} : {})
-    }));
+    try {
+        await updateStore(await getSharedDB(), 'hybridanalysis', key, existing =>
+            updateOccurrenceMetadata(existing || {messageHeader:key},getAnalysisRuntimeId(),message.id,{scanCoverage:{[kind]:coverage}}));
+    } catch (error) {
+        if (!['OCCURRENCE_METADATA_CAPACITY','OCCURRENCE_METADATA_INVALID'].includes(error?.code)) throw error;
+        Logger.warn('Occurrence coverage could not be stored', error.code);
+    }
 }
 
 async function checkURLhausDomains(filteredUrls, parsedUrlCache = null, coverage = null, analysisContext = null) {
@@ -821,11 +823,8 @@ async function persistThreatIntelSummary(message, summary) {
   if (!message || (!message.headerMessageId && message.id == null)) return;
   const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id;
   try {
-    await updateStore(await getSharedDB(), 'hybridanalysis', key, existing => ({
-      ...(existing || { messageHeader: key }),
-      threatIntel: summary,
-      ...(typeof ThundyAnalysis !== 'undefined' ? { threatIntelBinding: { runtimeId: getAnalysisRuntimeId(), messageId: message.id } } : {})
-    }), { preserveReports: true });
+    await updateStore(await getSharedDB(), 'hybridanalysis', key, existing =>
+      updateOccurrenceMetadata(existing || {messageHeader:key},getAnalysisRuntimeId(),message.id,{threatIntel:summary}));
   } catch (e) {
     Logger.error('Fehler beim Speichern der Threat-Intel-Zusammenfassung:', e);
   }

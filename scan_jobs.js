@@ -230,7 +230,8 @@ const ThundyScans=(()=>{
             if(typeof ThundyApiDiagnostics!=='undefined')for(const [provider,plan] of Object.entries(providers))for(const item of plan.checks)ThundyApiDiagnostics.event(diagnosticRun,'precondition',{provider,state:item.reason?'blocked':'complete',reason:item.reason});
             const fingerprint=await hash({assessmentVersion:2,messageId:message.id,full,hashes,coverage,settings:Object.fromEntries(Object.entries(settings).sort(([a],[b])=>a.localeCompare(b))),providers});
             check();
-            const meta=record?.scanJobMeta, same=meta?.fingerprint===fingerprint;
+            const {scanJobMeta:meta}=readOccurrenceMetadata(record,getAnalysisRuntimeId(),message.id);
+            const same=meta?.fingerprint===fingerprint;
             const pending=record?.links?.some(l=>urls.includes(l.url)&&(l.state==='UPLOADED'||ThundyProviderResults.urlscanPending(l.urlscan)))||record?.attachments?.some(a=>hashes[a.partName]===a.hybrid_sha256&&a.state==='UPLOADED');
             const reusable=same&&!pending&&meta.state==='completed'&&Date.now()-meta.finishedAt<900000?{...meta,providers,pending:false}:!options.manual&&pending&&!Object.values(providers).some(p=>p.checks.some(c=>!c.reason))?{state:meta?.errors?'incomplete':'pending',errors:meta?.errors||0,providers,pending:true,finishedAt:Date.now(),total:meta?.total||0,completed:meta?.completed||0}:null;
             return {diagnosticRun,reusable,pending:!!pending,message:{...message,headerMessageId:key},settings,full,attachments,urls,localUrls,key,context,hashes,record,fingerprint,providers,coverage};
@@ -248,12 +249,15 @@ const ThundyScans=(()=>{
             const work=await tasks(job);job.total=work.length;await changed();let index=0;
             await Promise.all(Array.from({length:Math.min(4,work.length)},async()=>{while(index<work.length){assert(job);const task=work[index++];await lane(task.provider,async()=>{assert(job);const state=job.providers[task.provider];if(state.state!=='failed')state.state='running';await changed();try{await task.run();assert(job);if(state.state!=='failed')state.state='checked';}catch(error){assert(job);job.errors++;state.state='failed';state.error=state.error==='rate_limited'?'rate_limited':['rate_limited','invalid_key','no_result','result_gone'].includes(error.code||error.message)?error.code||error.message:'provider_error';}finally{if(coordinator.active(job)){job.completed++;await changed();}}});}}));
             assert(job);
-            if(job.domains.length||job.ips.length)await record(job,old=>({...old,threatIntel:{urlhausDomains:job.domains,maliciousIps:job.ips,observedAt:Date.now()},threatIntelBinding:{runtimeId:getAnalysisRuntimeId(),messageId:p.message.id}}));
+            if(job.domains.length||job.ips.length)await record(job,old=>
+                updateOccurrenceMetadata(old,getAnalysisRuntimeId(),p.message.id,{threatIntel:{urlhausDomains:job.domains,maliciousIps:job.ips,observedAt:Date.now()}}))
+                .catch(()=>coordinator.assert(job));
             assert(job);
             if(job.riskTimer){clearTimeout(job.riskTimer);job.riskTimer=null;}await updateRisk(job);
         },
         async changed(job,summary){if(!coordinator.current(job))return;const p=job.prepared;if(typeof ThundyApiDiagnostics!=='undefined'){ThundyApiDiagnostics.event(p.diagnosticRun,'assessment',{state:summary.state==='completed'?'complete':summary.state==='queued'?'running':summary.state,reason:summary.reason});ThundyApiDiagnostics.endRun(p.diagnosticRun,['completed','blocked','incomplete','failed'].includes(summary.state)?summary.state==='completed'?'complete':summary.state:'running');}p.context.scanJob={...summary,migration:!p.settings.scanMode,manualAllowed:p.settings.externalAnalysisConsent===true};
-            if(!p.context.disposed){p.context.schedule();await record(job,old=>({...old,scanJobMeta:{...summary,fingerprint:job.fingerprint}}),!['queued','running'].includes(summary.state)).catch(()=>{});}
+            if(!p.context.disposed){p.context.schedule();await record(job,old=>
+                updateOccurrenceMetadata(old,getAnalysisRuntimeId(),p.message.id,{scanJobMeta:{...summary,fingerprint:job.fingerprint}}),!['queued','running'].includes(summary.state)).catch(()=>{});}
         }
     });
     async function display(tab,message){
