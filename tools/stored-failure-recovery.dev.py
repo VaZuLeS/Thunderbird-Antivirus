@@ -15,7 +15,7 @@ def check(m, base, out, report, display, wait, open_page, native_click):
       w.__storedFailureProbe={bg,db,key,original,audit,fetch:bg.fetch,calls:0};bg.fetch=async()=>{w.__storedFailureProbe.calls++;throw Error('Unexpected provider request');};
       await b.runtime.sendMessage({action:'clearMemoryCaches'});
       const full=await bg.getAnalysisFull(message.id),urls=bg.filterUrls(bg.extractUrls(bg.extractTextFromParts(full.parts||full)));if(!urls.length)throw Error('Missing fixture URL');
-      await bg.updateStore(db,'hybridanalysis',key,old=>({...old,messageHeader:key,attachments:[],sourceDataIncomplete:false,links:[{url:urls[0],state:'UPLOADED',report:{state:'ERROR'},report_fetched_at:new Date(Date.now()-60000).toISOString()}],analysisSourceSnapshots:{}}));
+      await bg.updateStore(db,'hybridanalysis',key,old=>({...old,messageHeader:key,attachments:[],sourceDataIncomplete:false,links:[{url:urls[0],state:'UPLOADED',report:{state:'ERROR'},report_fetched_at:new Date(Date.now()-60000).toISOString()}],analysisSourceSnapshots:{}}),bg.messageReportOptions(message));
       const ready=await bg.getMessageAnalysisContext(message,tabId),context=ready.wrappedJSObject||ready;w.__storedFailureProbe.context=context;
       const initial=await context.snapshot(),row=initial.rows.find(row=>row.provider==='hybridanalysis'&&row.resource==='link:0');
       if(row?.state!=='failed'||row.verdict!=='unknown'||row.failures!==1)throw Error('Missing stored failed baseline');
@@ -28,7 +28,7 @@ def check(m, base, out, report, display, wait, open_page, native_click):
         wait(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector("[data-provider=hybridanalysis] .service-results")?.textContent===arguments[0];',[prepared['failed']]))
         m.js('window.gTabmail.switchToTab(arguments[0]);',[probe_tab])
         recovered=m.page('''return (async()=>{const w=window.wrappedJSObject,p=w.__storedFailureProbe,b=w.browser;
-          await p.bg.updateStore(p.db,'hybridanalysis',p.key,old=>({...old,links:old.links.map(link=>({...link,state:'KNOWN',report:{finished:true,verdict:'malicious',threat_score:85},report_fetched_at:new Date().toISOString()}))}));
+          await p.bg.updateStore(p.db,'hybridanalysis',p.key,old=>({...old,links:old.links.map(link=>({...link,state:'KNOWN',report:{finished:true,verdict:'malicious',threat_score:85},report_fetched_at:new Date().toISOString()}))}),p.bg.messageReportOptions(p.message));
           await p.context.flush();const after=await p.context.snapshot(),again=await p.context.snapshot(),row=after.rows.find(row=>row.provider==='hybridanalysis'&&row.resource==='link:0');
           const saved=await p.bg.getFromStore(p.db,'hybridanalysis',p.key),written=saved.analysisSourceSnapshots[p.context.snapshotId]?.snapshot.rows.find(row=>row.provider==='hybridanalysis'&&row.resource==='link:0');
           const findings=await p.bg.collectLinkFindings(p.message);

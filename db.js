@@ -1,6 +1,7 @@
 const REPORT_ARCHIVE_ENTRIES = 128;
 const REPORT_ARCHIVE_BYTES = 2 * 1024 * 1024;
 const REPORT_CAPTURE_BYTES = 4 * 1024 * 1024;
+const REPORT_OCCURRENCE_LIMIT = 64;
 const reportArchiveBlockedKeys = new Set();
 function noteReportArchiveBlocked(key, notify = true) {
     if (!reportArchiveBlockedKeys.has(key) && reportArchiveBlockedKeys.size >= 1000) reportArchiveBlockedKeys.delete(reportArchiveBlockedKeys.values().next().value);
@@ -63,6 +64,83 @@ function preserveReportRevisions(before, updated, now = Date.now()) {
     return {...updated,analysisReportArchive:archive};
 }
 
+const occurrenceReportFields = ['attachments','links','analysisReportArchive'];
+
+function* reportHistoryEntries(source, includeCurrent) {
+    if (includeCurrent) for (const [kind,field] of [['attachment','attachments'],['link','links']]) {
+        for (const resource of Array.isArray(source?.[field]) ? source[field] : []) {
+            if (resource && (resource.report || resource.hybrid_verdict || resource.urlscan || resource.virustotal_stats)) {
+                yield {kind,resource};
+            }
+        }
+    }
+    const archive = source?.analysisReportArchive;
+    if (archive?.schemaVersion === 1 && Array.isArray(archive.entries)) {
+        yield* archive.entries.slice(0, REPORT_ARCHIVE_ENTRIES);
+    }
+}
+
+function* occurrenceReportHistory(record, area, current, scope) {
+    yield* reportHistoryEntries(current, false);
+    yield* reportHistoryEntries(record, true);
+    if (area?.schemaVersion !== 1) return;
+    const [runtime] = JSON.parse(scope);
+    for (const [key,previous] of Object.entries(area.entries || {}).slice(0, REPORT_OCCURRENCE_LIMIT)) {
+        let binding;
+        try { binding = JSON.parse(key); } catch (_) { continue; }
+        if (Array.isArray(binding) && binding.length === 2 && typeof binding[0] === 'string' && binding[0] &&
+            binding[0] !== runtime && Number.isSafeInteger(binding[1]) && binding[1] > 0) yield* reportHistoryEntries(previous, true);
+    }
+}
+
+function projectOccurrenceReports(record, scope, includeHistory = false) {
+    if (!record || !scope) return record;
+    const area=record.analysisOccurrenceReports;
+    const current=area?.schemaVersion===1 && Object.hasOwn(area.entries || {},scope) ? area.entries[scope] : null;
+    const view={...record};
+    delete view.analysisOccurrenceReports;
+    for (const field of occurrenceReportFields) {
+        delete view[field];
+        if (current?.[field] != null) view[field]=current[field];
+    }
+    if (includeHistory) {
+        const entries = [];
+        let truncated = false;
+        // The history screen has a row limit. Protection searches all retained reports of the requested resource kind.
+        for (const entry of occurrenceReportHistory(record, area, current, scope)) {
+            if (includeHistory === true && entries.length >= REPORT_ARCHIVE_ENTRIES) {
+                truncated = true;
+                break;
+            }
+            if (includeHistory === true || entry?.kind === includeHistory) entries.push(entry);
+        }
+        if (entries.length) view.analysisReportArchive = {schemaVersion: 1, entries, truncated};
+    }
+    return view;
+}
+
+function commitOccurrenceReports(original, scoped, scope) {
+    const area=original?.analysisOccurrenceReports;
+    if (area!=null && (area.schemaVersion!==1 || !area.entries || typeof area.entries!=='object' || Array.isArray(area.entries))) throw reportArchiveError();
+    const entries=area?.entries || {};
+    const previous=entries[scope];
+    if (Object.hasOwn(entries,scope) && (!previous || typeof previous!=='object' || Array.isArray(previous))) throw reportArchiveError();
+    const updated={...scoped};
+    delete updated.analysisOccurrenceReports;
+    const reports={...previous};
+    for (const field of occurrenceReportFields) {
+        if (Object.hasOwn(scoped,field)) reports[field]=scoped[field];
+        else delete reports[field];
+        if (Object.hasOwn(original || {},field)) updated[field]=original[field];
+        else delete updated[field];
+    }
+    if (!previous && !Object.keys(reports).length) return area ? {...updated,analysisOccurrenceReports:area} : updated;
+    if (!previous && Object.keys(entries).length>=REPORT_OCCURRENCE_LIMIT) throw reportArchiveError();
+    const next={...entries,[scope]:reports};
+    reportJsonCopy(next,REPORT_CAPTURE_BYTES);
+    return {...updated,analysisOccurrenceReports:{...area,schemaVersion:1,entries:next}};
+}
+
 class DatabaseDAO {
     constructor(dbName = "thunderbird_av", version = 3) {
         this.dbName = dbName;
@@ -112,13 +190,16 @@ class DatabaseDAO {
             transaction.onerror = transaction.onabort = failed;
 
             request.onsuccess = function () {
-                const record = request.result;
+                const original = request.result;
                 let updatedRecord;
                 try {
+                    const scope=storeName==='hybridanalysis' ? options.reportScope : null;
+                    const record=projectOccurrenceReports(original,scope);
                     const before = options.preserveReports && storeName === 'hybridanalysis' ? captureReportState(record) : null;
                     preservationNeeded = !!before && (before.resources.length > 0 || before.archive != null);
                     updatedRecord = updateFn(record);
                     if (before && updatedRecord) updatedRecord = preserveReportRevisions(before, updatedRecord);
+                    if (scope && updatedRecord) updatedRecord=commitOccurrenceReports(original,updatedRecord,scope);
                 }
                 catch (error) { if (preservationNeeded || error?.code === 'REPORT_ARCHIVE_BLOCKED') noteReportArchiveBlocked(key); reject(error); transaction.abort(); return; }
                 if (!updatedRecord) { reject(new Error('Cannot update a missing record')); transaction.abort(); return; }
@@ -142,14 +223,16 @@ class DatabaseDAO {
         return storePromise;
     }
 
-    getFromStore(db, storeName, key) {
+    getFromStore(db, storeName, key, options = {}) {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([storeName], "readonly");
             const store = transaction.objectStore(storeName);
             const request = store.get(key);
 
             request.onsuccess = function () {
-                resolve(request.result);
+                try {
+                    resolve(projectOccurrenceReports(request.result,storeName==='hybridanalysis' ? options.reportScope : null,options.includeHistory));
+                } catch (error) { reject(error); }
             };
 
             request.onerror = function (e) {
@@ -211,8 +294,8 @@ function updateStore(db, storeName, key, updateFn, options = {}) {
     return defaultDAO.updateStore(db, storeName, key, updateFn, options);
 }
 
-function getFromStore(db, storeName, key) {
-    return defaultDAO.getFromStore(db, storeName, key);
+function getFromStore(db, storeName, key, options = {}) {
+    return defaultDAO.getFromStore(db, storeName, key, options);
 }
 
 function putToStore(db, storeName, item) {

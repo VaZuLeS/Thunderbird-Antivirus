@@ -12,14 +12,14 @@ def check(m, base, out, report, display, wait_for, open_page, native_click, nati
       const hash=await bg.get_sha256_hash(bytes),key=bg.resolveMessageStorageKey(message),db=await bg.getSharedDB();
       const original=await bg.getFromStore(db,'hybridanalysis',key),settings=await b.storage.local.get(['externalAnalysisConsent','thundySecurityV1']);
       const sec=settings.thundySecurityV1||{schemaVersion:1,policy:{enabled:false,threshold:50,unknown:'warn',revision:0}};
-      const p=w.__attachTest={bg,b,db,key,original,settings,sec,fetch:bg.fetch,providerCalls:0};
+      const p=w.__attachTest={bg,b,db,key,original,scope:bg.messageReportOptions(message),settings,sec,fetch:bg.fetch,providerCalls:0};
       p.onMenu=(info,tab)=>{if(info.menuItemId==='save-attachment-thundy')p.menu={tabId:tab?.id,parts:info.attachments?.map(item=>item.partName)};};
       b.menus.onClicked.addListener(p.onMenu);
       bg.fetch=async()=>{p.providerCalls++;throw Error('Unexpected provider request');};
       const policy={mode:'block',threshold:70,unknown:'warn',revision:1};
       await b.storage.local.set({externalAnalysisConsent:false,thundySecurityV1:{...sec,attachmentPolicy:policy}});await bg.loadSettings();
       await bg.updateStore(db,'hybridanalysis',key,old=>({...old,analysisReportArchive:{schemaVersion:1,entries:[]},attachments:old.attachments.map(a=>a.partName===part.partName?
-        {...a,hybrid_sha256:hash,state:'KNOWN',assessment:null,report:{state:'SUCCESS',sha256:hash,threat_score:70}}:a)}));
+        {...a,hybrid_sha256:hash,state:'KNOWN',assessment:null,report_fetched_at:new Date().toISOString(),report:{state:'SUCCESS',sha256:hash,threat_score:70}}:a)}),p.scope);
       const downloads=(await b.downloads.search({})).map(item=>item.id);
       await b.messageDisplay.open({messageId:message.id,location:'tab'});
       return {hash,part:part.partName,downloads};
@@ -38,11 +38,15 @@ def check(m, base, out, report, display, wait_for, open_page, native_click, nati
           if(!button)return false;section.open=true;button.click();return true;'''
 
         def replace_score(score):
-            m.page('''return (async()=>{
+            saved = m.page('''return (async()=>{
               const p=window.wrappedJSObject.__attachTest;
               await p.bg.updateStore(p.db,'hybridanalysis',p.key,old=>({...old,attachments:old.attachments.map(a=>a.partName===arguments[0]?
-                {...a,assessment:null,report:{state:'SUCCESS',sha256:arguments[1],threat_score:arguments[2]}}:a)}));
+                {...a,assessment:null,report_fetched_at:new Date(Math.max(Date.now(),Date.parse(a.report_fetched_at)+1)).toISOString(),
+                 report:{state:'SUCCESS',sha256:arguments[1],threat_score:arguments[2]}}:a)}),{...p.scope,preserveReports:true});
+              const view=await p.bg.getFromStore(p.db,'hybridanalysis',p.key,p.scope);
+              return view.attachments.find(a=>a.partName===arguments[0])?.report.threat_score;
             })();''',[arrangement['part'],arrangement['hash'],score],browser=settings_browser)
+            assert saved==score, saved
 
         def check_block(name):
             wait_for(lambda:m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.startsWith(arguments[0]);',[base+'attachment_download.html#']))
@@ -69,8 +73,15 @@ def check(m, base, out, report, display, wait_for, open_page, native_click, nati
                 m.js('window.gTabmail.switchToTab(arguments[0]);',[dialog_index])
                 replace_score(12)
                 m.page('document.getElementById("attachmentRefresh").click();')
-                wait_for(lambda:m.page('''return !document.getElementById("attachmentSaveForm").hidden&&
-                  document.getElementById("attachmentScore").textContent==="12 / 100";'''))
+                try:
+                    wait_for(lambda:m.page('''return !document.getElementById("attachmentSaveForm").hidden&&
+                      document.getElementById("attachmentScore").textContent==="12 / 100";'''))
+                except TimeoutError:
+                    state=m.page('''return (async()=>{const w=window.wrappedJSObject;
+                      const response=await w.browser.runtime.sendMessage({action:"attachmentDownloadCommand",op:"status",challenge:location.hash.slice(1)});
+                      return {code:response.code,mode:response.details?.mode,score:response.details?.score,
+                        source:response.details?.source,status:document.getElementById("attachmentStatus").textContent};})();''')
+                    raise AssertionError(state) from None
                 assert native_dialogs(display)==dialogs_before, 'A refresh opened an OS save picker'
                 assert m.page('return document.activeElement?.id;')=='attachmentRefresh'
                 replace_score(70)
@@ -110,7 +121,7 @@ def check(m, base, out, report, display, wait_for, open_page, native_click, nati
         m.js('window.gTabmail.switchToTab(arguments[0]);',[options_index])
         m.page("""return (async()=>{const p=window.wrappedJSObject.__attachTest;
           await p.bg.updateStore(p.db,'hybridanalysis',p.key,old=>({...old,attachments:old.attachments.map(a=>a.partName===arguments[0]
-            ? {...a,hybrid_sha256:'f'.repeat(64),report:{state:'SUCCESS',sha256:'f'.repeat(64),threat_score:5}} : a)}),{preserveReports:true});
+            ? {...a,hybrid_sha256:'f'.repeat(64),report:{state:'SUCCESS',sha256:'f'.repeat(64),threat_score:5}} : a)}),{...p.scope,preserveReports:true});
         })();""",[arrangement['part']])
         switch_message()
         wait_for(lambda:m.page(button_click,[arrangement['part']]))

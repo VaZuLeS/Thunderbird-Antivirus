@@ -57,7 +57,7 @@ describe('popup consent enforcement (P0-7)', () => {
     wrapped += '; globalThis.hasExternalAnalysisConsent = hasExternalAnalysisConsent;\n';
     wrapped += '; globalThis.renderStoredResultWithoutConsent = renderStoredResultWithoutConsent;\n';
     wrapped += '; globalThis.__setConsent = (value) => { externalAnalysisConsent = value === true; };\n';
-    vm.runInContext(wrapped, context);
+    vm.runInContext(fs.readFileSync(path.join(ROOT, 'provider_results.js'), 'utf8') + '\n' + wrapped, context);
 
     fetch_hybrid_report = context.fetch_hybrid_report;
     hybrid_report_cache = context.hybrid_report_cache;

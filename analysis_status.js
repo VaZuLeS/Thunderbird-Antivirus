@@ -271,7 +271,7 @@ const ThundyAnalysis = (() => {
             for (const entry of archived.entries.slice(0,128)) {
                 if (entry?.resource && ['attachment','link'].includes(entry.kind)) add(legacy({[entry.kind === 'attachment' ? 'attachments' : 'links']:[entry.resource]}));
             }
-            result.truncated ||= archived.entries.length > 128;
+            result.truncated ||= archived.truncated === true || archived.entries.length > 128;
         }
         for (const map of [record.analysisStatusByMessage,record.analysisSourceSnapshots]) {
             if (!map || typeof map !== 'object') continue;

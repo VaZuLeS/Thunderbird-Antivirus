@@ -1,5 +1,6 @@
 let popupAnalysisContext = null;
 let popupMessageId = null;
+let popupReportScope = null;
 const popupLinkResources = new Map();
 function uiText(key, fallback, params = []) {
     return typeof ThundyI18n !== 'undefined' ? ThundyI18n.get(key, params) : params.reduce((text, value, i) => text.replaceAll('$' + (i + 1), String(value)), fallback);
@@ -259,14 +260,18 @@ if (!externalAnalysisConsent && apiContainer) {
 refreshStoredResults = async () => {
 try {
 
-    const db = await openDB('thunderbird_av', 3);
+    let db;
     try {
             let record;
             if (typeof ThundyAnalysis !== 'undefined') {
                 const result = await browser.runtime.sendMessage({action:'getMessageAnalysisRecord',messageId:message.id});
                 if (!result?.success) throw new Error('Message resource inventory unavailable');
+                popupReportScope=result.reportScope || null;
                 record = result.record;
-            } else record = await getFromStore(db, 'hybridanalysis', message.headerMessageId);
+            } else {
+                db = await openDB('thunderbird_av', 3);
+                record = await getFromStore(db, 'hybridanalysis', message.headerMessageId);
+            }
             if (typeof ThundyAnalysis !== 'undefined' && typeof ThundyAnalysis.resources === 'function') record = ThundyAnalysis.resources(record);
             popupLinkResources.clear();
             for (const [index,item] of (record?.links || []).entries()) popupLinkResources.set(item.url, item.analysisResourceRef || 'link:' + index);
@@ -373,7 +378,7 @@ try {
                 emptyCard.appendChild(p1);
                 container.appendChild(emptyCard);
             }
-    } finally { db.close(); }
+    } finally { db?.close(); }
 } catch (error) {
     // Do not log raw provider data, URLs, keys or potentially sensitive errors.
     console.error('Thundy popup analysis load failed', error instanceof TypeError ? 'invalid-data' : 'unavailable');
@@ -968,7 +973,10 @@ function hasExternalAnalysisConsent() {
 const HYBRID_QUICK_SCAN_ID = /^[A-Za-z0-9_-]{1,128}$/;
 
 async function fetch_hybrid_report(hybrid_sha, resource = null, quickScanId = null) {
-    const reportContext = popupAnalysisContext ? {diagnosticContext:popupAnalysisContext,scopeOverride:'report', event:event => { if (event.phase === 'finish' && event.state !== 'failed' && Number.isFinite(event.observedAt)) ThundyAnalysis.cacheTime('hybridanalysis','report',hybrid_sha,event.observedAt); return popupAnalysisContext.event({...event,resource}); }} : null;
+    const rawId = typeof quickScanId === 'string' ? quickScanId : '';
+    const qsId = HYBRID_QUICK_SCAN_ID.test(rawId) && !['MANUAL_CHECK', 'PENDING_UPLOAD', 'N/A'].includes(rawId) ? rawId : null;
+    const cacheKey = qsId ? JSON.stringify([hybrid_sha, qsId]) : hybrid_sha;
+    const reportContext = popupAnalysisContext ? {diagnosticContext:popupAnalysisContext,scopeOverride:'report', event:event => { if (event.phase === 'finish' && event.state !== 'failed' && Number.isFinite(event.observedAt)) ThundyAnalysis.cacheTime('hybridanalysis','report',cacheKey,event.observedAt); return popupAnalysisContext.event({...event,resource}); }} : null;
     if (!hasExternalAnalysisConsent()) {
         if(typeof ThundyApiDiagnostics!=='undefined')await ThundyApiDiagnostics.note(popupAnalysisContext,'hybridanalysis','precondition',{state:'blocked',reason:'disabled'});
         throw new Error('external-analysis-disabled');
@@ -977,12 +985,12 @@ async function fetch_hybrid_report(hybrid_sha, resource = null, quickScanId = nu
         const current = await browser.storage.local.get('externalAnalysisConsent');
         if (current.externalAnalysisConsent !== true || !await browser.permissions.contains({ origins: ['https://hybrid-analysis.com/*'] })) {if(typeof ThundyApiDiagnostics!=='undefined')await ThundyApiDiagnostics.note(popupAnalysisContext,'hybridanalysis','precondition',{state:'blocked',reason:current.externalAnalysisConsent!==true?'disabled':'permission'});throw new Error(uiText('errorHostPermissionMissing', 'Host permission missing'));}
     }
-    if (hybrid_report_cache.has(hybrid_sha)) {
-        const cached = await hybrid_report_cache.get(hybrid_sha);
+    if (hybrid_report_cache.has(cacheKey)) {
+        const cached = await hybrid_report_cache.get(cacheKey);
         if(typeof ThundyApiDiagnostics!=='undefined')await ThundyApiDiagnostics.note(popupAnalysisContext,'hybridanalysis','cache',{state:'complete'});
         if (popupAnalysisContext && typeof ThundyAnalysis !== 'undefined') {
             const classified = ThundyAnalysis.response({ provider: 'hybridanalysis', scope: 'report' }, cached.response.status, cached.json_data);
-            reportContext.event({ phase: 'cache', provider: 'hybridanalysis', scope: 'report', ...classified, observedAt: ThundyAnalysis.cacheTime('hybridanalysis', 'report', hybrid_sha) }).catch(() => {});
+            reportContext.event({ phase: 'cache', provider: 'hybridanalysis', scope: 'report', ...classified, observedAt: ThundyAnalysis.cacheTime('hybridanalysis', 'report', cacheKey) }).catch(() => {});
         }
         return cached;
     }
@@ -1010,25 +1018,23 @@ async function fetch_hybrid_report(hybrid_sha, resource = null, quickScanId = nu
             let result = await request(options.url);
             // A fresh quick-scan submission is often not yet known to the
             // overview endpoint. Its scanner state lives under /quick-scan/{id}.
-            const qsId = quickScanId != null ? String(quickScanId) : '';
-            if (result.response.status === 404 && HYBRID_QUICK_SCAN_ID.test(qsId) && !['MANUAL_CHECK', 'PENDING_UPLOAD', 'N/A'].includes(qsId)) {
+            if (result.response.status === 404 && qsId) {
                 const quick = await request('https://hybrid-analysis.com/api/v2/quick-scan/' + encodeURIComponent(qsId));
                 if (quick.response.status === 200 && quick.json_data && typeof quick.json_data === 'object' && !Array.isArray(quick.json_data)) {
                     result = { response: quick.response, json_data: { ...quick.json_data, sha256: quick.json_data.sha256 || hybrid_sha }, source: 'quick-scan' };
                 }
             }
-            if (result.response.status !== 200) {
-                hybrid_report_cache.delete(hybrid_sha);
-            }
+            const complete = result.response.status === 200 && ThundyProviderResults.evaluate('hybridanalysis', result.json_data).completion === 'complete';
+            if (!complete && hybrid_report_cache.get(cacheKey) === fetchPromise) hybrid_report_cache.delete(cacheKey);
 
             return result;
         } catch (error) {
-            hybrid_report_cache.delete(hybrid_sha);
+            if (hybrid_report_cache.get(cacheKey) === fetchPromise) hybrid_report_cache.delete(cacheKey);
             throw error;
         }
     })();
 
-    hybrid_report_cache.set(hybrid_sha, fetchPromise);
+    hybrid_report_cache.set(cacheKey, fetchPromise);
     return fetchPromise;
 }
 
@@ -1225,7 +1231,13 @@ function handle_hybrid_report_fetch_error(error, attachmentName, targetContainer
  * report data is already on the machine, so this never violates the consent
  * rules. Returns true when the record was updated.
  */
-async function persistHybridReport({ headerMessageId, sha256, attachmentName, report, fetchedAt = null, jobId = null, submissionId = null, generation = hybridReportGeneration }) {
+async function persistHybridReport({ headerMessageId, sha256, attachmentName, report, fetchedAt = null, jobId = null, submissionId = null, generation = hybridReportGeneration, messageId, partName, quickScanId, reportScope }) {
+    if (typeof ThundyAnalysis !== 'undefined') {
+        if (hybridReportDisposed || generation!==hybridReportGeneration || !reportScope) return false;
+        const result=await browser.runtime.sendMessage({action:'savePopupHybridReport',messageId,headerMessageId,reportScope,
+            sha256,partName,url:partName ? undefined : attachmentName,report,jobId,submissionId,quickScanId});
+        return result?.success===true;
+    }
     if (!headerMessageId || !report || typeof updateStore !== 'function' || typeof openDB !== 'function') return false;
     try {
         const db = await openDB('thunderbird_av', 3);
@@ -1325,7 +1337,7 @@ function scheduleHybridReportPoll(params, targetContainer, replaceNode) {
     }, HYBRID_REPORT_POLL_DELAY_MS);
 }
 
-async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null, urlscan = null, jobId = null, submissionId = null, quickScanId = null, _attempt = 1 }, targetContainer, replaceNode = null) {
+async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null, urlscan = null, jobId = null, submissionId = null, quickScanId = null, reportScope = popupReportScope, _attempt = 1 }, targetContainer, replaceNode = null) {
     const generation = hybridReportGeneration;
     if (hybridReportDisposed) return;
     try {
@@ -1334,7 +1346,8 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
 
         if (response.status === 200) {
             const reportNode = render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, json_data, jobId, submissionId, attempt: _attempt }, targetContainer, replaceNode);
-            const saved = await persistHybridReport({ headerMessageId, sha256: hybrid_sha, attachmentName, report: json_data, jobId, submissionId, generation });
+            const saved = await persistHybridReport({ headerMessageId, sha256: hybrid_sha, attachmentName, report: json_data,
+                messageId:Number.isInteger(messageId)?messageId:popupMessageId,partName,jobId,submissionId,quickScanId,reportScope,generation });
             if (hybridReportDisposed || generation !== hybridReportGeneration) return;
             if (headerMessageId && !saved && reportNode) {
                 const status = document.createElement('p'); status.setAttribute('role', 'status');
@@ -1348,12 +1361,12 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
                 }
             }
             if (json_data && isHybridReportInProgress(json_data) && _attempt < HYBRID_REPORT_POLL_MAX_ATTEMPTS) {
-                scheduleHybridReportPoll({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, jobId, submissionId, quickScanId, _attempt: _attempt + 1 }, targetContainer, reportNode);
+                scheduleHybridReportPoll({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, jobId, submissionId, quickScanId, reportScope, _attempt: _attempt + 1 }, targetContainer, reportNode);
             }
         } else if (response.status === 404 && (jobId || submissionId) && _attempt < HYBRID_REPORT_POLL_MAX_ATTEMPTS) {
             const pendingReport = { state: 'IN_PROGRESS', sha256: hybrid_sha, job_id: jobId, submission_id: submissionId };
             const reportNode = render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, json_data: pendingReport, jobId, submissionId, attempt: _attempt }, targetContainer, replaceNode);
-            scheduleHybridReportPoll({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, jobId, submissionId, quickScanId, _attempt: _attempt + 1 }, targetContainer, reportNode);
+            scheduleHybridReportPoll({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, jobId, submissionId, quickScanId, reportScope, _attempt: _attempt + 1 }, targetContainer, reportNode);
         } else {
             handle_hybrid_report_error(response, attachmentName, targetContainer, json_data);
         }
@@ -1363,6 +1376,7 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
 }
 
 function handleUrlScanClick(btn, url, urlId, headerMessageId, urlscan = null) {
+    const reportScope = popupReportScope;
     let statusEl = document.getElementById(`upload-status-${urlId}`);
     btn.disabled = true;
     btn.setAttribute('aria-busy', 'true');
@@ -1387,7 +1401,7 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId, urlscan = null) {
                 // response.data.sha256 enthält den sha256-Hash des URL-Scans
                 get_hybrid_report_by_sha256({
                     hybrid_sha: response.data.sha256,
-                    attachmentName: url, headerMessageId,
+                    attachmentName: url, headerMessageId, reportScope,
                     urlscan,
                     jobId: response.data?.job_id || (Array.isArray(response.data?.reports) && response.data.reports[0]) || response.data?.id,
                     quickScanId: response.data?.id,
@@ -1487,6 +1501,7 @@ function renderManualUrlScanUI(url, headerMessageId, targetContainer, urlscan = 
 function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null }) {
     const handler = function() {
         let btn = this;
+        const reportScope = popupReportScope;
         let statusId = `upload-status-${safeHash}`;
         let statusEl = document.getElementById(statusId);
         btn.disabled = true;
@@ -1520,7 +1535,7 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
                         messageId: messageId,
                         partName: partName,
                         headerMessageId: headerMessageId,
-                        virustotal_stats: virustotal_stats
+                        reportScope, virustotal_stats: virustotal_stats
                     });
                 }, 3000);
             } else {

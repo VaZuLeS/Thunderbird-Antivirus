@@ -459,6 +459,9 @@ function evaluateLinkFindings(findings, score, reasons) {
             score += 35;
             addReason(reasons, "reasonSuspiciousLinkVerdict", "Link \"$1\" wurde von $2 als verdächtig eingestuft.", [displayUrl, provider]);
         }
+        if (finding.source==='archive' && ['malicious','suspicious'].includes(finding.verdict)) {
+            reasons[reasons.length-1]=uiText('checkOrigin_stored','Gespeicherter Befund')+' · '+reasons.at(-1);
+        }
     }
     return score;
 }
