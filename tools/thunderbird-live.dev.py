@@ -1732,15 +1732,22 @@ def check_report_archive(m, base, out, report, restart, display):
       const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
       const target=(await b.messages.query({subject:"Thundy report archive B"})).messages.find(item=>item.subject==="Thundy report archive B");
       const a=(await b.messages.query({subject:"Thundy report archive A"})).messages.find(item=>item.subject==="Thundy report archive A");
-      const raw=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",target.headerMessageId);
+      const db=await bg.getSharedDB(),url=arguments[2];
+      const raw=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId);
       const record=raw.analysisOccurrenceReports.entries[arguments[1]],original=raw.analysisOccurrenceReports.entries[arguments[0]];
       const snapshot=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:target.id});
       const attachments=await bg.collectAttachmentFindings(a),links=await bg.collectLinkFindings(a);
+      await bg.updateStore(db,"hybridanalysis",a.headerMessageId,record=>({...record,
+        links:[{url,state:"UPLOADED",report:{finished:false,verdict:"clean"},report_fetched_at:"2026-10-04T08:00:00.000Z"}]}),bg.messageReportOptions(a));
+      const pending=await bg.collectLinkFindings(a);
+      await bg.persistHybridLinkVerdict(a,url,{status:"CLEAN",check:{outcome:"success",observedAt:Date.parse("2026-10-05T08:00:00Z")}});
+      const finished=await bg.collectLinkFindings(a);
       return {archiveEntries:record.analysisReportArchive.entries.length,originalA:original.attachments[0].report.details.nested[2].retained,originalB:record.analysisReportArchive.entries.some(entry=>entry.resource.report?.details?.originalB),currentClean:record.attachments[0].report.verdict==="clean",activeRows:snapshot.rows.length,historicalUnbound:snapshot.sourceHistory.rows.every(row=>row.resource===null),historyTruncated:snapshot.sourceHistory.truncated,
         retainedAttachmentWarning:attachments.some(item=>item.source==="archive"&&item.verdict==="malicious"&&item.observedAt===Date.parse("2026-10-02T08:00:00Z")),
-        retainedExactUrlWarning:links.length===1&&links[0].url===arguments[2]&&links[0].verdict==="malicious"&&links[0].source==="archive"};
+        retainedExactUrlWarning:links.length===1&&links[0].url===url&&links[0].verdict==="malicious"&&links[0].source==="archive",
+        pendingRetainsWarning:pending.some(item=>item.url===url&&item.source==="archive"),completedSupersedesWarning:finished.every(item=>item.url!==url)};
     })();''',[before['scopeA'],before['scopeB'],archived_url])
-    assert after['archiveEntries'] == 128 and after['activeRows'] == 0 and all(after[key] for key in ['originalA', 'originalB', 'currentClean', 'historicalUnbound', 'historyTruncated', 'retainedAttachmentWarning', 'retainedExactUrlWarning']), after
+    assert after['archiveEntries'] == 128 and after['activeRows'] == 0 and all(after[key] for key in ['originalA', 'originalB', 'currentClean', 'historicalUnbound', 'historyTruncated', 'retainedAttachmentWarning', 'retainedExactUrlWarning', 'pendingRetainsWarning', 'completedSupersedesWarning']), after
     report['reportArchive'] = {'passed': True, 'syntheticProtocols': True, 'liveProviderCalls': False, 'realMimeIndexedDBPopupRestart': True, 'popupWriteScope': 'Native popup RPC and scoped DAO', 'before': before, 'popupAndCapacity': saved, 'afterRestart': after, 'warningVisibleInMessageAndPopup': True, 'scope': 'Bounded revisions per occurrence. Historical warnings use matching resources across the retained archive.'}
     return m
 

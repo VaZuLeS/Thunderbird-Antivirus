@@ -945,9 +945,8 @@ function savedLinkAssessments(record, urls = null) {
         if (!url || urls && !urls.has(url)) continue;
         const earlier = ThundyProviderResults.resource(entry.resource);
         if (!['malicious', 'suspicious'].includes(earlier.verdict)) continue;
-        const latest = current.get(url);
-        const superseded = latest?.provider === earlier.provider && latest.completion === 'complete' && latest.verdict !== 'unknown' &&
-            Number.isFinite(latest.observedAt) && Number.isFinite(earlier.observedAt) && latest.observedAt > earlier.observedAt;
+        const finishedAt = current.get(url)?.completedAt?.[earlier.provider];
+        const superseded = Number.isFinite(finishedAt) && Number.isFinite(earlier.observedAt) && finishedAt > earlier.observedAt;
         if (!superseded && attachmentFindingStrength(earlier.verdict) > attachmentFindingStrength(findings.get(url)?.verdict)) {
             findings.set(url, {...earlier, source: 'archive'});
         }

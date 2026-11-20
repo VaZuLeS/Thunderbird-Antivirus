@@ -134,11 +134,18 @@ var ThundyProviderResults = (function () {
         const fetchedAt=Date.parse(item?.report_fetched_at);
         const values=[
             {verdict:ha.verdict,provider:'hybridanalysis',observedAt:Number.isFinite(fetchedAt)?fetchedAt:null,completion:ha.completion},
-            {verdict:judgement(live?.status),provider:'hybridanalysis',observedAt:live?.observedAt||null,completion:live?.completion},
+            {verdict:judgement(live?.status),provider:'hybridanalysis',observedAt:live?.observedAt??null,completion:live?.completion},
             {verdict:judgement(retained?.status),provider:'urlscan',observedAt:retained?.observedAt||null},
             {verdict:us.verdict,provider:'urlscan',observedAt:item?.urlscan?.observedAt||null,completion:us.completion}
         ];
-        return values.reduce((a,b)=>verdicts.indexOf(b.verdict)>verdicts.indexOf(a.verdict)?b:a,{verdict:'unknown',provider:null,observedAt:null});
+        const completedAt = {};
+        for (const value of values) {
+            if (value.completion === 'complete' && value.verdict !== 'unknown' && Number.isFinite(value.observedAt)) {
+                completedAt[value.provider] = Math.max(completedAt[value.provider] ?? -Infinity, value.observedAt);
+            }
+        }
+        const strongest=values.reduce((a,b)=>verdicts.indexOf(b.verdict)>verdicts.indexOf(a.verdict)?b:a,{verdict:'unknown',provider:null,observedAt:null});
+        return {...strongest, completedAt};
     }
     function legacy(provider,data){const a=evaluate(provider,data);return a.verdict==='malicious'?'MALICIOUS':a.verdict==='suspicious'?'SUSPICIOUS':a.verdict==='none'&&a.completion==='complete'?'CLEAN':a.completion==='complete'?'UNKNOWN':null;}
     // Display-only API v2 projection. Kept separate from provenance, exports and

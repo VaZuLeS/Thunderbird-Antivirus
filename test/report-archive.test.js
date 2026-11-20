@@ -244,6 +244,15 @@ test('an archived URL warning lasts until a newer completed assessment from its 
  assert.equal(s.c.savedLinkAssessments(record).get(url).verdict, 'malicious');
  current.report.finished = true;
  assert.equal(s.c.savedLinkAssessments(record).get(url).verdict, 'none');
+ current.report.finished = false;
+ current.hybrid_verdict = {status: 'CLEAN', completion: 'complete', observedAt: Date.parse('2026-10-03T12:00:00Z')};
+ assert.equal(s.c.savedLinkAssessments(record).get(url).verdict, 'none');
+ record.links = [{
+    url, urlscan: {observedAt: Date.parse('2026-10-04T12:00:00Z'), assessment: {
+        assessmentVersion: 1, completion: 'complete', signals: [{code: 'overall', verdict: 'none'}]
+    }}
+ }];
+ assert.equal(s.c.savedLinkAssessments(record).get(url).verdict, 'malicious');
 });
 
 test('an unfinished submission identity is retained without inventing a completed report',async()=>{
