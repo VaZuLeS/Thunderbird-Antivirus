@@ -1145,8 +1145,55 @@ test('attachment findings hash only relevant parts once per evaluation and rejec
  sourceRecords(s,{attachments:[{partName:'1',hybrid_sha256:hash,state:'KNOWN',report:{verdict:'malicious'}},{partName:'1',hybrid_sha256:hash,virustotal_stats:{malicious:1}},{partName:'2',hybrid_sha256:'a'.repeat(64),report:{verdict:'no specific threat'}}]});
  s.context.browser.messages.listAttachments=async()=>[{partName:'1',name:'relevant.txt',size:4},{partName:'2',name:'unrelated.txt',size:4}];let bytes='test';const reads=[];
  s.context.browser.messages.getAttachmentFile=async(_id,part)=>{reads.push(part);assert.equal(part,'1');return new File([bytes],'relevant.txt');};
- let findings=await s.context.collectAttachmentFindings(s.message);assert.equal(findings.length,2);assert.deepEqual(reads,['1']);
+ let findings=await s.context.collectAttachmentFindings(s.message);assert.equal(findings.length,1);assert.deepEqual(reads,['1']);
  bytes='changed';findings=await s.context.collectAttachmentFindings(s.message);assert.equal(findings.length,0);assert.deepEqual(reads,['1','1']);
+});
+
+test('a displaced Hybrid warning follows verified bytes and survives unknown or older replacement reports',async()=>{
+ const s=setup();await s.context.configure();
+ const hash=await s.context.get_sha256_hash(new TextEncoder().encode('test')),foreign='a'.repeat(64);
+ const time='2026-11-17T12:00:00Z',later='2026-11-18T12:00:00Z';
+ const archived={partName:'1',hybrid_sha256:hash,report_fetched_at:time,report:{state:'COMPLETE',sha256:hash,verdict:'malicious'}};
+ const active={...archived,hybrid_sha256:foreign,report:{state:'COMPLETE',sha256:foreign,verdict:'clean'}};
+ const record={attachments:[active],analysisReportArchive:{schemaVersion:1,entries:[
+  {kind:'attachment',resource:archived},{kind:'attachment',resource:archived},
+  {kind:'attachment',resource:{...archived,partName:'2',report:{...archived.report,sha256:foreign}}},
+  {kind:'attachment',resource:{...archived,partName:'2',report:null,virustotal_stats:{malicious:20}}},
+  {kind:'link',resource:{...archived,partName:'2'}}
+ ]}};
+ sourceRecords(s,record);
+ const reads=[];
+ s.context.browser.messages.listAttachments=async()=>['1','2'].map(partName=>({partName,name:'file.pdf',size:4}));
+ s.context.browser.messages.getAttachmentFile=async(_id,part)=>{reads.push(part);return new File(['test'],'file.pdf');};
+ const lookup=()=>s.context.collectAttachmentFindings(s.message);
+ const findings=await lookup();
+ assert.deepEqual(reads,['1']);
+ assert.equal(findings.length,1);
+ assert.equal(findings[0].source,'archive');
+ assert.equal(findings[0].observedAt,Date.parse(time));
+ const assessment=s.context.calculateThreatScore(s.message.author,[],{attachmentFindings:findings});
+ assert.equal(assessment.heuristicScore,0);
+ assert.equal(assessment.score,80);
+ assert.equal(assessment.reasonDetails[0].code,'reasonArchivedMaliciousAttachment');
+ assert.match(assessment.archivedAttachmentReasons[0],/Historical finding.*Hybrid Analysis.*file\.pdf/i);
+ const clean={...archived,report:{state:'COMPLETE',sha256:hash,verdict:'clean'}};
+ for (const replacement of [
+  {...clean,report_fetched_at:'2026-11-16T12:00:00Z'},
+  {...clean,report_fetched_at:later,report:{...clean.report,finished:false}},
+  {...clean,report_fetched_at:later,report:{state:'COMPLETE',sha256:hash}},
+  {...clean,report_fetched_at:later,report:[clean.report,{state:'COMPLETE',sha256:foreign,verdict:'clean'}]}
+ ]) {
+  record.attachments[0]=replacement;
+  assert.equal((await lookup())[0].source,'archive');
+ }
+ record.attachments[0]={...clean,report_fetched_at:later};
+ assert.equal((await lookup()).length,0);
+ record.attachments[0]={...clean,report_fetched_at:later,virustotal_stats:{malicious:1}};
+ assert.equal((await lookup())[0].provider,'VirusTotal');
+ record.attachments[0]=active;
+ s.context.browser.messages.getAttachmentFile=async()=>new File(['different'],'file.pdf');
+ assert.equal((await lookup()).length,0);
+ assert.equal(s.requests.length,0);
 });
 
 test('local revisions are allocated before asynchronous reads and older computations cannot overwrite the source score',async()=>{

@@ -831,43 +831,92 @@ async function persistThreatIntelSummary(message, summary) {
   }
 }
 
-/**
- * Reads attachment verdicts already stored for this message (Hybrid Analysis
- * report or VirusTotal stats). Local-only: no provider request is made here.
- */
+function attachmentRiskEvidence(item, digest, archived) {
+  const {bound,fullyBound} = ThundyProviderResults.boundAttachmentReports(item.report,digest);
+  // An assessment derived from a mixed legacy response cannot be bound separately.
+  const assessment = fullyBound ? item.assessment : null;
+  const hybrid = ThundyProviderResults.stored('hybridanalysis', {assessment, report:bound.length ? bound : null});
+  const time = typeof item.report_fetched_at === 'string' ? Date.parse(item.report_fetched_at) : NaN;
+  const observedAt = Number.isFinite(time) ? time : null;
+  const confirmed = item.state !== 'UPLOADED' && hybrid.verdict !== 'unknown' &&
+    hybrid.completion === 'complete' && bound.length > 0 && fullyBound &&
+    bound.every(ThundyProviderResults.hybridCompletionConfirmed);
+  const stats = archived ? null : item.virustotal_stats;
+  const virusTotal = Number.isFinite(stats?.malicious) && stats.malicious > 0 ? 'malicious' :
+    Number.isFinite(stats?.suspicious) && stats.suspicious > 0 ? 'suspicious' : 'unknown';
+  return {digest, archived, observedAt, confirmed, hybrid:hybrid.verdict, virusTotal};
+}
+
+function attachmentFindingStrength(verdict) {
+  return verdict === 'malicious' ? 2 : verdict === 'suspicious' ? 1 : 0;
+}
+function selectAttachmentRiskFinding(items, name) {
+  let latestCompleted = -Infinity;
+  for (const item of items) {
+    if (!item.archived && item.confirmed && item.observedAt !== null) {
+      latestCompleted = Math.max(latestCompleted, item.observedAt);
+    }
+  }
+  let best = null;
+  // Current records precede archived ones, so ties preserve current provenance.
+  for (const item of items) {
+    if (item.archived && item.observedAt !== null && latestCompleted > item.observedAt) continue;
+    for (const [provider, verdict] of [['Hybrid Analysis',item.hybrid],['VirusTotal',item.virusTotal]]) {
+      const strength = attachmentFindingStrength(verdict);
+      if (strength > attachmentFindingStrength(best?.verdict)) {
+        best = {name,verdict,provider,...(item.archived ? {source:'archive',observedAt:item.observedAt} : {})};
+      } else if (strength && item.archived && best?.source === 'archive' && verdict === best.verdict &&
+          (item.observedAt ?? -Infinity) > (best.observedAt ?? -Infinity)) {
+        best.observedAt = item.observedAt;
+      }
+    }
+  }
+  return best;
+}
+
+/** Looks up byte-bound attachment warnings locally, including preserved Hybrid reports. */
 async function collectAttachmentFindings(message) {
   if (!message || (!message.headerMessageId && message.id == null)) return [];
   if (typeof getFromStore !== 'function' || typeof getSharedDB !== 'function') return [];
   try {
     const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id;
     const record = await getFromStore(await getSharedDB(), 'hybridanalysis', key);
-    // No cached finding can contribute a score without a candidate record.
-    const candidates=(Array.isArray(record?.attachments)?record.attachments:[]).filter(att=>{
-      if(!att||typeof att!=='object'||!att.partName||!/^[a-f0-9]{64}$/i.test(att.hybrid_sha256||''))return false;
-      const fact=ThundyProviderResults.stored('hybridanalysis',att),vt=att.virustotal_stats;
-      return ['malicious','suspicious'].includes(fact.verdict)||Number.isFinite(vt?.malicious)&&vt.malicious>0||Number.isFinite(vt?.suspicious)&&vt.suspicious>0;
-    });
-    if(!candidates.length)return [];
-    const current=await browser.messages.listAttachments(message.id);
-    const parts=new Map(current.slice(0,100).map(item=>[String(item.partName),item]));
-    const hashes=new Map(),findings=[];
-    for(const att of candidates){
-      const part=String(att.partName),actual=parts.get(part);
-      if(!actual||actual.size>25*1024*1024)continue;
-      if(!hashes.has(part)){
-        let digest=null;
-        try{const file=await browser.messages.getAttachmentFile(message.id,actual.partName);if(file.size<=25*1024*1024)digest=await get_sha256_hash(await file.arrayBuffer());}catch(_){}
-        hashes.set(part,digest);
+    const candidates = new Map();
+    const add = (item, archived) => {
+      if (typeof item?.partName !== 'string' || !/^[0-9]+(?:\.[0-9]+)*$/.test(item.partName) ||
+          typeof item.hybrid_sha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(item.hybrid_sha256)) return;
+      if (!candidates.has(item.partName)) candidates.set(item.partName, []);
+      candidates.get(item.partName).push(attachmentRiskEvidence(item,item.hybrid_sha256.toLowerCase(),archived));
+    };
+    for (const item of Array.isArray(record?.attachments) ? record.attachments : []) add(item,false);
+    const archive = record?.analysisReportArchive;
+    if (archive?.schemaVersion === 1 && Array.isArray(archive.entries) && archive.entries.length <= 128) {
+      for (const entry of archive.entries) {
+        if (entry?.kind === 'attachment') add(entry.resource,true);
       }
-      if(hashes.get(part)!==att.hybrid_sha256.toLowerCase())continue;
-      const name=typeof actual.name==='string'?actual.name:typeof att.attachment_name==='string'?att.attachment_name:'';
-      const fact=ThundyProviderResults.stored('hybridanalysis',att),vt=att.virustotal_stats;
-      if(fact.verdict==='malicious')findings.push({name,verdict:'malicious',provider:'Hybrid Analysis'});
-      else if(Number.isFinite(vt?.malicious)&&vt.malicious>0)findings.push({name,verdict:'malicious',provider:'VirusTotal'});
-      else if(fact.verdict==='suspicious')findings.push({name,verdict:'suspicious',provider:'Hybrid Analysis'});
-      else if(Number.isFinite(vt?.suspicious)&&vt.suspicious>0)findings.push({name,verdict:'suspicious',provider:'VirusTotal'});
     }
-    return findings;
+    for (const [part, items] of candidates) {
+      if (!items.some(item => attachmentFindingStrength(item.hybrid) || attachmentFindingStrength(item.virusTotal))) candidates.delete(part);
+    }
+    if (!candidates.size) return [];
+    const current=await browser.messages.listAttachments(message.id);
+    const parts = new Map();
+    for (const item of current.slice(0,100)) {
+      if (candidates.has(item?.partName)) parts.set(item.partName,parts.has(item.partName) ? null : item);
+    }
+    const findings = [];
+    for (const [part, actual] of parts) {
+      if (!actual || actual.size > 25*1024*1024) continue;
+      try {
+        const file = await browser.messages.getAttachmentFile(message.id,part);
+        if (file.size > 25*1024*1024) continue;
+        const digest = await get_sha256_hash(await file.arrayBuffer());
+        const items = candidates.get(part).filter(item => item.digest === digest);
+        const finding = selectAttachmentRiskFinding(items,actual.name || file.name);
+        if (finding) findings.push(finding);
+      } catch (_) { /* An unreadable file cannot inherit a stored finding. */ }
+    }
+    return findings.sort((a,b) => attachmentFindingStrength(b.verdict)-attachmentFindingStrength(a.verdict));
   } catch (e) {
     Logger.warn('Anhang-Befunde konnten nicht gelesen werden', e);
     return [];
@@ -985,7 +1034,8 @@ function recordLocalCoverage(context, coverage, threat = null, assessment = thre
   if(previous?.runtimeId===assessment.runtimeId&&previous.revision>=assessment.revision)return false;
   context.model.data.local = {...coverage,source:'local',observedAt:assessment.observedAt,assessment,...(threat ? {
     score:threat.score,heuristicScore:threat.heuristicScore,riskModelVersion:threat.riskModelVersion,
-    reasons:threat.reasons.slice(0,20),heuristicReasons:threat.heuristicReasons?.slice(0,20),providerReasons:threat.providerReasons?.slice(0,20)
+    reasons:threat.reasons.slice(0,20),heuristicReasons:threat.heuristicReasons?.slice(0,20),providerReasons:threat.providerReasons?.slice(0,20),
+    archivedAttachmentReasons:threat.archivedAttachmentReasons?.slice(0,20)
   } : {})};
   context.schedule();
   return true;

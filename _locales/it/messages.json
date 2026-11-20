@@ -1906,6 +1906,34 @@
   "hybridRateLimited": {
     "message": "È stato raggiunto il limite di richieste o la quota di Hybrid Analysis. Riprova più tardi."
   },
+  "reasonArchivedMaliciousAttachment": {
+    "message": "Esito storico ($OBSERVED$). $PROVIDER$ ha classificato l’allegato «$NAME$» come dannoso.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonArchivedSuspiciousAttachment": {
+    "message": "Esito storico ($OBSERVED$). $PROVIDER$ ha classificato l’allegato «$NAME$» come sospetto.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
   "reasonMaliciousAttachment": {
     "message": "L'allegato \"$NAME$\" è stato classificato come dannoso da $PROVIDER$.",
     "placeholders": {

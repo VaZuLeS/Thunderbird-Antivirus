@@ -198,16 +198,15 @@ test('collectAttachmentFindings derives verdicts from stored reports and VirusTo
     ] };
     record.attachments.forEach((item,index)=>{item.partName=String(index+1);item.hybrid_sha256='a'.repeat(64);});
     const keys = [];
-    const context = vm.createContext({ browser:{messages:{listAttachments:async()=>record.attachments.map(item=>({partName:item.partName,size:1})),getAttachmentFile:async()=>({size:1,arrayBuffer:async()=>new ArrayBuffer(1)})}},get_sha256_hash:async()=>'a'.repeat(64),Logger: { warn() {} }, getSharedDB: async () => ({}), getFromStore: async (_db, _store, key) => { keys.push(key); return record; } });
-    loadSlice('background.js', 'extractHybridVerdictFromOverview', context);
-    loadSlice('background.js', 'collectAttachmentFindings', context);
+    const context = vm.createContext({ browser:{messages:{listAttachments:async()=>record.attachments.map(item=>({partName:item.partName,name:item.attachment_name,size:1})),getAttachmentFile:async()=>({size:1,arrayBuffer:async()=>new ArrayBuffer(1)})}},get_sha256_hash:async()=>'a'.repeat(64),Logger: { warn() {} }, getSharedDB: async () => ({}), getFromStore: async (_db, _store, key) => { keys.push(key); return record; } });
+    for (const name of ['attachmentRiskEvidence','attachmentFindingStrength','selectAttachmentRiskFinding','collectAttachmentFindings']) loadSlice('background.js',name,context);
     const findings = await context.collectAttachmentFindings({ id: 4 });
     assert.deepEqual(keys, ['message:4']);
     assert.deepEqual(JSON.parse(JSON.stringify(findings)), [
         { name: 'a.exe', verdict: 'malicious', provider: 'Hybrid Analysis' },
         { name: 'b.doc', verdict: 'malicious', provider: 'VirusTotal' },
-        { name: 'c.js', verdict: 'suspicious', provider: 'Hybrid Analysis' },
-        { name: 'd.pdf', verdict: 'malicious', provider: 'Hybrid Analysis' }
+        { name: 'd.pdf', verdict: 'malicious', provider: 'Hybrid Analysis' },
+        { name: 'c.js', verdict: 'suspicious', provider: 'Hybrid Analysis' }
     ]);
     context.get_sha256_hash=async()=>'b'.repeat(64);
     assert.equal((await context.collectAttachmentFindings({id:4})).length,0,'different attachment bytes never inherit findings');

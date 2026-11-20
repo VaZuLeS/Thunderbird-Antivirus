@@ -355,6 +355,34 @@ test('message and popup distinguish a flagged attachment from clean links and co
  }
 });
 
+test('archived attachment evidence stays visible beside the separate decision score in both views',()=>{
+ const a=model();
+ for(const lang of ['en','de','fr','es','it','pl']){
+  const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json'));
+  const labels=a.labels(key=>catalog[key]?.message);
+  const warning=catalog.reasonArchivedSuspiciousAttachment.message
+   .replace('$NAME$','<img src=fixture.png>').replace('$PROVIDER$','Hybrid Analysis').replace('$OBSERVED$','17:00');
+  for(const surface of ['message','popup']){
+   const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>');
+   try{
+    const c=vm.createContext({document:dom.window.document,Date});
+    vm.runInContext('globalThis.render='+a.render.toString(),c);
+    const data={messageId:7,rows:[],local:{state:'checked',heuristicScore:0,score:30,riskModelVersion:2,
+     reasons:['First','Second','Third',warning],archivedAttachmentReasons:[warning]}};
+    const root=c.render(data,labels,'',{surface}).shadowRoot;
+    const visible=()=>[...root.querySelectorAll('.card')].find(card=>!card.hidden);
+    assert.equal(visible().querySelector('h2').textContent,catalog.analysisSimpleCaution.message);
+    assert.match(visible().textContent,/30 \/ 100/);
+    assert.equal(visible().querySelector('li.warning').textContent,warning);
+    root.querySelector('[data-focus-key="view-switch"]').click();
+    assert.equal(visible().querySelector('li.warning').textContent,warning);
+    assert.equal(visible().querySelector('img'),null);
+    assert.equal(visible().querySelector('.services li'),null);
+   } finally{dom.window.close();}
+  }
+ }
+});
+
 test('Hybrid Analysis API v2 Quick-Scan and Overview payloads classify id, finished, whitelisted and scanners_v2 accurately',()=>{
  const a=model();
  assert.deepEqual({...a.spec('https://hybrid-analysis.com/api/v2/quick-scan/64f123')},{provider:'hybridanalysis',scope:'report'});

@@ -231,7 +231,12 @@ test('a bound archived warning survives slot replacement until a new completed s
     assert.equal(status.source,'archive');assert.equal(status.observedAt,Date.parse(timestamp));
     assert.equal(status.score,91);assert.equal(status.mode,'block');
     await assert.rejects(f.command('save'),{code:'ATTACHMENT_BLOCKED'});
-    f.state.record.attachments = [f.withScore(20)];
+    f.state.record.attachments = [{...f.withScore(20),report_fetched_at:'2026-11-17T12:00:00Z'}];
+    const older = await f.command('save');
+    assert.equal(older.changed,true);assert.equal(older.details.source,'archive');
+    assert.equal(older.details.mode,'block');assert.equal(f.downloads.length,0);
+    await assert.rejects(f.command('save'),{code:'ATTACHMENT_BLOCKED'});
+    f.state.record.attachments = [{...f.withScore(20),report_fetched_at:'2026-11-18T16:00:00Z'}];
     const update = await f.command('save');
     assert.equal(update.changed,true);assert.equal(update.details.source,'current');
     assert.equal(update.details.mode,'allow');assert.equal(f.downloads.length,0);

@@ -52,12 +52,14 @@ async function run() {
             const noReadMutation=JSON.stringify(store.records.get(keyA))===JSON.stringify(original);
             await c.indexedDB_save_batch_hybrid_data_to_db(b,[{attachmentName:'same.bin',hybrid_data:{sha256:sha(bytes.get(2)),partName:'1.2',state:'UPLOADED',submission_id:'new-submission'},report:{state:'IN_PROGRESS'}}]);
             const after=store.records.get(keyA);
+            const afterFindings=await c.collectAttachmentFindings(a);
             rows.push({kind,sameStorageKey:keyA===keyB,sameBody,sameAttachmentBytes:sameBytes,
                 attachmentFindingReused:findings.length>0,matchingUrlFindingReused:links.length>0,
                 unverifiedAttachmentCardHidden:!snapshot.hybridReports?.['attachment:1.2'],
                 readPreservesOriginal:noReadMutation,priorReportArchived:after.analysisReportArchive?.entries?.some(e=>e.resource?.report?.verdict==='malicious')===true,
-                originalMessageCurrentFindingsAfterSiblingWrite:(await c.collectAttachmentFindings(a)).length,
-                originalScoreBefore:beforeScore,originalScoreAfter:c.calculateThreatScore(a.author,[],{attachmentFindings:await c.collectAttachmentFindings(a)}).score,
+                originalMessageCurrentFindingsAfterSiblingWrite:afterFindings.filter(finding=>finding.source!=='archive').length,
+                originalMessageHistoricalFindingsAfterSiblingWrite:afterFindings.filter(finding=>finding.source==='archive').length,
+                originalScoreBefore:beforeScore,originalScoreAfter:c.calculateThreatScore(a.author,[],{attachmentFindings:afterFindings}).score,
                 verifiedAttachmentCardVisible:!!verifiedSnapshot.hybridReports?.["attachment:1.2"],
                 auditUnchanged:JSON.stringify(settings.linkAuditLog)===auditBefore});
             context.dispose();

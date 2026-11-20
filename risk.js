@@ -413,20 +413,29 @@ function evaluateMaliciousIps(maliciousIps, score, reasons) {
 
 /**
  * Attachment verdicts already obtained from Hybrid Analysis or VirusTotal.
- * Each finding: { name, verdict: 'malicious' | 'suspicious', provider }.
+ * Findings from preserved Hybrid reports carry their original observation time.
  */
-function evaluateAttachmentFindings(findings, score, reasons) {
+function evaluateAttachmentFindings(findings, score, reasons, archivedReasons = []) {
     if (!Array.isArray(findings)) return score;
     for (const finding of findings.slice(0, 20)) {
         if (!finding || typeof finding !== 'object') continue;
         const name = typeof finding.name === 'string' && finding.name.trim() ? finding.name.trim().slice(0, 200) : '?';
         const provider = typeof finding.provider === 'string' && finding.provider.trim() ? finding.provider.trim() : 'Sandbox';
-        if (finding.verdict === 'malicious') {
-            score += 80;
-            addReason(reasons, "reasonMaliciousAttachment", "Anhang \"$1\" wurde von $2 als bösartig eingestuft.", [name, provider]);
-        } else if (finding.verdict === 'suspicious') {
-            score += 30;
-            addReason(reasons, "reasonSuspiciousAttachment", "Anhang \"$1\" wurde von $2 als verdächtig eingestuft.", [name, provider]);
+        if (!['malicious','suspicious'].includes(finding.verdict)) continue;
+        const malicious = finding.verdict === 'malicious';
+        score += malicious ? 80 : 30;
+        if (finding.source === 'archive') {
+            const observed = Number.isFinite(finding.observedAt)
+                ? (typeof ThundyI18n !== 'undefined' ? ThundyI18n.date(finding.observedAt) : new Date(finding.observedAt).toISOString())
+                : uiText('analysisTimeUnknown','Zeitpunkt unbekannt');
+            addReason(reasons, malicious ? 'reasonArchivedMaliciousAttachment' : 'reasonArchivedSuspiciousAttachment',
+                malicious ? 'Historischer Befund ($3). $2 stufte Anhang "$1" als bösartig ein.'
+                    : 'Historischer Befund ($3). $2 stufte Anhang "$1" als verdächtig ein.', [name,provider,observed]);
+            archivedReasons.push(reasons.at(-1));
+        } else {
+            addReason(reasons, malicious ? 'reasonMaliciousAttachment' : 'reasonSuspiciousAttachment',
+                malicious ? 'Anhang "$1" wurde von $2 als bösartig eingestuft.'
+                    : 'Anhang "$1" wurde von $2 als verdächtig eingestuft.', [name,provider]);
         }
     }
     return score;
@@ -504,10 +513,11 @@ function calculateThreatScore(author, urls, options = {}) {
     const heuristicReasons = reasons.slice();
     score = evaluateUrlhaus(urlhausDomains, score, reasons);
     score = evaluateMaliciousIps(maliciousIps, score, reasons);
-    score = evaluateAttachmentFindings(attachmentFindings, score, reasons);
+    const archivedAttachmentReasons = [];
+    score = evaluateAttachmentFindings(attachmentFindings, score, reasons, archivedAttachmentReasons);
     score = evaluateLinkFindings(linkFindings, score, reasons);
     return { score: Math.min(score, 100), heuristicScore, riskModelVersion: 2, reasons,
         heuristicReasons, providerReasons: reasons.slice(heuristicReasons.length),
-        reasonDetails: reasons.details || [], authStatus };
+        reasonDetails: reasons.details || [], archivedAttachmentReasons, authStatus };
 }
 

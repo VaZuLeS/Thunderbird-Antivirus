@@ -919,14 +919,20 @@ def check_identity_lifecycle(m, base, out, report, restart):
       const original=await bg.collectAttachmentFindings(a),guarded=await bg.collectAttachmentFindings(other);
       await bg.indexedDB_save_batch_hybrid_data_to_db(other,result(otherPart,arguments[3],'clean'));
       const after=await bg.collectAttachmentFindings(a),record=await bg.getFromStore(await bg.getSharedDB(),'hybridanalysis',bg.resolveMessageStorageKey(a));
+      const currentOther=await bg.collectAttachmentFindings(other);
       return {realThunderbirdAPIs:true,syntheticReports:true,liveProviderCalls:false,
         sameStorageKey:bg.resolveMessageStorageKey(a)===bg.resolveMessageStorageKey(other),
         foreignAttachmentFindingRejected:guarded.length===0,originalFindingsBefore:original.length,originalFindingsAfter:after.length,
         originalScoreBefore:score(original),originalScoreAfter:score(after),
+        historicProvenance:after.length===1&&after[0].source==='archive',
+        siblingRemainsUnflagged:currentOther.length===0,
         priorReportArchived:record.analysisReportArchive.entries.some(entry=>entry.resource.report?.verdict==='malicious'),
         auditUnchanged:beforeAudit===JSON.stringify((await b.storage.local.get('linkAuditLog')).linkAuditLog)};
     })();''',[initial[0]['id'],initial[1]['id'],initial[0]['attachments'][0]['sha256'],initial[1]['attachments'][0]['sha256']])
-    assert probe['runtimeConsequences']['auditUnchanged'] and probe['runtimeConsequences']['priorReportArchived'],probe['runtimeConsequences']
+    consequences=probe['runtimeConsequences']
+    assert all(consequences[key] for key in ['auditUnchanged','priorReportArchived','foreignAttachmentFindingRejected',
+                                            'historicProvenance','siblingRemainsUnflagged']),consequences
+    assert consequences['originalScoreBefore']==consequences['originalScoreAfter']==80,consequences
     keys=m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
       return Array.from(MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Identity Source").messages).map(h=>h.messageKey).sort((a,b)=>a-b);''')
     for key, destination, move in [(keys[0],'Identity Copy',False),(keys[1],'Identity Moved',True)]:

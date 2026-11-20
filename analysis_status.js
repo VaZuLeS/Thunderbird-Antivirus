@@ -313,7 +313,9 @@ const ThundyAnalysis = (() => {
         const failures = rows.some(row => row.failures > 0 || row.state === 'failed'), received = rows.some(row => row.responses > 0 || row.cacheHits > 0);
         const usable = rows.some(row => ['none','suspicious','malicious'].includes(row.verdict) && (row.responses > 0 || row.cacheHits > 0));
         const jobBusy=['queued','running'].includes(data.scanJob?.state);
-        const mode = t(jobBusy ? 'scanRunning' : data.unavailable ? 'analysisUnavailable' : rows.length ? local || localLimited ? 'analysisMixed' : 'analysisExternal' : data.sourcePersistenceFailed ? 'analysisModeUnknown' : local || localLimited ? 'analysisLocal' : 'analysisModeUnknown');
+        const archivedReasons = Array.isArray(data.local?.archivedAttachmentReasons)
+            ? data.local.archivedAttachmentReasons.slice(0,20).filter(value => typeof value === 'string' && value) : [];
+        const mode = t(jobBusy ? 'scanRunning' : data.unavailable ? 'analysisUnavailable' : rows.length ? local || localLimited ? 'analysisMixed' : 'analysisExternal' : data.sourcePersistenceFailed ? 'analysisModeUnknown' : archivedReasons.length ? 'analysisLocalOnly' : local || localLimited ? 'analysisLocal' : 'analysisModeUnknown');
         const phase = t(running ? 'analysisModeRunning' : waiting ? 'analysisModeSubmitted' : failures ? usable ? 'analysisModePartial' : received ? 'analysisModeResponsesFailed' : 'analysisModeFailed' : incomplete ? 'analysisModeIncomplete' : usable ? 'analysisModeResults' : received ? 'analysisModeResponses' : 'analysisModeUnknown');
         const card = n('div', '', 'card'); card.append(n('h2', t('analysisTitle')), n('p', mode, 'mode'));
         if (rows.length) card.append(n('p',phase, failures ? 'phase warning' : 'phase'));
@@ -615,7 +617,7 @@ const ThundyAnalysis = (() => {
         if (data.sourcePersistenceFailed) {const code=['QuotaExceededError','InvalidStateError','AbortError','UnknownError','DataCloneError','NotFoundError','TransactionInactiveError','SecurityError'].includes(data.sourcePersistenceError)?data.sourcePersistenceError:null;card.append(n('p',persistenceMessage+(code?' ('+code+')':''),'warning'));}
         if (data.reportArchiveBlocked) card.append(n('p',t('analysisReportArchiveBlocked'),'warning'));
         card.append(n('p', t('analysisLimit'), 'muted'));
-        const announcement = [mode, localLabel, localScoreText, sourceDataIncomplete ? t('analysisStoredDataIncomplete') : '', rows.length ? phase : '', data.sourceHistory?.rows?.length ? t('analysisHistoryTitle') : '', historicalWarning ? t('analysisHistoryFlagged') : '', data.sourcePersistenceFailed ? persistenceMessage : '', data.reportArchiveBlocked ? t('analysisReportArchiveBlocked') : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
+        const announcement = [mode, localLabel, localScoreText, archivedReasons[0], sourceDataIncomplete ? t('analysisStoredDataIncomplete') : '', rows.length ? phase : '', data.sourceHistory?.rows?.length ? t('analysisHistoryTitle') : '', historicalWarning ? t('analysisHistoryFlagged') : '', data.sourcePersistenceFailed ? persistenceMessage : '', data.reportArchiveBlocked ? t('analysisReportArchiveBlocked') : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
         const changed = host.dataset.announcement !== announcement;
         const technicalDetails = inline ? details('provider-technical',t('hybridReportTechnical')) : card;
         for(const row of rows) {
@@ -630,8 +632,11 @@ const ThundyAnalysis = (() => {
         const overview=n('div','','card');
         const danger=flagged.some(row=>row.verdict==='malicious');
         const uncertain=data.scanJob?.coverage?.incomplete===true||data.scanJob?.assessmentIncomplete===true||jobBusy||['pending','incomplete','failed','deferred'].includes(data.scanJob?.state)||data.unavailable||sourceDataIncomplete||!local||failures||running||waiting||incomplete||rows.some(row=>['unknown'].includes(row.verdict));
-        const title=danger?'analysisSimpleDanger':flagged.length||data.local?.score>=50?'analysisSimpleCaution':uncertain?'analysisSimpleIncomplete':data.sourcePersistenceFailed||data.reportArchiveBlocked?'analysisSimpleDocumentationIncomplete':'analysisSimpleNone';
+        const title=danger?'analysisSimpleDanger':flagged.length||archivedReasons.length||data.local?.score>=50?'analysisSimpleCaution':uncertain?'analysisSimpleIncomplete':data.sourcePersistenceFailed||data.reportArchiveBlocked?'analysisSimpleDocumentationIncomplete':'analysisSimpleNone';
         overview.append(n('h2',t(title)),n('p',localScoreText,'local-score'));
+        if (archivedReasons.length && localScoreValid && Number.isFinite(data.local?.score)) {
+            overview.append(n('p',t('auditDecisionScore')+' · '+data.local.score+' / 100'));
+        }
         if (inline && warningRow) {
             const focus = n('p',[brands[warningRow.provider],resourceName(warningRow),t('analysisVerdict_'+warningRow.verdict)].join(' · '),'warning finding-summary');
             const summary = n('div','','finding-overview');
@@ -670,8 +675,9 @@ const ThundyAnalysis = (() => {
         if(rows.some(r=>r.conflicts?.includes('mixed_verdicts')))overview.append(n('p',t('assessmentConflict'),'warning'));
         if (data.attachmentActions && refs.length) overview.append(inventory('overview-resources',true));
         const reasons=n('ul','');
-        const topReasons=[...(Array.isArray(data.local?.reasons)?data.local.reasons:[]),...(!inline ? flagged.map(row=>(brands[row.provider]||row.provider)+': '+t('analysisVerdict_'+row.verdict)) : [])].slice(0,3);
-        for(const reason of topReasons)reasons.append(n('li',String(reason)));
+        const allReasons=Array.isArray(data.local?.reasons)?data.local.reasons:[];
+        const topReasons=[...new Set([...archivedReasons,...allReasons,...(!inline ? flagged.map(row=>(brands[row.provider]||row.provider)+': '+t('analysisVerdict_'+row.verdict)) : [])])].slice(0,3);
+        for(const reason of topReasons)reasons.append(n('li',String(reason),archivedReasons.includes(reason)?'warning':''));
         if(topReasons.length)overview.append(reasons);
         if (inline && warningRow) {
             const times = [['analysisFindingObserved',warningRow.findingAt],['analysisAttempted',warningRow.attemptedAt]]
@@ -685,7 +691,12 @@ const ThundyAnalysis = (() => {
         overview.append(n('p',t('analysisScoreExplanation'),'muted'));
         if(conflicting){overview.append(n('p',t('analysisConflict'),'warning'));card.prepend(n('p',t('analysisConflict'),'warning'));}
         card.append(n('p',t('analysisScoreExplanation'),'muted'),n('p',t('analysisExportSensitive'),'muted'));
-        if(Array.isArray(data.local?.reasons)){const allReasons=n('ul','');for(const reason of data.local.reasons.slice(0,20))allReasons.append(n('li',String(reason)));card.append(allReasons);}
+        const expertReasons = [...new Set([...archivedReasons,...allReasons])].slice(0,20);
+        if (expertReasons.length) {
+            const list=n('ul','');
+            for (const reason of expertReasons) list.append(n('li',String(reason),archivedReasons.includes(reason)?'warning':''));
+            card.append(list);
+        }
         card.append(n('p',localScoreText,'local-score'));
         if (data.local?.riskModelVersion === 2 && localScoreValid) {
             card.append(n('p',t('auditDecisionScore')+' · '+data.local.score+' / 100'));
