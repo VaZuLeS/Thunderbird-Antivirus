@@ -1,6 +1,7 @@
 const REPORT_ARCHIVE_ENTRIES = 128;
 const REPORT_ARCHIVE_BYTES = 2 * 1024 * 1024;
 const REPORT_CAPTURE_BYTES = 4 * 1024 * 1024;
+const REPORT_OCCURRENCE_LIMIT = 64;
 const reportArchiveBlockedKeys = new Set();
 function noteReportArchiveBlocked(key, notify = true) {
     if (!reportArchiveBlockedKeys.has(key) && reportArchiveBlockedKeys.size >= 1000) reportArchiveBlockedKeys.delete(reportArchiveBlockedKeys.values().next().value);
@@ -64,6 +65,34 @@ function preserveReportRevisions(before, updated, now = Date.now()) {
 }
 
 const occurrenceReportFields = ['attachments','links','analysisReportArchive'];
+
+function* reportHistoryEntries(source, includeCurrent) {
+    if (includeCurrent) for (const [kind,field] of [['attachment','attachments'],['link','links']]) {
+        for (const resource of Array.isArray(source?.[field]) ? source[field] : []) {
+            if (resource && (resource.report || resource.hybrid_verdict || resource.urlscan || resource.virustotal_stats)) {
+                yield {kind,resource};
+            }
+        }
+    }
+    const archive = source?.analysisReportArchive;
+    if (archive?.schemaVersion === 1 && Array.isArray(archive.entries)) {
+        yield* archive.entries.slice(0, REPORT_ARCHIVE_ENTRIES);
+    }
+}
+
+function* occurrenceReportHistory(record, area, current, scope) {
+    yield* reportHistoryEntries(current, false);
+    yield* reportHistoryEntries(record, true);
+    if (area?.schemaVersion !== 1) return;
+    const [runtime] = JSON.parse(scope);
+    for (const [key,previous] of Object.entries(area.entries || {}).slice(0, REPORT_OCCURRENCE_LIMIT)) {
+        let binding;
+        try { binding = JSON.parse(key); } catch (_) { continue; }
+        if (Array.isArray(binding) && binding.length === 2 && typeof binding[0] === 'string' && binding[0] &&
+            binding[0] !== runtime && Number.isSafeInteger(binding[1]) && binding[1] > 0) yield* reportHistoryEntries(previous, true);
+    }
+}
+
 function projectOccurrenceReports(record, scope, includeHistory = false) {
     if (!record || !scope) return record;
     const area=record.analysisOccurrenceReports;
@@ -75,28 +104,17 @@ function projectOccurrenceReports(record, scope, includeHistory = false) {
         if (current?.[field] != null) view[field]=current[field];
     }
     if (includeHistory) {
-        // Stored reports can still warn about verified resources. They cannot
-        // supply submission identities to this occurrence.
-        const prior=Array.isArray(view.analysisReportArchive?.entries) ? [...view.analysisReportArchive.entries] : [];
-        const currentRuntime=JSON.parse(scope)[0];
-        const append=source=>{
-            for (const [kind,field] of [['attachment','attachments'],['link','links']]) {
-                for (const resource of Array.isArray(source?.[field])?source[field]:[]) {
-                    if (prior.length>=REPORT_ARCHIVE_ENTRIES) return;
-                    if (resource && (resource.report || resource.hybrid_verdict || resource.urlscan || resource.virustotal_stats)) prior.push({kind,resource});
-                }
+        const entries = [];
+        let truncated = false;
+        // The history screen has a row limit. Protection searches all retained reports of the requested resource kind.
+        for (const entry of occurrenceReportHistory(record, area, current, scope)) {
+            if (includeHistory === true && entries.length >= REPORT_ARCHIVE_ENTRIES) {
+                truncated = true;
+                break;
             }
-            for (const entry of Array.isArray(source?.analysisReportArchive?.entries)?source.analysisReportArchive.entries:[]) {
-                if (prior.length>=REPORT_ARCHIVE_ENTRIES) return;
-                prior.push(entry);
-            }
-        };
-        append(record);
-        if (area?.schemaVersion===1) for (const [key,previous] of Object.entries(area.entries || {}).slice(0,64)) {
-            try { if (JSON.parse(key)[0]!==currentRuntime) append(previous); }
-            catch (_) { /* An invalid key cannot prove a previous runtime. */ }
+            if (includeHistory === true || entry?.kind === includeHistory) entries.push(entry);
         }
-        if (prior.length) view.analysisReportArchive={schemaVersion:1,entries:prior.slice(0,REPORT_ARCHIVE_ENTRIES)};
+        if (entries.length) view.analysisReportArchive = {schemaVersion: 1, entries, truncated};
     }
     return view;
 }
@@ -117,7 +135,7 @@ function commitOccurrenceReports(original, scoped, scope) {
         else delete updated[field];
     }
     if (!previous && !Object.keys(reports).length) return area ? {...updated,analysisOccurrenceReports:area} : updated;
-    if (!previous && Object.keys(entries).length>=64) throw reportArchiveError();
+    if (!previous && Object.keys(entries).length>=REPORT_OCCURRENCE_LIMIT) throw reportArchiveError();
     const next={...entries,[scope]:reports};
     reportJsonCopy(next,REPORT_CAPTURE_BYTES);
     return {...updated,analysisOccurrenceReports:{...area,schemaVersion:1,entries:next}};

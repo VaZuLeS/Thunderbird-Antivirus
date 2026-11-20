@@ -883,7 +883,7 @@ async function collectAttachmentFindings(message) {
   if (typeof getFromStore !== 'function' || typeof getSharedDB !== 'function') return [];
   try {
     const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id;
-    const record = await getFromStore(await getSharedDB(), 'hybridanalysis', key,messageReportOptions(message,{includeHistory:true}));
+    const record = await getFromStore(await getSharedDB(), 'hybridanalysis', key,messageReportOptions(message,{includeHistory:'attachment'}));
     const candidates = new Map();
     const add = (item, archived) => {
       if (typeof item?.partName !== 'string' || !/^[0-9]+(?:\.[0-9]+)*$/.test(item.partName) ||
@@ -893,7 +893,7 @@ async function collectAttachmentFindings(message) {
     };
     for (const item of Array.isArray(record?.attachments) ? record.attachments : []) add(item,false);
     const archive = record?.analysisReportArchive;
-    if (archive?.schemaVersion === 1 && Array.isArray(archive.entries) && archive.entries.length <= 128) {
+    if (archive?.schemaVersion === 1 && Array.isArray(archive.entries)) {
       for (const entry of archive.entries) {
         if (entry?.kind === 'attachment') add(entry.resource,true);
       }
@@ -931,22 +931,22 @@ async function collectAttachmentFindings(message) {
  * report, Hybrid Analysis live link verdict, or URLScan.io result).
  * Local-only: no provider request is made here.
  */
-function savedLinkAssessments(record) {
+function savedLinkAssessments(record, urls = null) {
     const current = new Map();
     for (const item of Array.isArray(record?.links) ? record.links : []) {
         const url = canonicalHttpUrl(item?.url);
-        if (url && !current.has(url)) current.set(url, ThundyProviderResults.resource(item));
+        if (url && (!urls || urls.has(url)) && !current.has(url)) current.set(url, ThundyProviderResults.resource(item));
     }
     const findings = new Map(current);
     const entries = Array.isArray(record?.analysisReportArchive?.entries) ? record.analysisReportArchive.entries : [];
     for (const entry of entries) {
         if (entry?.kind !== 'link') continue;
         const url = canonicalHttpUrl(entry.resource?.url);
-        if (!url) continue;
+        if (!url || urls && !urls.has(url)) continue;
         const earlier = ThundyProviderResults.resource(entry.resource);
         if (!['malicious', 'suspicious'].includes(earlier.verdict)) continue;
         const latest = current.get(url);
-        const superseded = latest?.provider === earlier.provider && latest.verdict !== 'unknown' &&
+        const superseded = latest?.provider === earlier.provider && latest.completion === 'complete' && latest.verdict !== 'unknown' &&
             Number.isFinite(latest.observedAt) && Number.isFinite(earlier.observedAt) && latest.observedAt > earlier.observedAt;
         if (!superseded && attachmentFindingStrength(earlier.verdict) > attachmentFindingStrength(findings.get(url)?.verdict)) {
             findings.set(url, {...earlier, source: 'archive'});
@@ -959,11 +959,12 @@ async function collectLinkFindings(message, fullMessage = null) {
     if (typeof getFromStore !== 'function' || typeof getSharedDB !== 'function') return [];
     try {
         const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id;
-        const record = await getFromStore(await getSharedDB(), 'hybridanalysis', key, messageReportOptions(message, {includeHistory: true}));
+        const record = await getFromStore(await getSharedDB(), 'hybridanalysis', key, messageReportOptions(message, {includeHistory: 'link'}));
         const full = fullMessage || await readFullForAnalysis(message);
-        const saved = savedLinkAssessments(record);
+        const urls = new Set(messageUrlInventory(full));
+        const saved = savedLinkAssessments(record, urls);
         const findings = [];
-        for (const url of messageUrlInventory(full)) {
+        for (const url of urls) {
             const fact = saved.get(url);
             if (['malicious', 'suspicious'].includes(fact?.verdict)) {
                 findings.push({url, verdict: fact.verdict, provider: fact.provider === 'hybridanalysis' ? 'Hybrid Analysis' : 'URLScan.io', source: fact.source});
@@ -1945,16 +1946,17 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         }
 
         const db = await getSharedDB();
-        const reportOptions = messageReportOptions(message, {includeHistory: true});
+        const reportOptions = messageReportOptions(message, {includeHistory: 'link'});
         const record = await getFromStore(db, 'hybridanalysis', message.headerMessageId, reportOptions);
         const linkObj = Array.isArray(record?.links) ? record.links.find(item => item && sameAnalysisUrl(item.url, request.url)) : null;
+        const url = canonicalHttpUrl(request.url);
 
         const forward=sendResponse;let incompleteProvider=false;
         sendResponse=async result=>{
             let latest = record;
             try { latest = await getFromStore(db, 'hybridanalysis', message.headerMessageId, reportOptions); }
             catch (_) { incompleteProvider = true; }
-            const fact=savedLinkAssessments(latest).get(canonicalHttpUrl(request.url)) || {},rank={unknown:0,none:1,suspicious:2,malicious:3},status=({MALICIOUS:'malicious',MALICIOUS_VISUAL:'malicious',SUSPICIOUS:'suspicious',CLEAN:'none'})[result.status]||'unknown';
+            const fact=savedLinkAssessments(latest,new Set([url])).get(url) || {},rank={unknown:0,none:1,suspicious:2,malicious:3},status=({MALICIOUS:'malicious',MALICIOUS_VISUAL:'malicious',SUSPICIOUS:'suspicious',CLEAN:'none'})[result.status]||'unknown';
             if(rank[fact.verdict]>rank[status]&&['malicious','suspicious'].includes(fact.verdict))result={...result,status:fact.verdict==='malicious'?'MALICIOUS':'SUSPICIOUS',provider:fact.provider==='hybridanalysis'?'Hybrid Analysis':'urlscan.io',retainedFinding:true,check:{...result.check,origin:'stored',outcome:result.check?.outcome||'success',observedAt:fact.observedAt}};
             else if(result.status==='CLEAN'&&(incompleteProvider||typeof ThundyScans!=='undefined'&&ThundyScans.get?.(message.id)?.assessmentIncomplete))result={...result,status:'UNKNOWN',check:{...result.check,outcome:'incomplete'}};
             await forward(result);
@@ -2238,7 +2240,7 @@ var hybridReportBroker = typeof ThundyHybridReport === 'undefined' ? null : Thun
 var attachmentDownloads = typeof ThundyAttachmentDownload === 'undefined' ? null : ThundyAttachmentDownload.create(browser,{
     security:ThundySecurity,
     hash:get_sha256_hash,
-    record:async message => getFromStore(await getSharedDB(),'hybridanalysis',resolveMessageStorageKey(message),messageReportOptions(message,{includeHistory:true})),
+    record:async message => getFromStore(await getSharedDB(),'hybridanalysis',resolveMessageStorageKey(message),messageReportOptions(message,{includeHistory:'attachment'})),
     revision:id => typeof ThundyScans === 'undefined' ? null : ThundyScans.revision(id),
     pending:(id,part) => typeof ThundyScans !== 'undefined' && ThundyScans.attachmentPending(id,part),
     openReport:async (target,resource,sender,archived) => {

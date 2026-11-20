@@ -1647,9 +1647,11 @@ def check_source_export(m, base, out, report, restart, display):
 
 def check_report_archive(m, base, out, report, restart, display):
     """Real MIME, popup-side protected DAO and restart; synthetic provider protocols."""
+    archived_url = 'https://archive.example.invalid/match?q=one#target'
+    other_url = 'https://archive.example.invalid/match?q=one#other'
     for index, (name, payload) in enumerate([('A', 'AAAA'), ('B', 'BBBB')], 1):
         fixture = out / ('report-archive-' + name + '.eml')
-        fixture.write_bytes(('From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy report archive ' + name + '\r\nMessage-ID: <report-archive-collision@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="archive"\r\n\r\n--archive\r\nContent-Type: text/plain\r\n\r\nSynthetic archive fixture.\r\n--archive\r\nContent-Type: application/octet-stream\r\nContent-Disposition: attachment; filename="same.bin"\r\n\r\n' + payload + '\r\n--archive--\r\n').encode('ascii'))
+        fixture.write_bytes(('From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy report archive ' + name + '\r\nMessage-ID: <report-archive-collision@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="archive"\r\n\r\n--archive\r\nContent-Type: text/plain\r\n\r\nSynthetic archive fixture.\r\n' + archived_url + '\r\n' + other_url + '\r\n--archive\r\nContent-Type: application/octet-stream\r\nContent-Disposition: attachment; filename="same.bin"\r\n\r\n' + payload + '\r\n--archive--\r\n').encode('ascii'))
         m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
           const root=MailServices.accounts.localFoldersServer.rootFolder;
           if(!root.containsChildNamed("Report Archive"))root.createSubfolder("Report Archive",null);
@@ -1664,7 +1666,8 @@ def check_report_archive(m, base, out, report, restart, display):
       const a=await find("A"),target=await find("B"),part=(await b.messages.listAttachments(a.id))[0];
       const hashed=await bg.process_single_attachment(a,part,false,false),db=await bg.getSharedDB();
       const old={partName:part.partName,attachment_name:"same.bin",hybrid_sha256:hashed.hybrid_data.sha256,hybrid_job_id:"job-A",hybrid_submission_id:"submission-A",state:"KNOWN",report:{state:"COMPLETE",verdict:"malicious",created:"provider-original",details:{nested:[1,"original",{retained:true}]}},report_fetched_at:"2026-10-02T08:00:00.000Z",virustotal_stats:{malicious:2,undetected:5},created:new Date()};
-      await bg.updateStore(db,"hybridanalysis",a.headerMessageId,()=>({messageHeader:a.headerMessageId,attachments:[old],updatedAt:Date.now()}),bg.messageReportOptions(a));
+      const url=arguments[0],link={url,state:"KNOWN",report:{state:"COMPLETE",verdict:"malicious"},report_fetched_at:old.report_fetched_at};
+      await bg.updateStore(db,"hybridanalysis",a.headerMessageId,()=>({messageHeader:a.headerMessageId,attachments:[old],links:[link],updatedAt:Date.now()}),bg.messageReportOptions(a));
       await bg.processAttachments(a,false,false);
       const same=await bg.getFromStore(db,"hybridanalysis",a.headerMessageId,bg.messageReportOptions(a));
       const offlineKeptReport=JSON.stringify(same.attachments[0].report)===JSON.stringify(old.report)&&same.attachments[0].report_fetched_at===old.report_fetched_at&&same.attachments[0].hybrid_job_id==="job-A"&&!same.analysisReportArchive;
@@ -1675,7 +1678,7 @@ def check_report_archive(m, base, out, report, restart, display):
       const current=changed.attachments[0];
       await bg.updateStore(db,"hybridanalysis",target.headerMessageId,record=>{record.attachments[0]={...current,state:"KNOWN",hybrid_job_id:"job-B",report:{state:"COMPLETE",verdict:"malicious",details:{originalB:true}},report_fetched_at:"2026-10-03T08:00:00.000Z"};return record;},bg.messageReportOptions(target));
       return {offlineKeptReport,exactOriginal,newContentClearedCurrentReport:current.report===null,differentHashes:current.hybrid_sha256!==old.hybrid_sha256,archiveEntries:changed.analysisReportArchive?.entries.length||0,scopeA:bg.messageReportOptions(a).reportScope,scopeB:bg.messageReportOptions(target).reportScope};
-    })();''')
+    })();''',[archived_url])
     assert all(before[key] for key in ['offlineKeptReport', 'exactOriginal', 'newContentClearedCurrentReport', 'differentHashes']) and before['archiveEntries'] == 0, before
     m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
       const {MailUtils}=ChromeUtils.importESModule("resource:///modules/MailUtils.sys.mjs");
@@ -1714,18 +1717,31 @@ def check_report_archive(m, base, out, report, restart, display):
     m.screenshot(out / 'report-archive-message.png')
     close_extension_tabs(m)
     m.js('for(const tab of [...window.gTabmail.tabInfo])if(tab.mode.name==="mailMessageTab")window.gTabmail.closeTab(tab);')
+    open_page(m, base + 'options.html')
+    m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+      const target=(await b.messages.query({subject:"Thundy report archive A"})).messages.find(item=>item.subject==="Thundy report archive A");
+      const entries=Array.from({length:128},(_,slot)=>({id:"legacy-"+slot,archivedAt:Date.now(),kind:"link",slot,
+        resource:{url:"https://archive.example.invalid/legacy/"+slot,report:{state:"COMPLETE",verdict:"clean"}}}));
+      return bg.updateStore(await bg.getSharedDB(),"hybridanalysis",target.headerMessageId,record=>({...record,analysisReportArchive:{schemaVersion:1,entries}}));
+    })();''')
+    close_extension_tabs(m)
     m = restart()
     open_page(m, base + 'options.html')
     after = m.page('''return (async()=>{
       const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
       const target=(await b.messages.query({subject:"Thundy report archive B"})).messages.find(item=>item.subject==="Thundy report archive B");
+      const a=(await b.messages.query({subject:"Thundy report archive A"})).messages.find(item=>item.subject==="Thundy report archive A");
       const raw=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",target.headerMessageId);
       const record=raw.analysisOccurrenceReports.entries[arguments[1]],original=raw.analysisOccurrenceReports.entries[arguments[0]];
       const snapshot=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:target.id});
-      return {archiveEntries:record.analysisReportArchive.entries.length,originalA:original.attachments[0].report.details.nested[2].retained,originalB:record.analysisReportArchive.entries.some(entry=>entry.resource.report?.details?.originalB),currentClean:record.attachments[0].report.verdict==="clean",activeRows:snapshot.rows.length,historicalUnbound:snapshot.sourceHistory.rows.every(row=>row.resource===null),originalTimeInHistory:snapshot.sourceHistory.rows.some(row=>row.observedAt===Date.parse("2026-10-02T08:00:00Z"))};
-    })();''',[before['scopeA'],before['scopeB']])
-    assert after['archiveEntries'] == 128 and after['activeRows'] == 0 and all(after[key] for key in ['originalA', 'originalB', 'currentClean', 'historicalUnbound', 'originalTimeInHistory']), after
-    report['reportArchive'] = {'passed': True, 'syntheticProtocols': True, 'liveProviderCalls': False, 'realMimeIndexedDBPopupRestart': True, 'popupWriteScope': 'Native popup RPC and scoped DAO', 'before': before, 'popupAndCapacity': saved, 'afterRestart': after, 'warningVisibleInMessageAndPopup': True, 'scope': 'Bounded revisions of a single live occurrence, retained as history after a restart.'}
+      const attachments=await bg.collectAttachmentFindings(a),links=await bg.collectLinkFindings(a);
+      return {archiveEntries:record.analysisReportArchive.entries.length,originalA:original.attachments[0].report.details.nested[2].retained,originalB:record.analysisReportArchive.entries.some(entry=>entry.resource.report?.details?.originalB),currentClean:record.attachments[0].report.verdict==="clean",activeRows:snapshot.rows.length,historicalUnbound:snapshot.sourceHistory.rows.every(row=>row.resource===null),historyTruncated:snapshot.sourceHistory.truncated,
+        retainedAttachmentWarning:attachments.some(item=>item.source==="archive"&&item.verdict==="malicious"&&item.observedAt===Date.parse("2026-10-02T08:00:00Z")),
+        retainedExactUrlWarning:links.length===1&&links[0].url===arguments[2]&&links[0].verdict==="malicious"&&links[0].source==="archive"};
+    })();''',[before['scopeA'],before['scopeB'],archived_url])
+    assert after['archiveEntries'] == 128 and after['activeRows'] == 0 and all(after[key] for key in ['originalA', 'originalB', 'currentClean', 'historicalUnbound', 'historyTruncated', 'retainedAttachmentWarning', 'retainedExactUrlWarning']), after
+    report['reportArchive'] = {'passed': True, 'syntheticProtocols': True, 'liveProviderCalls': False, 'realMimeIndexedDBPopupRestart': True, 'popupWriteScope': 'Native popup RPC and scoped DAO', 'before': before, 'popupAndCapacity': saved, 'afterRestart': after, 'warningVisibleInMessageAndPopup': True, 'scope': 'Bounded revisions per occurrence. Historical warnings use matching resources across the retained archive.'}
     return m
 
 

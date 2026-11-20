@@ -190,6 +190,62 @@ test('report scope capacity refuses a new occurrence while preserving old data',
  assert.equal(JSON.stringify(s.records.get('mail')), before);
 });
 
+test('historical protection sees applicable resources beyond the bounded history display', async () => {
+ const message = {id: 7, headerMessageId: 'mail'};
+ const url = 'https://target.invalid/path?value=7#view';
+ const unrelated = 'https://target.invalid/path?value=7#other';
+ const observedAt = '2026-10-01T08:00:00Z';
+ const report = {state: 'COMPLETE', verdict: 'malicious'};
+ const digest = 'a'.repeat(64);
+ const previous = {
+    attachments: [item()],
+    links: [{url, report, report_fetched_at: observedAt}]
+ };
+ const legacy = {schemaVersion: 1, entries: Array.from({length: 128}, (_, slot) => ({
+    id: String(slot), slot, kind: 'link', resource: {url: 'https://legacy.invalid/' + slot, report: {state: 'COMPLETE', verdict: 'clean'}}
+ }))};
+ const s = setup({messageHeader: 'mail', analysisReportArchive: legacy, analysisOccurrenceReports: {
+    schemaVersion: 1, entries: {
+        '["previous",4]': previous,
+        '["current",8]': {links: [{url: unrelated, report}]},
+        '["invalid"]': {links: [{url: unrelated, report}]}
+    }
+ }});
+ const file = new File(['test'], 'same.bin');
+ Object.assign(s.c, {
+    URL, getAnalysisRuntimeId: () => 'current', getSharedDB: async () => s.db, Logger: {warn() {}},
+    browser: {messages: {listAttachments: async () => [{partName: '1.2', name: file.name, size: file.size}], getAttachmentFile: async () => file}},
+    get_sha256_hash: async () => digest, messageUrlInventory: () => [url, unrelated]
+ });
+ vm.runInContext(['runtime.js', 'provider_results.js', 'analysis_status.js'].map(file => fs.readFileSync(file, 'utf8')).join('\n'), s.c);
+ for (const name of ['messageReportOptions', 'canonicalHttpUrl', 'attachmentFindingStrength',
+     'savedLinkAssessments', 'collectLinkFindings', 'attachmentRiskEvidence', 'selectAttachmentRiskFinding', 'collectAttachmentFindings']) {
+    loadBackgroundFunction(s.c, name);
+ }
+ const view = await s.c.getFromStore(s.db, 'hybridanalysis', 'mail', s.c.messageReportOptions(message, {includeHistory: true}));
+ assert.equal(view.analysisReportArchive.entries.length, 128);
+ assert.equal(view.links, undefined);
+ const links = await s.c.collectLinkFindings(message, {});
+ const attachments = await s.c.collectAttachmentFindings(message);
+ assert.deepEqual(Array.from(links, finding => [finding.url, finding.verdict, finding.source]), [[url, 'malicious', 'archive']]);
+ assert.deepEqual(Array.from(attachments, finding => [finding.name, finding.verdict, finding.source]), [[file.name, 'malicious', 'archive']]);
+ assert.equal(vm.runInContext('ThundyAnalysis', s.c).history(view).truncated, true);
+});
+
+test('an archived URL warning lasts until a newer completed assessment from its provider', () => {
+ const s = setup({messageHeader: 'mail'});
+ s.c.URL = URL;
+ vm.runInContext(fs.readFileSync('provider_results.js', 'utf8'), s.c);
+ for (const name of ['canonicalHttpUrl', 'attachmentFindingStrength', 'savedLinkAssessments']) loadBackgroundFunction(s.c, name);
+ const url = 'https://target.invalid/path';
+ const old = {url, report_fetched_at: '2026-10-01T12:00:00Z', report: {state: 'COMPLETE', verdict: 'malicious'}};
+ const current = {url, report_fetched_at: '2026-10-02T12:00:00Z', report: {finished: false, verdict: 'clean'}};
+ const record = {links: [current], analysisReportArchive: {schemaVersion: 1, entries: [{kind: 'link', resource: old}]}};
+ assert.equal(s.c.savedLinkAssessments(record).get(url).verdict, 'malicious');
+ current.report.finished = true;
+ assert.equal(s.c.savedLinkAssessments(record).get(url).verdict, 'none');
+});
+
 test('an unfinished submission identity is retained without inventing a completed report',async()=>{
  const s=setup({messageHeader:'mail',links:[{url:'https://old.invalid/',state:'UPLOADED',hybrid_job_id:'old-job',hybrid_submission_id:'old-submission',report:null}]});
  await s.c.updateStore(s.db,'hybridanalysis','mail',record=>{record.links[0]={url:'https://old.invalid/',state:'UPLOADED',hybrid_job_id:'new-job'};return record;},{preserveReports:true});

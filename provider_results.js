@@ -130,8 +130,14 @@ var ThundyProviderResults = (function () {
     }
     function resource(item){
         const ha=stored('hybridanalysis',item),us=item?.urlscan?.assessment?.assessmentVersion===1?stored('urlscan',item.urlscan):{verdict:judgement(item?.urlscan?.status)};
-        const retained=item?.urlscan?.retainedFinding;
-        const values=[{verdict:ha.verdict,provider:'hybridanalysis',observedAt:Number.isFinite(Date.parse(item?.report_fetched_at))?Date.parse(item.report_fetched_at):null},{verdict:judgement(item?.hybrid_verdict?.status),provider:'hybridanalysis',observedAt:item?.hybrid_verdict?.observedAt||null},{verdict:judgement(retained?.status),provider:'urlscan',observedAt:retained?.observedAt||null},{verdict:us.verdict,provider:'urlscan',observedAt:item?.urlscan?.observedAt||null}];
+        const retained=item?.urlscan?.retainedFinding, live=item?.hybrid_verdict;
+        const fetchedAt=Date.parse(item?.report_fetched_at);
+        const values=[
+            {verdict:ha.verdict,provider:'hybridanalysis',observedAt:Number.isFinite(fetchedAt)?fetchedAt:null,completion:ha.completion},
+            {verdict:judgement(live?.status),provider:'hybridanalysis',observedAt:live?.observedAt||null,completion:live?.completion},
+            {verdict:judgement(retained?.status),provider:'urlscan',observedAt:retained?.observedAt||null},
+            {verdict:us.verdict,provider:'urlscan',observedAt:item?.urlscan?.observedAt||null,completion:us.completion}
+        ];
         return values.reduce((a,b)=>verdicts.indexOf(b.verdict)>verdicts.indexOf(a.verdict)?b:a,{verdict:'unknown',provider:null,observedAt:null});
     }
     function legacy(provider,data){const a=evaluate(provider,data);return a.verdict==='malicious'?'MALICIOUS':a.verdict==='suspicious'?'SUSPICIOUS':a.verdict==='none'&&a.completion==='complete'?'CLEAN':a.completion==='complete'?'UNKNOWN':null;}
