@@ -12,8 +12,8 @@
 | C08 | Ein bösartiger Anhangsbefund bleibt an die geprüften Bytes gebunden | OK | Native Prüfung mit synthetischem Hybrid-Analysis-Befund und Anhang-SHA-256 |
 | C09 | Der Python-Empfänger übernimmt Link- und Anhangsmeldungen und erzeugt MIME-E-Mails | OK | Thunderbird-POST über HTTPS an den Python-Dienst und lokale SMTP-Annahme |
 | C10 | Mehrfache Anlieferung wird zusammengeführt, vorübergehende SMTP-Fehler werden wiederholt | OK | Python-Integrationstests mit SQLite-Neustart und lokalem SMTP-Testrelay |
-| C11 | Die verpflichtende Browser- und Thunderbird-Matrix deckt das exakte Release-XPI ab | OFFEN | Der GitHub-Workflow erzeugt den an die Paketprüfsumme gebundenen Nachweis |
+| C11 | Die verpflichtende Browser- und Thunderbird-Matrix deckt das exakte Release-XPI ab | OK | [Release-CI](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/45195676935) und [unabhängiger Paketabgleich](audits/release-1.26.2.json) |
 
-**Summe:** 10 OK / 0 FAIL / 0 N/A / 1 OFFEN
+**Summe:** 11 OK / 0 FAIL / 0 N/A / 0 OFFEN
 
 Die vorbereitenden Prüfungen verwenden harmlose Nachrichten, synthetische Anbieterbefunde und lokale Testempfänger. Die endgültigen Clientversionen, Upgradeprüfungen und Paketidentitäten stehen im veröffentlichten Abnahmenachweis.

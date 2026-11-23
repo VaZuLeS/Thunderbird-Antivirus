@@ -665,7 +665,9 @@ def check_followup(m, base, out, report, display, source_catalog):
     subprocess.run(['import', '-window', 'root', str(out / 'coverage-popup.png')], env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
     if 'analysisTitle' in source_catalog:
-        sources = wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card:not(.finding-card)")?.textContent;'))
+        sources = wait_for(lambda: m.page('''const text=document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card:not(.finding-card)")?.textContent;
+            return text?.includes(arguments[0]) && text.includes(arguments[1]) ? text : null;''',
+            [source_catalog['analysisMixed']['message'], source_catalog['analysisSource_stored']['message']]))
         assert source_catalog['analysisMixed']['message'] in sources, sources
         assert source_catalog['analysisSource_stored']['message'] in sources, sources
         probe['analysisSources']['nativeStoredMessage'] = True

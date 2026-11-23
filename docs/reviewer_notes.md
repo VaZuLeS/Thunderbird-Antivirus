@@ -1,4 +1,4 @@
-> Aktueller GitHub-Release-Stand **1.25.9** (unsignierte Distribution). ATN-Signierung und Review bleiben separat offen: [aktueller Stand](AKTUELLER_PRODUKTSTAND.md), [versionsgebundene Prüfung](live_test_1_25_9.md), [Datenmatrix](privacy_policy.md).
+> Aktueller GitHub-Release-Stand **1.26.2** (unsignierte Distribution). ATN-Signierung und Review bleiben separat offen: [aktueller Stand](AKTUELLER_PRODUKTSTAND.md), [versionsgebundene Prüfung](live_test_1_26_2.md), [Datenmatrix](privacy_policy.md).
 
 # Reviewer Notes — Thundy AV (Thunderbird Add-on)
 

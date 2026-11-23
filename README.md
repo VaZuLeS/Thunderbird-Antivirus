@@ -2,13 +2,15 @@
 
 Thundy AV provides local message-risk heuristics, HTML attachment disarming and a link-decision log for Thunderbird. External analysis is optional and disabled until the user grants consent and configures the relevant provider. Local heuristics do not replace a full antivirus engine or guarantee that a message or website is safe.
 
-**Version 1.25.9:** [GitHub release status and download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.9), unsigned distribution. [Release scope and remaining prerequisites](docs/VEROEFFENTLICHUNG_1_25_9.md). An XPI checksum is not a store signature. ATN listing/signing is a separate maintainer step.
+**Version 1.26.2:** [GitHub release status and download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.2), unsigned distribution. [Release scope and remaining prerequisites](docs/VEROEFFENTLICHUNG_1_26_2.md). An XPI checksum is not a store signature. ATN listing/signing is a separate maintainer step.
+
+[Python receiver for security reports](examples/python-receiver/README.md)
 
 ## Install and use
 
 Download the published XPI from GitHub, verify its accompanying `SHA256SUMS.txt`, and use Thunderbird's Add-ons Manager → Install Add-on From File in a test profile first. Follow the permission prompts supported by your Thunderbird version. Do not install a development ZIP as though it were the published release.
 
-The manifest requires Thunderbird 140.0+. Real Linux evidence for the prepared candidate covers 140.12.0 ESR and 153.6.0 ESR in the specific cases recorded in the [execution report](docs/AUSFUEHRUNG_AUFGABEN_2026-11-02.md). This is not a claim that every newer version or Windows/macOS is already verified.
+The manifest requires Thunderbird 140.0 or later. The published acceptance covers Thunderbird 140.12.0 and 153.7.0 on Linux, including upgrade and profile recovery. [Release verification](docs/VEROEFFENTLICHUNG_1_26_2.md)
 
 - Local checks work without API keys. Supported UI languages: English, German, French, Spanish, Italian and Polish.
 - External provider access additionally requires global consent, the relevant optional host/data permissions and the appropriate privacy tier. Automatic message scans need sender authorization; one-off scans do not permanently authorize a sender.

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "kind": "thundy-published-release-verification",
+  "verified": true,
+  "releaseTag": "v1.26.2",
+  "releaseId": 455581092,
+  "releaseUrl": "https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.2",
+  "githubImmutableRelease": false,
+  "publishedAt": "2026-11-23T15:02:55Z",
+  "verifiedAt": "2026-11-23T15:03:34.946Z",
+  "releaseRun": 45195676935,
+  "tagCommit": "c080898adaecc4d547e4548ccc6d0c4d097e6f6e",
+  "xpiSha256": "abe2a8d2f766ab7ab88ccb64f6cf5d7223dea68181fec22fff0d23fb549cc30c",
+  "sourceFingerprint": "102a8fad94b4c6840eacf24a53affc725ba839362ae2b7b82d855471b9d7f459",
+  "assets": [
+    {
+      "name": "acceptance-1.26.2.json",
+      "bytes": 818501,
+      "sha256": "ff873eaa4b422a6eeafd38a0a54f0b91cbb7ce9c1d48e80834a13b271fc2ebfc",
+      "githubAssetId": 783374984
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "bytes": 87,
+      "sha256": "c2b762c2df6cb99101af765dbe6d5408e2e946652f26c36cfc9f9b2c4bbca09d",
+      "githubAssetId": 783374979
+    },
+    {
+      "name": "thundy-av-1.26.2.xpi",
+      "bytes": 462339,
+      "sha256": "abe2a8d2f766ab7ab88ccb64f6cf5d7223dea68181fec22fff0d23fb549cc30c",
+      "githubAssetId": 783374990
+    },
+    {
+      "name": "thundy-python-receiver-1.26.2.zip",
+      "bytes": 31191,
+      "sha256": "d6b08eee86e42cfa926f223e8872ac4ba46e3c676903418eebc6b11be9500af6",
+      "githubAssetId": 783374981
+    }
+  ],
+  "previousRelease": {
+    "version": "1.25.9",
+    "sha256": "21c4df27b24211268f7a96873c43da26eba93b28be84b6d7f9f37cebc388c661"
+  },
+  "upgradeAndRestoreCases": 12,
+  "clientTargets": [
+    {
+      "target": "current",
+      "version": "153.7.0",
+      "platform": "Linux CI"
+    },
+    {
+      "target": "minimum",
+      "version": "140.12.0",
+      "platform": "Linux CI"
+    }
+  ],
+  "browserLanguages": [
+    "de",
+    "en",
+    "es",
+    "fr",
+    "it",
+    "pl"
+  ],
+  "limits": {
+    "unsignedEvidence": true,
+    "syntheticProviderResponses": true,
+    "realProviderAccountsVerified": false,
+    "windowsVerified": false,
+    "macosVerified": false,
+    "screenReadersVerified": false,
+    "automaticUpdateChannelVerified": false
+  },
+  "verificationScope": "Independent GitHub release download. XPI and receiver files checked against the tagged source. All asset digests and the release acceptance report verified.",
+  "tagReplayRun": 45198513589,
+  "publicationMethod": "The published XPI and acceptance report are the unchanged files from the fully successful CI run of the tagged main commit. The tag replay later failed an asynchronous UI assertion."
+}

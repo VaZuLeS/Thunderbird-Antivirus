@@ -1,8 +1,8 @@
-# Aktueller Produktstand — 19. November 2026
+# Aktueller Produktstand
 
-**Version 1.25.9 ist auf GitHub veröffentlicht.** XPI-SHA-256 `21c4df27b24211268f7a96873c43da26eba93b28be84b6d7f9f37cebc388c661`. Alle drei öffentlichen Release-Dateien sind unabhängig geprüft. [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.9) · [Veröffentlichungsnachweis](VEROEFFENTLICHUNG_1_25_9.md) · [Abnahme](live_test_1_25_9.md)
+**Version 1.26.2 ist auf GitHub veröffentlicht.** Die XPI-SHA-256 lautet `abe2a8d2f766ab7ab88ccb64f6cf5d7223dea68181fec22fff0d23fb549cc30c`. Die vier Release-Dateien wurden nach dem Download geprüft. [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.2) · [Veröffentlichungsnachweis](VEROEFFENTLICHUNG_1_26_2.md) · [Abnahme](live_test_1_26_2.md)
 
-1.25.9 zeigt den lokalen Score auch ohne externe Dienste an und begrenzt die Wartezeit bei Link- und Auditvorgängen. Dazu kommen eine Admin-geschützte API-Diagnoseansicht, kompaktere Inline-Ansichten, ein eigener Hybrid-Analysis-Berichtstab und ein konfigurierbarer Schutz für Anhangaktionen. Die Abnahme bestätigt das direkte Upgrade von 1.25.8, die Wiederherstellung nach Prozessverlust und die Rückkehr zum gesicherten Thunderbird-Profil auf beiden Linux-Clientlinien. [Releaseumfang](releases/1.25.9.md) · [Lokaler Score](LOKALER_SCORE_1_25_9.md) · [API-Diagnose](API_DIAGNOSEANSICHT_1_25_9.md) · [Manuelle Anhangprüfung](MANUELLE_ANHANGBINDUNG_1_25_9.md)
+Firmen können Thundys Link- und Anhangschutz zentral einstellen und kontrollierte Öffnungs- und Speicherversuche optional per HTTPS melden. Die Nachrichtenansicht und das Linkprotokoll erklären Anbieterbefunde und Richtliniensperren. Der separate Python-Empfänger übernimmt die Zustellung an ein konfigurierbares Postfach. [Releaseumfang](releases/1.26.2.md) · [Python-Empfänger einrichten](https://github.com/VaZuLeS/Thunderbird-Antivirus/blob/v1.26.2/examples/python-receiver/README.md)
 
 ## Funktionen und nachgewiesene Grenzen
 
@@ -18,14 +18,15 @@
 | Historie und Datenschutz | Additive Quellen-/Berichtsarchive im begrenzten Analysecache; separate Auditretention. Kein unbegrenztes oder unveränderliches Langzeitarchiv |
 | Einrichtung | Lokale Darstellungsprofile und Schutzprofile mit Vorschau/Bestätigung und v1/v2-Kompatibilität vorhanden; keine importierte Einwilligung oder versteckte Integrationsaktivierung |
 | Lokale Administration | Optionale profilbezogene Adminsperre, getrenntes Freigabepasswort und Wiederherstellung; kein zentraler SSO-/MDM-Dienst und kein Schutz vor Änderungen am Benutzerprofil |
+| Firmenrichtlinien und Meldungen | Verwalteter Schutz für Thundys eigene Öffnungswege, optionales HTTPS-Reporting und separater Python-Empfänger mit SQLite und SMTP |
 | Enterprise | Deaktivierte Konfigurationsprofile und lokale Node-Werkzeuge mit signierten Journalelementen, Outbox und Offline-Reviews. Produktive SSO/RBAC-/OS-/SEALED-Gesamtintegration weiterhin offen |
 | React | Separate gekennzeichnete Websimulation mit eigenem localStorage; nicht im XPI |
 | Installation und Rückweg | GitHub-XPI und begrenzte echte Linux-Upgrade-/Crash-/Profilrestore-Nachweise. ATN, automatische Updates und allgemeiner In-place-Downgrade dadurch nicht bestätigt |
-| Weitere Plattformen | Windows/macOS, NVDA/VoiceOver, native DPI/High Contrast weiterhin eigenständige offene Abnahmen |
+| Weitere Plattformen | Fokussierter Windows-Test mit Thunderbird 160 für Öffnungsdialoge und HTTPS/SMTP. Vollständige Plattform- und Screenreader-Abnahmen sind weiterhin separat. |
 
 ## Nachweise richtig lesen
 
-Der Veröffentlichungsnachweis verknüpft die geprüften Paketbytes und den Quellfingerprint mit den simulierten Anbieterprüfungen und den echten Thunderbird-Läufen. ATN-Signierung und automatische Updates bleiben offen. Frühere Kandidatenberichte behalten ihre eigenen Paketidentitäten. [Paket und Release-Dateien](audits/release-1.25.9.json) · [Release-CI](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/44425122989)
+Der Veröffentlichungsnachweis verknüpft die geprüften Paketbytes und den Quellfingerprint mit den simulierten Anbieterprüfungen und den echten Thunderbird-Läufen. ATN-Signierung und automatische Updates bleiben offen. Frühere Kandidatenberichte behalten ihre eigenen Paketidentitäten. [Paket und Release-Dateien](audits/release-1.26.2.json) · [Release-CI](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/45195676935)
 
 Nach dem GitHub-Pages-Deployment prüft der Workflow den öffentlichen Spracheinstieg, die aktuelle Dokumentation und die Downloadlinks aller sechs Sprachseiten. Er lädt das verlinkte XPI und die Prüfsummendatei per HTTPS und vergleicht beide mit der veröffentlichten Paketidentität. [Pages-Workflow](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/workflows/pages.yml)
 
