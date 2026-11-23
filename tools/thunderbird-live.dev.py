@@ -2119,7 +2119,9 @@ def check_provider_results(m, base, out, report, display, message_id):
         report['providerFailure']={'snapshot':snapshot(),'calls':m.page('return window.wrappedJSObject.__providerCalls;',browser=options),'errors':m.page('return window.wrappedJSObject.__automaticScanErrors;',browser=options)}
         raise
     assert observed['protection']['required'] and observed['protection']['reason']=='malicious',observed
-    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes("Dangerous content reported");'))
+    danger_heading = m.page('return window.wrappedJSObject.browser.i18n.getMessage("analysisSimpleDanger");',browser=options)
+    finding_heading = 'return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(".finding-card h2")?.textContent===arguments[0];'
+    wait_for(lambda:m.page(finding_heading,[danger_heading]))
     expert_view(m)
     m.page('const root=document.getElementById("thundy-analysis-status").shadowRoot;Array.from(root.querySelectorAll("details")).find(d=>d.dataset.key?.startsWith("hybridanalysis:report:" )).open=true;')
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes("Different partial assessments");'))
@@ -2164,7 +2166,7 @@ def check_provider_results(m, base, out, report, display, message_id):
     native_click(display,point['x'],point['y'])
     wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
-    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes("Dangerous content reported");',browser=popup))
+    wait_for(lambda:m.page(finding_heading,[danger_heading],browser=popup))
     expert_view(m,popup)
     wait_for(lambda:m.page('return !!document.querySelector("#hybrid_analysis_api_content .card-danger");',browser=popup))
     expert_details(popup)
