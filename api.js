@@ -171,10 +171,9 @@ if (typeof ThundyAnalysis !== 'undefined') {
     popupAnalysisContext = { scopeOverride: 'report', event: event => browser.runtime.sendMessage({ action: 'recordAnalysisEvent', messageId: message.id, event }) };
     let sourceGeneration = 0;
     const sourceLabels = ThundyAnalysis.labels(key => uiText(key, key));
-    const sourceTheme = typeof ThundyTheme !== 'undefined' ? (await ThundyTheme.snapshot())?.css || '' : '';
     const noSources = { messageId: message.id, local: { state: 'unrecorded' }, rows: [], availability: {} };
     let sourceView=noSources;
-    const renderSourceState=data=>{if(data){sourceView=data;if(data.local)renderLocalAssessment(data.local,data.local.state,true);}ThundyAnalysis.render({...sourceView,...(localResult?{local:localResult}:{})},sourceLabels,sourceTheme);};
+    const renderSourceState=data=>{if(data){sourceView=data;if(data.local)renderLocalAssessment(data.local,data.local.state,true);}ThundyAnalysis.render({...sourceView,...(localResult?{local:localResult}:{})},sourceLabels);};
     renderLocalSourceState=()=>renderSourceState();renderSourceState(noSources);
     const refreshSources = async () => {
         const own = ++sourceGeneration;

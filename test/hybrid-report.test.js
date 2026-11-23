@@ -80,8 +80,8 @@ test('compact inline keeps warnings and score visible while preserving focused c
   const c=setup({document:dom.window.document,browser:{runtime:{sendMessage:async req=>{requests.push(req);return {success:true};}}}});vm.runInContext(source+'\nglobalThis.analysis=ThundyAnalysis;',c);
   const labels=c.analysis.labels(key=>catalog[key]?.message||'MISSING:'+key),data={messageId:42,contextToken:'bound',local:{state:'checked',score:0},scanJob:{state:'failed',reason:'source_capacity',manualAllowed:false},sourcePersistenceFailed:true,sourcePersistenceReason:'storage_failed',rows:[],hybridReports:{'attachment:1':{schemaVersion:1,sections:[],resourceToken:token}}};
   const render=()=>c.analysis.render(data,labels,'',{surface:'message'}),host=render(),root=host.shadowRoot;
-  assert.ok(root.querySelector('.inline-toolbar .local-score').textContent.includes('0 / 100'));
-  assert.ok(root.querySelector('.card:not([hidden])').textContent.includes(catalog.analysisPersistenceFailed.message));
+  assert.ok(root.querySelector('.finding-card .local-score').textContent.includes('0 / 100'));
+  assert.ok(root.querySelector('.card:not(.finding-card):not([hidden])').textContent.includes(catalog.analysisPersistenceFailed.message));
   assert.ok(root.querySelector('.scan-actions').textContent.includes(catalog.scanFailure_source_capacity.message));
   root.querySelector('[data-focus-key=view-switch]').click();const details=root.querySelector('[data-key=expert-explanation]');details.open=true;details.querySelector('summary').focus();render();
   assert.equal(root.querySelector('[data-key=expert-explanation]').open,true);assert.equal(root.activeElement?.dataset.focusKey,'expert-explanation');
@@ -116,9 +116,9 @@ test('inline names the strongest resource and attributes only comparable cross-p
   assert.match(simple.querySelector('.finding-summary').textContent,/Hybrid Analysis.*fixture\.zip/);
   assert.match(simple.querySelector('.provider-counts').textContent,/analysisProviderFindingsCount: 3.*analysisProviderPendingCount: 1.*analysisProviderErrorsCount: 1/);
   assert.doesNotMatch(simple.textContent,/analysisConflict/);
-  assert.match(simple.textContent,/analysisFindingObserved.*analysisAttempted/);
+  assert.match(root.textContent,/analysisFindingObserved.*analysisAttempted/);
   data.rows.push({...clean,provider:'virustotal',resource:'attachment:1',scope:'hash'});
-  assert.match(visibleCard(render()).textContent,/analysisConflict/);
+  assert.match(render().querySelector('[data-key="overview-resources"] [data-resource="attachment:1"]').textContent,/analysisConflict/);
   root.querySelector('[data-focus-key=view-switch]').click();
   const report = root.querySelector('[data-provider=hybridanalysis] .service-resource');
   assert.match(report.querySelector('summary').textContent,/fixture\.zip/);
@@ -217,6 +217,7 @@ test('inline evidence action opens only the bound Hybrid report or focuses the e
   data.rows = [{...warning,provider:'virustotal',scope:'hash'}];
   render();
   assert.equal(root.querySelector('.overview-report-link'),null);
+  assert.ok(root.querySelector('[data-key="overview-resources"] .hybrid-report-link button'));
   root.querySelector('[data-focus-key=overview-find-warning]').click();
   assert.equal(root.activeElement.dataset.focusKey,'virustotal:hash:attachment:1');
   assert.equal(root.activeElement.parentElement.open,true);

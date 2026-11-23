@@ -333,7 +333,7 @@ function evaluateLinks(options = {}) {
             if (hostname) linkDomainsSet.add(hostname);
         } catch (e) { /* Ignore invalid URLs */ }
     }
-    if (linkDomainsSet.size > 0 && senderDomain) {
+    if (linkDomainsSet.size > 0) {
         let matchFound = false;
         let typosquatLinkFound = false;
         let checkedMainDomains = new Map();
@@ -343,7 +343,7 @@ function evaluateLinks(options = {}) {
         const dotSenderDomain = '.' + senderDomain;
         const dotSenderMainDomain = senderMainDomain ? '.' + senderMainDomain : '';
         for (let ld of linkDomainsSet) {
-            if (!matchFound) {
+            if (senderDomain && !matchFound) {
                 if (ld === senderDomain || ld.endsWith(dotSenderDomain) || senderDomain.endsWith('.' + ld)) {
                     matchFound = true;
                 } else if (senderMainDomain && (ld === senderMainDomain || ld.endsWith(dotSenderMainDomain))) {
@@ -361,7 +361,7 @@ function evaluateLinks(options = {}) {
             }
         }
 
-        if (!matchFound) {
+        if (senderDomain && !matchFound) {
             score += 40;
             if (!(reasons.details || []).some(reason => reason.code === 'ui_097')) {
                  addReason(reasons, "ui_097", "Keiner der Links im Text verweist auf die Absender-Domain ($1).", [senderDomain]);

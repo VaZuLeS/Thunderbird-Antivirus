@@ -29,6 +29,10 @@ Anfragen gehen direkt an Hybrid Analysis (`hybrid-analysis.com`), VirusTotal (`w
 
 ### Kontrolle und lokale Daten
 
+Firmenmeldungen haben eine eigene Zustimmung und sind standardmäßig aus. Bei verwalteten Schutzregeln können Ereignis-ID, Zeitpunkt, Aktion, Befund, Entscheidung und Richtlinienversion an den angegebenen Firmen-Endpunkt übertragen werden. Optional gehören der Hostname des Links oder der SHA-256 des Anhangs zum Ereignis. Ausstehende Meldungen werden höchstens 24 Stunden lokal zwischengespeichert. Der Widerruf für Firmenmeldungen löscht die Warteschlange. [Einrichtung und Datenfelder](UNTERNEHMENSRICHTLINIE.md)
+
+Aktiviert die Firma den ausführlichen Modus und stimmt der Profilnutzer dem zu, können Auslöser, Scores, Dateiname, Anbieterurteile und Berichtsreferenzen hinzukommen. Anbieterberichte können eine Anmeldung erfordern und zusätzliche Daten des untersuchten Objekts anzeigen.
+
 Widerruf stoppt neue Anfragen und bricht wartende/laufende Gateway-Anfragen ab. Der Popup-Lebenszyklus verwirft ungültig gewordene verspätete Ergebnisse und Pollingtimer. Bereits übertragene Daten lassen sich damit nicht zurückholen; anbieterinterne Aufbewahrung und Löschmöglichkeiten richten sich nach dessen Bedingungen.
 
 Einstellungen, Zustimmung, Absenderfreigaben und API-Schlüssel liegen in `browser.storage.local` im Thunderbird-Profil. Schlüssel sind dort nicht gesondert verschlüsselt. Der Profil-/Betriebssystemschutz ist maßgeblich. Keine Schlüssel in Exportdateien, Tickets oder Versionskontrolle ablegen.
@@ -40,6 +44,10 @@ Das Audit enthält vollständige URL, Nachrichtenkennung, Zeitpunkt, Score/Prüf
 „Cache leeren“, „Linkprotokoll löschen“ und Entfernen von Absenderfreigaben sind getrennte Aktionen. Ein Upgrade erteilt keine Zustimmung und schreibt historische Entscheidungen nicht neu. Exportierte JSON-/CSV-Dateien und Profilbackups liegen außerhalb der automatischen Extensionbereinigung; ihre Besitzer müssen sie separat schützen und löschen. Ein Backup-Restore stellt nur den Sicherungsstand wieder her. [Dateninventar und Wiederherstellung](DATENLEBENSZYKLUS.md).
 
 ## English
+
+Company incident reporting is off by default and has a separate consent control. Under managed protection rules, reports can include the event ID, time, action, finding, decision and policy version, with an optional link hostname or attachment SHA-256. Pending reports are queued locally for up to 24 hours. Withdrawing reporting consent clears the pending queue. [Configuration and event fields](UNTERNEHMENSRICHTLINIE.md)
+
+Detailed mode requires separate approval and may include the decision reason, scores, attachment filename, provider verdicts and report references. The provider report may require sign-in and may display more information about the scanned resource.
 
 The extension reads the displayed message locally, including sender, subject, headers, text, links and attachment metadata. Local checks, HTML disarming and the local audit work without API credentials. There is no telemetry or developer analysis server. A low score is not a guarantee of safety.
 

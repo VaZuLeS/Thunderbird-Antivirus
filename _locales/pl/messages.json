@@ -993,7 +993,7 @@
     "message": "Zapis lokalny: maksymalnie 30 dni, 2000 wpisów lub 2 MiB; najstarsze wpisy są usuwane. Pełne adresy URL mogą zawierać dane osobowe lub tokeny dostępu. Brak automatycznego wysyłania. Użytkownicy profilu mogą zmieniać lub usuwać dziennik; nie jest to centralny audyt odporny na manipulacje. Lokalny wynik uwzględnia odnośnik i kontekst wiadomości, nie wynik dostawcy. Powody oceny mogą zawierać dane nadawcy lub domeny."
   },
   "auditSearch": {
-    "message": "URL lub domena"
+    "message": "URL, domena lub ID zdarzenia"
   },
   "auditOutcome": {
     "message": "Decyzja"
@@ -2194,10 +2194,10 @@
     "message": "Nie wykryto podejrzanych oznak"
   },
   "analysisSimpleCaution": {
-    "message": "Uwaga"
+    "message": "Podejrzenie"
   },
   "analysisSimpleDanger": {
-    "message": "Zgłoszono niebezpieczną treść"
+    "message": "Wykryto zagrożenie"
   },
   "analysisSimpleIncomplete": {
     "message": "Sprawdzenie niepełne"
@@ -3215,5 +3215,158 @@
   },
   "auditFullSave": {
     "message": "Eksportuj pełny dziennik"
+  },
+  "managedByCompany": {
+    "message": "Zarządzane przez organizację"
+  },
+  "managedLocal": {
+    "message": "Źródło: ten profil Thunderbirda"
+  },
+  "managedRevision": {
+    "message": "Wersja zasad"
+  },
+  "managedThreshold": {
+    "message": "Próg"
+  },
+  "managedPolicyInvalid": {
+    "message": "Zasady firmowe są nieprawidłowe. Skontaktuj się z działem IT."
+  },
+  "managedLinkBlocked": {
+    "message": "Twoja organizacja zablokowała ten odnośnik."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Otwórz w Thundy"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Otwórz załącznik"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy sprawdza ten załącznik przed przekazaniem go Thunderbirdowi."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird przyjął żądanie otwarcia załącznika."
+  },
+  "attachmentOpenFailed": {
+    "message": "Nie udało się otworzyć załącznika."
+  },
+  "reportingTitle": {
+    "message": "Zgłoszenia bezpieczeństwa do firmy"
+  },
+  "reportingOff": {
+    "message": "Automatyczne zgłaszanie jest wyłączone."
+  },
+  "reportingNeedsConsent": {
+    "message": "Wysyłanie wymaga Twojej zgody i tokena."
+  },
+  "reportingNeedsPermission": {
+    "message": "Brak uprawnienia. Włącz ponownie zgłoszenia."
+  },
+  "reportingReady": {
+    "message": "Twoja organizacja może odbierać automatyczne zgłoszenia."
+  },
+  "reportingQueued": {
+    "message": "Oczekujące zgłoszenia:"
+  },
+  "reportingMalicious": {
+    "message": "Wykrycia złośliwe"
+  },
+  "reportingSuspicious": {
+    "message": "Wykrycia złośliwe i osiągnięte progi"
+  },
+  "reportingConsent": {
+    "message": "Zgadzam się na przesyłanie identyfikatora, czasu, działania, wyniku, decyzji i wersji zasad na powyższy adres firmowy."
+  },
+  "reportingConsentIndicators": {
+    "message": "Zgadzam się na przesyłanie identyfikatora, czasu, działania, wyniku, decyzji, wersji zasad oraz hosta odnośnika lub SHA-256 załącznika na powyższy adres."
+  },
+  "reportingToken": {
+    "message": "Token wysyłania od działu IT"
+  },
+  "reportingActivate": {
+    "message": "Włącz zgłoszenia lub wymień token"
+  },
+  "reportingRevoke": {
+    "message": "Cofnij zgodę i usuń oczekujące zgłoszenia"
+  },
+  "reportingSetupFailed": {
+    "message": "Nie udało się zastosować ustawień zgłoszeń."
+  },
+  "reportingAuthentication": {
+    "message": "Serwer odrzucił token wysyłania."
+  },
+  "reportingRejected": {
+    "message": "Serwer odrzucił zgłoszenie."
+  },
+  "reportingStorage": {
+    "message": "Thundy nie mógł odczytać ani zapisać kolejki zgłoszeń."
+  },
+  "reportingFull": {
+    "message": "Kolejka jest pełna. Część zgłoszeń może zostać utracona."
+  },
+  "reportingExpired": {
+    "message": "Zgłoszenie wygasło przed dostarczeniem."
+  },
+  "reportingPrivacy": {
+    "message": "Po wyrażeniu odrębnej zgody Thundy zgłasza na adres firmy określone próby otwarcia odnośników lub otwarcia bądź zapisania załączników. Zgłoszenia zawierają identyfikator, czas, działanie, wynik, decyzję, wersję zasad oraz opcjonalnie nazwę hosta lub SHA-256 pliku. Kolejka jest przechowywana lokalnie do 24 godzin. Zgodę można cofnąć i usunąć kolejkę w ustawieniach."
+  },
+  "reportingConsentDetails": {
+    "message": "Zgadzam się również na przesłanie podstawy decyzji, dostępnych ocen, nazwy pliku, werdyktów dostawców i dostępnych odnośników do raportów."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Szczegółowe zgłoszenia mogą zawierać nazwę pliku i odnośniki do raportów dostawców."
+  },
+  "analysisRunningHeading": {
+    "message": "Trwa sprawdzanie"
+  },
+  "analysisLocalNoFinding": {
+    "message": "Brak oznak zagrożenia w sprawdzeniu lokalnym"
+  },
+  "analysisLinksGroup": {
+    "message": "Odnośniki"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Załączniki"
+  },
+  "protectionOpenAllowed": {
+    "message": "Można otworzyć"
+  },
+  "protectionSaveAllowed": {
+    "message": "Można zapisać"
+  },
+  "protectionWarn": {
+    "message": "Ostrzeżenie"
+  },
+  "protectionApproval": {
+    "message": "Wymagana zgoda"
+  },
+  "protectionRequestApproval": {
+    "message": "Poproś o zgodę"
+  },
+  "protectionBlocked": {
+    "message": "Zablokowano"
+  },
+  "protectionMalicious": {
+    "message": "Dostawca zgłosił wykrycie zagrożenia"
+  },
+  "protectionThreshold": {
+    "message": "Osiągnięto próg ochrony"
+  },
+  "protectionManagedThreshold": {
+    "message": "Osiągnięto firmowy próg"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "Obowiązujące ustawienia zezwalają na tę czynność."
+  },
+  "linkContextChanged": {
+    "message": "Odnośnik lub wiadomość zmieniły się podczas sprawdzania."
+  },
+  "auditPolicyBlocked": {
+    "message": "Zablokowano przez zasady"
+  },
+  "reportingLastReceipt": {
+    "message": "Ostatni odbiór potwierdzony przez serwer"
+  },
+  "reportingOldestPending": {
+    "message": "Najstarsze oczekujące zgłoszenie"
   }
 }

@@ -8,8 +8,100 @@ const ThundySettings = (() => {
         return result;
     };
     const set=values=>send({action:'securitySettingsWrite',values});
-    const storage={get:(...args)=>browser.storage.local.get(...args),set};
+    const storage={get:(...args)=>browser.storage.local.get(...args),set:values=>{
+        if (document.getElementById('timeOfClickProtection')?.dataset.managed) {
+            const {timeOfClickProtection,...editable} = values;
+            return set(editable);
+        }
+        return set(values);
+    }};
     async function command(op,values={}){return send({action:'securityCommand',op,...values});}
+    function mountReporting(panel) {
+        const section = document.createElement('section');
+        section.className = 'security-controls';
+        section.id = 'incidentReporting';
+        const heading = document.createElement('h2');
+        heading.textContent = t('reportingTitle');
+        const status = document.createElement('p');
+        status.setAttribute('role','status');
+        const destination = document.createElement('p');
+        const lastReceipt = document.createElement('p');
+        const oldestPending = document.createElement('p');
+        const enrollment = document.createElement('form');
+        const consentLabel = document.createElement('label');
+        const consent = document.createElement('input');
+        consent.type='checkbox';consent.required=true;
+        const explanation = document.createElement('span');
+        consentLabel.append(consent,explanation);
+        const credentialLabel = document.createElement('label');
+        const credential = document.createElement('input');
+        credential.type='password';credential.required=true;credential.minLength=16;credential.maxLength=1024;
+        credential.autocomplete='off';credential.spellcheck=false;
+        credentialLabel.append(t('reportingToken'),credential);
+        const activate = document.createElement('button');
+        activate.textContent=t('reportingActivate');
+        enrollment.append(consentLabel,credentialLabel,activate);
+        const revoke = document.createElement('button');
+        revoke.type='button';revoke.textContent=t('reportingRevoke');
+        const result = document.createElement('p');
+        result.setAttribute('role','status');
+        section.append(heading,status,destination,lastReceipt,oldestPending,enrollment,revoke,result);
+        panel.after(section);
+        let sending = false, currentReporting;
+        function render(info, unlocked) {
+            currentReporting = info;
+            section.hidden = !info;
+            if (!info) return;
+            const states = {off:'reportingOff',invalid:'managedPolicyInvalid',consent:'reportingNeedsConsent',permission:'reportingNeedsPermission',ready:'reportingReady',storage:'reportingStorage'};
+            const failures = {authentication:'reportingAuthentication',rejected:'reportingRejected',storage:'reportingStorage',full:'reportingFull',expired:'reportingExpired'};
+            const label = [t(states[info.state]), info.endpoint ? t('reportingQueued')+' '+info.queued : '',
+                info.failure ? t(failures[info.failure]) : ''].filter(Boolean).join(' · ');
+            if (status.textContent !== label) status.textContent = label;
+            destination.textContent = info.endpoint ? [info.endpoint,t(info.mode==='malicious'?'reportingMalicious':'reportingSuspicious')].join(' · ') : '';
+            for (const [line,label,at,id] of [
+                [lastReceipt,'reportingLastReceipt',info.lastReceiptAt,info.lastReceiptId],
+                [oldestPending,'reportingOldestPending',info.oldestPendingAt,info.oldestPendingId]
+            ]) {
+                line.hidden = !info.endpoint;
+                line.textContent = [t(label), Number.isFinite(at) ? ThundyI18n.date(at) : t('auditUnavailable'), id].filter(Boolean).join(' · ');
+            }
+            explanation.textContent = [t(info.indicators?'reportingConsentIndicators':'reportingConsent'),
+                info.details ? t('reportingConsentDetails') : ''].filter(Boolean).join(' ');
+            enrollment.hidden = !info.endpoint || !unlocked;
+            revoke.hidden = !['ready','permission','storage'].includes(info.state);
+            activate.disabled = revoke.disabled = sending;
+        }
+        async function refresh() {
+            const latest = await command('status');
+            render(latest.reporting,latest.unlocked);
+        }
+        async function change(task) {
+            if (sending) return;
+            sending=true;activate.disabled=revoke.disabled=true;result.textContent='';
+            try {
+                await task();
+                consent.checked=false;
+            } catch (_) { result.textContent=t('reportingSetupFailed'); }
+            finally {
+                credential.value='';sending=false;activate.disabled=revoke.disabled=false;
+                await refresh().catch(() => {});
+            }
+        }
+        enrollment.onsubmit = event => {
+            event.preventDefault();
+            const info = currentReporting;
+            if (!info?.endpoint || !consent.checked) return;
+            void change(async () => {
+                if (!await requestIncidentPermissions(info)) throw Error('REPORTING_SETUP_INVALID');
+                await command('enableReporting',{consent:true,details:info.details,endpoint:info.endpoint,credential:credential.value});
+            });
+        };
+        revoke.onclick = () => change(() => command('disableReporting'));
+        setInterval(() => {
+            if (!sending && !document.hidden && currentReporting?.endpoint) void refresh().catch(() => {});
+        },10000);
+        return render;
+    }
     async function mount(){
         const shell=document.querySelector('.settings-shell')||document.querySelector('main');
         if(!shell)return;
@@ -30,8 +122,10 @@ const ThundySettings = (() => {
         const threshold=field('securityThreshold','number');threshold.required=true;threshold.min='0';threshold.max='100';threshold.value='50';
         const enabled=field('securityEnablePolicy','checkbox');
         const unknown=field('securityUnknownApproval','checkbox');
+        const linkSource = document.createElement('p');
+        form.append(linkSource);
         const attachmentControls = [];
-        let attachmentMode, attachmentThreshold, attachmentUnknown;
+        let attachmentMode, attachmentThreshold, attachmentUnknown, attachmentSource;
         if (location.pathname.endsWith('/options.html')) {
             const group = document.createElement('fieldset');
             const legend = document.createElement('legend');
@@ -67,6 +161,8 @@ const ThundySettings = (() => {
                 ['warn','attachmentModeWarn'],['block','attachmentModeBlock']
             ]);
             attachmentControls.push(attachmentMode,attachmentThreshold,attachmentUnknown);
+            attachmentSource = document.createElement('p');
+            group.append(attachmentSource);
             form.append(group);
         }
         const unlock=document.createElement('button');unlock.type='button';unlock.dataset.security='unlock';unlock.textContent=t('securityUnlock');form.append(unlock);
@@ -99,6 +195,7 @@ const ThundySettings = (() => {
         browser.storage.onChanged?.addListener(providerChanged);
         panel.append(providers);
         document.body.prepend(panel);
+        const renderReporting = location.pathname.endsWith('/options.html') ? mountReporting(panel) : () => {};
         // Appearance preferences have their own save operation: no key tests,
         // permission prompts, scan restart or consent changes accompany it.
         let view,showDetails,displaySave,debugControls=[],debugRefresh=async()=>{},debugHide=()=>{};
@@ -149,21 +246,36 @@ const ThundySettings = (() => {
                 admin.autocomplete=current.unlocked?'new-password':'current-password';admin.parentElement.firstChild.textContent=t(current.unlocked?'securityAdminPassword':'securityUnlockPassword');
                 disable.hidden=!current.protected||!current.unlocked;lock.hidden=!current.protected||!current.unlocked;unlock.hidden=!current.protected||current.unlocked;recoveryGroup.hidden=!current.protected||current.unlocked;
                 approvalState.textContent=t(current.approvalConfigured?'securityApprovalConfigured':'securityApprovalMissing');
-                threshold.value=current.policy.threshold;enabled.checked=current.policy.enabled;unknown.checked=current.policy.unknown==='approval';
+                threshold.value=current.policy.threshold ?? '';enabled.checked=current.policy.enabled;unknown.checked=current.policy.unknown==='approval';
+                const source = policy => policy.managed ? policy.invalid ? t('managedPolicyInvalid') :
+                    [t('managedByCompany'),t('managedRevision')+' '+policy.revision,
+                        t('managedThreshold')+' '+policy.threshold,t(policy.action==='block'?'attachmentModeBlock':'attachmentModeWarn'),
+                        t('attachmentUnknownSetting')+' '+t(policy.unknown==='block'?'attachmentModeBlock':'attachmentModeWarn')].join(' · ') : t('managedLocal');
+                linkSource.textContent=source(current.policy);
+                if (current.policy.managed) for (const input of [enabled,threshold,unknown]) input.disabled=true;
+                const clickProtection = document.getElementById('timeOfClickProtection');
+                if (clickProtection && current.policy.managed) {
+                    clickProtection.dataset.managed='true';clickProtection.checked=true;clickProtection.disabled=true;
+                    clickProtection.title=t('managedByCompany');
+                }
                 if (attachmentMode) {
                     const policy = current.attachmentPolicy || {mode:'off',threshold:70,unknown:'warn'};
                     attachmentMode.value = policy.mode;
-                    attachmentThreshold.value = policy.threshold;
+                    attachmentThreshold.value = policy.threshold ?? '';
                     attachmentUnknown.value = policy.unknown;
+                    attachmentSource.textContent=source(policy);
+                    if (policy.managed) for (const input of attachmentControls) input.disabled=true;
                 }
+                renderReporting(current.reporting,current.unlocked);
                 await debugRefresh();
             }catch(_){shell.hidden=hideShell;debugHide();for(const input of [...debugControls,...attachmentControls])input.disabled=true;state.textContent=t('securityError');}
         };
         const run=async fn=>{if(busy)return;busy=true;output.textContent='';try{await fn();await refresh();}catch(e){output.textContent=t(e.code==='PASSWORD_WAIT'?'securityWait':['PASSWORD_LENGTH','PASSWORDS_DISTINCT'].includes(e.code)?'securityLength':e.code==='PASSWORD_CONFIRM'?'securityConfirmMismatch':'securityError');if(e.code==='ADMIN_LOCKED')await refresh();}finally{busy=false;for(const input of [admin,adminConfirm,approval,approvalConfirm,recovery,recoveryAdmin,recoveryConfirm])input.value='';}};
         const confirm=(password,repeated)=>{if(password!==repeated)throw Object.assign(Error('PASSWORD_CONFIRM'),{code:'PASSWORD_CONFIRM'});};
         unlock.onclick=()=>run(async()=>{token=(await command('unlock',{password:admin.value})).token;connect();});
-        form.onsubmit=event=>{event.preventDefault();run(async()=>{confirm(admin.value,adminConfirm.value);confirm(approval.value,approvalConfirm.value);const result=await command('configure',{adminPassword:admin.value||undefined,approvalPassword:approval.value||undefined,policy:{enabled:enabled.checked,threshold:Number(threshold.value),unknown:unknown.checked?'approval':'warn'},
-            ...(attachmentMode ? {attachmentPolicy:{mode:attachmentMode.value,threshold:Number(attachmentThreshold.value),unknown:attachmentUnknown.value}} : {})
+        form.onsubmit=event=>{event.preventDefault();run(async()=>{confirm(admin.value,adminConfirm.value);confirm(approval.value,approvalConfirm.value);const result=await command('configure',{adminPassword:admin.value||undefined,approvalPassword:approval.value||undefined,
+            ...(!current.policy.managed ? {policy:{enabled:enabled.checked,threshold:Number(threshold.value),unknown:unknown.checked?'approval':'warn'}} : {}),
+            ...(attachmentMode && !current.attachmentPolicy?.managed ? {attachmentPolicy:{mode:attachmentMode.value,threshold:Number(attachmentThreshold.value),unknown:attachmentUnknown.value}} : {})
         });token=null;output.textContent=result.recovery?t('securityRecoverySave')+' '+result.recovery:t('securitySaved');});};
         lock.onclick=()=>run(async()=>{await command('lock');token=null;});
         disable.onclick=()=>run(async()=>{if(!window.confirm(t('securityDisableConfirm')))return;await command('disableAdmin');token=null;});

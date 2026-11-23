@@ -61,6 +61,11 @@ jobs:
         run: npm run check:design
       - name: Run unit tests
         run: npm test
+      - name: Verify Python receiver against Thundy and a local HTTPS/SMTP relay
+        run: |
+          python3 -m venv "$RUNNER_TEMP/thundy-receiver"
+          "$RUNNER_TEMP/thundy-receiver/bin/python" -m pip install -r examples/python-receiver/requirements.txt
+          "$RUNNER_TEMP/thundy-receiver/bin/python" -m unittest discover -v -s examples/python-receiver
       - name: Verify identity probe preserves non-local MIME bytes
         run: python3 tools/test_thunderbird_identity.dev.py -v
       - name: web-ext lint

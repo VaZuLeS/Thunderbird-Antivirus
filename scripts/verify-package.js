@@ -46,6 +46,8 @@ const ALLOWED_FILES = [
   'provider_results.js',
   'provider_registry.js',
   'security.js',
+  'managed_policy.js',
+  'incident_reporting.js',
   'security_links.js',
   'security_client.js',
   'security_page.js',
@@ -110,6 +112,8 @@ const REQUIRED_FILES = [
   'provider_results.js',
   'provider_registry.js',
   'security.js',
+  'managed_policy.js',
+  'incident_reporting.js',
   'security_links.js',
   'security_client.js',
   'security_page.js',
@@ -159,7 +163,7 @@ const FORBIDDEN = [
 // 1.24.6 ships 47 allowlisted files including analysis_status, source_export and remote provider parsers.
 // Generator sources stay excluded; retain a small, explicit size budget.
 // Includes the dedicated diagnostic viewer and six-language flow labels.
-const MAX_UNCOMPRESSED_BYTES = 1651 * 1024;
+const MAX_UNCOMPRESSED_BYTES = 1740 * 1024;
 
 /**
  * Picks the artifact to check. `web-ext` writes one ZIP per version into the
@@ -169,7 +173,8 @@ const MAX_UNCOMPRESSED_BYTES = 1651 * 1024;
  * back to the highest version number embedded in the file name.
  */
 function selectArtifact(artifactsDir) {
-  const names = fs.readdirSync(artifactsDir).filter((name) => name.endsWith('.zip') || name.endsWith('.xpi'));
+  const names = fs.readdirSync(artifactsDir).filter((name) =>
+    (name.endsWith('.zip') || name.endsWith('.xpi')) && !/^thundy-python-receiver-\d+\.\d+\.\d+\.zip$/.test(name));
   if (names.length === 0) return null;
   const versionOf = (name) => {
     const match = name.match(/-(\d+(?:\.\d+)*)(?:\.zip|\.xpi)$/);

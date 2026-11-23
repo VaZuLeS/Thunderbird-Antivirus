@@ -1,4 +1,4 @@
-// Local audit records are independent of provider caches. No network transmission.
+// Local audit records are independent of provider caches and the optional reporting queue.
 const LINK_AUDIT_KEY = 'linkAuditLog';
 const LINK_AUDIT_DAYS = 30;
 const LINK_AUDIT_LIMIT = 2000;
@@ -95,7 +95,9 @@ async function handleAuditedLinkCheck(request, sender) {
         // Read policy while checks are running. Starting it only at the end
         // would incorrectly exhaust its budget after a provider timeout.
         const securityEnabled = typeof ThundyLinkSecurity === 'undefined' ? Promise.resolve(false) : bounded(
-            Promise.resolve().then(() => ThundySecurity.read()).then(saved => saved.policy?.enabled === true).catch(() => 'unavailable'), 'unavailable');
+            Promise.resolve().then(() => ThundySecurity.effective()).then(saved => saved.policy).catch(() => 'unavailable'), 'unavailable');
+        const managedAssessment = securityEnabled.then(policy => policy?.managed && !policy.invalid ?
+            ThundyLinkSecurity.evaluate(session,sender).catch(() => null) : null);
         // Provider availability is not a prerequisite for an explicit warning
         // confirmation. Keep the click dialog bounded; background scans may continue.
         let localActive=true;
@@ -116,7 +118,8 @@ async function handleAuditedLinkCheck(request, sender) {
         })();
         const localReady=bounded(localCheck,null).finally(()=>{localActive=false;if(session.local.state==='pending')session.local={...session.local,state:'failed',reason:'timeout'};});
         const unavailable={status:'UNKNOWN',provider:'none',check:{origin:'none',outcome:'no_result',errorCode:'LINK_CHECK_TIMEOUT',attemptedAt:clickedAt,observedAt:null}};
-        const verdict = await bounded(new Promise(resolve => {Promise.resolve().then(()=>handleCheckLinkState(request,sender,resolve)).catch(()=>resolve(unavailable));}),unavailable);
+        const {incidentEvidence,...verdict} = await bounded(new Promise(resolve => {Promise.resolve().then(()=>handleCheckLinkState(request,sender,resolve)).catch(()=>resolve(unavailable));}),unavailable);
+        session.incidentEvidence = incidentEvidence;
         session.providerReasons = copyAuditValue((verdict.reasons || []).slice(0, 20));
         session.check = verdict.check || null;
         session.verdict = verdict.status || 'UNKNOWN'; session.provider = verdict.provider || 'none'; session.checked = true; session.providerCheckedAt = Date.now();
@@ -136,18 +139,54 @@ async function handleAuditedLinkCheck(request, sender) {
             providerReasons: (verdict.reasons || []).slice(0, 20)
         }, {deadline}); }
         catch (error) { reportLinkAuditFailure(); }
-        let protection=null;
+        let protection=null, assessment;
         const enabled = await securityEnabled;
-        if (enabled === true) protection = await bounded(
-            Promise.resolve().then(() => ThundyLinkSecurity.evaluate(session,sender)).then(value => value.decision).catch(() => ({required:true,reason:'context_changed'})),
-            {required:true,reason:'context_changed'});
-        else if (enabled !== false) protection = {required:true,reason:'context_changed'};
+        if (enabled?.enabled) {
+            const fallback = enabled.managed || enabled.invalid ? {mode:'block',reason:enabled.invalid?'policy_invalid':'context_changed',revision:enabled.revision} :
+                {required:true,reason:'context_changed'};
+            if (enabled.managed) {
+                assessment = await bounded(managedAssessment,null);
+                protection = assessment ? ThundySecurity.decision(assessment.policy,
+                    {...assessment.input,verdict:session.verdict,check:session.check}) : fallback;
+            } else {
+                assessment = enabled.invalid ? null : await bounded(ThundyLinkSecurity.evaluate(session,sender).catch(() => null), null);
+                protection = assessment?.decision || fallback;
+            }
+            if (enabled.managed) {
+                session.managedDecision = protection;
+                if (protection.mode === 'block') {
+                    void updateLinkAudit(session.record.id,{blockedAt:Date.now(),blockReason:protection.reason,policyRevision:protection.revision}).catch(reportLinkAuditFailure);
+                }
+                void reportManagedLinkAttempt(session,protection,assessment);
+            }
+        } else if (enabled === 'unavailable') protection = {required:true,reason:'context_changed'};
+        if (protection && assessment) protection = linkDecisionPresentation(protection,assessment);
         return { ...verdict, score: session.score, local: copyAuditValue(session.local), protection, auditSaved: saved && session.auditSaved };
     } catch (error) {
         // Consume ready rejection even when cancellation arrives while initialising.
         reportLinkAuditFailure();
         return { status: 'ERROR', score: session.score, local:{...session.local,state:'failed'}, auditSaved: false };
     }
+}
+
+function linkDecisionPresentation(decision, assessment) {
+    const providers = {hybridanalysis:'Hybrid Analysis',urlscan:'urlscan.io'};
+    const evidence = assessment.incidentEvidence || [];
+    return {...decision, managed:assessment.policy.managed === true, threshold:assessment.policy.threshold,
+        score:assessment.input.score,
+        providers:[...new Set(evidence.filter(row => row.verdict === 'malicious').map(row => providers[row.provider]).filter(Boolean))]};
+}
+
+async function reportManagedLinkAttempt(session,decision,assessment) {
+    if (typeof ThundyIncidentReporting === 'undefined' || !['malicious','threshold'].includes(decision.reason)) return;
+    const { reporting } = await ThundyManagedPolicy.read();
+    if (!reporting?.endpoint || session.incidentReported ||
+        decision.reason === 'threshold' && reporting.mode !== 'suspicious') return;
+    session.incidentReported = true;
+    await ThundyIncidentReporting.capture({id:session.record.id,kind:'link_open',mode:decision.mode,reason:decision.reason,
+        finding:session.verdict === 'MALICIOUS_VISUAL' ? 'phishing' : 'malicious',indicator:session.url,
+        score:assessment?.input.score,threshold:assessment?.policy.threshold,
+        evidence:[...(session.incidentEvidence || []),...(assessment?.incidentEvidence || [])]});
 }
 
 function copyAuditValue(value) { return value == null ? null : JSON.parse(JSON.stringify(value)); }

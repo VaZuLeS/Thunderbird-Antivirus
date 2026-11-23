@@ -27,6 +27,26 @@ const ThundySecurity = (() => {
         }
         return saved;
     }
+    async function effective(saved) {
+        const managed = typeof ThundyManagedPolicy === 'undefined' ? {} : await ThundyManagedPolicy.read();
+        const { links, attachments, revision } = managed;
+        let localInvalid = false;
+        try {
+            saved ??= await read();
+        } catch (error) {
+            if (!links && !attachments) throw error;
+            saved = {};
+            localInvalid = true;
+        }
+        return {
+            managed,
+            policy: links ? { ...links, enabled: true, revision, managed: true } :
+                { ...defaults, ...saved.policy, ...(localInvalid ? {enabled:true,invalid:true} : {}) },
+            attachmentPolicy: attachments ? { ...attachments, mode: attachments.invalid ? 'block' : attachments.action, revision, managed: true } :
+                { ...attachmentDefaults, ...saved.attachmentPolicy, ...(localInvalid ? {mode:'block',invalid:true} : {}) },
+            approval: saved.approval, localInvalid
+        };
+    }
     async function digest(password, salt) {
         const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
         return hex(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:new Uint8Array(salt.match(/../g).map(x=>parseInt(x,16))),iterations:ITERATIONS}, material, 256)));
@@ -64,7 +84,10 @@ const ThundySecurity = (() => {
     async function status(sender, token) {
         const saved = await read(); let unlocked = !saved.admin;
         if (saved.admin) { try { await authorized(sender,token,false,page(sender,'api_debug.html')); unlocked=true; } catch (_) {} }
-        return {protected:!!saved.admin,unlocked,approvalConfigured:!!saved.approval,policy:{...defaults,...saved.policy},attachmentPolicy:{...attachmentDefaults,...saved.attachmentPolicy}};
+        const current = await effective(saved);
+        const reporting = typeof ThundyIncidentReporting === 'undefined' ? undefined :
+            await ThundyIncidentReporting.status(current.managed.reporting).catch(() => ({ state: 'storage' }));
+        return {protected:!!saved.admin,unlocked,approvalConfigured:!!saved.approval,policy:current.policy,attachmentPolicy:current.attachmentPolicy,reporting};
     }
     function serialized(fn) { const job=queue.then(fn);queue=job.catch(()=>{});return job; }
     async function command(request,sender) {
@@ -74,6 +97,12 @@ const ThundySecurity = (() => {
         if (!adminPage(sender)&&!diagnostic) throw error('ADMIN_PAGE_REQUIRED');
         if (op==='status') return status(sender,token);
         if (op==='touch') { await authorized(sender,token,true,diagnostic);return {}; }
+        if (op==='enableReporting' || op==='disableReporting') {
+            if (!page(sender,'options.html')) throw error('ADMIN_PAGE_REQUIRED');
+            if (op==='enableReporting') await authorized(sender,token);
+            await ThundyIncidentReporting.configure((await ThundyManagedPolicy.read()).reporting,request);
+            return {};
+        }
         if (op==='lock') { sessions.delete(token);return {unlocked:false}; }
         if (op==='unlock') {
             await verify(request.password,(await read()).admin,'admin');
@@ -101,6 +130,8 @@ const ThundySecurity = (() => {
             }
             let recovery;
             if (op==='configure') {
+                const { managed } = await effective(saved);
+                if (managed.links && request.policy !== undefined || managed.attachments && request.attachmentPolicy !== undefined) throw error('POLICY_MANAGED');
                 if (request.adminPassword) {
                     if (request.adminPassword===request.approvalPassword) throw error('PASSWORDS_DISTINCT');
                     if (saved.approval && await digest(request.adminPassword,saved.approval.salt)===saved.approval.hash) throw error('PASSWORDS_DISTINCT');
@@ -112,7 +143,7 @@ const ThundySecurity = (() => {
                     saved.approval=await verifier(request.approvalPassword);
                 }
                 const policy=request.policy;
-                if (!policy || typeof policy.enabled!=='boolean' || !Number.isInteger(policy.threshold) || policy.threshold<0 || policy.threshold>100 || !['warn','approval'].includes(policy.unknown)) throw error('POLICY_INVALID');
+                if (!managed.links && (!policy || typeof policy.enabled!=='boolean' || !Number.isInteger(policy.threshold) || policy.threshold<0 || policy.threshold>100 || !['warn','approval'].includes(policy.unknown))) throw error('POLICY_INVALID');
                 if (request.attachmentPolicy !== undefined) {
                     const next = request.attachmentPolicy;
                     if (!validAttachmentPolicy(next)) throw error('POLICY_INVALID');
@@ -122,7 +153,7 @@ const ThundySecurity = (() => {
                         saved.attachmentPolicy = {mode, threshold, unknown, revision:current.revision+1};
                     }
                 }
-                saved.policy={...policy,revision:(saved.policy?.revision||0)+1};
+                if (policy) saved.policy={...policy,revision:(saved.policy?.revision||0)+1};
                 await browser.storage.local.set({[KEY]:saved});sessions.clear();return {recovery};
             }
             if (op==='disableAdmin') {
@@ -139,6 +170,7 @@ const ThundySecurity = (() => {
         else if (!sender?.id || sender.id!==browser.runtime.id) throw error('ADMIN_PAGE_REQUIRED');
         const allowed = new Set(['apikey','virustotalApikey','urlhausApikey','urlscanApikey','privacyTier','alwaysManual','scanMode','autoScanLinks','timeOfClickProtection','ipReputationProvider','ipReputationApiKey','externalAnalysisConsent','scanningEnabledSenders','trustedAuthServers','customWhitelist','customBlacklist','onboardingState','thundyAppearance','thundyAccent','thundyDensity','analysisDefaultView','analysisShowHybridDetails','enterpriseProfile','enterpriseConfiguration','enterpriseProfileSelection']);
         if (Object.keys(values).some(k=>!allowed.has(k))) throw error('SETTINGS_INVALID');
+        if ('timeOfClickProtection' in values && (await effective()).managed.links) throw error('POLICY_MANAGED');
         if('scanMode' in values && !['allDisplayed','approvedSenders','manual'].includes(values.scanMode))throw error('SETTINGS_INVALID');
         if('analysisDefaultView' in values && !['simple','expert'].includes(values.analysisDefaultView))throw error('SETTINGS_INVALID');
         if('analysisShowHybridDetails' in values && typeof values.analysisShowHybridDetails!=='boolean')throw error('SETTINGS_INVALID');
@@ -154,13 +186,15 @@ const ThundySecurity = (() => {
         });
     }
     function decision(policy,input) {
+        if (policy.invalid) return {mode:'block',reason:'policy_invalid',revision:policy.revision};
         const incomplete = !Number.isFinite(input.score) || input.coverage !== 'checked' || !['CLEAN','MALICIOUS','MALICIOUS_VISUAL','SUSPICIOUS'].includes(input.verdict) || !!input.check && !['success','not_requested'].includes(input.check.outcome);
         const malicious = ['MALICIOUS','MALICIOUS_VISUAL'].includes(input.verdict) || input.malicious===true;
+        if (policy.managed) return { ...ThundyManagedPolicy.decision(policy,{...input,malicious,incomplete}), incomplete, revision:policy.revision };
         const reason = malicious ? 'malicious' : Number.isFinite(input.score)&&input.score>=policy.threshold ? 'threshold' : incomplete&&policy.unknown==='approval' ? 'incomplete' : null;
         return {required:policy.enabled&&!!reason,reason:policy.enabled?reason:null,incomplete,revision:policy.revision};
     }
     if (browser.runtime.onConnect) browser.runtime.onConnect.addListener(port=>{
         if(port.name!=='thundy-admin-session')return;let bound;port.onMessage.addListener(value=>{const session=sessions.get(value.token);if(session?.identity===identity(port.sender))bound=value.token;});port.onDisconnect.addListener(()=>{sessions.delete(bound);});
     });
-    return {read,status,command,authorized,write,decision,verify,identity,page,defaults,attachmentDefaults,serialized};
+    return {read,effective,status,command,authorized,write,decision,verify,identity,page,defaults,attachmentDefaults,serialized};
 })();

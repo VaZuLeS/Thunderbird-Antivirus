@@ -5,7 +5,7 @@
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
   "author": "Jan Bludau",
-  "version": "1.25.9",
+  "version": "1.26.0",
   "homepage_url": "https://vazules.github.io/Thunderbird-Antivirus/",
   "browser_specific_settings": {
     "gecko": {
@@ -16,7 +16,8 @@
           "none"
         ],
         "optional": [
-          "personalCommunications"
+          "personalCommunications",
+          "technicalAndInteraction"
         ]
       }
     }
@@ -28,7 +29,8 @@
     "scripting",
     "downloads",
     "menus",
-    "theme"
+    "theme",
+    "alarms"
   ],
   "optional_permissions": [
     "sensitiveDataUpload"
@@ -40,7 +42,8 @@
     "https://urlscan.io/*",
     "https://*.urlscan.io/*",
     "https://urlhaus-api.abuse.ch/*",
-    "https://api.abuseipdb.com/*"
+    "https://api.abuseipdb.com/*",
+    "https://*/*"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none';"
@@ -62,6 +65,8 @@
       "db.js",
       "analysis_status.js",
       "api_gateway.js",
+      "managed_policy.js",
+      "incident_reporting.js",
       "security.js",
       "api_diagnostics.js",
       "link_audit.js",

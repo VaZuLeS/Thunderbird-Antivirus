@@ -5,14 +5,14 @@ const vm = require('node:vm');
 const {createHash,webcrypto} = require('node:crypto');
 const {JSDOM} = require('jsdom');
 
-const sources = ['provider_results.js','attachment_download.js'].map(path=>fs.readFileSync(path,'utf8')).join('\n');
+const sources = ['provider_results.js','managed_policy.js','attachment_download.js'].map(path=>fs.readFileSync(path,'utf8')).join('\n');
 const hash = buffer => createHash('sha256').update(Buffer.from(buffer)).digest('hex');
 const digest = value => hash(Buffer.from(value));
 const target = {tabId:3,messageId:7,partName:'1.2'};
 const basePolicy = {mode:'block',unknown:'warn',threshold:70,revision:1};
 
 function fixture() {
-    const downloads = [], opened = [], reportRequests = [];
+    const downloads = [], opened = [], reportRequests = [], nativeOpened = [], incidents = [];
     let notifyDisplayed;
     let securityWork = Promise.resolve();
     const state = {record:{attachments:[]},application:{attachmentPolicy:basePolicy},current:target.messageId,
@@ -26,7 +26,8 @@ function fixture() {
         },
         messages:{
             listAttachments:async ()=>[{partName:'1.2',name:'same.pdf'},{partName:'1.3',name:'same.pdf'}],
-            getAttachmentFile:async ()=>new File([state.contents],'same.pdf',{type:'application/pdf'})
+            getAttachmentFile:async ()=>new File([state.contents],'same.pdf',{type:'application/pdf'}),
+            openAttachment:async (...args) => { nativeOpened.push(args); }
         },
         storage:{local:{get:async ()=>({})}},
         downloads:{download:async request=>{
@@ -51,7 +52,8 @@ function fixture() {
             verify:async value=>{if(value!=='correct password')throw Error('PASSWORD_INVALID');}
         },
         hash,record:async ()=>state.record,revision:()=>state.revision,pending:()=>state.pending,
-        openReport:async (request, resource)=>{reportRequests.push({request,digest:resource.digest});return {success:true};}
+        openReport:async (request, resource)=>{reportRequests.push({request,digest:resource.digest});return {success:true};},
+        reportAttempt:async event => { incidents.push(event); }
     };
     const module = context.moduleApi, gate = module.create(browser,deps);
     const command = (op,extra={},num=0,sender={}) => {
@@ -60,9 +62,28 @@ function fixture() {
     };
     const withScore = (score,report={},sha=digest('abc'),partName='1.2') =>
         ({partName,attachment_name:'same.pdf',hybrid_sha256:sha,report:{sha256:sha,state:'SUCCESS',threat_score:score,...report}});
-    return {state,downloads,opened,browser,module,gate,command,withScore,reportRequests,deps,timers,
+    return {state,downloads,opened,browser,module,gate,command,withScore,reportRequests,deps,timers,nativeOpened,incidents,
         display:id=>{state.current=id;notifyDisplayed({id:target.tabId},{messages:[{id}]});}};
 }
+
+test('managed attachment actions block byte-bound malware and report one event per explicit attempt', async () => {
+    const f = fixture();
+    f.state.application = {attachmentPolicy:{...basePolicy,managed:true,mode:'warn',action:'warn'},
+        managed:{reporting:{mode:'suspicious'}}};
+    f.state.record.attachments = [{...f.withScore(10),virustotal_stats:{malicious:1}}];
+    await f.gate.start({...target,operation:'open'});
+    const {details} = await f.command('status');
+    assert.equal(details.mode,'block');
+    assert.equal(details.operation,'open');
+    assert.equal(f.incidents[0].kind,'attachment_open');
+    await assert.rejects(f.command('save'),{code:'ATTACHMENT_BLOCKED'});
+    assert.equal(f.incidents.length,1);
+    assert.equal(f.nativeOpened.length,0);
+    f.state.record.attachments = [f.withScore(2)];
+    assert.equal((await f.gate.start({...target,operation:'open'})).opened,true);
+    assert.deepEqual(f.nativeOpened,[[target.messageId,target.partName,target.tabId]]);
+    assert.equal(f.downloads.length,0);
+});
 
 test('attachment policy uses the exact 0–100 score and preserves explicit provider warnings', () => {
     const f = fixture();

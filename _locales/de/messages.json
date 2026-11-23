@@ -996,7 +996,7 @@
     "message": "Lokal gespeichert: höchstens 30 Tage, 2.000 Einträge oder 2 MiB; ältere Einträge werden entfernt. Vollständige URLs können personenbezogene Daten oder Zugriffstoken enthalten. Kein automatischer Upload. Profilnutzer können das lokale Protokoll ändern oder löschen; es ist kein manipulationssicheres zentrales Audit. Der lokale Score berücksichtigt Link und Nachrichtenkontext, keinen Anbieter-Score. Bewertungsgründe können Absender- oder Domainangaben enthalten."
   },
   "auditSearch": {
-    "message": "URL oder Domain"
+    "message": "URL, Domain oder Ereignis-ID"
   },
   "auditOutcome": {
     "message": "Entscheidung"
@@ -2197,10 +2197,10 @@
     "message": "Keine Auffälligkeit erkannt"
   },
   "analysisSimpleCaution": {
-    "message": "Vorsicht"
+    "message": "Verdacht"
   },
   "analysisSimpleDanger": {
-    "message": "Gefährlicher Inhalt gemeldet"
+    "message": "Bösartiger Befund"
   },
   "analysisSimpleIncomplete": {
     "message": "Prüfung unvollständig"
@@ -3218,5 +3218,158 @@
   },
   "auditFullSave": {
     "message": "Vollständiges Audit exportieren"
+  },
+  "managedByCompany": {
+    "message": "Vom Unternehmen verwaltet"
+  },
+  "managedLocal": {
+    "message": "Quelle: dieses Thunderbird-Profil"
+  },
+  "managedRevision": {
+    "message": "Richtlinienversion"
+  },
+  "managedThreshold": {
+    "message": "Schwellenwert"
+  },
+  "managedPolicyInvalid": {
+    "message": "Die Firmenrichtlinie ist ungültig. Wenden Sie sich an Ihre IT."
+  },
+  "managedLinkBlocked": {
+    "message": "Ihr Unternehmen hat diesen Link gesperrt."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Mit Thundy öffnen"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Anhang öffnen"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy prüft diesen Anhang vor der Übergabe an Thunderbird."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird hat die Anfrage zum Öffnen des Anhangs angenommen."
+  },
+  "attachmentOpenFailed": {
+    "message": "Der Anhang konnte nicht geöffnet werden."
+  },
+  "reportingTitle": {
+    "message": "Sicherheitsmeldungen an das Unternehmen"
+  },
+  "reportingOff": {
+    "message": "Automatische Meldungen sind ausgeschaltet."
+  },
+  "reportingNeedsConsent": {
+    "message": "Der Versand erfordert Ihre Zustimmung und ein Sendetoken."
+  },
+  "reportingNeedsPermission": {
+    "message": "Die Berechtigung fehlt. Aktivieren Sie die Meldungen erneut."
+  },
+  "reportingReady": {
+    "message": "Ihr Unternehmen kann automatische Meldungen empfangen."
+  },
+  "reportingQueued": {
+    "message": "Ausstehende Meldungen:"
+  },
+  "reportingMalicious": {
+    "message": "Bösartige Befunde"
+  },
+  "reportingSuspicious": {
+    "message": "Bösartige Befunde und erreichte Schwellen"
+  },
+  "reportingConsent": {
+    "message": "Ich stimme zu, dass Ereignis-ID, Zeitpunkt, Aktion, Befund, Entscheidung und Richtlinienversion an die oben angezeigte Firmenadresse gesendet werden."
+  },
+  "reportingConsentIndicators": {
+    "message": "Ich stimme zu, dass Ereignis-ID, Zeitpunkt, Aktion, Befund, Entscheidung, Richtlinienversion sowie der Link-Hostname oder Datei-SHA-256 an die oben angezeigte Firmenadresse gesendet werden."
+  },
+  "reportingToken": {
+    "message": "Sendetoken Ihrer IT"
+  },
+  "reportingActivate": {
+    "message": "Meldungen aktivieren oder Token ersetzen"
+  },
+  "reportingRevoke": {
+    "message": "Zustimmung widerrufen und ausstehende Meldungen löschen"
+  },
+  "reportingSetupFailed": {
+    "message": "Die Meldeeinstellungen konnten nicht übernommen werden."
+  },
+  "reportingAuthentication": {
+    "message": "Der Server hat das Sendetoken abgelehnt."
+  },
+  "reportingRejected": {
+    "message": "Der Server hat eine Meldung abgelehnt."
+  },
+  "reportingStorage": {
+    "message": "Thundy konnte die Meldewarteschlange nicht lesen oder speichern."
+  },
+  "reportingFull": {
+    "message": "Die Warteschlange ist voll. Meldungen können verloren gehen."
+  },
+  "reportingExpired": {
+    "message": "Eine Meldung ist vor der Zustellung abgelaufen."
+  },
+  "reportingPrivacy": {
+    "message": "Mit separater Zustimmung meldet Thundy bestimmte Versuche, einen Link zu öffnen oder einen Anhang zu öffnen oder zu speichern, an die konfigurierte Firmenadresse. Meldungen enthalten Ereignis-ID, Zeitpunkt, Aktion, Befund, Entscheidung und Richtlinienversion sowie optional den Hostnamen oder Datei-SHA-256. Ausstehende Meldungen verbleiben höchstens 24 Stunden in der lokalen Warteschlange. In den Einstellungen können Sie die Zustimmung widerrufen und die Warteschlange löschen."
+  },
+  "reportingConsentDetails": {
+    "message": "Ich stimme auch der Übermittlung von Entscheidungsgrund, verfügbaren Scores, Dateiname, Anbieterurteilen und verfügbaren Berichtsreferenzen zu."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Ausführliche Meldungen können den Dateinamen und Links zu Anbieterberichten enthalten."
+  },
+  "analysisRunningHeading": {
+    "message": "Prüfung läuft"
+  },
+  "analysisLocalNoFinding": {
+    "message": "Keine Auffälligkeit in der lokalen Prüfung"
+  },
+  "analysisLinksGroup": {
+    "message": "Links"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Anhänge"
+  },
+  "protectionOpenAllowed": {
+    "message": "Öffnen möglich"
+  },
+  "protectionSaveAllowed": {
+    "message": "Speichern möglich"
+  },
+  "protectionWarn": {
+    "message": "Warnung"
+  },
+  "protectionApproval": {
+    "message": "Freigabe erforderlich"
+  },
+  "protectionRequestApproval": {
+    "message": "Freigabe anfordern"
+  },
+  "protectionBlocked": {
+    "message": "Blockiert"
+  },
+  "protectionMalicious": {
+    "message": "Ein Anbieter hat einen bösartigen Befund gemeldet"
+  },
+  "protectionThreshold": {
+    "message": "Schutzschwelle erreicht"
+  },
+  "protectionManagedThreshold": {
+    "message": "Firmenschwelle erreicht"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "Die geltenden Einstellungen erlauben diese Aktion."
+  },
+  "linkContextChanged": {
+    "message": "Link oder Nachricht haben sich während der Prüfung geändert."
+  },
+  "auditPolicyBlocked": {
+    "message": "Durch Richtlinie blockiert"
+  },
+  "reportingLastReceipt": {
+    "message": "Letzter vom Server bestätigter Empfang"
+  },
+  "reportingOldestPending": {
+    "message": "Älteste ausstehende Meldung"
   }
 }

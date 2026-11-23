@@ -993,7 +993,7 @@
     "message": "Archiviazione locale: massimo 30 giorni, 2.000 voci o 2 MiB; le voci più vecchie vengono eliminate. Gli URL completi possono contenere dati personali o token. Nessun invio automatico. Gli utenti del profilo possono modificare o eliminare il registro; non è un audit centrale inalterabile. Il punteggio locale usa il link e il contesto del messaggio, non un punteggio del fornitore. I motivi della valutazione possono includere dati del mittente o del dominio."
   },
   "auditSearch": {
-    "message": "URL o dominio"
+    "message": "URL, dominio o ID evento"
   },
   "auditOutcome": {
     "message": "Decisione"
@@ -2194,10 +2194,10 @@
     "message": "Nessun segnale sospetto rilevato"
   },
   "analysisSimpleCaution": {
-    "message": "Attenzione"
+    "message": "Sospetto"
   },
   "analysisSimpleDanger": {
-    "message": "Contenuto pericoloso segnalato"
+    "message": "Esito dannoso"
   },
   "analysisSimpleIncomplete": {
     "message": "Controllo incompleto"
@@ -3215,5 +3215,158 @@
   },
   "auditFullSave": {
     "message": "Esporta registro completo"
+  },
+  "managedByCompany": {
+    "message": "Gestito dalla tua organizzazione"
+  },
+  "managedLocal": {
+    "message": "Origine: questo profilo Thunderbird"
+  },
+  "managedRevision": {
+    "message": "Versione dei criteri"
+  },
+  "managedThreshold": {
+    "message": "Soglia"
+  },
+  "managedPolicyInvalid": {
+    "message": "I criteri aziendali non sono validi. Contatta il reparto IT."
+  },
+  "managedLinkBlocked": {
+    "message": "La tua organizzazione ha bloccato questo link."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Apri con Thundy"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Apri allegato"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy verifica questo allegato prima di passarlo a Thunderbird."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird ha accettato la richiesta di apertura dell’allegato."
+  },
+  "attachmentOpenFailed": {
+    "message": "Impossibile aprire l’allegato."
+  },
+  "reportingTitle": {
+    "message": "Segnalazioni di sicurezza all’azienda"
+  },
+  "reportingOff": {
+    "message": "Le segnalazioni automatiche sono disattivate."
+  },
+  "reportingNeedsConsent": {
+    "message": "L’invio richiede il tuo consenso e un token."
+  },
+  "reportingNeedsPermission": {
+    "message": "Manca l’autorizzazione. Attiva di nuovo le segnalazioni."
+  },
+  "reportingReady": {
+    "message": "La tua organizzazione può ricevere segnalazioni automatiche."
+  },
+  "reportingQueued": {
+    "message": "Segnalazioni in coda:"
+  },
+  "reportingMalicious": {
+    "message": "Rilevamenti dannosi"
+  },
+  "reportingSuspicious": {
+    "message": "Rilevamenti dannosi e superamenti di soglia"
+  },
+  "reportingConsent": {
+    "message": "Acconsento all’invio di ID, ora, azione, esito, decisione e versione dei criteri all’indirizzo sopra indicato."
+  },
+  "reportingConsentIndicators": {
+    "message": "Acconsento all’invio di ID, ora, azione, esito, decisione, versione e nome host del link o SHA-256 dell’allegato all’indirizzo sopra indicato."
+  },
+  "reportingToken": {
+    "message": "Token di invio fornito dal reparto IT"
+  },
+  "reportingActivate": {
+    "message": "Attiva segnalazioni o sostituisci il token"
+  },
+  "reportingRevoke": {
+    "message": "Revoca il consenso e cancella le segnalazioni in coda"
+  },
+  "reportingSetupFailed": {
+    "message": "Impossibile applicare le impostazioni delle segnalazioni."
+  },
+  "reportingAuthentication": {
+    "message": "Il server ha rifiutato il token di invio."
+  },
+  "reportingRejected": {
+    "message": "Il server ha rifiutato una segnalazione."
+  },
+  "reportingStorage": {
+    "message": "Thundy non ha potuto leggere o salvare la coda delle segnalazioni."
+  },
+  "reportingFull": {
+    "message": "La coda è piena. Alcune segnalazioni potrebbero andare perse."
+  },
+  "reportingExpired": {
+    "message": "Una segnalazione è scaduta prima della consegna."
+  },
+  "reportingPrivacy": {
+    "message": "Con il consenso separato, Thundy segnala all’indirizzo aziendale determinati tentativi di aprire link o aprire o salvare allegati. Le segnalazioni includono ID, ora, azione, esito, decisione, versione dei criteri e, facoltativamente, nome host o SHA-256 del file. La coda locale dura al massimo 24 ore. Nelle impostazioni puoi revocare il consenso e cancellare la coda."
+  },
+  "reportingConsentDetails": {
+    "message": "Acconsento anche all’invio del motivo della decisione, dei punteggi disponibili, del nome del file, dei giudizi dei fornitori e dei riferimenti ai rapporti disponibili."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Le segnalazioni dettagliate possono includere il nome del file e i link ai rapporti dei fornitori."
+  },
+  "analysisRunningHeading": {
+    "message": "Analisi in corso"
+  },
+  "analysisLocalNoFinding": {
+    "message": "Nessun indicatore nel controllo locale"
+  },
+  "analysisLinksGroup": {
+    "message": "Link"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Allegati"
+  },
+  "protectionOpenAllowed": {
+    "message": "Apertura consentita"
+  },
+  "protectionSaveAllowed": {
+    "message": "Salvataggio consentito"
+  },
+  "protectionWarn": {
+    "message": "Avviso"
+  },
+  "protectionApproval": {
+    "message": "Approvazione richiesta"
+  },
+  "protectionRequestApproval": {
+    "message": "Richiedi approvazione"
+  },
+  "protectionBlocked": {
+    "message": "Bloccato"
+  },
+  "protectionMalicious": {
+    "message": "Un servizio ha segnalato un esito dannoso"
+  },
+  "protectionThreshold": {
+    "message": "Soglia di protezione raggiunta"
+  },
+  "protectionManagedThreshold": {
+    "message": "Soglia aziendale raggiunta"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "Le impostazioni in vigore consentono questa azione."
+  },
+  "linkContextChanged": {
+    "message": "Il link o il messaggio è cambiato durante il controllo."
+  },
+  "auditPolicyBlocked": {
+    "message": "Bloccato dalle regole aziendali"
+  },
+  "reportingLastReceipt": {
+    "message": "Ultima ricezione confermata dal server"
+  },
+  "reportingOldestPending": {
+    "message": "Segnalazione in attesa più vecchia"
   }
 }

@@ -353,8 +353,8 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     m.screenshot(out / 'message.png')
     if banner_root_shot:
         def banner_probe():
-            return m.page('''const o=document.getElementById("thundy-optin-banner");
-                const t=document.getElementById("thundy-threat-banner");
+            return m.page('''const o=document.getElementById("thundy-optin-banner")?.shadowRoot?.querySelector(".thundy-surface");
+                const t=document.getElementById("thundy-threat-banner")?.shadowRoot?.querySelector(".thundy-surface");
                 const r={optin:null,threat:null};
                 if(o){const b=o.querySelectorAll("button");
                     r.optin={text:o.innerText,buttons:b.length,
@@ -586,7 +586,7 @@ def check_followup(m, base, out, report, display, source_catalog):
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
     wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
     if 'analysisTitle' in source_catalog:
-        sources = wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card")?.textContent;'))
+        sources = wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card:not(.finding-card)")?.textContent;'))
         assert source_catalog['analysisLocal']['message'] in sources, sources
         probe['analysisSources'] = {'nativeLocalMessage':True,'syntheticStoredReport':True,'liveProviderCalls':False}
     point = m.js('''const t=window.gTabmail.currentTabInfo,b=t.chromeBrowser;
@@ -643,7 +643,7 @@ def check_followup(m, base, out, report, display, source_catalog):
           await b.runtime.sendMessage({action:"getLocalRisk",messageId:message.id});
           return true;
         })();''', browser=popup_browser)
-        popup_sources = wait_for(lambda: m.page('const text=document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card")?.textContent;return text?.includes(arguments[0]) && text.includes(arguments[1])?text:null;', [source_catalog['analysisMixed']['message'],source_catalog['analysisSource_stored']['message']], browser=popup_browser))
+        popup_sources = wait_for(lambda: m.page('const text=document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card:not(.finding-card)")?.textContent;return text?.includes(arguments[0]) && text.includes(arguments[1])?text:null;', [source_catalog['analysisMixed']['message'],source_catalog['analysisSource_stored']['message']], browser=popup_browser))
         assert source_catalog['analysisMixed']['message'] in popup_sources, popup_sources
         assert source_catalog['analysisSource_stored']['message'] in popup_sources, popup_sources
         if 'analysisResources' in source_catalog:
@@ -665,7 +665,7 @@ def check_followup(m, base, out, report, display, source_catalog):
     subprocess.run(['import', '-window', 'root', str(out / 'coverage-popup.png')], env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
     if 'analysisTitle' in source_catalog:
-        sources = wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card")?.textContent;'))
+        sources = wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card:not(.finding-card)")?.textContent;'))
         assert source_catalog['analysisMixed']['message'] in sources, sources
         assert source_catalog['analysisSource_stored']['message'] in sources, sources
         probe['analysisSources']['nativeStoredMessage'] = True
@@ -1213,7 +1213,7 @@ def check_source_history(m, base, out, report, restart, display):
     expert_view(m)
     visible=m.page('''const root=document.getElementById("thundy-analysis-status").shadowRoot;
       const detail=root.querySelector('[data-key="unbound-history"]');detail.open=true;
-      return {summary:detail.querySelector("summary").textContent,currentNotMalicious:root.querySelector(".card").style.borderColor===""};''')
+      return {summary:detail.querySelector("summary").textContent,currentNotMalicious:root.querySelector(".card:not(.finding-card)").style.borderColor===""};''')
     assert visible['currentNotMalicious'] and all(brand in visible['summary'] for brand in brands),visible
     m.screenshot(out/'source-history-message.png')
     point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser;
@@ -1325,7 +1325,7 @@ def check_history_pages(m, base, out, report, display):
       await b.messageDisplay.open({messageId:message.id,location:"tab"});return {id:message.id,legacy:JSON.stringify(legacy)};
     })();''')
     wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(".history-range");'))
-    inspect='''const host=document.getElementById("thundy-analysis-status"),root=host.shadowRoot,detail=root.querySelector('[data-key="unbound-history"]');return {view:host.dataset.view,cardHidden:root.querySelector(".card").hidden,page:Number(host.dataset.historyPage),entries:detail.querySelectorAll(".history-entries li").length,range:detail.querySelector(".history-range").textContent,summary:detail.querySelector("summary").textContent,localOnly:root.querySelector(".mode").textContent==="Local · no external results recorded",noCurrentThreat:root.querySelector(".card").style.borderColor==="",nodes:root.querySelectorAll("*").length,focused:root.activeElement?.dataset.focusKey||null,warningFocused:root.activeElement?.dataset.historyWarning==="true"};'''
+    inspect='''const host=document.getElementById("thundy-analysis-status"),root=host.shadowRoot,detail=root.querySelector('[data-key="unbound-history"]');return {view:host.dataset.view,cardHidden:root.querySelector(".card:not(.finding-card)").hidden,page:Number(host.dataset.historyPage),entries:detail.querySelectorAll(".history-entries li").length,range:detail.querySelector(".history-range").textContent,summary:detail.querySelector("summary").textContent,localOnly:root.querySelector(".mode").textContent==="Local · no external results recorded",noCurrentThreat:root.querySelector(".card:not(.finding-card)").style.borderColor==="",nodes:root.querySelectorAll("*").length,focused:root.activeElement?.dataset.focusKey||null,warningFocused:root.activeElement?.dataset.historyWarning==="true"};'''
     expert_view(m)
     first=m.page(inspect);assert first['entries']==30 and first['page']==0 and first['noCurrentThreat'],first
     assert 'association unconfirmed' in first['summary'] and 'Suspicious or malicious historical finding' in first['summary'],first

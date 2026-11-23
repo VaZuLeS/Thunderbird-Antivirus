@@ -156,7 +156,7 @@ test('first external request, submission, loss and failure are visible in the he
  const c=vm.createContext({URL,Date,document:dom.window.document});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
  const labels=c.a.labels(key=>catalog[key].message),m=c.a.create();m.data.local.state='checked';
  m.event({provider:'urlscan',scope:'url',resource:'link:0',phase:'start'});
- const check=key=>{c.a.render(m.data,labels);const card=dom.window.document.getElementById('thundy-analysis-status').shadowRoot.querySelector('.card');assert.ok(card.querySelector('.mode').textContent.includes(catalog.analysisMixed.message));assert.ok(card.querySelector('.phase').textContent.includes(catalog[key].message));};
+ const check=key=>{c.a.render(m.data,labels);const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;assert.ok(root.querySelector('.mode').textContent.includes(catalog.analysisMixed.message));assert.ok(root.querySelector('.phase').textContent.includes(catalog[key].message));};
  check('analysisModeRunning');m.event({provider:'urlscan',scope:'url',resource:'link:0',phase:'finish',state:'submitted',verdict:'unknown',responded:true,observedAt:100});check('analysisModeSubmitted');
  m.event({provider:'urlscan',scope:'url',resource:'link:0',phase:'start'});m.event({provider:'urlscan',scope:'url',resource:'link:0',phase:'finish',state:'failed',verdict:'unknown',responded:false});check('analysisModeResponsesFailed');
  const restarted=c.a.create({schemaVersion:2,local:{state:'checked'},rows:[{provider:'urlscan',scope:'url',resource:'link:0',state:'running'}]});c.a.render(restarted.data,labels);assert.ok(dom.window.document.getElementById('thundy-analysis-status').shadowRoot.querySelector('.phase').textContent.includes(catalog.analysisModeIncomplete.message));
@@ -314,12 +314,14 @@ test('serialized current warning jump chooses the strongest active finding witho
  }
 });
 
-test('inventory provider index preserves resource ownership, source order and deduplication',()=>{
+test('inventory provider index preserves resource ownership and deduplicates verdicts with provenance',()=>{
  const a=model(),dom=new JSDOM('<html lang="en"><body data-thundy-analysis-view="expert"></body></html>');try{
   const catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json')),labels=a.labels(key=>catalog[key]?.message),c=vm.createContext({document:dom.window.document,Date,URL});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
   const rows=[{provider:'urlhaus',scope:'domain',resource:'link:0'},{provider:'virustotal',scope:'hash',resource:'link:0'},{provider:'urlhaus',scope:'url',resource:'link:0'},{provider:'hybridanalysis',scope:'report',resource:'link:1'}].map(row=>({...row,state:'checked',source:'stored',verdict:'none'}));
   const original=JSON.stringify(rows),host=c.a.render({rows,local:{state:'checked'},resourceLabels:{'link:0':'first','link:1':'second','link:2':'third'}},labels),items=host.shadowRoot.querySelectorAll('[data-key="resources"] li');
-  assert.equal(items[0].lastChild.textContent,'URLhaus · VirusTotal');assert.equal(items[1].lastChild.textContent,'Hybrid Analysis');assert.equal(items[2].lastChild.textContent,catalog.analysisResourceNoExternal.message);assert.equal(JSON.stringify(rows),original);
+  const expected=brand=>[brand,labels.providerNoDetection,labels.analysisSource_stored].join(' · ');
+  assert.deepEqual([...items[0].querySelectorAll('div')].slice(1).map(node=>node.textContent),[expected('URLhaus'),expected('VirusTotal')]);
+  assert.equal(items[1].lastChild.textContent,expected('Hybrid Analysis'));assert.equal(items[2].lastChild.textContent,catalog.analysisResourceNoExternal.message);assert.equal(JSON.stringify(rows),original);
  }finally{dom.window.close();}
 });
 
@@ -349,9 +351,48 @@ test('message and popup distinguish a flagged attachment from clean links and co
    await new Promise(setImmediate);
    assert.deepEqual(requests,[{action:'startAttachmentDownload',messageId:7,partName:'1.2'}]);
    c.render({...data,rows:[...data.rows,row('hybridanalysis','report','link:0','suspicious')]},labels,'',{surface});
-   assert.match(inventory()[1].textContent,/urlscan.*Hybrid Analysis/);
+   assert.match(inventory()[1].textContent,/Hybrid Analysis.*urlscan/);
    assert.ok(root.textContent.includes(labels.analysisConflict));
   }finally{dom.window.close();}
+ }
+});
+
+test('overview states, bound cached VirusTotal finding and focus survive live updates in all six languages',()=>{
+ const a=model();
+ for(const lang of ['en','de','fr','es','it','pl']){
+  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>',{pretendToBeVisual:true});
+  try{
+   const document=dom.window.document,catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=a.labels(k=>catalog[k]?.message);
+   document.documentElement.dataset.thundyAnalysisMessage='7';
+   const c=vm.createContext({document,Date});vm.runInContext('globalThis.render='+a.render.toString(),c);
+   const data={messageId:7,attachmentActions:true,local:{state:'checked',score:0},rows:[],
+    resourceLabels:{'attachment:1':'other.txt','attachment:2':'result.txt'}};
+   const render=patch=>c.render({...data,...patch},labels,'',{surface:'message'});
+   const root=render().shadowRoot;
+   const title=()=>root.querySelector('.finding-card h2').textContent;
+   assert.equal(title(),labels.analysisLocalNoFinding);
+   assert.ok(!root.textContent.includes(labels.analysisContinueWarning));
+   render({local:{state:'pending'}});assert.equal(title(),labels.analysisRunningHeading);
+   assert.ok(root.querySelector('.local-score').textContent.includes(labels.auditUnavailable));
+   render({local:{state:'incomplete'}});assert.equal(title(),labels.analysisSimpleIncomplete);
+   const result={provider:'virustotal',source:'cache',scope:'hash',resource:'attachment:2',verdict:'suspicious',state:'checked'};
+   const key='overview-resources:open:attachment:2';
+   root.querySelector('[data-focus-key="'+key+'"]').focus();
+   const apply=style=>{style.textContent='.card { color-scheme:dark; }';};
+   document.__thundyMessageAppearance=apply;
+   const palette=root.querySelector('style[data-thundy-theme]');apply(palette);
+   assert.equal(root.activeElement.dataset.focusKey,key);
+   render({rows:[result]});
+   assert.equal(title(),labels.analysisSimpleCaution);
+   const first=root.querySelector('[data-key="overview-resources"] [data-resource]');
+   assert.equal(first.dataset.resource,'attachment:2');
+   assert.ok(first.textContent.includes(['VirusTotal',labels.providerSuspicious,labels.analysisSource_cache].join(' · ')));
+   assert.equal(root.querySelector('style[data-thundy-theme]'),palette);
+   assert.equal(root.activeElement.dataset.focusKey,key);
+   document.documentElement.dataset.thundyAnalysisMessage='8';
+   assert.equal(render({rows:[{...result,verdict:'malicious'}]}),null);
+   assert.equal(title(),labels.analysisSimpleCaution);
+  } finally { dom.window.close(); }
  }
 });
 

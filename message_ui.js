@@ -14,12 +14,43 @@ async function injectIntoMessageDisplay(tabId, func, args = []) {
     }
 }
 
+async function bindMessageAppearance(tabId) {
+    if (typeof ThundyTheme === 'undefined' || typeof ThundyTheme.watch !== 'function') return;
+    await injectIntoMessageDisplay(tabId, function() {
+        if (document.__thundyMessageAppearance || !browser.runtime.connect) return;
+        const hosts = ['thundy-link-dialog','thundy-threat-banner','thundy-auth-badge','thundy-optin-banner','thundy-analysis-status'];
+        let css;
+        const apply = style => {
+            if (!css || !style) return;
+            const selector = style.dataset.thundyTheme === 'analysis' ? '.card,.inline-toolbar' : '.thundy-surface';
+            style.textContent = selector + '{' + css + '}';
+        };
+        document.__thundyMessageAppearance = apply;
+        const port = browser.runtime.connect({name:'thundy-message-appearance'});
+        port.onMessage.addListener(theme => {
+            if (typeof theme?.css !== 'string') return;
+            css = theme.css;
+            for (const id of hosts) apply(document.getElementById(id)?.shadowRoot?.querySelector('style[data-thundy-theme]'));
+        });
+        port.onDisconnect.addListener(() => { delete document.__thundyMessageAppearance; });
+    });
+}
+
 async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null) {
-    const forced = typeof ThundySecurity !== 'undefined' && (await ThundySecurity.read()).policy?.enabled;
+    const policy = typeof ThundySecurity !== 'undefined' && (await ThundySecurity.effective()).policy;
+    const forced = policy?.enabled === true;
     if (!timeOfClickProtection && !forced) return;
-    const labels = { scoreLabel:msg('localScoreLink'), localPending:msg('analysisLocalPending'), localFailed:msg('analysisLocalUnavailable'), localIncomplete:msg('analysisLocalIncomplete'), localNone:msg('localScoreNoIndicators'), localIndicators:msg('localScoreIndicators'), simple:msg('analysisSimple'), expert:msg('analysisExpert'), approval:msg('analysisApprovalRequired'), approvalMissing:msg('securityApprovalMissing'), approvalExpired:msg('securityExpired'), explanation:msg('analysisScoreExplanation'), incomplete:msg('analysisSimpleIncomplete'), danger:msg('analysisSimpleDanger'), caution:msg('analysisSimpleCaution'), waiting: msg('linkChecking'), warning: msg('linkWarning'), unknown: msg('linkUnknown'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel'), title: msg('linkDialogTitle'), destination: msg('linkDestination'), details: msg('linkUrlDetails'), open: msg('linkOpenBrowser'), opening: msg('linkOpening'), failed: msg('linkOpenFailed'), limited: msg('linkCheckLimited'), score: msg('auditLocalScore'), unavailable: msg('auditUnavailable'), decisionScore:msg('auditDecisionScore'), handoffPending:msg('linkHandoffPending'), preflightTimeout:msg('linkPreflightTimeout'), auditFailed: msg('auditFailure'), origins: { live: msg('checkOrigin_live'), stored: msg('checkOrigin_stored'), none: msg('checkOrigin_none') }, outcomes: {incomplete:msg('analysisSimpleIncomplete'), rate_limited:msg('checkOutcome_rate_limited'), invalid_key:msg('checkOutcome_invalid_key'),success: msg('checkOutcome_success'), failed: msg('checkOutcome_failed'), disabled: msg('checkOutcome_disabled'), permission_denied: msg('checkOutcome_permission_denied'), missing_key: msg('checkOutcome_missing_key'), missing_reference: msg('checkOutcome_missing_reference'), not_requested: msg('checkOutcome_not_requested'), no_result: msg('checkOutcome_no_result')}, observed: msg('checkObserved'), attempted: msg('checkAttempted') };
+    const labels = { scoreLabel:msg('localScoreLink'), localIncomplete:msg('analysisLocalIncomplete'), localNone:msg('localScoreNoIndicators'), localIndicators:msg('localScoreIndicators'), simple:msg('analysisSimple'), expert:msg('analysisExpert'), approvalMissing:msg('securityApprovalMissing'), approvalExpired:msg('securityExpired'), explanation:msg('analysisScoreExplanation'), incomplete:msg('analysisSimpleIncomplete'), danger:msg('analysisSimpleDanger'), caution:msg('analysisSimpleCaution'), waiting: msg('linkChecking'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel'), title: msg('linkDialogTitle'), destination: msg('linkDestination'), details: msg('linkUrlDetails'), open: msg('linkOpenBrowser'), opening: msg('linkOpening'), failed: msg('linkOpenFailed'), limited: msg('linkCheckLimited'), score: msg('auditLocalScore'), unavailable: msg('auditUnavailable'), decisionScore:msg('auditDecisionScore'), handoffPending:msg('linkHandoffPending'), preflightTimeout:msg('linkPreflightTimeout'), auditFailed: msg('auditFailure'), origins: { live: msg('checkOrigin_live'), stored: msg('checkOrigin_stored'), none: msg('checkOrigin_none') }, outcomes: {incomplete:msg('analysisSimpleIncomplete'), rate_limited:msg('checkOutcome_rate_limited'), invalid_key:msg('checkOutcome_invalid_key'),success: msg('checkOutcome_success'), failed: msg('checkOutcome_failed'), disabled: msg('checkOutcome_disabled'), permission_denied: msg('checkOutcome_permission_denied'), missing_key: msg('checkOutcome_missing_key'), missing_reference: msg('checkOutcome_missing_reference'), not_requested: msg('checkOutcome_not_requested'), no_result: msg('checkOutcome_no_result')}, observed: msg('checkObserved'), attempted: msg('checkAttempted') };
     const theme = typeof ThundyTheme !== 'undefined' ? await ThundyTheme.snapshot() : null;
-    await injectIntoMessageDisplay(tabId, function(labels, messageId, theme, forced) {
+    labels.decisions = {allow:msg('protectionOpenAllowed'),warn:msg('protectionWarn'),
+        approval:msg('protectionApproval'),block:msg('protectionBlocked')};
+    labels.causes = {malicious:msg('protectionMalicious'),threshold:msg('protectionThreshold'),
+        managedThreshold:msg('protectionManagedThreshold'),unknown:msg('analysisSimpleIncomplete'),
+        incomplete:msg('analysisSimpleIncomplete'),context_changed:msg('linkContextChanged'),
+        policy_invalid:msg('managedPolicyInvalid')};
+    labels.requestApproval = msg('protectionRequestApproval');
+    await injectIntoMessageDisplay(tabId, function(labels, displayedId, theme, forced) {
+        document.__thundyLinkMessageId = displayedId;
         document.documentElement.dataset.thundyForcedProtection = forced ? 'true' : 'false';
         if (document.documentElement.dataset.thundyClickProtection) return;
         document.documentElement.dataset.thundyClickProtection = 'true';
@@ -31,9 +62,10 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             event.stopImmediatePropagation();
             if (busy) return;
             busy = true;
+            const messageId = document.__thundyLinkMessageId;
             const url = link.href;
             const interactionId = Date.now().toString(36) + '_' + Math.random().toString(36).slice(2);
-            let opening = false, awaitingHandoff = false;
+            let opening = false, awaitingHandoff = false, checking = false, chooseContextAction;
             const panel = document.createElement('div');
             panel.id = 'thundy-link-dialog';
             panel.setAttribute('role', 'alertdialog');
@@ -45,27 +77,29 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             const root = panel.attachShadow({ mode: 'open' });
             const style = document.createElement('style');
             const themeStyle = document.createElement('style');
-            themeStyle.textContent = ':host {' + (theme?.css || '') + '}';
+            themeStyle.dataset.thundyTheme = '';
+            themeStyle.textContent = '.thundy-surface {' + (theme?.css || '') + '}';
             style.textContent = `
                 * { box-sizing:border-box; }
                 .dialog { width:520px;max-width:100%;max-height:calc(100vh - 32px);overflow:auto;background:var(--card-bg,#fff);color:var(--text-color,#17243a);border:1px solid var(--card-border,#cbd5e1);border-radius:16px;padding:24px;box-shadow:0 20px 70px #0004;font:14px/1.55 system-ui,sans-serif;text-align:left; }
                 header { display:flex;align-items:center;gap:12px;margin-bottom:20px; }
-                .brand { display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:var(--btn-primary-bg,#075985);color:white;font-size:22px;font-weight:800; }
+                .brand { display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:var(--btn-primary-bg,#075985);color:var(--btn-primary-text,#fff);font-size:22px;font-weight:800; }
                 strong { font-size:18px; } h2 { margin:0;font-size:13px;font-weight:400;color:var(--text-muted,#475569); }
                 .label { color:var(--text-muted,#475569);font-size:12px;font-weight:600;margin:0 0 4px; }
                 .destination { font-size:18px;font-weight:650;overflow-wrap:anywhere;margin:0 0 12px; }
                 details { border:1px solid var(--card-border,#cbd5e1);border-radius:8px;padding:10px 12px;margin-bottom:18px; } summary { cursor:pointer; } code { display:block;font-size:12px;overflow-wrap:anywhere;white-space:pre-wrap;margin-top:10px;user-select:text; }
                 .result { padding:14px;border-radius:10px;background:var(--accent-soft,#eff6ff);border-left:4px solid var(--link-color,#0369a1);margin:0 0 12px; }
-                .danger { background:var(--alert-error-bg,#fff1f2);border-color:var(--color-danger,#be123c); } .unknown { background:var(--warning-bg,#fff7ed);border-color:var(--color-warning,#b45309); }
+                .danger { background:var(--alert-error-bg,#fff1f2);border-color:var(--color-danger,#be123c);color:var(--color-danger,#881337); } .unknown { background:var(--warning-bg,#fff7ed);border-color:var(--color-warning,#92510d);color:var(--color-warning,#92510d); }
                 .note { color:var(--text-muted,#475569);font-size:12px;margin:12px 0; } ul { padding-left:20px;overflow-wrap:anywhere; }
-                .error { color:var(--color-danger,#be123c);margin:12px 0; } .error:empty { display:none; }
+                .error { color:var(--color-danger,#be123c);background:var(--alert-error-bg,#fff1f2);padding:8px;margin:12px 0; } .error:empty { display:none; }
                 footer { display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:20px; }
                 button { font:600 14px/1.4 system-ui,sans-serif;border:1px solid var(--input-border,#94a3b8);border-radius:8px;padding:10px 16px;min-height:var(--control-size,44px);cursor:pointer;background:var(--card-bg,#fff);color:var(--text-color,#17243a);max-width:100%;overflow-wrap:anywhere; }
-                .primary { background:var(--btn-primary-bg,#075985);color:#fff;border-color:var(--btn-primary-bg,#075985); } .warning { background:var(--btn-danger-bg,#9f1239);border-color:var(--btn-danger-bg,#9f1239); }
-                button:focus-visible,summary:focus-visible { outline:3px solid #0284c7;outline-offset:3px; } button:disabled { opacity:.6;cursor:wait; }
+                .primary { background:var(--btn-primary-bg,#075985);color:var(--btn-primary-text,#fff); } .warning { background:var(--btn-danger-bg,#9f1239); }
+                button:focus-visible,summary:focus-visible { outline:3px solid var(--link-color,#0369a1);outline-offset:3px; } button:disabled { opacity:.6;cursor:wait; }
+                @media (forced-colors:active) { .dialog,button { border-color:ButtonText; } button:focus-visible,summary:focus-visible { outline-color:Highlight; } }
 
             `;
-            const card = document.createElement('section'); card.className = 'dialog'; card.tabIndex = -1;
+            const card = document.createElement('section'); card.className = 'dialog thundy-surface'; card.tabIndex = -1;
             const header = document.createElement('header');
             const brand = document.createElement('span'); brand.className = 'brand'; brand.textContent = 'T'; brand.setAttribute('aria-hidden', 'true');
             const headings = document.createElement('div');
@@ -76,13 +110,16 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             panel.setAttribute('aria-label', 'Thundy AV · ' + labels.title);
             panel.removeAttribute('aria-labelledby'); panel.removeAttribute('aria-describedby');
             const label = document.createElement('p'); label.className = 'label'; label.textContent = labels.destination;
-            const host = document.createElement('p'); host.className = 'destination'; host.textContent = new URL(url).host;
+            const host = document.createElement('p'); host.className = 'destination'; host.textContent = new URL(url).hostname;
             const details = document.createElement('details');
             const summary = document.createElement('summary'); summary.textContent = labels.details;
             const address = document.createElement('code'); address.textContent = url;
-            details.append(summary, address); card.append(label, host, details);
-            const text = document.createElement('p'); text.id = 'thundy-link-result'; text.className = 'result'; text.setAttribute('role', 'status'); text.setAttribute('aria-live', 'polite'); text.textContent = labels.waiting;
-            const score = document.createElement('p');score.className='note local-score';score.textContent=labels.scoreLabel+': '+labels.localPending;
+            details.append(summary, address);
+            const decisionStatus = document.createElement('div'); decisionStatus.setAttribute('role','status'); decisionStatus.setAttribute('aria-atomic','true');
+            const text = document.createElement('p'); text.id = 'thundy-link-result'; text.className = 'result'; text.textContent = labels.waiting;
+            const cause = document.createElement('p'); cause.className = 'decision-reason'; cause.hidden = true;
+            decisionStatus.append(text,cause);
+            const score = document.createElement('p');score.className='note local-score';score.textContent=labels.scoreLabel+': '+labels.unavailable;
             const note = document.createElement('p'); note.className = 'note'; note.textContent = labels.limited;
             const reasons = document.createElement('ul'); reasons.hidden = true;
             const error = document.createElement('p'); error.className = 'error'; error.setAttribute('role', 'alert');
@@ -91,18 +128,20 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             const close = (reason = 'cancel') => {
                 if (!panel.isConnected || (opening && reason !== 'opened' && reason !== 'context_closed')) return;
                 panel.remove(); busy = false; if (link.isConnected) link.focus();
+                chooseContextAction?.(false);
                 document.defaultView.removeEventListener('pagehide', onPageHide);
-                if (reason !== 'opened' && !awaitingHandoff) browser.runtime.sendMessage({ action: 'cancelLinkInteraction', interactionId, url, messageId, reason }).catch(() => {});
+                if (checking && reason !== 'opened' && !awaitingHandoff) browser.runtime.sendMessage({ action: 'cancelLinkInteraction', interactionId, url, messageId, reason }).catch(() => {});
             };
             const onPageHide = () => close('context_closed');
             document.defaultView.addEventListener('pagehide', onPageHide);
 
             cancel.addEventListener('click', () => close('cancel')); footer.appendChild(cancel);
-            card.append(text, score, reasons, note, error, footer); root.append(themeStyle, style, card); document.body.appendChild(panel);
+            card.append(decisionStatus, label, host, details, score, reasons, note, error, footer); root.append(themeStyle, style, card); document.body.appendChild(panel);
             // Refresh without delaying security UI if the background is unavailable.
-            if (theme) {
+            if (document.__thundyMessageAppearance) document.__thundyMessageAppearance(themeStyle);
+            else if (theme) {
                 Promise.resolve(browser.runtime.sendMessage({ action: 'getUiTheme' })).then(latest => {
-                    if (panel.isConnected && latest && typeof latest.css === 'string') themeStyle.textContent = ':host {' + latest.css + '}';
+                    if (panel.isConnected && latest && typeof latest.css === 'string') themeStyle.textContent = '.thundy-surface {' + latest.css + '}';
                 }).catch(() => {});
             }
             root.addEventListener('keydown', event => {
@@ -116,18 +155,58 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                 }
             });
             cancel.focus();
+            if (event.type === 'contextmenu') {
+                text.textContent = labels.open;
+                const openIntent = document.createElement('button');
+                openIntent.type = 'button';
+                openIntent.textContent = labels.open;
+                const selected = new Promise(resolve => { chooseContextAction = resolve; });
+                openIntent.addEventListener('click',() => chooseContextAction(true));
+                footer.appendChild(openIntent);
+                if (!await selected) return;
+                chooseContextAction = null;
+                openIntent.remove();
+                if (!link.isConnected || link.href !== url) { close('destination_changed'); return; }
+                text.textContent = labels.waiting;
+                cancel.focus();
+            }
+            checking = true;
             let result;
             try { result = await browser.runtime.sendMessage({ action: 'checkLinkState', url, messageId, interactionId, userAction: true }); }
             catch (e) { result = { status: 'ERROR' }; }
             if (!panel.isConnected) return;
             if (!link.isConnected || link.href !== url) { close('destination_changed'); return; }
-            const dangerous = /MALICIOUS|SUSPICIOUS|MALICIOUS_VISUAL/.test(result && result.status || '');
-            const clean = result && result.status === 'CLEAN' && result.check?.origin === 'live' && result.check?.outcome === 'success';
+            const malicious = ['MALICIOUS','MALICIOUS_VISUAL'].includes(result?.status);
+            const dangerous = malicious || result?.status === 'SUSPICIOUS';
+            const noDetection = result?.status === 'CLEAN' && result.check?.outcome === 'success';
+            const clean = noDetection && result.check.origin === 'live';
             const local=result?.local||{score:result?.score,state:'unknown',reasons:[]};
             const validScore=typeof local.score==='number'&&Number.isFinite(local.score)&&local.score>=0&&local.score<=100&&local.state!=='failed';
-            const uncertain=result?.check?.origin==='stored'||!validScore||local.state!=='checked';
-            text.className = 'result ' + (dangerous ? 'danger' : uncertain||local.score>=25 ? 'unknown' : '');
-            text.textContent = dangerous ? labels.danger : validScore&&local.score>0 ? labels.localIndicators : local.state==='failed' ? labels.localFailed : local.state==='incomplete' ? labels.localIncomplete : local.state==='checked'&&validScore ? labels.localNone : clean ? labels.noDetection : labels.incomplete;
+            const uncertain = !clean || !validScore || local.state !== 'checked';
+            const protection = result?.protection;
+            const mode = protection?.mode || (protection?.required ? 'approval' : dangerous || uncertain || local.score >= 25 ? 'warn' : 'allow');
+            function showDecision(mode, rules) {
+                const reason = rules?.reason;
+                const provider = result?.provider && result.provider !== 'none' ? result.provider : '';
+                const providers = [...new Set([...(rules?.providers || []),...(malicious && provider ? [provider] : [])])];
+                const threshold = rules?.managed ? labels.causes.managedThreshold : labels.causes.threshold;
+                let why;
+                if (reason === 'threshold') {
+                    why = [threshold+(Number.isFinite(rules.threshold) ? ' · '+rules.threshold+' / 100' : ''),
+                        Number.isFinite(rules.score) ? labels.decisionScore+' '+rules.score+' / 100' : ''].filter(Boolean).join(' · ');
+                } else if (reason === 'malicious' || !reason && malicious) {
+                    why = [labels.causes.malicious,...providers].join(' · ');
+                } else {
+                    why = labels.causes[reason] || (dangerous ? [labels.caution,provider].filter(Boolean).join(' · ') :
+                        mode === 'allow' && noDetection ? [labels.noDetection,provider,labels.origins[result.check.origin]].filter(Boolean).join(' · ') :
+                        uncertain ? labels.incomplete : validScore && local.score > 0 ? labels.localIndicators : labels.localNone);
+                }
+                text.className = 'result ' + (mode === 'block' || malicious ? 'danger' : mode !== 'allow' ? 'unknown' : '');
+                text.textContent = labels.decisions[mode] || labels.decisions.warn;
+                cause.textContent = why;
+                cause.hidden = !why;
+            }
+            showDecision(mode,protection);
             score.textContent=labels.scoreLabel+': '+(validScore?local.score+' / 100':labels.unavailable);
             if(validScore&&local.state==='incomplete'){const limited=document.createElement('p');limited.className='note';limited.textContent=labels.localIncomplete;card.insertBefore(limited,note);}
             const displayedReasons=[...(Array.isArray(local.reasons)?local.reasons.map(text=>({text,source:'local'})):[]),...[...new Set([...(local.providerReasons||[]),...(Array.isArray(result?.reasons)?result.reasons:[])])].map(text=>({text,source:'provider'}))];
@@ -161,9 +240,9 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             if (result && result.auditSaved === false) { const auditNotice = document.createElement('p'); auditNotice.className = 'error'; auditNotice.textContent = labels.auditFailed; card.insertBefore(auditNotice, footer); }
             const explanation=document.createElement('p');explanation.textContent=labels.explanation;card.insertBefore(explanation,footer);
             const view=document.createElement('button');view.type='button';view.textContent=labels.expert;let expert=false;view.addEventListener('click',()=>{expert=!expert;view.textContent=expert?labels.simple:labels.expert;for(const node of root.querySelectorAll('[data-expert]'))node.hidden=!expert;});card.append(view);
-            if(result?.protection?.required){const warning=document.createElement('p');warning.textContent=labels.approval;card.insertBefore(warning,footer);}
+            if (mode === 'block') return;
             const proceed = document.createElement('button'); proceed.type = 'button'; proceed.className = 'primary' + (dangerous ? ' warning' : '');
-            const buttonLabel = clean ? labels.open : labels.proceed;
+            const buttonLabel = mode === 'approval' ? labels.requestApproval : mode === 'allow' ? labels.open : labels.proceed;
             proceed.textContent = buttonLabel;
             proceed.addEventListener('click', async () => {
                 if (opening || !panel.isConnected) return;
@@ -183,6 +262,10 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                     }
                     if (opened?.code === 'APPROVAL_NOT_CONFIGURED') {
                         error.textContent=labels.approvalMissing;opening=false;cancel.disabled=false;proceed.hidden=true;cancel.focus();return;
+                    }
+                    if (['LINK_POLICY_BLOCKED','POLICY_INVALID'].includes(opened?.code)) {
+                        showDecision('block',opened.protection || {reason:opened.code==='POLICY_INVALID'?'policy_invalid':'context_changed'});
+                        opening=false;cancel.disabled=false;proceed.hidden=true;cancel.focus();return;
                     }
                     if (opened?.code === 'LINK_HANDOFF_PENDING') {
                         error.textContent=labels.handoffPending;opening=false;awaitingHandoff=true;cancel.disabled=false;
@@ -205,6 +288,7 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
         document.addEventListener('contextmenu', onClick, true);
         document.addEventListener('dragstart',event=>{if(document.documentElement.dataset.thundyForcedProtection==='true' && event.target.closest?.('a[href]'))event.preventDefault();},true);
     }, [labels, messageId, theme, forced]);
+    await bindMessageAppearance(tabId);
 }
 
 async function injectThreatBanner(tabId, threat) {
@@ -230,14 +314,26 @@ async function injectThreatBanner(tabId, threat) {
                         return fallback;
                     }
                 };
+                if (score >= 50 || authStatus === 'pass') {
+                    const host = document.createElement('div');
+                    host.id = score >= 50 ? 'thundy-threat-banner' : 'thundy-auth-badge';
+                    host.style.cssText = 'all:initial!important;display:block!important;';
+                    const root = host.attachShadow({mode:'open'});
+                    const palette = document.createElement('style');
+                    palette.dataset.thundyTheme = '';
+                    palette.textContent = '.thundy-surface {' + (theme?.css || '') + '}';
+                    root.append(palette);
+                    document.body.prepend(host);
+                    document.__thundyMessageAppearance?.(palette);
+                }
                 if (score >= 50) {
                     // Sichere DOM-Manipulation ohne innerHTML
                     const banner = document.createElement('div');
-                    banner.id = 'thundy-threat-banner';
-                    banner.style.cssText = (theme?.css || '') + 'background:var(--alert-error-bg,#fff1f2);border:1px solid var(--color-danger,#be123c);border-left:4px solid var(--color-danger,#be123c);color:var(--color-danger,#881337);padding:16px;margin:12px;border-radius:12px;font:14px/1.55 system-ui,sans-serif;';
+                    banner.className = 'thundy-surface';
+                    banner.style.cssText = 'background:var(--alert-error-bg,#fff1f2);border:1px solid var(--color-danger,#be123c);border-left:4px solid var(--color-danger,#be123c);color:var(--color-danger,#881337);padding:16px;margin:12px;border-radius:12px;font:14px/1.55 system-ui,sans-serif;overflow-wrap:anywhere;';
 
                     const title = document.createElement('div');
-                    title.textContent = t('bannerThreatTitle', 'Thundy AV warning') +
+                    title.textContent = '⚠ ' + t('bannerThreatTitle', 'Thundy AV warning') +
                         ' (' + t('bannerThreatScore', 'Risk score: $SCORE$ of 100', [String(score)]) + ')';
                     title.style.fontSize = '16px';
                     title.style.marginBottom = '5px';
@@ -255,13 +351,12 @@ async function injectThreatBanner(tabId, threat) {
                     }
                     banner.appendChild(reasonList);
 
-                    document.body.prepend(banner);
+                    document.getElementById('thundy-threat-banner').shadowRoot.append(banner);
                 } else if (authStatus === 'pass') {
                     const badge = document.createElement('div');
-                    badge.id = 'thundy-auth-badge';
+                    badge.className = 'thundy-surface';
                     badge.style.display = 'inline-block';
-                    badge.style.cssText = theme?.css || '';
-                    badge.style.backgroundColor = 'var(--card-bg,#e6ffe6)';
+                    badge.style.backgroundColor = 'var(--success-bg,#e6ffe6)';
                     badge.style.border = '1px solid var(--color-success,#008000)';
                     badge.style.color = 'var(--color-success,#008000)';
                     badge.style.padding = '5px 10px';
@@ -273,9 +368,10 @@ async function injectThreatBanner(tabId, threat) {
                     badge.style.zIndex = '9999';
                     badge.textContent = '🟢 🛡️ ' + t('bannerAuthPass', 'Trusted server reports SPF/DKIM/DMARC passed');
 
-                    document.body.prepend(badge);
+                    document.getElementById('thundy-auth-badge').shadowRoot.append(badge);
                 }
         }, [threat.score, threat.reasons, threat.authStatus, Object.fromEntries(Object.keys(I18N_FALLBACKS).map(key => [key, msg(key, key === 'bannerThreatScore' ? [String(threat.score)] : [])])), theme, threat.assessment || null]);
+        await bindMessageAppearance(tabId);
     }
 }
 
@@ -293,9 +389,18 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
         const existing = document.getElementById('thundy-optin-banner');
         if (existing) return;
 
+        const host = document.createElement('div');
+        host.id = 'thundy-optin-banner';
+        host.style.cssText = 'all:initial!important;display:block!important;';
+        const root = host.attachShadow({mode:'open'});
+        const palette = document.createElement('style');
+        palette.dataset.thundyTheme = '';
+        palette.textContent = '.thundy-surface {' + (theme?.css || '') + '}';
+        const focus = document.createElement('style');
+        focus.textContent = 'button:focus-visible {outline:3px solid var(--link-color,#0369a1);outline-offset:3px} @media (forced-colors:active) {button:focus-visible {outline-color:Highlight}}';
         const banner = document.createElement('div');
-        banner.id = 'thundy-optin-banner';
-        banner.style.cssText = (theme?.css || '') + 'background:var(--card-bg,#f0f7ff);border:1px solid var(--card-border,#bfd6ee);border-left:4px solid var(--btn-primary-bg,#075985);color:var(--text-color,#17243a);padding:16px;margin:12px;border-radius:12px;font:14px/1.55 system-ui,sans-serif;';
+        banner.className = 'thundy-surface';
+        banner.style.cssText = 'background:var(--card-bg,#f0f7ff);border:1px solid var(--card-border,#bfd6ee);border-left:4px solid var(--link-color,#075985);color:var(--text-color,#17243a);padding:16px;margin:12px;border-radius:12px;font:14px/1.55 system-ui,sans-serif;overflow-wrap:anywhere;';
 
         const text = document.createElement('p');
         text.style.cssText = 'margin:0 0 12px;font-weight:600;';
@@ -306,7 +411,7 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.textContent = label;
-          btn.style.cssText = 'margin:0 8px 8px 0;padding:9px 13px;border:1px solid var(--btn-primary-bg,#075985);border-radius:8px;background:var(--btn-primary-bg,#075985);color:#fff;font:600 13px/1.4 system-ui,sans-serif;cursor:pointer;';
+          btn.style.cssText = 'margin:0 8px 8px 0;padding:9px 13px;border:1px solid var(--input-border,#627891);border-radius:8px;background:var(--btn-primary-bg,#075985);color:var(--btn-primary-text,#fff);font:600 13px/1.4 system-ui,sans-serif;cursor:pointer;';
           btn.addEventListener('click', async () => {
             const buttons = banner.querySelectorAll('button');
             buttons.forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
@@ -396,6 +501,9 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
           addOptionsButton();
         }
 
-        document.body.prepend(banner);
+        root.append(palette,focus,banner);
+        document.body.prepend(host);
+        document.__thundyMessageAppearance?.(palette);
   }, [messageId, senderEmail, consentGiven === true, Object.fromEntries(Object.keys(I18N_FALLBACKS).map(key => [key, msg(key)])), theme]);
+  await bindMessageAppearance(tabId);
 }

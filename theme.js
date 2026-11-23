@@ -7,21 +7,22 @@ const ThundyTheme = (() => {
     typeof matchMedia === "function"
       ? matchMedia("(prefers-color-scheme: dark)")
       : null;
-  async function readNative() {
+  async function readNative(windowId) {
     try {
-      return (await api?.theme?.getCurrent()) || {};
+      const args = Number.isInteger(windowId) ? [windowId] : [];
+      return (await api?.theme?.getCurrent(...args)) || {};
     } catch (_) {
       return {};
     }
   }
-  async function snapshot() {
+  async function snapshot(windowId) {
     let p = {};
     try {
       p = (await api?.storage.local.get(keys)) || {};
     } catch (_) {
       /* local default */
     }
-    const r = resolve(p, await readNative(), media?.matches === true);
+    const r = resolve(p, await readNative(windowId), media?.matches === true);
     return {
       scheme: r.scheme,
       css:
@@ -31,6 +32,30 @@ const ThundyTheme = (() => {
         ";color-scheme:" +
         r.scheme +
         ";",
+    };
+  }
+  function watch(windowId, render) {
+    let generation = 0;
+    const refresh = async () => {
+      const own = ++generation;
+      const theme = await snapshot(windowId);
+      if (own === generation) render(theme);
+    };
+    const storage = (changes, area) => {
+      if (area === 'local' && keys.some(key => Object.hasOwn(changes,key))) void refresh();
+    };
+    const native = info => {
+      if (info?.windowId === undefined || windowId === undefined || info.windowId === windowId) void refresh();
+    };
+    api?.storage?.onChanged?.addListener(storage);
+    api?.theme?.onUpdated?.addListener(native);
+    media?.addEventListener('change',refresh);
+    void refresh();
+    return () => {
+      generation++;
+      api?.storage?.onChanged?.removeListener?.(storage);
+      api?.theme?.onUpdated?.removeListener?.(native);
+      media?.removeEventListener?.('change',refresh);
     };
   }
   let idle = () => Promise.resolve();
@@ -44,6 +69,7 @@ const ThundyTheme = (() => {
     let preferences = normalize({}),
       native = {},
       generation = 0,
+      nativeGeneration = 0,
       pending = 0,
       queue = Promise.resolve();
     idle = () => queue;
@@ -93,17 +119,23 @@ const ThundyTheme = (() => {
       generation++;
       render();
     });
-    api?.theme?.onUpdated?.addListener(async () => {
-      native = await readNative();
-      render();
+    const ownWindow = Promise.resolve(api?.windows?.getCurrent?.()).then(value => value?.id, () => undefined);
+    api?.theme?.onUpdated?.addListener(async info => {
+      const windowId = await ownWindow;
+      if (info?.windowId !== undefined && windowId !== undefined && info.windowId !== windowId) return;
+      const own = ++nativeGeneration;
+      const latest = await readNative(windowId);
+      if (own === nativeGeneration) { native = latest; render(); }
     });
     media?.addEventListener("change", render);
     for (const input of inputs) input.disabled = true;
     const initial = generation;
-    Promise.all([api?.storage.local.get(keys), readNative()])
+    const initialNative = nativeGeneration;
+    render();
+    Promise.all([api?.storage.local.get(keys), ownWindow.then(readNative)])
       .then(([p, n]) => {
         if (generation === initial) preferences = normalize(p);
-        native = n;
+        if (nativeGeneration === initialNative) native = n;
         render();
         say("themeReady");
       })
@@ -155,5 +187,5 @@ const ThundyTheme = (() => {
   }
   if (typeof document !== "undefined")
     document.addEventListener("DOMContentLoaded", initialize);
-  return { resolve, normalize, snapshot, color, contrast, whenIdle: () => idle() };
+  return { resolve, normalize, snapshot, watch, color, contrast, whenIdle: () => idle() };
 })();

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.26.0 — 2026-11-23
+
+- Managed Thunderbird policies for separate link and attachment thresholds, protected opening and saving, and optional HTTPS incident reporting.
+- Clearer findings in the message and popup, live appearance updates, and policy blocks in the link log.
+- Standalone Python incident receiver with HTTPS, a durable SQLite outbox, and HTML and plain-text SMTP notification emails.
+
 ## 1.24.8 — 2026-11-06
 
 - Implement durable message content key derivation and storage key resolution (`deriveMessageContentKey`, `resolveMessageStorageKey`) in `db.js` and `background.js` (AVN-009).

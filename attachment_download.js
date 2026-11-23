@@ -1,4 +1,4 @@
-// Original-file downloads from Thundy. No provider requests are made here.
+// Original-file actions through Thundy. Evidence is read from local storage.
 const ThundyAttachmentDownload = (() => {
     const hashLimit = 25 * 1024 * 1024;
     const assessmentWait = 5000;
@@ -7,7 +7,7 @@ const ThundyAttachmentDownload = (() => {
     const fail = code => Object.assign(new Error(code), {code});
     const unavailable = () => ({score:null, malicious:false, state:'unknown'});
 
-    function evidence(item, digest) {
+    function evidence(item, digest, managed = false, archived = false) {
         if (!digest || item?.hybrid_sha256?.toLowerCase?.() !== digest) return unavailable();
         const {bound:matching,fullyBound} = ThundyProviderResults.boundAttachmentReports(item.report,digest);
         // A mixed legacy payload may also have produced an unbound composite assessment.
@@ -16,17 +16,24 @@ const ThundyAttachmentDownload = (() => {
         const signals = [...(stored.signals || []), ...evaluated.flatMap(report => report.signals)];
         const scores = signals.filter(s => s.code === 'threat_score' && validScore(s.value)).map(s => s.value);
         const score = scores.length ? Math.max(...scores) : null;
-        const malicious = signals.some(s => s.code === 'verdict' && s.verdict === 'malicious');
+        const detections = item.virustotal_stats?.malicious;
+        const maliciousProviders = [];
+        if (signals.some(s => (s.code === 'verdict' || managed && s.code === 'scanner') && s.verdict === 'malicious')) maliciousProviders.push('Hybrid Analysis');
+        if (managed && !archived && Number.isSafeInteger(detections) && detections > 0) maliciousProviders.push('VirusTotal');
         const state = item.state === 'UPLOADED' || stored.completion === 'pending' ||
             evaluated.some(report => report.completion === 'pending') ? 'pending' :
             stored.completion === 'failed' || evaluated.some(report => report.completion === 'failed') ? 'failed' :
             matching.length > 0 && fullyBound &&
                 matching.every((report,i) => evaluated[i].completion === 'complete' &&
                     ThundyProviderResults.hybridCompletionConfirmed(report)) ? 'complete' : 'unknown';
-        return {score, malicious, state};
+        return {score, malicious:maliciousProviders.length > 0, state, maliciousProviders};
     }
 
     function decision(policy, result) {
+        if (policy.invalid) return {mode:'block',reason:'policy_invalid'};
+        if (policy.managed) return ThundyManagedPolicy.decision(policy, {
+            score:result.score, malicious:result.malicious, incomplete:!validScore(result.score) || result.state !== 'complete'
+        });
         if (policy.mode === 'off') return {mode:'allow',reason:null};
         if (result.malicious) return {mode:policy.mode,reason:'malicious'};
         if (validScore(result.score) && result.score >= policy.threshold) return {mode:policy.mode,reason:'threshold'};
@@ -39,7 +46,7 @@ const ThundyAttachmentDownload = (() => {
             typeof entry.hybrid_sha256 === 'string' && entry.hybrid_sha256.toLowerCase() === digest;
         const active = (Array.isArray(record?.attachments) ? record.attachments : []).filter(matches);
         const current = active.length === 1 ? active[0] : null;
-        const result = evidence(current,digest);
+        const result = evidence(current,digest,policy.managed);
         if (pending) result.state = 'pending';
         const observed = item => {
             const time = typeof item?.report_fetched_at === 'string' ? Date.parse(item.report_fetched_at) : NaN;
@@ -53,7 +60,7 @@ const ThundyAttachmentDownload = (() => {
         for (const entry of entries) {
             const item = entry?.resource;
             if (entry?.kind !== 'attachment' || !matches(item)) continue;
-            const archived = evidence(item,digest);
+            const archived = evidence(item,digest,policy.managed,true);
             const time = observed(item);
             if (result.state === 'complete' && (result.malicious || validScore(result.score)) &&
                 selection.observedAt !== null && time !== null && selection.observedAt > time) continue;
@@ -76,6 +83,31 @@ const ThundyAttachmentDownload = (() => {
             name = name.slice(0,180-extension.length)+extension;
         }
         return name || 'attachment';
+    }
+
+    function attachmentIncidentEvidence(item, current, digest, source, observedAt) {
+        const providers = [];
+        if (item && digest) {
+            const {bound,fullyBound} = ThundyProviderResults.boundAttachmentReports(item.report,digest);
+            if (bound.length) {
+                const assessed = ThundyProviderResults.stored('hybridanalysis',{report:bound,assessment:fullyBound ? item.assessment : null});
+                if (['malicious','suspicious'].includes(assessed.verdict) || assessed.verdict === 'none' && assessed.completion === 'complete') {
+                    providers.push({provider:'hybridanalysis',verdict:assessed.verdict === 'none' ? 'no_detection' : assessed.verdict,
+                        source:source === 'archive' ? 'archive' : 'stored',observedAt,
+                        score:evidence(item,digest).score,reference:digest,jobId:fullyBound ? item.hybrid_job_id : null});
+                }
+            }
+        }
+        const stats = current?.virustotal_stats;
+        if (Number.isSafeInteger(stats?.malicious) && stats.malicious >= 0 && Number.isSafeInteger(stats.suspicious) && stats.suspicious >= 0) {
+            const verdict = stats.malicious ? 'malicious' : stats.suspicious ? 'suspicious' :
+                stats.harmless > 0 || stats.undetected > 0 ? 'no_detection' : null;
+            if (verdict) providers.push({provider:'virustotal',verdict,source:'stored',
+                maliciousCount:stats.malicious,suspiciousCount:stats.suspicious});
+        } else if (Number.isSafeInteger(stats?.malicious) && stats.malicious > 0) {
+            providers.push({provider:'virustotal',verdict:'malicious',source:'stored',maliciousCount:stats.malicious});
+        }
+        return providers;
     }
 
     function create(api, deps) {
@@ -114,7 +146,8 @@ const ThundyAttachmentDownload = (() => {
         async function readFile(target) {
             await current(target);
             const inventory = await api.messages.listAttachments(target.messageId);
-            if (inventory.filter(item => item.partName === target.partName).length !== 1) throw fail('ATTACHMENT_CONTEXT_CHANGED');
+            const matches = inventory.filter(item => item.partName === target.partName);
+            if (matches.length !== 1 || target.operation === 'open' && matches[0].type && matches[0].type !== 'normal') throw fail('ATTACHMENT_CONTEXT_CHANGED');
             try {
                 const file = await api.messages.getAttachmentFile(target.messageId,target.partName);
                 const digest = file.size <= hashLimit ? await deps.hash(await file.arrayBuffer()) : null;
@@ -138,7 +171,7 @@ const ThundyAttachmentDownload = (() => {
         }
 
         async function evaluate(target, resource) {
-            const saved = await deps.security.read();
+            const saved = await (deps.security.effective?.() ?? deps.security.read());
             const policy = {...deps.security.attachmentDefaults,...saved.attachmentPolicy};
             let showReport = false;
             if (resource.digest && policy.mode !== 'off') {
@@ -156,9 +189,15 @@ const ThundyAttachmentDownload = (() => {
             const {item,result,currentState,source,observedAt} = selectEvidence(record,target.partName,resource.digest,policy,
                 deps.pending(target.messageId,target.partName));
             const rules = decision(policy,result);
-            const details = {name:safeFilename(resource.file.name),threshold:policy.threshold,...result,...rules,currentState,source,observedAt,
+            const reporting = policy.managed ? saved.managed?.reporting : null;
+            const matching = reporting?.details && resource.digest && Array.isArray(record?.attachments) ?
+                record.attachments.filter(entry => entry?.partName === target.partName &&
+                    entry.hybrid_sha256?.toLowerCase?.() === resource.digest) : [];
+            const incidentEvidence = reporting?.details ? attachmentIncidentEvidence(item,
+                matching.length === 1 ? matching[0] : null,resource.digest,source,observedAt) : [];
+            const details = {name:safeFilename(resource.file.name),threshold:policy.invalid ? null : policy.threshold,managed:policy.managed === true,operation:target.operation,...result,...rules,currentState,source,observedAt,
                 report:showReport && !!item?.report,approvalConfigured:!!saved.approval};
-            return {details, item, approval:saved.approval, revision,
+            return {details, item, approval:saved.approval, revision, reportMode:reporting?.mode, incidentEvidence,
                 signature:JSON.stringify([policy.revision,details,saved.approval?.hash])};
         }
 
@@ -183,10 +222,28 @@ const ThundyAttachmentDownload = (() => {
             }
         }
 
-        async function openDialog(target, resource, assessment) {
+        async function transfer(target, resource, assessment) {
+            if (target.operation !== 'open') return download(resource.file,assessment.details.name);
+            try {
+                await api.messages.openAttachment(target.messageId,target.partName,target.tabId);
+                return {success:true,opened:true};
+            } catch (_) { throw fail('ATTACHMENT_OPEN_FAILED'); }
+        }
+
+        function recordAttempt(attempt, resource, assessment) {
+            const { mode, reason } = assessment.details;
+            if (!assessment.reportMode || assessment.reportMode === 'off' || !deps.reportAttempt || attempt.reported ||
+                (reason !== 'malicious' && !(reason === 'threshold' && assessment.reportMode === 'suspicious'))) return;
+            attempt.reported = true;
+            void deps.reportAttempt({id:attempt.eventId,kind:attempt.target.operation === 'open' ? 'attachment_open' : 'attachment_save',
+                mode,reason,finding:'malware',indicator:resource.digest,score:assessment.details.score,threshold:assessment.details.threshold,
+                name:assessment.details.name,evidence:assessment.incidentEvidence});
+        }
+
+        async function openDialog(attempt, resource, assessment) {
             if (challenges.size >= 20) throw fail('ATTACHMENT_DIALOG_LIMIT');
             const id = crypto.randomUUID();
-            const entry = {target,resource,assessment,until:Date.now()+lifetime,busy:false};
+            const entry = {...attempt,resource,assessment,until:Date.now()+lifetime,busy:false};
             entry.timer = setTimeout(() => forget(id),lifetime);
             challenges.set(id,entry);
             try {
@@ -200,21 +257,24 @@ const ThundyAttachmentDownload = (() => {
             if (!Number.isSafeInteger(target.tabId) || !Number.isSafeInteger(target.messageId) ||
                 target.messageId < 1 || typeof target.partName !== 'string' || target.partName.length > 80 ||
                 !partPattern.test(target.partName)) throw fail('ATTACHMENT_CONTEXT_CHANGED');
-            const attempt = {target,invalidated:false};
+            target = {...target,operation:target.operation === 'open' ? 'open' : 'save'};
+            const attempt = {target,invalidated:false,eventId:crypto.randomUUID()};
             starts.add(attempt);
             try {
                 const resource = await readFile(target);
+                if (target.operation === 'open' && !await sameFile(resource,await readFile(target))) throw fail('ATTACHMENT_CONTEXT_CHANGED');
                 const result = await deps.security.serialized(async () => {
                     const assessment = await boundedAssessment(target,resource);
                     if (attempt.invalidated || assessment.revision !== deps.revision(target.messageId)) {
                         throw fail('ATTACHMENT_CONTEXT_CHANGED');
                     }
-                    if (assessment.details.mode === 'allow') return {transfer:download(resource.file,assessment.details.name)};
+                    recordAttempt(attempt,resource,assessment);
+                    if (assessment.details.mode === 'allow') return {transfer:transfer(target,resource,assessment)};
                     return {assessment};
                 });
                 if (result.transfer) return result.transfer;
                 if (attempt.invalidated) throw fail('ATTACHMENT_CONTEXT_CHANGED');
-                return openDialog(target,resource,result.assessment);
+                return openDialog(attempt,resource,result.assessment);
             } finally { starts.delete(attempt); }
         }
 
@@ -250,6 +310,7 @@ const ThundyAttachmentDownload = (() => {
                 }
                 const result = await deps.security.serialized(async () => {
                     let assessment = await boundedAssessment(entry.target,next);
+                    recordAttempt(entry,next,assessment);
                     if (entry.assessment.signature !== assessment.signature) {
                         entry.assessment = assessment;
                         return {success:false,changed:true,details:assessment.details};
@@ -267,7 +328,7 @@ const ThundyAttachmentDownload = (() => {
                     if (entry.until <= Date.now() || challenges.get(id) !== entry ||
                         assessment.revision !== deps.revision(entry.target.messageId)) throw fail('ATTACHMENT_CONTEXT_CHANGED');
                     forget(id);
-                    return {transfer:download(next.file,assessment.details.name)};
+                    return {transfer:transfer(entry.target,next,assessment)};
                 });
                 return await (result.transfer || result);
             } finally {entry.busy = false;}

@@ -1056,6 +1056,31 @@ test('expert report snapshot exposes only current resources and never persists d
  }finally{ctx.dispose();}
 });
 
+test('opening a urlscan report revalidates the current message and the exact bound provider URL',async()=>{
+ const s=setup({},true);await s.context.configure();
+ const reportUrl='https://urlscan.io/result/test-id/';
+ const record={links:[{url:'https://example.com/',urlscan:{status:'SUSPICIOUS',reportUrl}},
+  {url:'https://another.invalid/',urlscan:{status:'CLEAN',reportUrl:'https://urlscan.io/result/other-id/'}}]};
+ const records=sourceRecords(s,record),context=await s.context.getMessageAnalysisContext(s.message),opened=[];
+ s.context.browser.windows.openDefaultBrowser=async url=>opened.push(url);
+ try{
+  const view=await context.snapshot();
+  assert.deepEqual({...view.urlscanReports},{'link:0':reportUrl});
+  const send=(fields={})=>new Promise(resolve=>s.listeners.at(-1)({action:'openUrlscanReport',messageId:7,
+   contextToken:view.contextToken,resourceRef:'link:0',reportUrl,...fields},{id:'test',tab:{id:1}},resolve));
+  assert.equal((await send({reportUrl:'https://urlscan.io/result/other-id/'})).success,false);
+  assert.equal((await send({resourceRef:'link:1'})).success,false);
+  assert.equal((await send({contextToken:'stale'})).success,false);
+  assert.equal((await send()).success,true);
+  s.context.browser.messageDisplay.getDisplayedMessages=async()=>({messages:[{id:8}]});
+  assert.equal((await send()).success,false);
+  s.context.browser.messageDisplay.getDisplayedMessages=async()=>({messages:[s.message]});
+  records.set(s.message.headerMessageId,{links:[{url:'https://example.com/',urlscan:{status:'SUSPICIOUS',reportUrl:'https://urlscan.io.invalid/result/test-id/'}}]});
+  assert.equal((await send()).success,false);
+  assert.deepEqual(opened,[reportUrl]);
+ }finally{context.dispose();}
+});
+
 test('resource labels and report details use one stored view when a link slot changes', async () => {
  const s=setup({},true);await s.context.configure();
  const firstUrl='https://example.com/first?secret=one', secondUrl='https://example.com/second?secret=two';
@@ -1338,7 +1363,7 @@ test('audit initialization reads and post-opening commits are bounded without re
 
 test('admin link evaluation accepts actual message targets even when providers exclude their domains',async()=>{
  const s=setup();await s.context.configure();
- s.context.ThundySecurity={read:async()=>({policy:{enabled:true}}),defaults:{},decision:()=>({required:false})};
+ s.context.ThundySecurity={effective:async()=>({policy:{enabled:true}}),defaults:{},decision:()=>({required:false})};
  s.context.getMessageAnalysisContext=async()=>({scanJob:null});
  vm.runInContext(fs.readFileSync('security_links.js','utf8')+'\nglobalThis.linkSecurity=ThundyLinkSecurity;',s.context);
  for(const url of ['https://github.com/project','https://microsoft.com/help?x=1&y=2#part']){
@@ -1379,7 +1404,7 @@ test('cancelled interactions cannot wait indefinitely for the final audit write'
 test('provider timeout does not invent an admin requirement, while unavailable policy stays protected',async()=>{
  for(const stalledPolicy of [false,true]){
   const s=setup();await s.context.configure();const clock=auditClock(s);let provider;
-  s.context.ThundySecurity={read:stalledPolicy?()=>new Promise(()=>{}):async()=>({policy:{enabled:false}})};
+  s.context.ThundySecurity={effective:stalledPolicy?()=>new Promise(()=>{}):async()=>({policy:{enabled:false}})};
   s.context.ThundyLinkSecurity={evaluate:async()=>{throw Error('must not evaluate a disabled or unreadable policy');}};
   s.context.handleCheckLinkState=(_request,_sender,resolve)=>{provider=resolve;};
   const check=s.context.handleAuditedLinkCheck(auditRequest('policy_'+stalledPolicy),auditSender);

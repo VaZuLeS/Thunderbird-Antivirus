@@ -21,10 +21,10 @@ const manifest = JSON.parse(read('manifest.json'));
 const gecko = manifest.browser_specific_settings.gecko;
 
 describe('manifest invariants (store readiness)', () => {
-  it('declares the data collection as opt-in: required none, optional personalCommunications', () => {
+  it('declares both analysis data and reporting data as opt-in', () => {
     assert.deepStrictEqual(gecko.data_collection_permissions, {
       required: ['none'],
-      optional: ['personalCommunications']
+      optional: ['personalCommunications', 'technicalAndInteraction']
     });
   });
 

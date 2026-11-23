@@ -39,6 +39,16 @@ test('filters combine dates, URL, outcome and minimum score without treating unk
     assert.equal(api.filter(records, { from: '2026-10-12' }).length, 0);
 });
 
+test('policy blocks can be found by event ID and remain distinct from cancellation and approval', () => {
+    const api = exportsApi();
+    const blocked = {...records[1],id:'incident-23',blockedAt:records[1].clickedAt,blockReason:'threshold'};
+    const needingApproval = {...blocked,id:'approval-23',approvalDecision:'required'};
+    assert.equal(api.filter([blocked,needingApproval],{outcome:'BLOCKED',query:'INCIDENT-23'})[0],blocked);
+    assert.equal(api.filter([blocked,needingApproval],{outcome:'ABORTED'})[0],needingApproval);
+    assert.equal(api.outcome({...blocked,outcome:'PENDING'}),'BLOCKED');
+    assert.equal(api.outcome({...blocked,outcome:'OPENED'}),'OPENED');
+});
+
 test('review UI escapes evidence, paginates and exports all filtered rows', { timeout: 10000 }, async () => {
     const dom = new JSDOM(fs.readFileSync('audit.html', 'utf8'));
     const entries = Array.from({ length: 57 }, (_, index) => ({ ...records[0], id: String(index), clickedAt: Date.now() - index }));

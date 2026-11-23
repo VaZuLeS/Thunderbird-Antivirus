@@ -128,16 +128,20 @@ var ThundyProviderResults = (function () {
         if(saved.assessmentVersion){const known=result(saved.signals,saved.completion);return raw?merge(known,raw):known;}
         return raw||evaluate(provider,null);
     }
-    function resource(item){
+    function linkObservations(item){
         const ha=stored('hybridanalysis',item),us=item?.urlscan?.assessment?.assessmentVersion===1?stored('urlscan',item.urlscan):{verdict:judgement(item?.urlscan?.status)};
         const retained=item?.urlscan?.retainedFinding, live=item?.hybrid_verdict;
         const fetchedAt=Date.parse(item?.report_fetched_at);
-        const values=[
-            {verdict:ha.verdict,provider:'hybridanalysis',observedAt:Number.isFinite(fetchedAt)?fetchedAt:null,completion:ha.completion},
-            {verdict:judgement(live?.status),provider:'hybridanalysis',observedAt:live?.observedAt??null,completion:live?.completion},
+        const hybrid = {provider:'hybridanalysis',reference:item?.hybrid_sha256,jobId:item?.hybrid_job_id};
+        return [
+            {...hybrid,verdict:ha.verdict,observedAt:Number.isFinite(fetchedAt)?fetchedAt:null,completion:ha.completion},
+            {...hybrid,verdict:judgement(live?.status),observedAt:live?.observedAt??null,completion:live?.completion},
             {verdict:judgement(retained?.status),provider:'urlscan',observedAt:retained?.observedAt||null},
-            {verdict:us.verdict,provider:'urlscan',observedAt:item?.urlscan?.observedAt||null,completion:us.completion}
+            {verdict:us.verdict,provider:'urlscan',observedAt:item?.urlscan?.observedAt||null,completion:us.completion,reference:item?.urlscan?.uuid}
         ];
+    }
+    function resource(item){
+        const values=linkObservations(item).map(({reference,jobId,...finding})=>finding);
         const completedAt = {};
         for (const value of values) {
             if (value.completion === 'complete' && value.verdict !== 'unknown' && Number.isFinite(value.observedAt)) {
@@ -234,5 +238,5 @@ var ThundyProviderResults = (function () {
         if(scanners.some(s=>Array.isArray(s.anti_virus_results))&&scanners.filter(s=>Array.isArray(s.anti_virus_results)).every(s=>s.anti_virus_results.length===0))emptySections.push('antivirus');
         return {schemaVersion:1,sections,emptySections,truncated};
     }
-    return {evaluate,project,merge,stored,resource,legacy,hybridDetails,hybridCompletionConfirmed,boundAttachmentReports,urlscanStatus,urlscanRecord,urlscanPending,urlscanRejection,projectQuota};
+    return {evaluate,project,merge,stored,resource,linkObservations,legacy,hybridDetails,hybridCompletionConfirmed,boundAttachmentReports,urlscanStatus,urlscanRecord,urlscanPending,urlscanRejection,projectQuota};
 }());

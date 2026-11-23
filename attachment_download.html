@@ -9,16 +9,19 @@
 </head>
 <body><main class="security-controls">
 <h1 data-i18n="attachmentProtectionTitle">Attachment protection</h1>
-<p data-i18n="attachmentProtectionScope"></p>
 <section id="attachmentDecision" hidden>
-<h2 id="attachmentName"></h2>
+<div role="status" aria-atomic="true">
+<h2 id="attachmentDecisionTitle"></h2>
+<p id="attachmentReason"></p>
+</div>
+<p><span id="attachmentAction"></span> · <strong id="attachmentName"></strong></p>
+<p id="attachmentScope" data-i18n="attachmentProtectionScope"></p>
 <dl>
 <dt data-i18n="hybridField_threat_score">Hybrid Analysis score</dt><dd id="attachmentScore"></dd>
 <dt data-i18n="attachmentScoreThreshold">Attachment score threshold</dt><dd id="attachmentThreshold"></dd>
 <dt data-i18n="assessmentCompletion">Processing status</dt><dd id="attachmentState"></dd>
 </dl>
 <p id="attachmentProvenance" hidden></p>
-<p id="attachmentReason" role="status"></p>
 </section>
 <form id="attachmentSaveForm" hidden>
 <label id="attachmentPasswordLabel" hidden><span data-i18n="securityApprovalPassword">Approval password</span>

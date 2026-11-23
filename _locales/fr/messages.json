@@ -993,7 +993,7 @@
     "message": "Stockage local : 30 jours, 2 000 entrées ou 2 Mio maximum ; les plus anciennes sont supprimées. Les URL complètes peuvent contenir des données personnelles ou des jetons. Aucun envoi automatique. Les utilisateurs du profil peuvent modifier ou supprimer le journal ; ce n’est pas un audit central inviolable. Le score local utilise le lien et le contexte du message, pas un score fournisseur. Les motifs d’évaluation peuvent inclure des informations sur l’expéditeur ou le domaine."
   },
   "auditSearch": {
-    "message": "URL ou domaine"
+    "message": "URL, domaine ou ID d’événement"
   },
   "auditOutcome": {
     "message": "Décision"
@@ -2194,10 +2194,10 @@
     "message": "Aucun signe suspect détecté"
   },
   "analysisSimpleCaution": {
-    "message": "Prudence"
+    "message": "Soupçon"
   },
   "analysisSimpleDanger": {
-    "message": "Contenu dangereux signalé"
+    "message": "Résultat malveillant"
   },
   "analysisSimpleIncomplete": {
     "message": "Vérification incomplète"
@@ -3215,5 +3215,158 @@
   },
   "auditFullSave": {
     "message": "Exporter le journal complet"
+  },
+  "managedByCompany": {
+    "message": "Géré par votre organisation"
+  },
+  "managedLocal": {
+    "message": "Source : ce profil Thunderbird"
+  },
+  "managedRevision": {
+    "message": "Version de la stratégie"
+  },
+  "managedThreshold": {
+    "message": "Seuil"
+  },
+  "managedPolicyInvalid": {
+    "message": "La stratégie d’entreprise est invalide. Contactez votre service informatique."
+  },
+  "managedLinkBlocked": {
+    "message": "Votre organisation a bloqué ce lien."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Ouvrir avec Thundy"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Ouvrir la pièce jointe"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy vérifie cette pièce jointe avant de la transmettre à Thunderbird."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird a accepté la demande d’ouverture de la pièce jointe."
+  },
+  "attachmentOpenFailed": {
+    "message": "La pièce jointe n’a pas pu être ouverte."
+  },
+  "reportingTitle": {
+    "message": "Signalements de sécurité à l’entreprise"
+  },
+  "reportingOff": {
+    "message": "Les signalements automatiques sont désactivés."
+  },
+  "reportingNeedsConsent": {
+    "message": "L’envoi nécessite votre accord et un jeton d’envoi."
+  },
+  "reportingNeedsPermission": {
+    "message": "L’autorisation manque. Réactivez les signalements."
+  },
+  "reportingReady": {
+    "message": "Votre organisation peut recevoir les signalements automatiques."
+  },
+  "reportingQueued": {
+    "message": "Signalements en attente :"
+  },
+  "reportingMalicious": {
+    "message": "Résultats malveillants"
+  },
+  "reportingSuspicious": {
+    "message": "Résultats malveillants et seuils atteints"
+  },
+  "reportingConsent": {
+    "message": "J’accepte l’envoi de l’identifiant, de l’heure, de l’action, du résultat, de la décision et de la version de la stratégie à l’adresse ci-dessus."
+  },
+  "reportingConsentIndicators": {
+    "message": "J’accepte aussi l’envoi du nom d’hôte du lien ou du SHA-256 de la pièce jointe, avec l’identifiant, l’heure, l’action, le résultat, la décision et la version, à l’adresse ci-dessus."
+  },
+  "reportingToken": {
+    "message": "Jeton d’envoi fourni par votre service informatique"
+  },
+  "reportingActivate": {
+    "message": "Activer les signalements ou remplacer le jeton"
+  },
+  "reportingRevoke": {
+    "message": "Retirer l’accord et effacer les signalements en attente"
+  },
+  "reportingSetupFailed": {
+    "message": "Les réglages des signalements n’ont pas pu être appliqués."
+  },
+  "reportingAuthentication": {
+    "message": "Le serveur a refusé le jeton d’envoi."
+  },
+  "reportingRejected": {
+    "message": "Le serveur a refusé un signalement."
+  },
+  "reportingStorage": {
+    "message": "Thundy n’a pas pu lire ou écrire la file des signalements."
+  },
+  "reportingFull": {
+    "message": "La file est pleine. Des signalements peuvent être perdus."
+  },
+  "reportingExpired": {
+    "message": "Un signalement a expiré avant sa livraison."
+  },
+  "reportingPrivacy": {
+    "message": "Avec votre accord séparé, Thundy signale certaines tentatives d’ouverture de liens ou d’ouverture ou d’enregistrement de pièces jointes à l’adresse de votre entreprise. Les signalements comprennent l’identifiant, l’heure, l’action, le résultat, la décision, la version de la stratégie et, en option, le nom d’hôte ou le SHA-256 du fichier. La file locale est conservée au plus 24 heures. Vous pouvez retirer votre accord et vider cette file dans les paramètres."
+  },
+  "reportingConsentDetails": {
+    "message": "J’accepte aussi l’envoi du motif de la décision, des scores disponibles, du nom de fichier, des verdicts des fournisseurs et des références de rapport disponibles."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Les signalements détaillés peuvent contenir le nom du fichier et des liens vers les rapports des fournisseurs."
+  },
+  "analysisRunningHeading": {
+    "message": "Analyse en cours"
+  },
+  "analysisLocalNoFinding": {
+    "message": "Aucun indicateur lors de l’analyse locale"
+  },
+  "analysisLinksGroup": {
+    "message": "Liens"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Pièces jointes"
+  },
+  "protectionOpenAllowed": {
+    "message": "Ouverture autorisée"
+  },
+  "protectionSaveAllowed": {
+    "message": "Enregistrement autorisé"
+  },
+  "protectionWarn": {
+    "message": "Avertissement"
+  },
+  "protectionApproval": {
+    "message": "Autorisation requise"
+  },
+  "protectionRequestApproval": {
+    "message": "Demander l’autorisation"
+  },
+  "protectionBlocked": {
+    "message": "Bloqué"
+  },
+  "protectionMalicious": {
+    "message": "Un service a signalé un résultat malveillant"
+  },
+  "protectionThreshold": {
+    "message": "Seuil de protection atteint"
+  },
+  "protectionManagedThreshold": {
+    "message": "Seuil de l’entreprise atteint"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "Les paramètres en vigueur autorisent cette action."
+  },
+  "linkContextChanged": {
+    "message": "Le lien ou le message a changé pendant la vérification."
+  },
+  "auditPolicyBlocked": {
+    "message": "Bloqué par la politique"
+  },
+  "reportingLastReceipt": {
+    "message": "Dernière réception confirmée par le serveur"
+  },
+  "reportingOldestPending": {
+    "message": "Signalement en attente le plus ancien"
   }
 }

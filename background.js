@@ -204,7 +204,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
             const model = ThundyAnalysis.create(ThundyAnalysis.legacy(sourceRecord(record)));
             // Current unreadability must not inherit a historical "checked" state.
             if (currentCoverage.state !== 'checked') model.data.local = {...currentCoverage,source:'local',observedAt:Date.now()};
-            let snapshotCreated = false, persistenceQueue = Promise.resolve();
+            let snapshotCreated = false, persistenceQueue = Promise.resolve(), flushGeneration = 0;
             let reportBindings = new Map();
             const context = { disposed: false, model, snapshotId, persistenceFailed:false, headerMessageId: key, messageId: message.id, tabs: new Set(), timer: null,
                 isCached() { return messageAnalyses.get(contextKey) === ready; },
@@ -259,13 +259,17 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     let data = null;
                     const nextBindings = new Map();
                     const hybridReports = {};
+                    const urlscanReports = {};
                     let hybridReportsTruncated=false,hybridReportBudget=500000;
                     try {
                         const original = await getFromStore(await getSharedDB(), 'hybridanalysis', key,messageReportOptions(message,{includeHistory:true})), saved = original ? ThundyAnalysis.resources(original) : null;
                         current = sourceRecord(original);
                         for (const item of current?.links || []) {
                             const url = new URL(item.url);
-                            resourceLabels[item.analysisResourceRef] = clean(url.origin + url.pathname);
+                            const ref = item.analysisResourceRef;
+                            resourceLabels[ref] = clean(url.origin + url.pathname);
+                            const reportUrl = safeUrlscanReport(item.urlscan?.reportUrl);
+                            if (reportUrl && /^link:[0-9]{1,6}$/.test(ref)) urlscanReports[ref] = reportUrl;
                         }
                         // Only current, content-bound resources enter the detailed display.
                         // Raw protocols and these resource details never enter provenance exports.
@@ -296,11 +300,12 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     data ||= JSON.parse(JSON.stringify(model.data));
                     const {local,rows} = data;
                     const protection = security ? ThundySecurity.decision({...ThundySecurity.defaults,...security.policy},{score:local.score,coverage:local.state,verdict:rows.some(row=>row.verdict==='malicious')?'MALICIOUS':rows.length && rows.every(row=>['none','suspicious'].includes(row.verdict)&&row.state==='checked')?rows.some(row=>row.verdict==='suspicious')?'SUSPICIOUS':'CLEAN':'UNKNOWN'}) : null;
-                    const view = { ...data, displayPreferences, hybridReports, hybridReportsTruncated, scanJob:context.scanJob || {state:'idle',migration:displaySettings.scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, attachmentActions:typeof ThundyAttachmentDownload !== 'undefined', sourcePersistenceFailed:context.persistenceFailed, sourcePersistenceReason:context.persistenceReason || null, sourcePersistenceError:context.persistenceError || null, diagnosticRun:context.diagnosticRun||null, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
+                    const view = { ...data, displayPreferences, hybridReports, hybridReportsTruncated, urlscanReports, scanJob:context.scanJob || {state:'idle',migration:displaySettings.scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, attachmentActions:typeof ThundyAttachmentDownload !== 'undefined', sourcePersistenceFailed:context.persistenceFailed, sourcePersistenceReason:context.persistenceReason || null, sourcePersistenceError:context.persistenceError || null, diagnosticRun:context.diagnosticRun||null, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
                     return project ? project(view,current) : view;
                 },
                 async flush() {
                     if (context.disposed) return;
+                    const generation = ++flushGeneration;
                     if (context.timer) { clearTimeout(context.timer); context.timer = null; }
                     const value = JSON.parse(JSON.stringify(model.data));
                     persistenceQueue = persistenceQueue.then(async () => {
@@ -327,13 +332,16 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     });
                     await persistenceQueue;
                     const snapshot = await context.snapshot();
-                    if (context.disposed) return;
+                    if (context.disposed || generation !== flushGeneration) return;
                     const labels = ThundyAnalysis.labels(msg);
-                    const theme = typeof ThundyTheme !== 'undefined' ? await ThundyTheme.snapshot() : null;
                     for (const tab of context.tabs) {
                         try {
                             const active = await getFirstDisplayedMessage(tab, { throwOnError: true });
-                            if (!context.disposed && active?.id === message.id) await injectIntoMessageDisplay(tab, ThundyAnalysis.render, [snapshot, labels, theme?.css || '', {surface:'message'}]);
+                            if (context.disposed || generation !== flushGeneration) return;
+                            if (active?.id === message.id) {
+                                await injectIntoMessageDisplay(tab, ThundyAnalysis.render, [snapshot, labels, '', {surface:'message',bound:true}]);
+                                await bindMessageAppearance(tab);
+                            }
                             else if (active?.id !== message.id) context.tabs.delete(tab);
                         } catch (_) { /* closed or changed message */ }
                     }
@@ -986,6 +994,41 @@ function savedLinkAssessments(record, urls = null) {
         }
     }
     return findings;
+}
+
+function incidentLinkEvidence(record, url, live) {
+    const rows = [];
+    const rank = {no_detection:1,suspicious:2,malicious:3};
+    const match = item => canonicalHttpUrl(item?.url) === url;
+    const current = (Array.isArray(record?.links) ? record.links : []).find(match);
+    const currentRows = ThundyProviderResults.linkObservations(current);
+    const keep = (entry,source) => {
+        const verdict = entry.verdict === 'none' ? 'no_detection' : entry.verdict;
+        if (!rank[verdict] || verdict === 'no_detection' && entry.completion !== 'complete') return;
+        const index = rows.findIndex(row => row.provider === entry.provider);
+        const previous = rows[index];
+        const row = {...entry,verdict,source};
+        if (!previous) rows.push(row);
+        else if (rank[verdict] > rank[previous.verdict] ||
+            rank[verdict] === rank[previous.verdict] && (source === 'live' || (row.observedAt ?? -1) > (previous.observedAt ?? -1))) rows[index] = row;
+    };
+    for (const entry of currentRows) keep(entry,'stored');
+    for (const archive of Array.isArray(record?.analysisReportArchive?.entries) ? record.analysisReportArchive.entries : []) {
+        if (archive?.kind !== 'link' || !match(archive.resource)) continue;
+        for (const entry of ThundyProviderResults.linkObservations(archive.resource)) {
+            if (entry.verdict !== 'malicious' && entry.verdict !== 'suspicious') continue;
+            if (currentRows.some(row => row.provider === entry.provider && row.completion === 'complete' &&
+                Number.isFinite(row.observedAt) && Number.isFinite(entry.observedAt) && row.observedAt > entry.observedAt)) continue;
+            keep(entry,'archive');
+        }
+    }
+    if (live?.check?.origin === 'live') {
+        const verdict = {CLEAN:'none',SUSPICIOUS:'suspicious',MALICIOUS:'malicious',MALICIOUS_VISUAL:'malicious'}[live.status];
+        const provider = live.provider === 'Hybrid Analysis' ? 'hybridanalysis' : live.provider === 'urlscan.io' ? 'urlscan' : null;
+        if (provider) keep({provider,verdict,reference:provider === 'hybridanalysis' ? current?.hybrid_sha256 : live.scanUuid,
+            jobId:current?.hybrid_job_id,observedAt:live.check.observedAt,completion:live.check.outcome === 'success' ? 'complete' : 'unknown'},'live');
+    }
+    return rows;
 }
 
 async function collectLinkFindings(message, fullMessage = null) {
@@ -1778,11 +1821,10 @@ function createContextMenus() {
             contexts: ["message_display_action"]
         }
     ];
-    if (typeof ThundyAttachmentDownload !== 'undefined') menus.push({
-        id: 'save-attachment-thundy',
-        title: msg('attachmentSaveWithThundy'),
-        contexts: ['message_attachments']
-    });
+    if (typeof ThundyAttachmentDownload !== 'undefined') menus.push(
+        {id:'save-attachment-thundy',title:msg('attachmentSaveWithThundy'),contexts:['message_attachments']},
+        {id:'open-attachment-thundy',title:msg('attachmentOpenWithThundy'),contexts:['message_attachments']}
+    );
     for (const menu of menus) {
         try {
             // menus.create is asynchronous: a synchronous try/catch cannot catch
@@ -1858,7 +1900,7 @@ let attachmentMenuOrigin = null;
 browser.menus?.onShown?.addListener((info,tab) => {
     if (!info.contexts?.includes('message_attachments')) return;
     attachmentMenuOrigin = null;
-    if (!info.menuIds?.includes('save-attachment-thundy') || info.attachments?.length !== 1) return;
+    if (!info.menuIds?.some(id => ['save-attachment-thundy','open-attachment-thundy'].includes(id)) || info.attachments?.length !== 1) return;
     attachmentMenuOrigin = {
         eventTabId:tab?.id,
         partName:info.attachments[0].partName,
@@ -1873,7 +1915,7 @@ browser.menus?.onShown?.addListener((info,tab) => {
 });
 
 if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListener(async (info, tab) => {
-    if (info.menuItemId === 'save-attachment-thundy' && attachmentDownloads) {
+    if (['save-attachment-thundy','open-attachment-thundy'].includes(info.menuItemId) && attachmentDownloads) {
         const origin = attachmentMenuOrigin;
         attachmentMenuOrigin = null;
         try {
@@ -1881,7 +1923,7 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
                 origin.partName !== info.attachments[0].partName) throw Error('ATTACHMENT_CONTEXT_CHANGED');
             const target = await origin.target;
             if (!target) throw Error('ATTACHMENT_CONTEXT_CHANGED');
-            await attachmentDownloads.start(target);
+            await attachmentDownloads.start({...target,operation:info.menuItemId === 'open-attachment-thundy' ? 'open' : 'save'});
         } catch (_) {notify('attachmentProtectionTitle','attachmentFailed');}
         return;
     }
@@ -1914,6 +1956,11 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
     }
 });
 
+function safeUrlscanReport(value) {
+    const url = typeof value === 'string' ? value.trim() : '';
+    return /^https:\/\/urlscan\.io\/result\/[A-Za-z0-9_-]{1,128}\/?$/i.test(url) ? url : null;
+}
+
 async function persistUrlscanLinkResult(message, url, res) {
     if (message && !message.headerMessageId && message.id != null) message={...message,headerMessageId:typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : 'message:' + message.id};
     if (!message || !message.headerMessageId || !res || !res.status) return;
@@ -1921,9 +1968,7 @@ async function persistUrlscanLinkResult(message, url, res) {
         const db = await getSharedDB();
 
         const attemptedAt = Date.now();
-        const reportUrl = typeof res.reportUrl === 'string' && /^https:\/\/urlscan\.io\/result\/[A-Za-z0-9_-]+\/?$/i.test(res.reportUrl.trim())
-            ? res.reportUrl.trim()
-            : null;
+        const reportUrl = safeUrlscanReport(res.reportUrl);
         await updateStore(db, 'hybridanalysis', message.headerMessageId, existingRecord => {
             if (!existingRecord || !Array.isArray(existingRecord.links)) return existingRecord;
             for (const item of existingRecord.links) {
@@ -1992,7 +2037,15 @@ async function handleCheckLinkState(request, sender, sendResponse) {
             const fact=savedLinkAssessments(latest,new Set([url])).get(url) || {},rank={unknown:0,none:1,suspicious:2,malicious:3},status=({MALICIOUS:'malicious',MALICIOUS_VISUAL:'malicious',SUSPICIOUS:'suspicious',CLEAN:'none'})[result.status]||'unknown';
             if(rank[fact.verdict]>rank[status]&&['malicious','suspicious'].includes(fact.verdict))result={...result,status:fact.verdict==='malicious'?'MALICIOUS':'SUSPICIOUS',provider:fact.provider==='hybridanalysis'?'Hybrid Analysis':'urlscan.io',retainedFinding:true,check:{...result.check,origin:'stored',outcome:result.check?.outcome||'success',observedAt:fact.observedAt}};
             else if(result.status==='CLEAN'&&(incompleteProvider||typeof ThundyScans!=='undefined'&&ThundyScans.get?.(message.id)?.assessmentIncomplete))result={...result,status:'UNKNOWN',check:{...result.check,outcome:'incomplete'}};
-            await forward(result);
+            const withEvidence = request.interactionId && typeof ThundyManagedPolicy !== 'undefined' &&
+                (await ThundyManagedPolicy.read()).reporting?.details;
+            if (withEvidence && url) {
+                const {scanUuid,...publicResult} = result;
+                await forward({...publicResult,incidentEvidence:incidentLinkEvidence(latest,url,result)});
+            } else {
+                const {scanUuid,...publicResult} = result;
+                await forward(publicResult);
+            }
         };
         const messageContext = await getMessageAnalysisContext(message, sender?.tab?.id);
         if (messageContext && !linkObj) await indexedDB_save_links_to_db(message, [request.url]);
@@ -2022,7 +2075,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
                 };
                 if (res && status !== 'NOT_CHECKED') await persistUrlscanLinkResult(message, request.url, {...res,status});
                 if (hasFinding) {
-                    await sendResponse({ status, reasons: res.reasons, provider: 'urlscan.io', check: urlscanAttempt });
+                    await sendResponse({ status, reasons: res.reasons, provider: 'urlscan.io', check: urlscanAttempt, scanUuid:res.uuid });
                     return;
                 }
             } catch (e) {
@@ -2280,6 +2333,7 @@ var hybridReportBroker = typeof ThundyHybridReport === 'undefined' ? null : Thun
 // The download dialog uses the same resource-bound report broker as the message view.
 var attachmentDownloads = typeof ThundyAttachmentDownload === 'undefined' ? null : ThundyAttachmentDownload.create(browser,{
     security:ThundySecurity,
+    reportAttempt:typeof ThundyIncidentReporting === 'undefined' ? null : ThundyIncidentReporting.capture,
     hash:get_sha256_hash,
     record:async message => getFromStore(await getSharedDB(),'hybridanalysis',resolveMessageStorageKey(message),messageReportOptions(message,{includeHistory:'attachment'})),
     revision:id => typeof ThundyScans === 'undefined' ? null : ThundyScans.revision(id),
@@ -2298,6 +2352,15 @@ var attachmentDownloads = typeof ThundyAttachmentDownload === 'undefined' ? null
         if ((await getFirstDisplayedMessage(target.tabId))?.id !== message.id || context.disposed) throw Error('REPORT_UNAVAILABLE');
         return hybridReportBroker.openBound(report);
     }
+});
+
+if (typeof ThundyIncidentReporting !== 'undefined') ThundyIncidentReporting.initialize();
+browser.runtime.onConnect?.addListener(port => {
+    if (port.name !== 'thundy-message-appearance' || port.sender?.id !== browser.runtime.id || !Number.isInteger(port.sender?.tab?.id)) return;
+    const stop = ThundyTheme.watch(port.sender.tab.windowId,theme => {
+        try { port.postMessage(theme); } catch (_) { /* The message document closed. */ }
+    });
+    port.onDisconnect.addListener(stop);
 });
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -2348,8 +2411,26 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (request.action === 'attachmentDownloadCommand') return attachmentDownloads.command(request,sender);
             const tabId = ThundySecurity.page(sender,'popup.html')
                 ? (await browser.tabs.query({active:true,currentWindow:true}))[0]?.id : sender.tab?.id;
-            return attachmentDownloads.start({tabId,messageId:request.messageId,partName:request.partName});
+            return attachmentDownloads.start({tabId,messageId:request.messageId,partName:request.partName,operation:request.operation});
         })().then(sendResponse).catch(error => sendResponse({success:false,code:error.code || 'ATTACHMENT_DOWNLOAD_FAILED'}));
+        return true;
+    }
+    if (request.action === 'openUrlscanReport') {
+        (async () => {
+            if (sender?.id !== browser.runtime.id || !Number.isInteger(request.messageId) ||
+                !/^link:[0-9]{1,6}$/.test(request.resourceRef)) throw Error('REPORT_UNAVAILABLE');
+            const tabId = sender.url?.split(/[?#]/)[0] === browser.runtime.getURL('popup.html')
+                ? (await browser.tabs.query({active:true,currentWindow:true}))[0]?.id : sender.tab?.id;
+            const message = await getFirstDisplayedMessage(tabId);
+            if (message?.id !== request.messageId) throw Error('REPORT_UNAVAILABLE');
+            const context = await getMessageAnalysisContext(message);
+            if (!context || context.disposed || context.snapshotId !== request.contextToken) throw Error('REPORT_UNAVAILABLE');
+            const reportUrl = await context.snapshot(view => view.urlscanReports[request.resourceRef]);
+            if (!reportUrl || reportUrl !== request.reportUrl ||
+                (await getFirstDisplayedMessage(tabId))?.id !== message.id) throw Error('REPORT_UNAVAILABLE');
+            await browser.windows.openDefaultBrowser(reportUrl);
+            return {success:true};
+        })().then(sendResponse).catch(()=>sendResponse({success:false,code:'REPORT_UNAVAILABLE'}));
         return true;
     }
     if (['openHybridReport','readHybridReport'].includes(request.action) && hybridReportBroker) {
@@ -2364,7 +2445,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             for (const ready of messageAnalyses.values()) Promise.resolve(ready).then(context => { if (context.headerMessageId === request.headerMessageId) context.schedule(); }).catch(() => {});
             sendResponse({success:true});return false;
         case "getUiTheme":
-            ThundyTheme.snapshot().then(sendResponse).catch(() => sendResponse(null));
+            ThundyTheme.snapshot(sender?.tab?.windowId).then(sendResponse).catch(() => sendResponse(null));
             return true;
         case "getMessageAnalysisRecord":
             if (!Number.isInteger(request.messageId)) { sendResponse({success:false}); return false; }

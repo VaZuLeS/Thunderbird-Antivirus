@@ -58,9 +58,12 @@ jobs:
           JS
       - name: Preserve redacted package-bound acceptance evidence
         run: node scripts/release-evidence.js
+      - name: Build standalone Python receiver
+        run: python3 scripts/package-python-receiver.py
       - name: Publish once or verify identical existing assets
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_PYTHON_RECEIVER: '1'
         run: node scripts/publish-release.js

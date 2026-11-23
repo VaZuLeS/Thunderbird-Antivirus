@@ -1,0 +1,24 @@
+[http]
+host = "0.0.0.0"
+port = 8443
+certificate = "fullchain.pem"
+key = "privkey.pem"
+# allow_loopback_http = true  # Only for curl tests with host = "127.0.0.1" or "::1".
+
+[storage]
+database = "state/events.sqlite3"
+queue_limit = 10000
+retention_days = 30
+
+[smtp]
+host = "smtp.example.com"
+port = 587
+tls = "starttls" # "implicit" for port 465, "local" for a loopback relay without credentials.
+from = "thundy@example.com"
+to = "jan@myville.com"
+username = "thundy@example.com"
+password_env = "THUNDY_SMTP_PASSWORD"
+
+[clients]
+# Replace the example with the SHA-256 printed by python receiver.py token.
+# "64-lowercase-hex-characters" = "pilot-pc-01"

@@ -287,6 +287,7 @@ test('urlscan reportUrl is persisted and rendered as a clickable link in the pop
     const record = { links: [{ url: 'https://phish.invalid/' }] };
     const bgContext = vm.createContext({ Logger: { error() {} }, getSharedDB: async () => ({}), updateStore: async (_db, _store, _key, edit) => edit(record) });
     loadUrlContract(bgContext);
+    loadSlice('background.js', 'safeUrlscanReport', bgContext);
     loadSlice('background.js', 'persistUrlscanLinkResult', bgContext);
     await bgContext.persistUrlscanLinkResult({ headerMessageId: 'm' }, 'https://phish.invalid/', {
         status: 'MALICIOUS_VISUAL',

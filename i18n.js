@@ -998,7 +998,7 @@ const ThundyI18n = (() => {
     "message": "Stored locally for up to 30 days, 2,000 records or 2 MiB (oldest entries are removed). Full URLs may contain personal data or access tokens. Nothing is uploaded automatically. The local log can be changed or deleted by profile users; it is not a tamper-proof central audit trail. The local score uses the clicked link and message context, not a provider score. Assessment reasons may include sender or domain details."
   },
   "auditSearch": {
-    "message": "URL or domain"
+    "message": "URL, domain or event ID"
   },
   "auditOutcome": {
     "message": "Decision"
@@ -2199,10 +2199,10 @@ const ThundyI18n = (() => {
     "message": "No suspicious signs detected"
   },
   "analysisSimpleCaution": {
-    "message": "Caution"
+    "message": "Suspicion"
   },
   "analysisSimpleDanger": {
-    "message": "Dangerous content reported"
+    "message": "Malicious finding"
   },
   "analysisSimpleIncomplete": {
     "message": "Check incomplete"
@@ -3220,6 +3220,159 @@ const ThundyI18n = (() => {
   },
   "auditFullSave": {
     "message": "Export full audit"
+  },
+  "managedByCompany": {
+    "message": "Managed by your organization"
+  },
+  "managedLocal": {
+    "message": "Source: this Thunderbird profile"
+  },
+  "managedRevision": {
+    "message": "Policy version"
+  },
+  "managedThreshold": {
+    "message": "Threshold"
+  },
+  "managedPolicyInvalid": {
+    "message": "The company policy is invalid. Contact your IT team."
+  },
+  "managedLinkBlocked": {
+    "message": "Your organization blocked this link."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Open with Thundy"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Open attachment"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy checks this attachment before handing it to Thunderbird."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird accepted the request to open the attachment."
+  },
+  "attachmentOpenFailed": {
+    "message": "The attachment could not be opened."
+  },
+  "reportingTitle": {
+    "message": "Company security reports"
+  },
+  "reportingOff": {
+    "message": "Automatic reporting is off."
+  },
+  "reportingNeedsConsent": {
+    "message": "Reporting requires your consent and a send token."
+  },
+  "reportingNeedsPermission": {
+    "message": "The reporting permission is missing. Enable reporting again to restore it."
+  },
+  "reportingReady": {
+    "message": "Your organization can receive automatic reports."
+  },
+  "reportingQueued": {
+    "message": "Pending reports:"
+  },
+  "reportingMalicious": {
+    "message": "Malicious findings"
+  },
+  "reportingSuspicious": {
+    "message": "Malicious findings and threshold violations"
+  },
+  "reportingConsent": {
+    "message": "I agree to send the event ID, time, action, finding, decision and policy version to the company address shown above."
+  },
+  "reportingConsentIndicators": {
+    "message": "I agree to send the event ID, time, action, finding, decision, policy version, and link hostname or attachment SHA-256 to the company address shown above."
+  },
+  "reportingToken": {
+    "message": "Send token from your IT team"
+  },
+  "reportingActivate": {
+    "message": "Enable reporting or replace token"
+  },
+  "reportingRevoke": {
+    "message": "Withdraw consent and clear pending reports"
+  },
+  "reportingSetupFailed": {
+    "message": "The reporting settings could not be applied."
+  },
+  "reportingAuthentication": {
+    "message": "The server rejected the send token."
+  },
+  "reportingRejected": {
+    "message": "The server rejected a report."
+  },
+  "reportingStorage": {
+    "message": "Thundy could not read or write the reporting queue."
+  },
+  "reportingFull": {
+    "message": "The queue is full. Reports may be lost."
+  },
+  "reportingExpired": {
+    "message": "A report expired before delivery."
+  },
+  "reportingPrivacy": {
+    "message": "With separate consent, Thundy sends details of qualifying attempts to open links or open or save attachments to the configured company address. Reports contain the event ID, time, action, finding, decision and policy version, plus an optional hostname or attachment SHA-256. Thundy queues pending reports locally for up to 24 hours. You can withdraw consent and delete the queue in Settings."
+  },
+  "reportingConsentDetails": {
+    "message": "I also agree to send the decision reason, available scores, attachment filename, provider verdicts and available report references."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Detailed reports may include the attachment filename and links to provider reports."
+  },
+  "analysisRunningHeading": {
+    "message": "Check in progress"
+  },
+  "analysisLocalNoFinding": {
+    "message": "No indicators in the local check"
+  },
+  "analysisLinksGroup": {
+    "message": "Links"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Attachments"
+  },
+  "protectionOpenAllowed": {
+    "message": "Opening allowed"
+  },
+  "protectionSaveAllowed": {
+    "message": "Saving allowed"
+  },
+  "protectionWarn": {
+    "message": "Warning"
+  },
+  "protectionApproval": {
+    "message": "Approval required"
+  },
+  "protectionRequestApproval": {
+    "message": "Request approval"
+  },
+  "protectionBlocked": {
+    "message": "Blocked"
+  },
+  "protectionMalicious": {
+    "message": "A provider reported a malicious finding"
+  },
+  "protectionThreshold": {
+    "message": "Protection threshold reached"
+  },
+  "protectionManagedThreshold": {
+    "message": "Company threshold reached"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "The applicable settings allow this action."
+  },
+  "linkContextChanged": {
+    "message": "The link or message changed during the check."
+  },
+  "auditPolicyBlocked": {
+    "message": "Blocked by policy"
+  },
+  "reportingLastReceipt": {
+    "message": "Last receipt confirmed by the server"
+  },
+  "reportingOldestPending": {
+    "message": "Oldest pending report"
   }
 };
     function get(key, params = []) {

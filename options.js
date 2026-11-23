@@ -165,11 +165,22 @@ async function requestSensitiveDataUploadPermission(origins = []) {
 
 async function removeDataCollectionConsent() {
     try {
-        await browser.permissions.remove({ data_collection: ['personalCommunications'] });
+        const reporting = typeof ThundySettings === 'undefined' ? null : (await ThundySettings.command('status'))?.reporting;
+        if (!(reporting?.indicators || reporting?.details) || !['ready','permission'].includes(reporting.state)) {
+            await browser.permissions.remove({ data_collection: ['personalCommunications'] });
+        }
     } catch (e) { /* ignore */ }
     try {
         await browser.permissions.remove({ permissions: ['sensitiveDataUpload'] });
     } catch (e) { /* ignore */ }
+}
+
+function requestIncidentPermissions(reporting) {
+    const data_collection = ['technicalAndInteraction'];
+    if (reporting.indicators || reporting.details) data_collection.push('personalCommunications');
+    return browser.permissions.request({
+        origins: [reporting.origin], ...(collectionConsentSupported ? { data_collection } : {})
+    });
 }
 
 // Event-Listener für das Laden der Seite
@@ -245,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const modeEl=document.getElementById('scanMode'), linksEl=document.getElementById('autoScanLinks');
                     if(modeEl) modeEl.value=committed.protection.scanMode || (committed.protection.alwaysManual ? 'manual' : modeEl.value);
                     if(linksEl && committed.schemaVersion === 2) linksEl.checked=committed.protection.autoScanLinks;
-                    if (tocEl) tocEl.checked = committed.protection.timeOfClickProtection;
+                    if (tocEl && !tocEl.dataset.managed) tocEl.checked = committed.protection.timeOfClickProtection;
                 } else {
                     await LocalSettingsProfile.commit(proposal, settingsStorage);
                 }
@@ -336,8 +347,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const timeOfClickProtectionCheckbox = document.getElementById('timeOfClickProtection');
 
       function updateTimeOfClickProtectionStatus() {
-          timeOfClickProtectionCheckbox.disabled = false;
-          timeOfClickProtectionCheckbox.title = '';
+          timeOfClickProtectionCheckbox.disabled = !!timeOfClickProtectionCheckbox.dataset.managed;
+          timeOfClickProtectionCheckbox.title = timeOfClickProtectionCheckbox.disabled ? uiText('managedByCompany') : '';
       }
 
       // Initiale Setzung

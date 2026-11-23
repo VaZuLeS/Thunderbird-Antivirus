@@ -40,15 +40,19 @@ const AuditExport = (() => {
                 ? record.check.httpStatus : null
         }));
     }
+    const policyBlocked = record => Number.isFinite(record.blockedAt) && !!record.blockReason &&
+        !record.approvalDecision && ['PENDING','ABORTED'].includes(record.outcome);
+    const outcome = record => policyBlocked(record) ? 'BLOCKED' : record.outcome;
     function filter(records, options) {
         const query = (options.query || '').toLowerCase();
         const from = options.from ? new Date(options.from + 'T00:00:00').getTime() : -Infinity;
         const to = options.to ? new Date(options.to + 'T23:59:59.999').getTime() : Infinity;
-        return records.filter(record => (!options.outcome || record.outcome === options.outcome) && (!query || record.url.toLowerCase().includes(query)) &&
+        return records.filter(record => (!options.outcome || outcome(record) === options.outcome) &&
+            (!query || record.url.toLowerCase().includes(query) || String(record.id || '').toLowerCase().includes(query)) &&
             (options.minScore === '' || options.minScore == null || (Number.isFinite(record.score) && record.score >= Number(options.minScore))) && record.clickedAt >= from && record.clickedAt <= to);
     }
     const riskyOpened = record => record.outcome === 'OPENED' && ((Number.isFinite(record.scoreAtDecision) && record.scoreAtDecision >= 50) || /MALICIOUS|SUSPICIOUS/.test(record.verdictAtDecision || ''));
-    return { csv, json, redacted, filter, riskyOpened };
+    return { csv, json, redacted, filter, outcome, riskyOpened };
 })();
 
 if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', () => {
@@ -56,7 +60,9 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
     const $ = id => document.getElementById(id);
     let records = [], snapshot = null, page = 0, refreshGeneration = 0, fullFormat = null;
     const pageSize = 50;
-    const decisionKeys = { OPENED: 'auditOpened', ABORTED: 'auditAborted', OPEN_ERROR: 'auditOpenError', PENDING: 'auditPending' };
+    const decisionKeys = { OPENED: 'auditOpened', BLOCKED: 'auditPolicyBlocked', ABORTED: 'auditAborted', OPEN_ERROR: 'auditOpenError', PENDING: 'auditPending' };
+    const blockReasons = {malicious:'protectionMalicious',threshold:'protectionManagedThreshold',unknown:'analysisSimpleIncomplete',
+        policy_invalid:'managedPolicyInvalid',context_changed:'linkContextChanged'};
     const cancelKeys = { cancel: 'auditCancelUser', escape: 'auditCancelEscape', destination_changed: 'auditCancelDestination', context_closed: 'auditCancelContext' };
     const verdictLabel = value => {
         if (!value) return t('auditUnavailable');
@@ -73,14 +79,15 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
         let restoreFocus = null;
         const filtered = selected(); page = Math.min(page, Math.max(0, Math.ceil(filtered.length / pageSize) - 1));
         $('auditRows').replaceChildren(); $('auditSummary').replaceChildren();
-        for (const [outcome, key] of Object.entries(decisionKeys)) $('auditSummary').appendChild(node('div', t(key) + ': ' + records.filter(record => record.outcome === outcome).length, 'card'));
+        for (const [outcome, key] of Object.entries(decisionKeys)) $('auditSummary').appendChild(node('div', t(key) + ': ' + records.filter(record => AuditExport.outcome(record) === outcome).length, 'card'));
         $('auditSummary').appendChild(node('div', t('auditRiskyOpened') + ': ' + records.filter(AuditExport.riskyOpened).length, 'card'));
         $('auditCount').textContent = t('auditRecords') + ': ' + filtered.length + ' / ' + records.length;
         for (const record of filtered.slice(page * pageSize, (page + 1) * pageSize)) {
             const row = document.createElement('tr'); row.dataset.recordId = record.id;
             if (AuditExport.riskyOpened(record)) row.className = 'audit-risky';
             const time = document.createElement('td'); time.append(node('div', date(record.clickedAt)), node('small', date(record.decidedAt)));
-            const decision = node('td', t(decisionKeys[record.outcome] || 'auditPending')); decision.className = 'audit-' + record.outcome.toLowerCase();
+            const outcome = AuditExport.outcome(record);
+            const decision = node('td', t(decisionKeys[outcome] || 'auditPending'), 'audit-' + outcome.toLowerCase());
             const score = document.createElement('td'); score.append(node('div', record.score == null ? t('auditUnavailable') : record.score + ' / 100'), node('small', t('auditScoreAtDecision') + ': ' + (record.scoreAtDecision == null ? t('auditUnavailable') : record.scoreAtDecision)));
             if (record.riskModelVersion === 2) {
                 const decisionHeuristic = record.heuristicScoreAtDecision;
@@ -93,7 +100,11 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
             const details = document.createElement('details'); details.open = expanded.has(String(record.id)); details.append(node('summary', t('auditDetails')), node('code', record.url));
             details.append(node('p', t('auditEventId') + ': ' + record.id));
             if (record.cancelReason) details.append(node('p', t('auditCancelReason') + ': ' + t(cancelKeys[record.cancelReason] || 'auditCancelUnknown')));
-            if (record.outcome === 'PENDING') details.append(node('p', t('auditPendingExplanation')));
+            if (outcome === 'BLOCKED') {
+                details.append(node('p', [t(blockReasons[record.blockReason] || 'auditUnavailable'),date(record.blockedAt)].join(' · ')));
+                if (record.policyRevision != null) details.append(node('p', t('managedRevision')+' · '+record.policyRevision));
+            }
+            if (outcome === 'PENDING') details.append(node('p', t('auditPendingExplanation')));
             if (record.check) details.append(node('p', t(({ live: 'checkOrigin_live', stored: 'checkOrigin_stored', none: 'checkOrigin_none' })[record.check.origin] || 'auditUnavailable') + ' · ' + t(({success: 'checkOutcome_success', failed: 'checkOutcome_failed', incomplete: 'analysisSimpleIncomplete', disabled: 'checkOutcome_disabled', permission_denied: 'checkOutcome_permission_denied', missing_key: 'checkOutcome_missing_key', missing_reference: 'checkOutcome_missing_reference', not_requested: 'checkOutcome_not_requested', no_result: 'checkOutcome_no_result', rate_limited: 'checkOutcome_rate_limited', invalid_key: 'checkOutcome_invalid_key'})[record.check.outcome] || 'auditUnavailable') + ' · ' + t('checkAttempted') + ': ' + date(record.check.attemptedAt) + ' · ' + t('checkObserved') + ': ' + date(record.check.observedAt)));
             const errorCode = record.errorCode || record.check?.errorCode;
             const errorDetails = record.errorDetails || record.check?.errorDetails;

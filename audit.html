@@ -13,8 +13,8 @@
 <p class="card audit-disclosure" data-i18n="auditPrivacy"></p>
 <div class="audit-summary" id="auditSummary" aria-live="polite"></div>
 <form class="audit-filters" id="auditFilters">
-<label><span data-i18n="auditSearch">URL or domain</span><input id="auditSearch" type="search"></label>
-<label><span data-i18n="auditOutcome">Decision</span><select id="auditOutcome"><option value="" data-i18n="auditAll">All</option><option value="OPENED" data-i18n="auditOpened">Opened</option><option value="ABORTED" data-i18n="auditAborted">Aborted</option><option value="OPEN_ERROR" data-i18n="auditOpenError">Opening failed</option><option value="PENDING" data-i18n="auditPending">No completed decision</option></select></label>
+<label><span data-i18n="auditSearch">URL, domain or event ID</span><input id="auditSearch" type="search"></label>
+<label><span data-i18n="auditOutcome">Decision</span><select id="auditOutcome"><option value="" data-i18n="auditAll">All</option><option value="OPENED" data-i18n="auditOpened">Opened</option><option value="BLOCKED" data-i18n="auditPolicyBlocked">Blocked by policy</option><option value="ABORTED" data-i18n="auditAborted">Aborted</option><option value="OPEN_ERROR" data-i18n="auditOpenError">Opening failed</option><option value="PENDING" data-i18n="auditPending">No completed decision</option></select></label>
 <label><span data-i18n="auditMinScore">Minimum decision score</span><input id="auditMinScore" type="number" min="0" max="100"></label>
 <label><span data-i18n="auditFrom">From</span><input id="auditFrom" type="date"></label>
 <label><span data-i18n="auditTo">To</span><input id="auditTo" type="date"></label>

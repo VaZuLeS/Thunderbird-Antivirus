@@ -262,13 +262,13 @@ const ThundyScans=(()=>{
     });
     async function display(tab,message){
         if(typeof settingsReady!=='undefined')await settingsReady;
+        await injectIntoMessageDisplay(tab.id,function(id){document.documentElement.dataset.thundyAnalysisMessage=String(id);},[message.id]);
+        await injectTimeOfClickProtection(tab.id,[],message.id);
         let full;
         try{full=await readFullForAnalysis(message);}catch(_){const context=await getMessageAnalysisContext(message,tab.id,{fullMessage:null,attachments:[]});context.scanJob={state:'failed',manualAllowed:mayTransmitExternally()};await context.flush();return;}
         let attachments;try{attachments=await browser.messages.listAttachments(message.id);}catch(_){attachments=[];full={...full,thundyInputStatus:'incomplete',thundyInventoryIncomplete:true};}
-        await injectIntoMessageDisplay(tab.id,function(id){document.documentElement.dataset.thundyAnalysisMessage=String(id);},[message.id]);
         const context=await getMessageAnalysisContext(message,tab.id,{fullMessage:full,attachments});
         if(!full.thundyInventoryIncomplete)await processAttachments(message,false,false,context);const text=extractTextFromParts(full.parts||full),urls=typeof messageUrlInventory==='function'?messageUrlInventory(full):extractUrls(text),eligibleUrls=filterUrls(urls);await indexedDB_save_links_to_db(message,eligibleUrls);
-        await injectTimeOfClickProtection(tab.id,urls,message.id);
         await evaluateAndInjectThreats({tab,message,fullMessage:full,urls,filteredUrls:eligibleUrls,messageText:text,allowExternal:false,analysisContext:context});
         await coordinator.start(message,{tabId:tab.id,full,attachments,manual:false});
     }

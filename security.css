@@ -3,3 +3,6 @@
 
 .security-controls fieldset { min-width: 0; border: 1px solid var(--card-border,#ccc); border-radius: 8px; }
 .security-controls select { display: block; width: 100%; max-width: 560px; margin-block: 6px; }
+.protection-decision { padding: .5rem .75rem; border-inline-start: 4px solid var(--link-color); }
+.protection-decision.block { border-color: var(--color-danger); color: var(--color-danger); background: var(--alert-error-bg); }
+.protection-decision.warn, .protection-decision.approval { border-color: var(--color-warning); color: var(--color-warning); background: var(--warning-bg); }

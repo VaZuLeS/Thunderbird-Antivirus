@@ -12,19 +12,24 @@ const ThundyLinkSecurity = (() => {
         const urls=typeof messageUrlInventory==='function'?messageUrlInventory(full):extractUrls(text);
         if(!urls.some(value=>{try{return new URL(value).href===new URL(session.url).href;}catch(_){return false;}}))throw Error('LINK_CONTEXT_CHANGED');
         const options=await collectThreatEvaluationOptions({message,fullMessage:full,filteredUrls:[session.url],messageText:text,allowExternal:false});
-        const threat=calculateThreatScore(message.author,[session.url],options);
+        const {policy} = await ThundySecurity.effective();
+        const linkFindings = (options.linkFindings || []).filter(finding => finding.url === new URL(session.url).href);
+        const threat=calculateThreatScore(message.author,[session.url],policy.managed ?
+            {...options,linkFindings,attachmentFindings:[]} : options);
         let scan=typeof ThundyScans!=='undefined'?ThundyScans.get?.(message.id):null;
         // A capacity rejection has no admitted job. Its local display context
         // still records incomplete coverage and must not authorize as complete.
         if(!scan && typeof getMessageAnalysisContext==='function')scan=(await getMessageAnalysisContext(message)).scanJob;
-        const input={score:threat.score,coverage:scan?.assessmentIncomplete?'incomplete':localContentCoverage(full).state,verdict:session.verdict||'UNKNOWN',check:session.check,malicious:[...(options.linkFindings||[]),...(options.attachmentFindings||[])].some(x=>x.verdict==='malicious')};
-        const saved=await ThundySecurity.read();
-        const policy={...ThundySecurity.defaults,...saved.policy};
+        const findings = policy.managed ? linkFindings : [...(options.linkFindings || []), ...(options.attachmentFindings || [])];
+        const input={score:threat.score,coverage:scan?.assessmentIncomplete?'incomplete':localContentCoverage(full).state,verdict:session.verdict||'UNKNOWN',check:session.check,malicious:findings.some(x=>x.verdict==='malicious')};
         const reasons=(threat.reasons||[]).slice(0,20);
         const reasonDetails=(threat.reasonDetails||[]).slice(0,20);
         const token=await fingerprint({scanRevision,messageId:message.id,url:session.url,text,parts:full,score:input.score,coverage:input.coverage,verdict:input.verdict,check:session.check,reasons,reasonDetails,revision:policy.revision});
         if (typeof ThundyScans!=='undefined'&&ThundyScans.revision(message.id)!==scanRevision) throw Error('APPROVAL_CHANGED');
-        return {policy,input,heuristicScore:threat.heuristicScore,scanRevision,reasons,reasonDetails,
+        const incidentEvidence = linkFindings.map(({provider,verdict,source}) => ({
+            provider:provider === 'Hybrid Analysis' ? 'hybridanalysis' : 'urlscan',verdict,source:source || 'stored'
+        }));
+        return {policy,input,heuristicScore:threat.heuristicScore,scanRevision,reasons,reasonDetails,incidentEvidence,
             decision:ThundySecurity.decision(policy,input),fingerprint:token};
     }
     function boundedValidation(work) {
@@ -35,7 +40,7 @@ const ThundyLinkSecurity = (() => {
         return Promise.race([work,timeout]).finally(() => clearTimeout(timer));
     }
     async function prepareOpening(request,sender,session) {
-        const saved = await ThundySecurity.read();
+        const saved = await ThundySecurity.effective();
         let current;
         if (saved.policy?.enabled) {
             if (!session || !session.checked || session.terminal || session.url !== request.url ||
@@ -68,6 +73,15 @@ const ThundyLinkSecurity = (() => {
                     return failure('APPROVAL_CHANGED');
                 }
                 const d=current.decision;
+                if (current.policy.managed && typeof reportManagedLinkAttempt === 'function') void reportManagedLinkAttempt(session,d,current);
+                if (d.mode === 'block') {
+                    void updateLinkAudit(session.record.id,{blockedAt:Date.now(),blockReason:d.reason,policyRevision:d.revision}).catch(()=>{});
+                    const blocked = failure(d.reason === 'policy_invalid' ? 'POLICY_INVALID' : 'LINK_POLICY_BLOCKED');
+                    return {...blocked,protection:typeof linkDecisionPresentation === 'function' ? linkDecisionPresentation(d,current) : d};
+                }
+                if (current.policy.managed && (session.managedDecision?.mode !== d.mode || session.managedDecision?.reason !== d.reason)) {
+                    return failure('APPROVAL_CHANGED');
+                }
                 if (d.required && !approval) {
                     void updateLinkAudit(session.record.id,{blockedAt:Date.now(),blockReason:d.reason,policyRevision:current.policy.revision,approvalDecision:'required'}).catch(()=>{});
                     return {...failure(saved.approval?'APPROVAL_REQUIRED':'APPROVAL_NOT_CONFIGURED'),required:true,reason:d.reason};

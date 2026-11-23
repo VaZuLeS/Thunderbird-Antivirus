@@ -577,7 +577,7 @@ async function interaction(page, c) {
     );
   } else if (c.view === "popup.html" && c.populated) {
     await page.locator("#thundy-analysis-status .mode").waitFor();
-    const sourceText = await page.locator("#thundy-analysis-status .card:visible").innerText();
+    const sourceText = await page.locator("#thundy-analysis-status .card:not(.finding-card):visible").innerText();
     for (const brand of ["Hybrid Analysis","VirusTotal","URLhaus","AbuseIPDB","urlscan.io"])
       assert.ok(sourceText.includes(brand), "missing source: " + brand);
     const sourceCatalog = JSON.parse(fs.readFileSync(path.join(root,"_locales",c.lang,"messages.json")));
@@ -594,8 +594,7 @@ async function interaction(page, c) {
     const sourceFocusKey = await sourceSummary.getAttribute("data-focus-key");
     await page.evaluate(async()=>{
       const snapshot=await browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:42});
-      const theme=await ThundyTheme.snapshot();
-      ThundyAnalysis.render({...snapshot,rows:snapshot.rows.map((row,index)=>index===0?{...row,state:"running"}:row)},ThundyAnalysis.labels(key=>browser.i18n.getMessage(key)),theme.css);
+      ThundyAnalysis.render({...snapshot,rows:snapshot.rows.map((row,index)=>index===0?{...row,state:"running"}:row)},ThundyAnalysis.labels(key=>browser.i18n.getMessage(key)));
     });
     assert.equal(await page.locator("#thundy-analysis-status").evaluate(el=>el.shadowRoot.activeElement?.dataset.focusKey),sourceFocusKey);
     assert.equal(await sourceSummary.evaluate(el=>el.parentElement.open),true);
