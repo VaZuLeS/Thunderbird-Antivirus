@@ -8,7 +8,7 @@ def check(m, base, out, report, wait_for, open_page):
     probe_tab=m.js('return window.gTabmail.tabInfo.indexOf(window.gTabmail.currentTabInfo);')
     result=None
     try:
-        m.page('''return (async()=>{
+        resource_ref = m.page('''return (async()=>{
           const w=window.wrappedJSObject,b=w.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
           const message=(await b.messages.query({subject:'Thundy hybrid popup'})).messages.find(v=>v.subject==='Thundy hybrid popup');
           const filePart=(await b.messages.listAttachments(message.id))[0],file=await b.messages.getAttachmentFile(message.id,filePart.partName),hash=await bg.get_sha256_hash(await file.arrayBuffer());
@@ -20,12 +20,13 @@ def check(m, base, out, report, wait_for, open_page):
           await bg.updateStore(db,'hybridanalysis',key,old=>({...old,attachments:old.attachments.map(a=>a.partName===filePart.partName?{...a,hybrid_sha256:hash,report_fetched_at:'2026-11-18T08:00:00Z',report:[{sha256:hash,job_id:'native-report-one',environment_description:'Native first environment',analysis_start_time:'2026-11-17T14:00:00Z',state:'SUCCESS',verdict:'clean',threat_score:0,processes:[]},{sha256:hash,job_id:'native-report-two',environment_description:'Native second environment',verdict:'unknown',scanners_v2:{Native:{positives:3,total:22}},signatures:[{name:'native-second-only',threat_level:2}]}]}:a)}),p.scope);
           p.content=r=>JSON.stringify({attachments:r.attachments.map(({created,...v})=>v),links:r.links,archive:r.analysisReportArchive});
           p.fixture=p.content(await bg.getFromStore(db,'hybridanalysis',key,p.scope));
-          await b.messageDisplay.open({messageId:message.id,location:'tab'});return true;
+          await b.messageDisplay.open({messageId:message.id,location:'tab'});return 'attachment:'+filePart.partName;
         })();''')
-        wait_for(lambda:m.page('const h=document.getElementById("thundy-analysis-status");return h?.dataset.surface==="message"&&!!h.shadowRoot.querySelector(".inline-toolbar .local-score");'))
+        wait_for(lambda:m.page('const h=document.getElementById("thundy-analysis-status");return h?.dataset.surface==="message"&&!!h.shadowRoot.querySelector(".finding-card .local-score");'))
         m.page('const r=document.getElementById("thundy-analysis-status").shadowRoot;if(document.body.dataset.thundyAnalysisView==="expert")r.querySelector("[data-focus-key=view-switch]").click();')
-        wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(".overview-report-link button");'))
-        inline=m.page('const h=document.getElementById("thundy-analysis-status"),s=h.shadowRoot.querySelector(".inline-toolbar .local-score");return h.dataset.surface==="message"&&s.getClientRects().length>0&&s.textContent.includes("/ 100");')
+        report_button = '[data-key="overview-resources"] [data-resource="' + resource_ref + '"] .hybrid-report-link button'
+        wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(arguments[0]);',[report_button]))
+        inline=m.page('const h=document.getElementById("thundy-analysis-status"),s=h.shadowRoot.querySelector(".finding-card .local-score");return h.dataset.surface==="message"&&s.getClientRects().length>0&&s.textContent.includes("/ 100");')
         m.js('window.gTabmail.switchToTab(arguments[0]);',[probe_tab])
         rejected=m.page('''return (async()=>{
           const w=window.wrappedJSObject,b=w.browser,messageId=w.__hybridViewerProbe.messageId;
@@ -38,7 +39,7 @@ def check(m, base, out, report, wait_for, open_page):
         })();''')
         assert rejected
         m.js('window.gTabmail.switchToTab(window.gTabmail.tabInfo.filter(tab=>tab.mode.name==="mailMessageTab").at(-1));')
-        m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector(".overview-report-link button").click();')
+        m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector(arguments[0]).click();',[report_button])
         wait_for(lambda:m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.startsWith(arguments[0]);',[base+'hybrid_report.html#']))
         wait_for(lambda:m.page('return document.querySelectorAll("#hybridReportSelect option").length===2;'))
         checks=m.page('''const s=document.getElementById('hybridReportSelect'),view=document.getElementById('hybridReportOverview');
