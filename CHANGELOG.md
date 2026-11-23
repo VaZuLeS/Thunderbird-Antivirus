@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.26.0 — 2026-11-23
+## 1.26.1 — 2026-11-23
 
 - Managed Thunderbird policies for separate link and attachment thresholds, protected opening and saving, and optional HTTPS incident reporting.
 - Clearer findings in the message and popup, live appearance updates, and policy blocks in the link log.
