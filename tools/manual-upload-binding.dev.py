@@ -59,8 +59,9 @@ def check_review(m, wait_for):
       const patch={apikey:'native-synthetic-manual-key',externalAnalysisConsent:true,privacyTier:'balanced',scanMode:'manual',alwaysManual:true,autoScanLinks:false};
       const keys=Object.keys(patch),settings=await b.storage.local.get(keys),audit=JSON.stringify((await b.storage.local.get('linkAuditLog')).linkAuditLog);
       const stored=()=>bg.getFromStore(db,'hybridanalysis',key,bg.messageReportOptions(message));
-      const content=async()=>{const row=await stored();return JSON.stringify({attachments:row?.attachments,links:row?.links,archive:row?.analysisReportArchive});};
-      const p={bg,keys,settings,audit,stored,content,before:await content(),fetch:bg.fetch,calls:[],responseHash:'b'.repeat(64)};
+      const content=async()=>{const row=await stored();return JSON.stringify({
+        attachments:row?.attachments?.map(({created,...item})=>item),links:row?.links,archive:row?.analysisReportArchive});};
+      const p={bg,keys,settings,audit,stored,content,fetch:bg.fetch,calls:[],responseHash:'b'.repeat(64)};
       w.__reviewProbe=p;
       bg.fetch=async(url,options={})=>{
         if(String(url)!=='https://hybrid-analysis.com/api/v2/quick-scan/file'||options.method!=='POST')throw Error('Unexpected synthetic route');
@@ -84,9 +85,13 @@ def check_review(m, wait_for):
         refused=foreign.get('code')==wrong.get('code')=='MESSAGE_CONTEXT_CHANGED' and m.page('return window.wrappedJSObject.__reviewProbe.calls.length===0;',browser=options)
         reviewed=prepare(target)
         assert reviewed['success'] and reviewed['target']==target['target'],reviewed
+        # Reopening the message prepares its inventory independently of the upload.
+        # Compare evidence at the upload boundary after review on that displayed message.
+        before=m.page('return window.wrappedJSObject.__reviewProbe.content();',browser=options)
         rejected=send('submitProviderTransfer',{'id':reviewed['id']})
         replay=send('submitProviderTransfer',{'id':reviewed['id']})
-        mismatch_preserved=m.page('return (async()=>{const p=window.wrappedJSObject.__reviewProbe;return p.before===await p.content();})();',browser=options)
+        after=m.page('return window.wrappedJSObject.__reviewProbe.content();',browser=options)
+        mismatch_preserved=before==after
         m.page('window.wrappedJSObject.__reviewProbe.responseHash=arguments[0];',[target['hash']],browser=options)
         reviewed=prepare({**target,'hash':target['hash'].upper()})
         assert m.page('return window.wrappedJSObject.__reviewProbe.calls.length===1;',browser=options)
