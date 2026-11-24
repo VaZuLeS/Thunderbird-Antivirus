@@ -2296,7 +2296,13 @@ def check_inline_scan(m, base, out, report, display, fresh=False):
     def snapshot():
         return m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[setup['messageId']],browser=options)
     wait_for(lambda:snapshot().get('scanJob',{}).get('state')=='blocked')
-    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector("[data-focus-key=scan-start]")?.textContent==="Check now";'))
+    # An accepted pending report can offer a refresh instead of a fresh scan.
+    # The transport assertions below distinguish those paths.
+    def scan_action_ready():
+        return m.page('''const root=document.getElementById("thundy-analysis-status")?.shadowRoot;
+            const button=root?.querySelector("[data-focus-key=scan-start]");
+            return !!button && !button.disabled;''')
+    wait_for(scan_action_ready)
     # Let the existing reconfiguration notification settle, without replaying any writes.
     m.page('return new Promise(resolve=>setTimeout(resolve,500));')
     before=snapshot()
@@ -2312,7 +2318,11 @@ def check_inline_scan(m, base, out, report, display, fresh=False):
     renewed=snapshot()
     assert invalidated
     assert (before['contextToken']==renewed['contextToken']) if fresh else (before['contextToken']!=renewed['contextToken'])
-    m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=scan-start]").click();')
+    wait_for(scan_action_ready)
+    m.page('''const root=document.getElementById("thundy-analysis-status").shadowRoot;
+      const details=root.querySelector('[data-key="inline-inspection"]');
+      if(details&&!details.open)details.querySelector('summary').click();
+      root.querySelector("[data-focus-key=scan-start]").click();''')
     def outcome():
         state=snapshot()
         if state.get('scanJob',{}).get('state')=='completed':return state
