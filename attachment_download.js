@@ -94,7 +94,8 @@ const ThundyAttachmentDownload = (() => {
                 if (['malicious','suspicious'].includes(assessed.verdict) || assessed.verdict === 'none' && assessed.completion === 'complete') {
                     providers.push({provider:'hybridanalysis',verdict:assessed.verdict === 'none' ? 'no_detection' : assessed.verdict,
                         source:source === 'archive' ? 'archive' : 'stored',observedAt,
-                        score:evidence(item,digest).score,reference:digest,jobId:fullyBound ? item.hybrid_job_id : null});
+                        score:evidence(item,digest).score,reference:digest,jobId:fullyBound ? item.hybrid_job_id : null,
+                        detections:ThundyProviderResults.hybridDetections(bound)});
                 }
             }
         }
@@ -103,9 +104,9 @@ const ThundyAttachmentDownload = (() => {
             const verdict = stats.malicious ? 'malicious' : stats.suspicious ? 'suspicious' :
                 stats.harmless > 0 || stats.undetected > 0 ? 'no_detection' : null;
             if (verdict) providers.push({provider:'virustotal',verdict,source:'stored',
-                maliciousCount:stats.malicious,suspiciousCount:stats.suspicious});
+                maliciousCount:stats.malicious,suspiciousCount:stats.suspicious,detections:ThundyProviderResults.projectDetections(stats.detections)});
         } else if (Number.isSafeInteger(stats?.malicious) && stats.malicious > 0) {
-            providers.push({provider:'virustotal',verdict:'malicious',source:'stored',maliciousCount:stats.malicious});
+            providers.push({provider:'virustotal',verdict:'malicious',source:'stored',maliciousCount:stats.malicious,detections:ThundyProviderResults.projectDetections(stats.detections)});
         }
         return providers;
     }
@@ -190,14 +191,17 @@ const ThundyAttachmentDownload = (() => {
                 deps.pending(target.messageId,target.partName));
             const rules = decision(policy,result);
             const reporting = policy.managed ? saved.managed?.reporting : null;
-            const matching = reporting?.details && resource.digest && Array.isArray(record?.attachments) ?
+            const matching = resource.digest && Array.isArray(record?.attachments) ?
                 record.attachments.filter(entry => entry?.partName === target.partName &&
                     entry.hybrid_sha256?.toLowerCase?.() === resource.digest) : [];
-            const incidentEvidence = reporting?.details ? attachmentIncidentEvidence(item,
-                matching.length === 1 ? matching[0] : null,resource.digest,source,observedAt) : [];
+            const findings = attachmentIncidentEvidence(item,matching.length === 1 ? matching[0] : null,resource.digest,source,observedAt);
+            const presentation = typeof ThundySeverity === 'undefined' ? null : ThundySeverity.presentation({
+                ...rules,score:result.score,malicious:result.malicious,incomplete:currentState !== 'complete' && currentState !== 'checked'
+            },saved.managed?.severityColors);
             const details = {name:safeFilename(resource.file.name),threshold:policy.invalid ? null : policy.threshold,managed:policy.managed === true,operation:target.operation,...result,...rules,currentState,source,observedAt,
-                report:showReport && !!item?.report,approvalConfigured:!!saved.approval};
-            return {details, item, approval:saved.approval, revision, reportMode:reporting?.mode, incidentEvidence,
+                report:showReport && !!item?.report,approvalConfigured:!!saved.approval,presentation,findings};
+            return {details, item, approval:saved.approval, revision, reportMode:reporting?.mode,
+                incidentEvidence:reporting?.details ? findings : [],
                 signature:JSON.stringify([policy.revision,details,saved.approval?.hash])};
         }
 

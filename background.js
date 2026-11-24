@@ -7,6 +7,12 @@ const Logger = {
     warn: (...args) => console.warn(...args),
     info: (...args) => console.info(...args)
 };
+const providerTransfers = new Map();
+const activeProviderTransfers = new Set();
+const transferEndpoints = {
+    hybridanalysis: {link:'https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis', attachment:'https://hybrid-analysis.com/api/v2/quick-scan/file'},
+    urlscan: {link:'https://urlscan.io/api/v1/scan/'}
+};
 
 // ---------------------------------------------------------------------------
 // Localization
@@ -115,6 +121,10 @@ let autoScanLinks = false;
 let timeOfClickProtection = true;
 let ipReputationProvider = "none";
 let ipReputationApiKey = "";
+let providerPreferences = {};
+function providerEnabled(id, scope) {
+    return typeof ThundyProviders === 'undefined' || ThundyProviders.enabled(providerPreferences,id,scope);
+}
 let externalAnalysisConsent = false;
 
 let sharedDBPromise = null;
@@ -233,16 +243,24 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                 async snapshot(project = null) {
                     const displaySettings=await browser.storage.local.get(['analysisDefaultView','analysisShowHybridDetails','scanMode']);
                     const displayPreferences={view:displaySettings.analysisDefaultView==='expert'?'expert':'simple',hybridDetails:displaySettings.analysisShowHybridDetails!==false};
-                    const enabled = { hybridanalysis: !!apikey_hybridanalysis, virustotal: !!apikey_virustotal || ipReputationProvider === 'virustotal' && !!ipReputationApiKey, urlhaus: !!urlhausApikey, abuseipdb: ipReputationProvider === 'abuseipdb' && !!ipReputationApiKey, urlscan: !!urlscanApikey };
+                    const virusTotalIpConfigured = ipReputationProvider === 'virustotal' && !!ipReputationApiKey;
+                    const configured = { hybridanalysis: !!apikey_hybridanalysis, virustotal: !!apikey_virustotal || virusTotalIpConfigured, urlhaus: !!urlhausApikey, abuseipdb: ipReputationProvider === 'abuseipdb' && !!ipReputationApiKey, urlscan: !!urlscanApikey };
                     const availability = {};
                     const providerAccess = {};
                     const connectionTests = (await browser.storage.local.get('providerConnectionTests')).providerConnectionTests || {};
                     const authorized = await authorizeMessageScan(message);
                     await Promise.all(ThundyAnalysis.providers.map(async provider => {
-                        providerAccess[provider] = {configured:!!enabled[provider],testStatus:['valid','invalid_key','rate_limited','permission_denied','error'].includes(connectionTests[provider]?.status)?connectionTests[provider].status:null,testedAt:Number.isFinite(connectionTests[provider]?.observedAt)?connectionTests[provider].observedAt:null};
-                        availability[provider] = !enabled[provider] ? 'unconfigured' : !mayTransmitExternally() ? 'disabled' : !await hasHostPermissionFor(PROVIDER_ORIGINS[provider]) ? 'permission' : provider === 'urlscan' ? !tierAtLeast('max') ? 'policy' : 'on_action' : !authorized ? 'authorization' : 'unrecorded';
+                        providerAccess[provider] = {configured:!!configured[provider],testStatus:['valid','invalid_key','rate_limited','permission_denied','error'].includes(connectionTests[provider]?.status)?connectionTests[provider].status:null,testedAt:Number.isFinite(connectionTests[provider]?.observedAt)?connectionTests[provider].observedAt:null};
+                        const enabled = provider === 'virustotal'
+                            ? ((apikey_virustotal || !virusTotalIpConfigured) && providerEnabled(provider)) || (virusTotalIpConfigured && providerEnabled(provider,'ip'))
+                            : providerEnabled(provider,provider === 'abuseipdb' ? 'ip' : undefined);
+                        availability[provider] = !enabled ? 'provider_disabled' : !configured[provider] ? 'unconfigured' : !mayTransmitExternally() ? 'disabled' : !await hasHostPermissionFor(PROVIDER_ORIGINS[provider]) ? 'permission' : provider === 'urlscan' ? !tierAtLeast('max') ? 'policy' : 'on_action' : !authorized ? 'authorization' : 'unrecorded';
                     }));
-                    if (context.scanJob?.providers) for(const [id,value] of Object.entries(context.scanJob.providers)) { const reasons=value.checks.map(c=>c.reason);availability[id]=value.state==='failed'&&value.error==='rate_limited'?'quota':reasons.some(r=>!r)?value.state==='running'?'running':'unrecorded':reasons[0]||'no_resources'; }
+                    if (context.scanJob?.providers) for(const [id,value] of Object.entries(context.scanJob.providers)) {
+                        if (availability[id] === 'provider_disabled') continue;
+                        const reasons=value.checks.map(c=>c.reason);
+                        availability[id]=value.state==='failed'&&value.error==='rate_limited'?'quota':reasons.some(r=>!r)?value.state==='running'?'running':'unrecorded':reasons[0]||'no_resources';
+                    }
                     const backoffs = {};
                     if (typeof apiGateway !== 'undefined' && apiGateway.backoffs) {
                         for (const host of apiGateway.backoffs.keys()) {
@@ -260,6 +278,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     const nextBindings = new Map();
                     const hybridReports = {};
                     const urlscanReports = {};
+                    const resourceDetections = {};
                     let hybridReportsTruncated=false,hybridReportBudget=500000;
                     try {
                         const original = await getFromStore(await getSharedDB(), 'hybridanalysis', key,messageReportOptions(message,{includeHistory:true})), saved = original ? ThundyAnalysis.resources(original) : null;
@@ -275,6 +294,12 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                         // Raw protocols and these resource details never enter provenance exports.
                         for(const item of [...(current?.attachments||[]),...(current?.links||[])]){
                             const ref=item.url?item.analysisResourceRef:'attachment:'+item.partName;
+                            const evidence = item.url ? incidentLinkEvidence({links:[item]}, canonicalHttpUrl(item.url)) : [
+                                {provider:'hybridanalysis',detections:ThundyProviderResults.hybridDetections(ThundyProviderResults.boundAttachmentReports(item.report,item.hybrid_sha256).bound)},
+                                {provider:'virustotal',detections:ThundyProviderResults.projectDetections(item.virustotal_stats?.detections)}
+                            ];
+                            const reported = evidence.filter(row => row.detections?.length).map(({provider,detections})=>({provider,detections}));
+                            if (reported.length && ThundyAnalysis.validResource(ref)) resourceDetections[ref] = reported;
                             if(displayPreferences.hybridDetails&&item.report&&ThundyAnalysis.validResource(ref)){
                                 const details={...ThundyProviderResults.hybridDetails(item.report,item.hybrid_sha256||null),observedAt:Number.isFinite(Date.parse(item.report_fetched_at))?Date.parse(item.report_fetched_at):null};
                                 const size=JSON.stringify(details).length;
@@ -301,6 +326,13 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     const {local,rows} = data;
                     const protection = security ? ThundySecurity.decision({...ThundySecurity.defaults,...security.policy},{score:local.score,coverage:local.state,verdict:rows.some(row=>row.verdict==='malicious')?'MALICIOUS':rows.length && rows.every(row=>['none','suspicious'].includes(row.verdict)&&row.state==='checked')?rows.some(row=>row.verdict==='suspicious')?'SUSPICIOUS':'CLEAN':'UNKNOWN'}) : null;
                     const view = { ...data, displayPreferences, hybridReports, hybridReportsTruncated, urlscanReports, scanJob:context.scanJob || {state:'idle',migration:displaySettings.scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, attachmentActions:typeof ThundyAttachmentDownload !== 'undefined', sourcePersistenceFailed:context.persistenceFailed, sourcePersistenceReason:context.persistenceReason || null, sourcePersistenceError:context.persistenceError || null, diagnosticRun:context.diagnosticRun||null, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
+                    view.sourceSessionOnly = context.sourceSessionOnly === true;
+                    view.resourceDetections = resourceDetections;
+                    view.transferProviders = mayTransmitExternally() ? {
+                        link: [apikey_hybridanalysis && providerEnabled('hybridanalysis') && 'hybridanalysis',
+                            urlscanApikey && providerEnabled('urlscan') && 'urlscan'].filter(id => id && tierAtLeast('max')),
+                        attachment: apikey_hybridanalysis && providerEnabled('hybridanalysis') && tierAtLeast('balanced') ? ['hybridanalysis'] : []
+                    } : null;
                     return project ? project(view,current) : view;
                 },
                 async flush() {
@@ -310,6 +342,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     const value = JSON.parse(JSON.stringify(model.data));
                     persistenceQueue = persistenceQueue.then(async () => {
                       try {
+                        if (context.sourceSessionOnly) return;
                         await updateStore(await getSharedDB(), 'hybridanalysis', key, old => {
                             if (context.disposed) return old;
                             const previous = old?.analysisSourceSnapshots;
@@ -328,7 +361,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                         snapshotCreated = true;
                         context.persistenceFailed = false; context.persistenceReason = null; context.persistenceError = null;if(typeof ThundyApiDiagnostics!=='undefined')ThundyApiDiagnostics.event(context.diagnosticRun,'persistence',{state:'complete'});
                       }
-                      catch (error) { context.persistenceError=['QuotaExceededError','InvalidStateError','AbortError','UnknownError','DataCloneError','NotFoundError','TransactionInactiveError','SecurityError'].includes(error?.name)?error.name:null; if(typeof ThundyApiDiagnostics!=='undefined')ThundyApiDiagnostics.event(context.diagnosticRun,'persistence',{state:'failed',reason:context.persistenceError||error?.code||'storage_failed'}); context.persistenceFailed = true; context.persistenceReason = ['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes'].includes(error?.code) ? error.code : 'storage_failed'; Logger.warn('Analysis source metadata could not be persisted'); }
+                      catch (error) { context.persistenceError=['QuotaExceededError','InvalidStateError','AbortError','UnknownError','DataCloneError','NotFoundError','TransactionInactiveError','SecurityError'].includes(error?.name)?error.name:null; if(typeof ThundyApiDiagnostics!=='undefined')ThundyApiDiagnostics.event(context.diagnosticRun,'persistence',{state:'failed',reason:context.persistenceError||error?.code||'storage_failed'}); context.sourceSessionOnly = ['snapshot_count','snapshot_bytes'].includes(error?.code);context.persistenceFailed = !context.sourceSessionOnly; context.persistenceReason = ['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes'].includes(error?.code) ? error.code : 'storage_failed'; Logger.warn('Analysis source metadata could not be persisted'); }
                     });
                     await persistenceQueue;
                     const snapshot = await context.snapshot();
@@ -399,7 +432,8 @@ const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist', 'externalAnalysisConsent','scanMode']);
+    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist', 'externalAnalysisConsent','scanMode','disabledProviders','ipReputationEnabled']);
+    providerPreferences = {disabledProviders:result.disabledProviders,ipReputationEnabled:result.ipReputationEnabled};
     if (result.virustotalApikey !== undefined) {
       apikey_virustotal = result.virustotalApikey;
     }
@@ -483,17 +517,24 @@ for (const event of [browser.permissions?.onAdded,browser.permissions?.onRemoved
 // Listener für Änderungen an den Einstellungen (API Key)
 browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local') {
-    if(changes.analysisDefaultView||changes.analysisShowHybridDetails)for(const ready of messageAnalyses.values())Promise.resolve(ready).then(context=>context.schedule()).catch(()=>{});
-    if (typeof ThundyScans !== 'undefined' && ['scanMode','alwaysManual','autoScanLinks','externalAnalysisConsent','privacyTier','scanningEnabledSenders','apikey','virustotalApikey','urlscanApikey','urlhausApikey','ipReputationProvider','ipReputationApiKey'].some(key=>changes[key])) { ThundyScans.reconfigure();apiGateway.abortAll(); }
+    if (['externalAnalysisConsent','privacyTier','disabledProviders','apikey','urlscanApikey'].some(key => changes[key])) providerTransfers.clear();
+    const providerSwitchChanged = !!(changes.disabledProviders || changes.ipReputationEnabled);
+    for (const key of ['disabledProviders','ipReputationEnabled']) {
+        if (changes[key]) providerPreferences[key] = changes[key].newValue;
+    }
+    if (changes.ipReputationProvider) ipReputationProvider = changes.ipReputationProvider.newValue || 'none';
+    if (changes.ipReputationApiKey) ipReputationApiKey = changes.ipReputationApiKey.newValue || '';
+    if(providerSwitchChanged||changes.analysisDefaultView||changes.analysisShowHybridDetails)for(const ready of messageAnalyses.values())Promise.resolve(ready).then(context=>context.schedule()).catch(()=>{});
+    if (typeof ThundyScans !== 'undefined' && (providerSwitchChanged || ['scanMode','alwaysManual','autoScanLinks','externalAnalysisConsent','privacyTier','scanningEnabledSenders','apikey','virustotalApikey','urlscanApikey','urlhausApikey','ipReputationProvider','ipReputationApiKey'].some(key=>changes[key]))) { ThundyScans.reconfigure();apiGateway.abortAll(); }
     if (changes.thundySecurityV1) {
         for (const ready of messageAnalyses.values()) Promise.resolve(ready).then(async context => {
             for (const tabId of context.tabs || []) { try { const current=await getFirstDisplayedMessage(tabId,{throwOnError:true});if(current?.id===context.messageId) await injectTimeOfClickProtection(tabId,[],current.id); }catch(_){} }
         }).catch(()=>{});
     }
-    if ((changes.externalAnalysisConsent && changes.externalAnalysisConsent.newValue !== true) || changes.privacyTier) {
+    if ((changes.externalAnalysisConsent && changes.externalAnalysisConsent.newValue !== true) || changes.privacyTier || providerSwitchChanged && typeof ThundyScans === 'undefined') {
       if (typeof apiGateway.abortAll === 'function') apiGateway.abortAll();
     }
-    if (['externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey', 'apikey', 'virustotalApikey', 'urlhausApikey', 'urlscanApikey'].some(key => changes[key])) {
+    if (providerSwitchChanged || ['externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey', 'apikey', 'virustotalApikey', 'urlhausApikey', 'urlscanApikey'].some(key => changes[key])) {
       urlhausCache.clear(); ipReputationCache.clear(); vtCache.clear();
     }
   }
@@ -591,62 +632,8 @@ function extractPublicIPs(receivedHeaders) {
 
 
 
-async function processAndUploadUrls(message, filteredUrls, allowExternal = true, manualAction = false, analysisContext = null) {
+async function processAndUploadUrls(message, filteredUrls) {
     await indexedDB_save_links_to_db(message, filteredUrls);
-    if (allowExternal && (manualAction || (!alwaysManual && autoScanLinks)) && privacyTier === 'max' && mayTransmitExternally()) {
-        try {
-            await requireHostPermission('https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis');
-        } catch (e) {
-            Logger.warn('Skipping URL upload: host permission missing', e);
-            return;
-        }
-        const urlResults = [];
-        const concurrencyLimit = 5;
-        let i = 0;
-
-        async function worker() {
-            while (i < filteredUrls.length) {
-                const index = i++;
-                const url = filteredUrls[index];
-
-                let result = { url: url, state: 'UNKNOWN' };
-                try {
-                    const formBody = new URLSearchParams();
-                    formBody.append('scan_type', 'all');
-                    formBody.append('url', url);
-
-                    const options = getHybridAnalysisOptions('POST', formBody, true);
-                    options.analysisContext = analysisContext?.forLinks ? await analysisContext.forLinks([url]) : analysisContext;
-                    options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis';
-                    const response = await apiGateway.fetchWithTimeout(options.url, options);
-                    if (response.status === 200 || response.status === 201) {
-                        const json_data = await response.json();
-                        const quickReport = typeof quickScanReport === 'function' ? quickScanReport(json_data) : null;
-                        result = {
-                            url: url,
-                            state: 'UPLOADED',
-                            hybrid_quick_scan_id: typeof json_data.id==='string'?json_data.id:null,
-                            hybrid_submission_id: json_data.submission_id || json_data.id,
-                            hybrid_job_id: json_data.job_id || (Array.isArray(json_data.reports) && json_data.reports[0]) || json_data.id,
-                            hybrid_sha256: json_data.sha256,
-                            ...(quickReport && { report: quickReport, report_fetched_at: new Date().toISOString() })
-                        };
-                    }
-                } catch (e) {
-                    Logger.error('Automatic URL upload failed');
-                }
-                urlResults[index] = result;
-            }
-        }
-
-        const workers = [];
-        for (let j = 0; j < Math.min(concurrencyLimit, filteredUrls.length); j++) {
-            workers.push(worker());
-        }
-        await Promise.all(workers);
-
-        await indexedDB_save_links_objects_to_db(message, urlResults);
-    }
 }
 
 
@@ -654,7 +641,7 @@ async function processAndUploadUrls(message, filteredUrls, allowExternal = true,
 async function checkIPReputation(receivedHeaders, analysisContext = null) {
     if (analysisContext && typeof ThundyAnalysis !== 'undefined') analysisContext = ThundyAnalysis.bind(analysisContext, ['message']);
     let maliciousIps = [];
-    if (ipReputationProvider !== "none" && ipReputationApiKey) {
+    if (ipReputationProvider !== "none" && ipReputationApiKey && providerEnabled(ipReputationProvider,"ip")) {
         // Without consent or without the host permission nothing is transmitted -
         // and, importantly, nothing is cached either: a cached "not malicious"
         // from the un-consented period would hide results forever (see P2-24 in
@@ -773,7 +760,7 @@ async function persistScanCoverage(message, kind, coverage) {
 
 async function checkURLhausDomains(filteredUrls, parsedUrlCache = null, coverage = null, analysisContext = null) {
     let urlhausDomains = [];
-    if (urlhausApikey && filteredUrls.length > 0 && mayTransmitExternally()) {
+    if (urlhausApikey && providerEnabled("urlhaus") && filteredUrls.length > 0 && mayTransmitExternally()) {
         let linkDomainsSet = new Set();
         // ⚡ Bolt Optimization: Use indexed loop and inline cache check to reduce function call overhead
         for (let i = 0; i < filteredUrls.length; i++) {
@@ -1010,7 +997,10 @@ function incidentLinkEvidence(record, url, live) {
         const row = {...entry,verdict,source};
         if (!previous) rows.push(row);
         else if (rank[verdict] > rank[previous.verdict] ||
-            rank[verdict] === rank[previous.verdict] && (source === 'live' || (row.observedAt ?? -1) > (previous.observedAt ?? -1))) rows[index] = row;
+            rank[verdict] === rank[previous.verdict] && (source === 'live' || (row.observedAt ?? -1) > (previous.observedAt ?? -1))) {
+            if (!row.detections?.length && row.reference && row.reference === previous.reference && verdict === previous.verdict) row.detections = previous.detections;
+            rows[index] = row;
+        }
     };
     for (const entry of currentRows) keep(entry,'stored');
     for (const archive of Array.isArray(record?.analysisReportArchive?.entries) ? record.analysisReportArchive.entries : []) {
@@ -1026,7 +1016,8 @@ function incidentLinkEvidence(record, url, live) {
         const verdict = {CLEAN:'none',SUSPICIOUS:'suspicious',MALICIOUS:'malicious',MALICIOUS_VISUAL:'malicious'}[live.status];
         const provider = live.provider === 'Hybrid Analysis' ? 'hybridanalysis' : live.provider === 'urlscan.io' ? 'urlscan' : null;
         if (provider) keep({provider,verdict,reference:provider === 'hybridanalysis' ? current?.hybrid_sha256 : live.scanUuid,
-            jobId:current?.hybrid_job_id,observedAt:live.check.observedAt,completion:live.check.outcome === 'success' ? 'complete' : 'unknown'},'live');
+            jobId:current?.hybrid_job_id,observedAt:live.check.observedAt,completion:live.check.outcome === 'success' ? 'complete' : 'unknown',
+            detections:live.detections},'live');
     }
     return rows;
 }
@@ -1136,6 +1127,7 @@ function recordLocalCoverage(context, coverage, threat = null, assessment = thre
   if(previous?.runtimeId===assessment.runtimeId&&previous.revision>=assessment.revision)return false;
   context.model.data.local = {...coverage,source:'local',observedAt:assessment.observedAt,assessment,...(threat ? {
     score:threat.score,heuristicScore:threat.heuristicScore,riskModelVersion:threat.riskModelVersion,
+    localRawScore:threat.localRawScore,localContributions:threat.localContributions,
     reasons:threat.reasons.slice(0,20),heuristicReasons:threat.heuristicReasons?.slice(0,20),providerReasons:threat.providerReasons?.slice(0,20),
     archivedAttachmentReasons:threat.archivedAttachmentReasons?.slice(0,20)
   } : {})};
@@ -1273,6 +1265,8 @@ function messageListToArray(messages) {
 // Hauptfunktion: Wird ausgelöst, wenn Nachrichten angezeigt werden
 // (MV3: messageDisplay.onMessagesDisplayed liefert eine MessageList)
 async function tab_mail_open_display(tab, messages) {
+    for (const [id, entry] of providerTransfers) if (entry.tabId === tab?.id) providerTransfers.delete(id);
+    if (typeof ThundyI18n !== 'undefined' && ThundyI18n.ready) await ThundyI18n.ready;
   for (const message of messageListToArray(messages)) {
     await handleDisplayedMessage(tab, message);
   }
@@ -1292,7 +1286,7 @@ async function handleDisplayedMessage(tab, message) {
     const permission = await hasHybridPermission();
     const allowExternal = await authorizeMessageScan(message);
     const canAutoUpload = permission && enabledSenders.includes(senderEmail) && !alwaysManual &&
-      !!apikey_hybridanalysis && mayTransmitExternally();
+      !!apikey_hybridanalysis && providerEnabled("hybridanalysis") && mayTransmitExternally();
 
     let fullMessage = await readFullForAnalysis(message);
     let attachments = [];
@@ -1465,56 +1459,8 @@ class HybridDataBuilder {
     }
 }
 
-async function handle_unknown_attachment({ attachment, content_of_attachment, local_hash, virustotal_stats, privacyTier, fileType, analysisContext = null }) {
-    if ((privacyTier === 'balanced' || privacyTier === 'max') && mayTransmitExternally()) {
-        try {
-            // The upload must be covered by the host permission the user granted
-            // when saving the key, and it must go through the shared gateway so
-            // the timeout/rate-limit handling applies (P1-12).
-            await requireHostPermission('https://hybrid-analysis.com/api/v2/quick-scan/file');
-            const file_to_submit = new File([content_of_attachment], attachment.name, { type: fileType || 'application/octet-stream' });
-            const formData = new FormData();
-            formData.append('scan_type', 'all');
-            formData.append('file', file_to_submit);
-
-            const uploadOptions = getHybridAnalysisOptions('POST', formData);
-            uploadOptions.analysisContext = analysisContext;
-            uploadOptions.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
-            const uploadResponse = await apiGateway.fetchWithTimeout(uploadOptions.url, uploadOptions, 60000);
-            if (uploadResponse.status === 200 || uploadResponse.status === 201) {
-                const uploadData = await uploadResponse.json();
-                const hybridData = HybridDataBuilder.create(
-                    uploadData.submission_id || uploadData.id,
-                    uploadData.job_id || (Array.isArray(uploadData.reports) && uploadData.reports[0]) || uploadData.id,
-                    uploadData.sha256 || local_hash,
-                    'UPLOADED',
-                    attachment,
-                    virustotal_stats
-                );
-                hybridData.hybrid_data.quick_scan_id = typeof uploadData.id==='string'?uploadData.id:null;
-                const quickReport = typeof quickScanReport === 'function' ? quickScanReport(uploadData) : null;
-                if (quickReport) {
-                    hybridData.report = quickReport;
-                    hybridData.report_fetched_at = new Date().toISOString();
-                }
-                return hybridData;
-            } else {
-                Logger.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
-            }
-        } catch (uploadError) {
-            Logger.error('Ausnahme beim automatischen Upload, falle auf manuell zurück.', uploadError);
-        }
-    }
-
-    const pendingData = HybridDataBuilder.create(
-        'PENDING_UPLOAD',
-        'PENDING_UPLOAD',
-        local_hash,
-        'UNKNOWN',
-        attachment,
-        virustotal_stats
-    );
-    return pendingData;
+function handle_unknown_attachment({ attachment, local_hash, virustotal_stats }) {
+    return create_manual_check_hybrid_data(local_hash, attachment, virustotal_stats);
 }
 
 
@@ -1601,9 +1547,9 @@ async function process_single_attachment(message, attachment, allowExternal = tr
             const local_hash = await get_sha256_hash(arrayBuffer);
             if (analysisContext?.forAttachment) analysisContext = analysisContext.forAttachment(attachment.partName, attachment.name, local_hash);
 
-            const virustotal_stats = allowExternal ? await fetch_virustotal_stats(local_hash, apikey_virustotal, analysisContext) : null;
+            const virustotal_stats = allowExternal && providerEnabled('virustotal') ? await fetch_virustotal_stats(local_hash, apikey_virustotal, analysisContext) : null;
 
-            if (!allowExternal || (alwaysManual && !manualAction) || !apikey_hybridanalysis || !mayTransmitExternally()) {
+            if (!allowExternal || (alwaysManual && !manualAction) || !apikey_hybridanalysis || !providerEnabled("hybridanalysis") || !mayTransmitExternally()) {
                 return create_manual_check_hybrid_data(local_hash, attachment, virustotal_stats);
             }
 
@@ -1807,7 +1753,7 @@ if (browser.messageDisplay && browser.messageDisplay.onMessagesDisplayed) {
     Logger.error('messageDisplay.onMessagesDisplayed is unavailable in this Thunderbird version');
 }
 
-function createContextMenus() {
+function createContextMenus(update = false) {
     if (!browser.menus || typeof browser.menus.create !== 'function') return;
     const menus = [
         {
@@ -1827,6 +1773,10 @@ function createContextMenus() {
     );
     for (const menu of menus) {
         try {
+            if (update) {
+                browser.menus.update?.(menu.id, { title: menu.title })?.catch(error => Logger.warn('Could not translate context menu entry', menu.id, error));
+                continue;
+            }
             // menus.create is asynchronous: a synchronous try/catch cannot catch
             // duplicate-ID errors, so the returned promise is handled as well.
             const created = browser.menus.create(menu);
@@ -1863,36 +1813,32 @@ async function scanLinksOfDisplayedMessage(tabId) {
     try {
         assertExternalAnalysisAllowed();
         const fullMessage = await readFullForAnalysis(message);
-        const text = extractTextFromParts(fullMessage.parts || fullMessage);
-        const rawUrls = extractUrls(text);
-        const urls = filterUrls(rawUrls);
+        const urls = filterUrls(messageUrlInventory(fullMessage));
         if (urls.length === 0) {
             notify('notificationTitle', 'notificationNoLinks', []);
             return;
         }
         const analysisContext = await getMessageAnalysisContext(message, tabId);
-        const messageKey = (typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id);
-        let submitted = 0;
-        for (const url of urls.slice(0, 20)) {
-            try {
-                await handleUrlScan(url, messageKey, analysisContext);
-                submitted++;
-            } catch (e) {
-                Logger.error('Could not submit link for analysis', e);
-            }
-        }
-        const coverage = scanCoverage(urls.length, urls.length, submitted, Math.min(urls.length, 20) - submitted, 'batch_limit_20');
-        await persistScanCoverage(message, 'batchLinks', coverage);
-        if (submitted > 0 && typeof evaluateAndInjectThreats === 'function') {
-            await evaluateAndInjectThreats({ tab: { id: tabId }, message, fullMessage, urls: rawUrls, filteredUrls: urls, messageText: text, allowExternal: false, analysisContext }).catch(() => {});
-        }
-        notify('notificationTitle', 'coverageSummary', [coverage.detected, coverage.eligible, coverage.processed, coverage.failed, coverage.skipped].map(String));
+        await indexedDB_save_links_to_db(message, urls.slice(0, 100));
+        await checkURLhausDomains(urls.slice(0, 100), null, null, analysisContext);
+        notify('notificationTitle', 'transferUsePopup');
     } catch (e) {
         notify('notificationTitleError', 'notificationScanError', [e.message]);
     }
 }
 
-createContextMenus();
+if (typeof ThundyI18n !== 'undefined' && ThundyI18n.ready) {
+    ThundyI18n.ready.then(() => {
+        const localizeActions = update => {
+            createContextMenus(update);
+            browser.messageDisplayAction?.setTitle?.({ title: msg('actionTitle') })?.catch(error => Logger.warn('Could not translate the toolbar action', error));
+        };
+        localizeActions(false);
+        ThundyI18n.onChange(() => localizeActions(true));
+    });
+} else {
+    createContextMenus();
+}
 
 // Attachment menus can report the internal about:message tab instead of the
 // enclosing API tab. Bind that menu to its active message before a click.
@@ -1939,17 +1885,12 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
             return;
         }
 
-        notify('notificationTitle', 'notificationScanStarted', [describeUrlForUser(url)]);
-
         try {
-            // Need a dummy headerMessageId as context menu might be clicked outside standard flow
-            // or we just fetch the active message
             const activeMessage = await getFirstDisplayedMessage(tab && tab.id);
-            let msgId = activeMessage ? (typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(activeMessage) : activeMessage.headerMessageId || 'message:' + activeMessage.id) : "context_menu_scan";
-
-            let result = await handleUrlScan(url, msgId, activeMessage ? await getMessageAnalysisContext(activeMessage, tab?.id) : null);
-
-            notify('notificationTitle', 'notificationScanSubmitted', [String(result.job_id || (Array.isArray(result.reports) && result.reports[0]) || result.id || result.submission_id || result.sha256 || 'OK')]);
+            if (activeMessage && messageUrlInventory(await readFullForAnalysis(activeMessage)).includes(canonicalHttpUrl(url))) {
+                await checkURLhausDomains(filterUrls([url]), null, null, await getMessageAnalysisContext(activeMessage, tab?.id));
+            }
+            notify('notificationTitle', 'transferUsePopup');
         } catch (error) {
             notify('notificationTitleError', 'notificationScanError', [error.message]);
         }
@@ -1961,7 +1902,7 @@ function safeUrlscanReport(value) {
     return /^https:\/\/urlscan\.io\/result\/[A-Za-z0-9_-]{1,128}\/?$/i.test(url) ? url : null;
 }
 
-async function persistUrlscanLinkResult(message, url, res) {
+async function persistUrlscanLinkResult(message, url, res, strict = false, expectedUuid = null) {
     if (message && !message.headerMessageId && message.id != null) message={...message,headerMessageId:typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : 'message:' + message.id};
     if (!message || !message.headerMessageId || !res || !res.status) return;
     try {
@@ -1970,13 +1911,19 @@ async function persistUrlscanLinkResult(message, url, res) {
         const attemptedAt = Date.now();
         const reportUrl = safeUrlscanReport(res.reportUrl);
         await updateStore(db, 'hybridanalysis', message.headerMessageId, existingRecord => {
-            if (!existingRecord || !Array.isArray(existingRecord.links)) return existingRecord;
+            if (!existingRecord || !Array.isArray(existingRecord.links)) {
+                if (strict) throw Error('MESSAGE_CONTEXT_CHANGED');
+                return existingRecord;
+            }
+            let matched = false;
             for (const item of existingRecord.links) {
-                if (item && sameAnalysisUrl(item.url,url)) {
+                if (item && sameAnalysisUrl(item.url,url) && (!expectedUuid || item.urlscan?.uuid === expectedUuid)) {
+                    matched = true;
                     item.urlscan = ThundyProviderResults.urlscanRecord({
                         status:res.status,
                         ...(res.terminal===true?{terminal:true}:{}),
                         ...(res.assessment?.assessmentVersion===1?{assessment:res.assessment}:{}),
+                        ...(res.detections?.length ? {detections:ThundyProviderResults.projectDetections(res.detections)} : {}),
                         ...(typeof res.uuid==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(res.uuid)?{uuid:res.uuid}:{}),
                         reasons:Array.isArray(res.reasons)?res.reasons:[],
                         ...(res.errorCode?{errorCode:res.errorCode}:{}),
@@ -1984,15 +1931,17 @@ async function persistUrlscanLinkResult(message, url, res) {
                     },item.urlscan,attemptedAt);
                 }
             }
+            if (strict && !matched) throw Error('MESSAGE_CONTEXT_CHANGED');
             existingRecord.updatedAt = attemptedAt;
             return existingRecord;
         }, messageReportOptions(message,{preserveReports:true}));
     } catch (e) {
+        if (strict) throw e;
         Logger.error('Fehler beim Speichern des urlscan.io-Ergebnisses:', e);
     }
 }
 
-async function persistHybridLinkVerdict(message, url, result) {
+async function persistHybridLinkVerdict(message, url, result, expected = null) {
     if (message && !message.headerMessageId && message.id != null) message={...message,headerMessageId:typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : 'message:' + message.id};
     if (!message || !message.headerMessageId || !url || !result || !result.status) return;
     try {
@@ -2000,9 +1949,11 @@ async function persistHybridLinkVerdict(message, url, result) {
         await updateStore(await getSharedDB(), 'hybridanalysis', message.headerMessageId, existingRecord => {
             if (!existingRecord || !Array.isArray(existingRecord.links)) return existingRecord;
             for (const item of existingRecord.links) {
-                if (item && sameAnalysisUrl(item.url,url)) {
+                if (item && sameAnalysisUrl(item.url,url) && (!expected ||
+                    item.hybrid_sha256 === expected.hybrid_sha256 && hybridLinkScanId(item) === hybridLinkScanId(expected))) {
                     if (result.check?.outcome !== 'success' && item.hybrid_verdict?.status === 'MALICIOUS' && result.status !== 'MALICIOUS') continue;
-                    item.hybrid_verdict = {status:result.status,observedAt,completion:result.check?.outcome === 'success'?'complete':'incomplete'};
+                    item.hybrid_verdict = {status:result.status,observedAt,completion:result.check?.outcome === 'success'?'complete':'incomplete',
+                        ...(result.detections?.length ? {detections:result.detections} : {})};
                 }
             }
             existingRecord.updatedAt = observedAt;
@@ -2013,7 +1964,94 @@ async function persistHybridLinkVerdict(message, url, result) {
     }
 }
 
-async function handleCheckLinkState(request, sender, sendResponse) {
+function hybridLinkScanId(link) {
+    return link?.hybrid_quick_scan_id || link?.hybrid_submission_id || link?.hybrid_job_id || null;
+}
+
+function linkScanSummary(item, evidence, live = {}) {
+    const providers = [
+        ['hybridanalysis',item?.hybrid_sha256 || hybridLinkScanId(item),item?.assessment,item?.report],
+        ['urlscan',item?.urlscan?.uuid,item?.urlscan?.assessment,null]
+    ];
+    return providers.flatMap(([provider,reference,saved,report]) => {
+        const row = evidence.find(entry=>entry.provider === provider);
+        const answer = live[provider];
+        if (!reference && !saved && !report && !row) return [];
+        const projected = answer?.assessment || (report ? ThundyProviderResults.stored(provider,item) : ThundyProviderResults.project(saved));
+        const current = (answer?.status ? {CLEAN:'no_detection',MALICIOUS:'malicious',MALICIOUS_VISUAL:'malicious',SUSPICIOUS:'suspicious'}[answer.status] : null) ||
+            (projected?.verdict === 'none' ? 'no_detection' : projected?.verdict) || 'unknown';
+        const completion = answer?.check?.outcome === 'success' ? 'complete' : projected?.completion ||
+            (provider === 'hybridanalysis' && item?.hybrid_verdict?.completion) || (reference ? 'pending' : 'unknown');
+        const safeReference = String((row?.source === 'archive' && row.reference) || reference || row?.reference || '');
+        const reportBound = /^[A-Za-z0-9_-]{1,128}$/.test(safeReference);
+        return [{provider,verdict:row?.verdict || current,completion,source:row?.source || (answer?.check?.origin === 'live' ? 'live' : 'stored'),
+            observedAt:row?.observedAt ?? answer?.check?.observedAt ?? null,check:answer?.check || null,
+            reference:reportBound ? safeReference : null,
+            detections:ThundyProviderResults.projectDetections([...(row?.detections || []),...(answer?.detections || [])]),
+            signals:projected?.signals || [],conflicts:projected?.conflicts || [],
+            report:provider === 'hybridanalysis' && /^[a-f0-9]{64}$/i.test(safeReference) && (report || row) ?
+                'https://hybrid-analysis.com/sample/'+safeReference : provider === 'urlscan' && reportBound && row ?
+                    'https://urlscan.io/result/'+safeReference+'/' : null,
+            details:provider === 'hybridanalysis' && row?.source !== 'archive' ?
+                answer?.details || (report ? ThundyProviderResults.hybridDetails(report,safeReference) : null) : null}];
+    });
+}
+
+async function refreshAcceptedLinkScans(item, message, context, click) {
+    const live = {};
+    if (!click.waitForResults || !item || !mayTransmitExternally() || !tierAtLeast('max') || click.signal.aborted) return live;
+    const deadline = click.deadline - 1000;
+    const remaining = () => Math.max(0,deadline-Date.now());
+    const scoped = {...context,signal:click.signal,skipRateLimitWait:true,event:event=>context?.event?.(event)};
+    const requireDisplayedMessage = async () => {
+        if (!click.signal.aborted && (await getFirstDisplayedMessage(click.tabId))?.id === message.id) return;
+        throw Error('MESSAGE_CONTEXT_CHANGED');
+    };
+    const tasks = [];
+    if ((item.hybrid_sha256 || hybridLinkScanId(item)) && apikey_hybridanalysis && providerEnabled('hybridanalysis') &&
+        !ThundyProviderResults.linkObservations(item).some(row=>row.provider === 'hybridanalysis' && row.completion === 'complete' && row.verdict !== 'unknown')) {
+        tasks.push((async()=>{
+            while (!click.signal.aborted && remaining() > 0 && mayTransmitExternally() && tierAtLeast('max')) {
+                await requireDisplayedMessage();
+                scoped.guard?.();
+                const answer = await checkHybridAnalysisResult(item.hybrid_sha256,null,{
+                    analysisContext:scoped,quickScanId:hybridLinkScanId(item),timeout:Math.min(remaining(),10000)
+                });
+                live.hybridanalysis = answer;
+                if (['CLEAN','MALICIOUS','SUSPICIOUS'].includes(answer.status)) {
+                    if (!click.signal.aborted) await persistHybridLinkVerdict(message,item.url,answer,item);
+                    return;
+                }
+                if (!['incomplete','not_found'].includes(answer.check.outcome)) return;
+                await apiGateway.pause(Math.min(2500,remaining()),click.signal);
+            }
+        })());
+    }
+    const uuid = item.urlscan?.uuid;
+    if (typeof uuid === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(uuid) && item.urlscan?.assessment?.completion !== 'complete' &&
+        !item.urlscan.terminal && urlscanApikey && providerEnabled('urlscan') && remaining() > 0) {
+        tasks.push((async()=>{
+            const endpoint = 'https://urlscan.io/api/v1/result/'+encodeURIComponent(uuid)+'/';
+            let result;
+            try { await requireHostPermission(endpoint); }
+            catch (_) { result = {status:'ERROR',errorCode:'permission_denied'}; }
+            await requireDisplayedMessage();
+            const cooldown = apiGateway.getBackoff('urlscan.io:result') || apiGateway.getBackoff('urlscan.io');
+            if (!result && cooldown) result = {status:'ERROR',errorCode:'rate_limited',httpStatus:429,retryAfter:cooldown.remainingSeconds};
+            result ??= await pollUrlscanIoResult(uuid,urlscanApikey,scoped,{requestedUrl:item.url,maxTime:remaining(),preflight:requireDisplayedMessage});
+            const outcome = ({rate_limited:'rate_limited', invalid_key:'invalid_key', timeout:'incomplete'})[result.errorCode] ||
+                (result.errorCode==='permission_denied' ? 'permission_denied' : result.assessment?.completion === 'complete' ? 'success' : 'failed');
+            const observedAt = ['CLEAN','MALICIOUS','MALICIOUS_VISUAL','SUSPICIOUS'].includes(result.status) ? Date.now() : null;
+            live.urlscan = {...result,details:null,scanUuid:uuid,check:{origin:observedAt === null ? 'none' : 'live',outcome,observedAt,
+                errorCode:result.errorCode,retryAfter:result.retryAfter,httpStatus:result.httpStatus}};
+            if (!click.signal.aborted && observedAt !== null) await persistUrlscanLinkResult(message,item.url,{...result,uuid},true,uuid);
+        })());
+    }
+    await Promise.allSettled(tasks);
+    return live;
+}
+
+async function handleCheckLinkState(request, sender, sendResponse, click) {
     try {
         // Need to find the active message to get headerMessageId
         let message = await getFirstDisplayedMessage(sender && sender.tab && sender.tab.id, { throwOnError: true });
@@ -2029,17 +2067,45 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         const linkObj = Array.isArray(record?.links) ? record.links.find(item => item && sameAnalysisUrl(item.url, request.url)) : null;
         const url = canonicalHttpUrl(request.url);
 
-        const forward=sendResponse;let incompleteProvider=false;
+        const forward=sendResponse;let incompleteProvider=false, live={};
         sendResponse=async result=>{
             let latest = record;
             try { latest = await getFromStore(db, 'hybridanalysis', message.headerMessageId, reportOptions); }
             catch (_) { incompleteProvider = true; }
+            const current = (Array.isArray(latest?.links) ? latest.links : []).find(item=>sameAnalysisUrl(item?.url,url));
+            if (click && click.waitForResults !== undefined) {
+                if (current?.urlscan?.uuid !== linkObj?.urlscan?.uuid) delete live.urlscan;
+                if (current?.hybrid_sha256 !== linkObj?.hybrid_sha256 || hybridLinkScanId(current) !== hybridLinkScanId(linkObj)) delete live.hybridanalysis;
+                const known = Object.entries(live).filter(([,row])=>['CLEAN','MALICIOUS','MALICIOUS_VISUAL','SUSPICIOUS'].includes(row.status));
+                const chosen = known.find(([,row])=>['MALICIOUS','MALICIOUS_VISUAL'].includes(row.status)) ||
+                    known.find(([,row])=>row.status==='SUSPICIOUS') || known[0];
+                const stored = incidentLinkEvidence(latest,url,null).find(row=>row.verdict==='no_detection' && row.completion==='complete');
+                const providerName = provider=>provider==='urlscan'?'urlscan.io':'Hybrid Analysis';
+                result = chosen ? {...chosen[1],provider:providerName(chosen[0])} : {
+                    status:stored ? 'CLEAN' : 'UNKNOWN',provider:stored ? providerName(stored.provider) : 'none',
+                    check:{origin:stored?'stored':'none',outcome:stored?'success':'not_requested',observedAt:stored?.observedAt ?? null}
+                };
+            }
             const fact=savedLinkAssessments(latest,new Set([url])).get(url) || {},rank={unknown:0,none:1,suspicious:2,malicious:3},status=({MALICIOUS:'malicious',MALICIOUS_VISUAL:'malicious',SUSPICIOUS:'suspicious',CLEAN:'none'})[result.status]||'unknown';
             if(rank[fact.verdict]>rank[status]&&['malicious','suspicious'].includes(fact.verdict))result={...result,status:fact.verdict==='malicious'?'MALICIOUS':'SUSPICIOUS',provider:fact.provider==='hybridanalysis'?'Hybrid Analysis':'urlscan.io',retainedFinding:true,check:{...result.check,origin:'stored',outcome:result.check?.outcome||'success',observedAt:fact.observedAt}};
             else if(result.status==='CLEAN'&&(incompleteProvider||typeof ThundyScans!=='undefined'&&ThundyScans.get?.(message.id)?.assessmentIncomplete))result={...result,status:'UNKNOWN',check:{...result.check,outcome:'incomplete'}};
             const withEvidence = request.interactionId && typeof ThundyManagedPolicy !== 'undefined' &&
                 (await ThundyManagedPolicy.read()).reporting?.details;
-            if (withEvidence && url) {
+            if (click && url) {
+                const evidence = incidentLinkEvidence(latest,url,result);
+                const rows = linkScanSummary(current,evidence,live);
+                const detected = rows.find(row=>row.verdict==='malicious') || rows.find(row=>row.verdict==='suspicious');
+                const limited = rows.find(row=>row.check?.outcome === 'rate_limited');
+                const pending = rows.some(row=>row.completion === 'pending');
+                if (detected && !['MALICIOUS','MALICIOUS_VISUAL'].includes(result.status)) result={...result,
+                    status:detected.verdict==='malicious'?'MALICIOUS':'SUSPICIOUS',provider:detected.provider==='urlscan'?'urlscan.io':'Hybrid Analysis',
+                    check:detected.check || {origin:detected.source === 'archive' ? 'stored' : detected.source,outcome:detected.completion === 'complete' ? 'success' : 'incomplete',observedAt:detected.observedAt}};
+                const unfinished = pending || rows.some(row=>row.completion !== 'complete' || row.verdict === 'unknown');
+                if (limited || unfinished) result={...result,status:result.status==='CLEAN'?'UNKNOWN':result.status,
+                    check:limited?.check || {...result.check,outcome:'incomplete'}};
+                const {scanUuid,details,detections,assessment,...publicResult} = result;
+                await forward({...publicResult,scans:rows,pending,attempted:rows.length>0,...(withEvidence ? {incidentEvidence:evidence} : {})});
+            } else if (withEvidence && url) {
                 const {scanUuid,...publicResult} = result;
                 await forward({...publicResult,incidentEvidence:incidentLinkEvidence(latest,url,result)});
             } else {
@@ -2047,44 +2113,18 @@ async function handleCheckLinkState(request, sender, sendResponse) {
                 await forward(publicResult);
             }
         };
+        if (click && click.waitForResults !== undefined) {
+            if (click.waitForResults && linkObj) {
+                const context = await getMessageAnalysisContext(message,sender?.tab?.id);
+                const analysisContext = context?.forLinks ? await context.forLinks([linkObj.url]) : context;
+                live = await refreshAcceptedLinkScans(linkObj,message,analysisContext,{...click,tabId:sender.tab.id});
+            }
+            await sendResponse({});
+            return;
+        }
         const messageContext = await getMessageAnalysisContext(message, sender?.tab?.id);
         if (messageContext && !linkObj) await indexedDB_save_links_to_db(message, [request.url]);
         const analysisContext = messageContext?.forLinks ? await messageContext.forLinks([linkObj?.url || request.url]) : messageContext;
-        let urlscanAttempt = null;
-        // Time-of-Click Live Scan via urlscan.io
-        if (request.userAction === true && urlscanApikey && tierAtLeast('max') && (!linkObj || linkObj.state === 'UNKNOWN')) {
-            try {
-                const res = await checkUrlscanIo(request.url, urlscanApikey, analysisContext);
-                const status = res?.status === 'CLEAN' && res.assessment?.completion !== 'complete' ? 'UNKNOWN' : res?.status;
-                const hasFinding = ['MALICIOUS','MALICIOUS_VISUAL','SUSPICIOUS','CLEAN'].includes(status);
-                const completed = hasFinding && res?.assessment?.completion === 'complete';
-                const outcome = completed ? 'success' : status === 'NOT_CHECKED' ? 'not_requested' :
-                    ['rate_limited','invalid_key'].includes(res?.errorCode) ? res.errorCode :
-                    ['UNKNOWN','SUBMITTED','TIMEOUT'].includes(status) || hasFinding ? 'incomplete' : 'failed';
-                if (!completed && status !== 'NOT_CHECKED') incompleteProvider = true;
-                const attemptedAt = Date.now();
-                urlscanAttempt = {
-                    origin: hasFinding ? 'live' : 'none',
-                    outcome,
-                    errorCode: res?.errorCode || null,
-                    errorDetails: res?.details || null,
-                    httpStatus: res?.httpStatus || null,
-                    retryAfter: res?.retryAfter || null,
-                    attemptedAt,
-                    observedAt: hasFinding ? attemptedAt : null
-                };
-                if (res && status !== 'NOT_CHECKED') await persistUrlscanLinkResult(message, request.url, {...res,status});
-                if (hasFinding) {
-                    await sendResponse({ status, reasons: res.reasons, provider: 'urlscan.io', check: urlscanAttempt, scanUuid:res.uuid });
-                    return;
-                }
-            } catch (e) {
-                urlscanAttempt = { origin: 'none', outcome: 'failed', errorCode: 'fetch_failed', attemptedAt: Date.now(), observedAt: null };
-                incompleteProvider = true;
-                Logger.warn('urlscan.io click check failed');
-            }
-        }
-
         if (linkObj?.urlscan && ['MALICIOUS_VISUAL','MALICIOUS','SUSPICIOUS','CLEAN'].includes(linkObj.urlscan.status) &&
             (!linkObj.hybrid_sha256 || linkObj.state === 'UNKNOWN') &&
             (linkObj.urlscan.status !== 'CLEAN' || linkObj.urlscan.assessment?.completion === 'complete')) {
@@ -2116,11 +2156,8 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         } else {
             await sendResponse({
                 status: 'UNKNOWN',
-                provider: urlscanAttempt ? 'urlscan.io' : 'none',
-                errorDetails: urlscanAttempt?.errorDetails || null,
-                errorCode: urlscanAttempt?.errorCode || null,
-                retryAfter: urlscanAttempt?.retryAfter || null,
-                check: urlscanAttempt || { origin: 'none', outcome: !request.userAction ? 'not_requested' : !mayTransmitExternally() ? 'disabled' : 'missing_reference', attemptedAt: request.userAction ? Date.now() : null, observedAt: null }
+                provider: 'none',
+                check: { origin: 'none', outcome: !request.userAction ? 'not_requested' : !mayTransmitExternally() ? 'disabled' : 'missing_reference', attemptedAt: request.userAction ? Date.now() : null, observedAt: null }
             });
         }
     } catch (err) {
@@ -2137,6 +2174,7 @@ function validLinkRequest(request, sender, { checking = true } = {}) {
 // Message documents cannot navigate reliably. Use Thunderbird's external-browser API.
 async function handleOpenCheckedLink(request, sender, options) {
     try {
+        if (request.automatic === true && (!request.interactionId || typeof ThundyLinkSecurity === 'undefined')) return {success:false,code:'LINK_CHECK_REQUIRED'};
         const tabId = sender && sender.tab && sender.tab.id;
         if (tabId == null || request.messageId == null || typeof request.url !== 'string') return { success: false };
         const url = new URL(request.url);
@@ -2171,25 +2209,26 @@ function quickScanReport(json_data) {
 
 // Optional legacy fields never imply a known observation time. `created` on a
 // submission is not the time a provider observed its final verdict.
-async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { requested = true, observedAt = null, analysisContext = null, quickScanId = null } = {}) {
+async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { requested = true, observedAt = null, analysisContext = null, quickScanId = null, timeout } = {}) {
     const check = { origin: fallbackState ? 'stored' : 'none', outcome: 'not_requested', attemptedAt: requested ? Date.now() : null, observedAt: Number.isFinite(observedAt) ? observedAt : null };
     const fallback = () => ({ status: fallbackState || 'UNKNOWN', check });
     if (!requested) return fallback();
-    if (!mayTransmitExternally()) { check.outcome = 'disabled'; return fallback(); }
+    if (!mayTransmitExternally() || !providerEnabled('hybridanalysis')) { check.outcome = 'disabled'; return fallback(); }
     if (!apikey_hybridanalysis) { check.outcome = 'missing_key'; return fallback(); }
-    if (!hybrid_sha256) { check.outcome = 'missing_reference'; return fallback(); }
+    const qsId = quickScanId != null ? String(quickScanId) : '';
+    const qsUrl = /^[A-Za-z0-9_-]{1,128}$/.test(qsId) && !['MANUAL_CHECK','PENDING_UPLOAD','N/A'].includes(qsId) ?
+        'https://hybrid-analysis.com/api/v2/quick-scan/' + encodeURIComponent(qsId) : null;
+    if (!hybrid_sha256 && !qsUrl) { check.outcome = 'missing_reference'; return fallback(); }
     const options = getHybridAnalysisOptions('GET');
-    options.analysisContext = analysisContext ? { event: event => analysisContext.event(event), scopeOverride: 'url' } : null;
-    options.url = 'https://hybrid-analysis.com/api/v2/overview/' + encodeURIComponent(hybrid_sha256);
+    options.analysisContext = analysisContext ? {...analysisContext,event:event=>analysisContext.event?.(event),scopeOverride:'url'} : null;
+    options.url = hybrid_sha256 ? 'https://hybrid-analysis.com/api/v2/overview/' + encodeURIComponent(hybrid_sha256) : qsUrl;
     try { await requireHostPermission(options.url); }
     catch (error) { check.outcome = 'permission_denied'; return fallback(); }
     try {
-        let response = await apiGateway.fetchWithTimeout(options.url, options);
-        const qsId = quickScanId != null ? String(quickScanId) : '';
-        if (response.status === 404 && /^[A-Za-z0-9_-]{1,128}$/.test(qsId) && !['MANUAL_CHECK', 'PENDING_UPLOAD', 'N/A'].includes(qsId)) {
-            const qsUrl = 'https://hybrid-analysis.com/api/v2/quick-scan/' + encodeURIComponent(qsId);
+        let response = await apiGateway.fetchWithTimeout(options.url, options,timeout);
+        if (response.status === 404 && qsUrl && qsUrl !== options.url) {
             await requireHostPermission(qsUrl);
-            response = await apiGateway.fetchWithTimeout(qsUrl, { ...options, url: qsUrl });
+            response = await apiGateway.fetchWithTimeout(qsUrl, { ...options, url: qsUrl },timeout);
         }
         if (response.status === 404) {
             check.outcome = 'not_found';
@@ -2233,7 +2272,7 @@ async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { request
         const data = await response.json();
         const verdict = extractHybridVerdictFromOverview(data);
         const roots = Array.isArray(data) ? data : [data];
-        if (roots.some(row => row?.sha256 != null && String(row.sha256).toLowerCase() !== String(hybrid_sha256).toLowerCase())) {
+        if (hybrid_sha256 && roots.some(row => row?.sha256 != null && String(row.sha256).toLowerCase() !== String(hybrid_sha256).toLowerCase())) {
             check.outcome = 'failed';
             check.errorCode = 'resource_mismatch';
             return fallback();
@@ -2243,9 +2282,10 @@ async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { request
             roots.every(ThundyProviderResults.hybridCompletionConfirmed);
         if (!verdict || verdict === 'UNKNOWN' || verdict === 'CLEAN' && !complete) {
             check.outcome = assessment.completion === 'pending' ? 'incomplete' : 'no_result';
-            return fallback();
+            return timeout === undefined ? fallback() : {...fallback(),assessment};
         }
-        return { status: verdict, check: { ...check, origin: 'live', outcome: complete ? 'success' : 'incomplete', observedAt: Date.now() } };
+        return { status: verdict, check: { ...check, origin: 'live', outcome: complete ? 'success' : 'incomplete', observedAt: Date.now() },
+            ...(timeout === undefined ? {} : {assessment,details:ThundyProviderResults.hybridDetails(data),detections:ThundyProviderResults.hybridDetections(data)}) };
     } catch (error) {
         check.outcome = 'failed';
         check.errorCode = error instanceof SyntaxError ? 'invalid_response' : 'fetch_failed';
@@ -2363,6 +2403,112 @@ browser.runtime.onConnect?.addListener(port => {
     port.onDisconnect.addListener(stop);
 });
 
+async function currentTransferMessage(tabId, messageId) {
+    const [active] = await browser.tabs.query({active:true,currentWindow:true});
+    if (!Number.isSafeInteger(tabId) || active?.id !== tabId) throw typedError('MESSAGE_CONTEXT_CHANGED',msg('analysisContextChanged'));
+    const message = await getFirstDisplayedMessage(tabId, {throwOnError:true});
+    if (message?.id !== messageId) throw typedError('MESSAGE_CONTEXT_CHANGED',msg('analysisContextChanged'));
+    return message;
+}
+
+async function prepareProviderTransfer(request, sender) {
+    const kind = request.partName || request.resourceRef?.startsWith('attachment:') ? 'attachment' : 'link';
+    const provider = request.provider ?? 'hybridanalysis';
+    if (!Object.hasOwn(transferEndpoints, provider)) throw Error('TRANSFER_APPROVAL_REQUIRED');
+    const endpoint = transferEndpoints[provider][kind];
+    if (!endpoint || !Number.isSafeInteger(request.messageId)) throw Error('TRANSFER_APPROVAL_REQUIRED');
+    const [active] = await browser.tabs.query({active:true,currentWindow:true});
+    const tabId = active?.id;
+    const message = await currentTransferMessage(tabId, request.messageId);
+    const key = resolveMessageStorageKey(message);
+    if (request.headerMessageId && request.headerMessageId !== key) throw Error('MESSAGE_CONTEXT_CHANGED');
+    await ThundyProviders.enforce(endpoint, {method:'POST', authorizeTransfer() {}});
+    const config = ThundyProviders.registry[provider];
+    const credential = (await browser.storage.local.get(config.key))[config.key];
+    if (!credential) throw Error('PROVIDER_UNCONFIGURED');
+    const context = await getMessageAnalysisContext(message, tabId);
+    if (request.contextToken && request.contextToken !== context.snapshotId) throw Error('MESSAGE_CONTEXT_CHANGED');
+    let target, digest, partName;
+    if (kind === 'link') {
+        const address = request.resourceRef ? await context.snapshot((_view, record) =>
+            record?.links?.find(link => link.analysisResourceRef === request.resourceRef)?.url) : request.url;
+        target = canonicalHttpUrl(address);
+        const full = target && await readFullForAnalysis(message);
+        if (!full || !messageUrlInventory(full).includes(target)) throw Error('MESSAGE_CONTEXT_CHANGED');
+    } else {
+        partName = request.partName || request.resourceRef.slice('attachment:'.length);
+        if (!/^[0-9]+(?:\.[0-9]+)*$/.test(partName)) throw Error('MESSAGE_CONTEXT_CHANGED');
+        const file = await browser.messages.getAttachmentFile(message.id, partName);
+        if (file.size > 25 * 1024 * 1024) throw Error('RESOURCE_MISMATCH');
+        digest = await get_sha256_hash(await file.arrayBuffer());
+        if (request.hash && request.hash.toLowerCase() !== digest) throw Error('MESSAGE_CONTEXT_CHANGED');
+        target = file.name;
+    }
+    await currentTransferMessage(tabId, message.id);
+    if (context.disposed) throw Error('MESSAGE_CONTEXT_CHANGED');
+    for (const [id, transfer] of providerTransfers) if (transfer.expires <= Date.now()) providerTransfers.delete(id);
+    if (providerTransfers.size >= 32) throw Error('TRANSFER_APPROVAL_REQUIRED');
+    const id = crypto.randomUUID();
+    providerTransfers.set(id, {id, tabId, messageId:message.id, key, context, provider, endpoint, kind, target, partName, digest,
+        documentId:sender.documentId, credential, expires:Date.now()+120000, claimed:false});
+    return {success:true, id, target, provider:config.name, visibility:provider === 'urlscan' ? 'unlisted' : null};
+}
+
+async function submitProviderTransfer(id, sender) {
+    const transfer = providerTransfers.get(id);
+    if (!transfer || transfer.claimed || transfer.expires <= Date.now() || transfer.documentId !== sender.documentId) throw Error('TRANSFER_APPROVAL_REQUIRED');
+    transfer.claimed = true;
+    const {tabId,messageId,context,provider,endpoint,kind,target,partName,digest,key} = transfer;
+    const resourceLock = JSON.stringify([messageId,kind,partName || target]);
+    if (activeProviderTransfers.has(resourceLock)) {
+        providerTransfers.delete(id);
+        throw Error('TRANSFER_APPROVAL_REQUIRED');
+    }
+    activeProviderTransfers.add(resourceLock);
+    const authorize = body => async (address, options) => {
+        const config = ThundyProviders.registry[provider];
+        if (kind === 'link') {
+            if (!messageUrlInventory(await getAnalysisFull(messageId)).includes(target)) throw typedError('MESSAGE_CONTEXT_CHANGED',msg('analysisContextChanged'));
+        } else {
+            const file = await browser.messages.getAttachmentFile(messageId,partName);
+            if (file.name !== target || file.size > 25 * 1024 * 1024 ||
+                await get_sha256_hash(await file.arrayBuffer()) !== digest) throw typedError('MESSAGE_CONTEXT_CHANGED',msg('analysisContextChanged'));
+        }
+        await ThundyProviders.enforce(endpoint, {method:'POST', authorizeTransfer:authorize});
+        const credential = (await browser.storage.local.get(config.key))[config.key];
+        const current = await currentTransferMessage(tabId, messageId);
+        if (providerTransfers.get(id) !== transfer || transfer.expires <= Date.now() || context.disposed ||
+            resolveMessageStorageKey(current) !== key || address !== endpoint || options.body !== body ||
+            credential !== transfer.credential || new Headers(options.headers).get(config.header) !== credential) {
+            throw typedError('MESSAGE_CONTEXT_CHANGED',msg('analysisContextChanged'));
+        }
+        providerTransfers.delete(id);
+    };
+    try {
+        if (kind === 'attachment') return await handleManualUpload(messageId,partName,target,digest,key,authorize);
+        if (provider === 'hybridanalysis') return await handleUrlScan(target,key,context,authorize);
+        const message = await currentTransferMessage(tabId,messageId);
+        await reserveLinkTransfer(message,key,target);
+        const scoped = await context.forLinks([target]);
+        const result = await checkUrlscanIo(target,transfer.credential,{
+            ...scoped, submitted:uuid => persistUrlscanLinkResult({...message,headerMessageId:key},target,{status:'SUBMITTED',uuid},true)
+        },authorize);
+        if (result?.status !== 'SUBMITTED' || !result.uuid) throw typedError(result?.errorCode || 'TRANSFER_APPROVAL_REQUIRED',msg('transferFailed'));
+        context.schedule();
+        return result;
+    } finally {
+        providerTransfers.delete(id);
+        activeProviderTransfers.delete(resourceLock);
+    }
+}
+
+browser.tabs?.onActivated?.addListener(({tabId}) => {
+    for (const [id, entry] of providerTransfers) if (entry.tabId !== tabId) providerTransfers.delete(id);
+});
+browser.tabs?.onRemoved?.addListener(tabId => {
+    for (const [id, entry] of providerTransfers) if (entry.tabId === tabId) providerTransfers.delete(id);
+});
+
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Harden the message boundary: only our own extension contexts may drive the
     // background script (P3-25 in docs/PROBLEMANALYSE_STORE_READINESS.md).
@@ -2371,6 +2517,20 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return false;
     }
     if (!request || typeof request !== 'object') return false;
+    if (['prepareProviderTransfer','submitProviderTransfer','cancelProviderTransfer'].includes(request.action)) {
+        if (sender?.url?.split(/[?#]/)[0] !== browser.runtime.getURL('popup.html')) return false;
+        if (request.action === 'cancelProviderTransfer') {
+            const transfer = providerTransfers.get(request.id);
+            if (transfer && !transfer.claimed && transfer.documentId === sender.documentId) providerTransfers.delete(request.id);
+            sendResponse({success:true});
+            return false;
+        }
+        const task = request.action === 'prepareProviderTransfer' ? prepareProviderTransfer(request,sender) :
+            submitProviderTransfer(request.id,sender).then(data => ({status:'success', data}));
+        task.then(sendResponse).catch(error => sendResponse({status:'error', code:error.code || error.message,
+            message:msg('transferFailed'), ...(error.uploadSent ? {uploadSent:true} : {})}));
+        return true;
+    }
 
     if(request.action==='apiDebugCapture'&&typeof ThundyApiDiagnostics!=='undefined') {
         ThundyApiDiagnostics.capture(request,sender).then(result=>sendResponse({success:true,...result})).catch(()=>sendResponse({success:false,code:'DIAGNOSTIC_REJECTED'}));
@@ -2383,11 +2543,12 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (request.action === 'securitySettingsWrite') return await ThundySecurity.write(request.values,sender,request.token);
             if (request.action === 'testProviderKey') {
                 await ThundySecurity.authorized(sender,request.token);
-                const result=await ThundyProviders.test(request.provider,request.key,()=>ThundySecurity.authorized(sender,request.token,false));
+                const result=await ThundyProviders.test(request.provider,request.key,()=>ThundySecurity.authorized(sender,request.token,false),request.ipReputation===true);
                 const config=ThundyProviders.registry[request.provider];
                 const stored=await browser.storage.local.get(['providerConnectionTests',config?.key || 'apikey','ipReputationProvider','ipReputationApiKey']);
-                const matches=config && (stored[config.key]===request.key.trim() || stored.ipReputationProvider===request.provider && stored.ipReputationApiKey===request.key.trim());
-                if(matches)await browser.storage.local.set({providerConnectionTests:{...stored.providerConnectionTests,[request.provider]:{status:result.status,httpStatus:result.httpStatus||null,observedAt:Date.now(),uploadVerified:false}}});
+                const key=typeof request.key==='string' ? request.key.trim() : '';
+                const matches=key && config && (stored[config.key]===key || stored.ipReputationProvider===request.provider && stored.ipReputationApiKey===key);
+                if(matches && result.status!=='disabled')await browser.storage.local.set({providerConnectionTests:{...stored.providerConnectionTests,[request.provider]:{status:result.status,httpStatus:result.httpStatus||null,observedAt:Date.now(),uploadVerified:false}}});
                 return {success:true,...result};
             }
             if (request.action === 'startLinkApproval') return await ThundyLinkSecurity.start(request,sender);
@@ -2399,7 +2560,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     if (typeof ThundySecurity !== 'undefined' && ['clearLinkAudit','clearMemoryCaches'].includes(request.action)) {
         ThundySecurity.authorized(sender,request.token).then(async()=>{
-            if(request.action==='clearLinkAudit') { await editLinkAudit(records=>{records.length=0;}); }
+            if(request.action==='clearLinkAudit') { await clearLinkAuditRecords(); }
             else { clearAnalysisMemory(); }
             sendResponse({success:true,status:'success'});
         }).catch(()=>sendResponse({success:false,code:'ADMIN_LOCKED'}));
@@ -2517,27 +2678,12 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ status: 'success' });
             return false;
         case "uploadAttachment":
-            handleManualUpload(request.messageId, request.partName, request.attachmentName, request.hash, request.headerMessageId)
-                .then(res => sendResponse({status: 'success', data: res}))
-                .catch(err => sendResponse({status:'error',message:err.message,code:err.code,...(err.uploadSent?{uploadSent:true}:{} )}));
-            return true;
+        case "scanUrl":
+            sendResponse({status:'error', code:'TRANSFER_APPROVAL_REQUIRED', message:msg('transferUsePopup')});
+            return false;
         case "savePopupHybridReport":
             if (sender?.url?.split(/[?#]/)[0] !== browser.runtime.getURL('popup.html')) return false;
             savePopupHybridReport(request).then(saved=>sendResponse({success:saved})).catch(()=>sendResponse({success:false}));
-            return true;
-
-        case "scanUrl":
-            (async () => {
-                let context = null;
-                if (Number.isInteger(request.messageId)) {
-                    const message = await browser.messages.get(request.messageId);
-                    const key = (typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id);
-                    if (key !== request.headerMessageId) throw typedError('MESSAGE_CONTEXT_CHANGED', msg('analysisContextChanged'));
-                    context = await getMessageAnalysisContext(message);
-                }
-                return await handleUrlScan(request.url, request.headerMessageId, context);
-            })().then(res => sendResponse({status: 'success', data: res}))
-                .catch(err => sendResponse({status: 'error', message: err.message, code: err.code}));
             return true;
 
         case "cancelLinkInteraction":
@@ -2552,12 +2698,17 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         case "clearLinkAudit":
             if (!isLinkAuditAdminPage(sender)) return false;
-            editLinkAudit(records => { records.length = 0; }).then(() => sendResponse({ success: true })).catch(() => sendResponse({ success: false }));
+            clearLinkAuditRecords().then(() => sendResponse({ success: true })).catch(() => sendResponse({ success: false }));
             return true;
 
         case "openCheckedLink":
             if (!validLinkRequest(request, sender, { checking: false })) { sendResponse({ success: false }); return false; }
             (request.interactionId ? handleOpenAuditedLink(request, sender) : handleOpenCheckedLink(request, sender)).then(sendResponse);
+            return true;
+
+        case "openAuditedScanReport":
+            if (!validLinkRequest(request,sender,{checking:false}) || !request.interactionId) return false;
+            openAuditedScanReport(request,sender).then(sendResponse).catch(()=>sendResponse({success:false}));
             return true;
 
         case "checkLinkState":
@@ -2627,7 +2778,36 @@ async function handleDownloadDisarmed(messageId, partName, attachmentName) {
     return { downloadId: downloadId };
 }
 
-async function handleUrlScan(url, headerMessageId, analysisContext = null) {
+async function reserveLinkTransfer(message, key, url) {
+    const db = await getSharedDB();
+    await updateStore(db, 'hybridanalysis', key, record => {
+        const current = record || {messageHeader:key};
+        const links = current.links || [];
+        const matches = links.filter(link => sameAnalysisUrl(link.url,url));
+        if (matches.length > 1) throw Error('MESSAGE_CONTEXT_CHANGED');
+        if (!matches.length) {
+            current.links = [...links,{url,state:'UNKNOWN',created:Date.now()}];
+        }
+        if (typeof preserveReportRevisions === 'function') {
+            const draft = {...current, links:current.links.map(link => sameAnalysisUrl(link.url,url) ? {...link,state:'UPLOADED',report:null,urlscan:null} : link)};
+            preserveReportRevisions(captureReportState(current), draft);
+        }
+        return current;
+    },messageReportOptions(message,{preserveReports:true}));
+}
+
+function transferUnassigned() {
+    return Object.assign(typedError('RESOURCE_MISMATCH',msg('uploadSentUnassigned')), {uploadSent:true});
+}
+
+function hasHybridTransferReference(data) {
+    return [data.id, data.submission_id, data.job_id, data.reports?.[0]].some(id =>
+        typeof id === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(id)) ||
+        (typeof data.sha256 === 'string' && /^[a-f0-9]{64}$/i.test(data.sha256));
+}
+
+async function handleUrlScan(url, headerMessageId, analysisContext = null, authorize = null) {
+    if (!providerEnabled('hybridanalysis')) throw typedError('PROVIDER_DISABLED',msg('analysisReason_provider_disabled'));
     // A header-only caller cannot prove which duplicate message initiated this request.
     if (!apikey_hybridanalysis) throw new Error(uiText("ui_086", "API-Key fehlt."));
     assertExternalAnalysisAllowed();
@@ -2639,7 +2819,7 @@ async function handleUrlScan(url, headerMessageId, analysisContext = null) {
     await requireHostPermission('https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis');
     const reportOptions=messageReportOptions({id:analysisContext?.messageId},{preserveReports:true});
     if (analysisContext?.forLinks) {
-        await indexedDB_save_links_to_db({id:analysisContext.messageId,headerMessageId:analysisContext.headerMessageId}, [url]);
+        await reserveLinkTransfer({id:analysisContext.messageId},headerMessageId,url);
         analysisContext = await analysisContext.forLinks([url]);
     }
 
@@ -2650,12 +2830,14 @@ async function handleUrlScan(url, headerMessageId, analysisContext = null) {
 
     const options = getHybridAnalysisOptions('POST', formBody, true);
     options.analysisContext = analysisContext;
+    options.authorizeTransfer = authorize?.(formBody);
     options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis';
 
     const response = await apiGateway.fetchWithTimeout(options.url, options);
-    const json_data = await response.json();
 
     if (response.status === 200 || response.status === 201) {
+        const json_data = await response.json().catch(error => { throw authorize ? transferUnassigned() : error; });
+        if (authorize && (!json_data || typeof json_data !== 'object' || !hasHybridTransferReference(json_data))) throw transferUnassigned();
         // Update DB record
         try {
             const db = await getSharedDB();
@@ -2666,7 +2848,7 @@ async function handleUrlScan(url, headerMessageId, analysisContext = null) {
                     const links = existingRecord.links;
                     const len = links.length;
                     for (let i = 0; i < len; i++) {
-                        if (links[i].url === url) {
+                        if (sameAnalysisUrl(links[i].url,url)) {
                             linkIndex = i;
                             break;
                         }
@@ -2675,17 +2857,20 @@ async function handleUrlScan(url, headerMessageId, analysisContext = null) {
                         existingRecord.links[linkIndex].hybrid_quick_scan_id = typeof json_data.id==='string'?json_data.id:null;
                         existingRecord.links[linkIndex].hybrid_submission_id = json_data.submission_id || json_data.id;
                         existingRecord.links[linkIndex].hybrid_job_id = json_data.job_id || (Array.isArray(json_data.reports) && json_data.reports[0]) || json_data.id;
-                        existingRecord.links[linkIndex].hybrid_sha256 = json_data.sha256;
+                        existingRecord.links[linkIndex].hybrid_sha256 = typeof json_data.sha256 === 'string' && /^[a-f0-9]{64}$/i.test(json_data.sha256) ? json_data.sha256.toLowerCase() : authorize ? null : json_data.sha256;
                         existingRecord.links[linkIndex].state = 'UPLOADED';
                         // Keep the immediate quick-scan payload (scanner states) instead of discarding it.
                         const quickReport = typeof quickScanReport === 'function' ? quickScanReport(json_data) : null;
                         existingRecord.links[linkIndex].report = quickReport;
                         existingRecord.links[linkIndex].report_fetched_at = quickReport ? new Date().toISOString() : null;
                     }
+                    else if (authorize) throw Error('MESSAGE_CONTEXT_CHANGED');
                 }
+                else if (authorize) throw Error('MESSAGE_CONTEXT_CHANGED');
                 return existingRecord;
             }, reportOptions);
         } catch (dbError) {
+            if (authorize) throw transferUnassigned();
             Logger.error('Fehler beim Aktualisieren des DB Records für URL:', dbError);
         }
         return json_data;
@@ -2724,7 +2909,8 @@ async function savePopupHybridReport(request) {
     return saved;
 }
 
-async function handleManualUpload(messageId, partName, attachmentName, hash, headerMessageId) {
+async function handleManualUpload(messageId, partName, attachmentName, hash, headerMessageId, authorize = null) {
+    if (!providerEnabled('hybridanalysis')) throw typedError('PROVIDER_DISABLED',msg('analysisReason_provider_disabled'));
     if (!apikey_hybridanalysis) throw new Error(uiText('ui_086', 'API-Key fehlt.'));
     assertExternalAnalysisAllowed();
     if (!tierAtLeast('balanced')) throw typedError(TIER_BLOCKS_UPLOAD, msg('errorTierUploadBlocked'));
@@ -2741,18 +2927,25 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
     const reference = item => JSON.stringify([item.hybrid_quick_scan_id || null, item.hybrid_submission_id || null, item.hybrid_job_id || null]);
     const db = await getSharedDB();
     const candidates = matching(await getFromStore(db, 'hybridanalysis', key,messageReportOptions(message)));
-    if (candidates.length !== 1) throw changed();
-    const originalReference = reference(candidates[0]);
+    if (candidates.length > 1 || (!candidates.length && !authorize)) throw changed();
+    const originalReference = reference(candidates[0] || {});
     const file = await browser.messages.getAttachmentFile(messageId, partName);
     if (file.size > 25 * 1024 * 1024) throw typedError('RESOURCE_MISMATCH', msg('scanCoverage_size_limit'));
     const bytes = await file.arrayBuffer();
-    if (await get_sha256_hash(bytes) !== digest) throw changed();
-
+    if (await get_sha256_hash(bytes) !== digest || (authorize && file.name !== attachmentName)) throw changed();
+    if (!candidates.length) {
+        await updateStore(db, 'hybridanalysis', key, saved => {
+            const record = saved || {messageHeader:key};
+            const attachments = record.attachments || [];
+            if (attachments.some(item => item.partName === partName)) throw changed();
+            record.attachments = [...attachments,{partName,attachment_name:attachmentName,hybrid_sha256:digest,state:'UNKNOWN'}];
+            return record;
+        },messageReportOptions(message,{preserveReports:true}));
+    }
     const messageContext = await getMessageAnalysisContext(message);
     const analysisContext = messageContext?.forAttachment ? messageContext.forAttachment(partName, file.name, digest) : messageContext;
-    const unassigned = () => Object.assign(typedError('RESOURCE_MISMATCH', msg('uploadSentUnassigned')), {uploadSent:true});
     const validateResponse = data => {
-        if (data?.sha256 != null && (typeof data.sha256 !== 'string' || data.sha256.toLowerCase() !== digest)) throw unassigned();
+        if (data?.sha256 != null && (typeof data.sha256 !== 'string' || data.sha256.toLowerCase() !== digest)) throw transferUnassigned();
     };
     const formData = new FormData();
     formData.append('scan_type', 'all');
@@ -2762,22 +2955,30 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
     await requireHostPermission(url);
     const beforeSend = matching(await getFromStore(db, 'hybridanalysis', key,messageReportOptions(message)));
     if (messageContext?.disposed || beforeSend.length !== 1 || reference(beforeSend[0]) !== originalReference) throw changed();
+    if (authorize) await updateStore(db, 'hybridanalysis', key, record => {
+        const current = matching(record);
+        if (current.length !== 1 || reference(current[0]) !== originalReference) throw changed();
+        const draft = {...record,attachments:record.attachments.map(item => item === current[0] ? {...item,state:'UPLOADED',report:null} : item)};
+        preserveReportRevisions(captureReportState(record), draft);
+        return record;
+    },messageReportOptions(message,{preserveReports:true}));
     // Read policy and credentials after preflight awaits, immediately before queuing.
     assertExternalAnalysisAllowed();
     if (!tierAtLeast('balanced')) throw typedError(TIER_BLOCKS_UPLOAD, msg('errorTierUploadBlocked'));
     const options = getHybridAnalysisOptions('POST', formData);
     options.analysisContext = {...analysisContext, validateResponse};
+    options.authorizeTransfer = authorize?.(formData);
     options.url = url;
     const response = await apiGateway.fetchWithTimeout(options.url, options, 60000);
-    const data = await response.json();
     if (response.status !== 200 && response.status !== 201) throw new Error(uiText('ui_060', 'Fehler beim Upload: ') + String(response.status));
-    if (!data || typeof data !== 'object' || Array.isArray(data)) throw unassigned();
+    const data = await response.json().catch(() => { throw transferUnassigned(); });
+    if (!data || typeof data !== 'object' || Array.isArray(data) || (authorize && !hasHybridTransferReference(data))) throw transferUnassigned();
     validateResponse(data);
     try {
         await updateStore(db, 'hybridanalysis', key, record => {
             const current = matching(record);
             // A later submission or another message's part must not inherit this response.
-            if (messageContext?.disposed || current.length !== 1 || reference(current[0]) !== originalReference) throw unassigned();
+            if (messageContext?.disposed || current.length !== 1 || reference(current[0]) !== originalReference) throw transferUnassigned();
             const target = current[0];
             target.hybrid_quick_scan_id = typeof data.id === 'string' ? data.id : null;
             target.hybrid_submission_id = data.submission_id || data.id;
@@ -2791,13 +2992,14 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
         }, messageReportOptions(message,{preserveReports:true}));
     } catch (error) {
         if (error.uploadSent) throw error;
+        if (authorize) throw transferUnassigned();
         Logger.error('Fehler beim Aktualisieren des DB Records:', error);
     }
     return {...data, sha256:digest};
 }
 
 // Prune expired audit records when the extension starts as well as on access/write.
-if (typeof readLinkAudit === 'function') readLinkAudit().catch(() => Logger.warn('Could not prune local link audit at startup'));
+if (typeof prepareLinkAudit === 'function') prepareLinkAudit().catch(() => Logger.warn('Could not prune local link audit at startup'));
 
 // First-install setup only. Updates never change existing preferences or reopen setup.
 let onboardingOpened = false;

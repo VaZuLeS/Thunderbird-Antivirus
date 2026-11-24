@@ -81,6 +81,8 @@ test('compact inline keeps warnings and score visible while preserving focused c
   const labels=c.analysis.labels(key=>catalog[key]?.message||'MISSING:'+key),data={messageId:42,contextToken:'bound',local:{state:'checked',score:0},scanJob:{state:'failed',reason:'source_capacity',manualAllowed:false},sourcePersistenceFailed:true,sourcePersistenceReason:'storage_failed',rows:[],hybridReports:{'attachment:1':{schemaVersion:1,sections:[],resourceToken:token}}};
   const render=()=>c.analysis.render(data,labels,'',{surface:'message'}),host=render(),root=host.shadowRoot;
   assert.ok(root.querySelector('.finding-card .local-score').textContent.includes('0 / 100'));
+  assert.equal(root.querySelector('[data-key=inline-inspection]').open,false);
+  root.querySelector('[data-key=inline-inspection]').open=true;
   assert.ok(root.querySelector('.card:not(.finding-card):not([hidden])').textContent.includes(catalog.analysisPersistenceFailed.message));
   assert.ok(root.querySelector('.scan-actions').textContent.includes(catalog.scanFailure_source_capacity.message));
   root.querySelector('[data-focus-key=view-switch]').click();const details=root.querySelector('[data-key=expert-explanation]');details.open=true;details.querySelector('summary').focus();render();

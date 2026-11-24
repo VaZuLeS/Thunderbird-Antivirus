@@ -1,5 +1,6 @@
 // Local configuration drafts only: no external connection, scan or activation.
 document.addEventListener("DOMContentLoaded", async () => {
+  if (ThundyI18n.ready) await ThundyI18n.ready;
   const $ = (id) => document.getElementById(id),
     t = (key) => ThundyI18n.get(key);
   const controls = {

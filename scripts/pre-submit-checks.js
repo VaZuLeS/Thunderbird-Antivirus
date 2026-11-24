@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const DEFAULT_LOCALES = ['en', 'de', 'fr', 'es', 'it', 'pl'];
+const DEFAULT_LOCALES = Object.keys(require('./locale-catalogs.js').locales);
 const REQUIRED_MDM_KEYS = ['gecko'];
 const FORBIDDEN_PERMISSIONS = ['webRequest', '<all_urls>', 'management'];
 const MV3_UNSUPPORTED_KEYS = ['content_scripts', 'user_scripts', 'web_accessible_resources'];

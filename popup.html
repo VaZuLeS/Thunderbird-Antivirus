@@ -6,7 +6,13 @@
     <title data-i18n="ui_106">Thundy AV – Email Scanner</title>
     <link rel="stylesheet" href="theme.css">
 
-<script src="design_system.js"></script><script src="theme.js"></script><script src="i18n.js"></script><script src="runtime.js"></script><script src="provider_results.js"></script><script src="provider_registry.js"></script><script src="analysis_status.js"></script><script src="api_gateway.js"></script><style>body[data-thundy-analysis-view="simple"] #hybrid_analysis_api_content,body[data-thundy-analysis-view="simple"] .message-details{display:none}</style></head>
+<script src="design_system.js"></script><script src="theme.js"></script><script src="i18n.js"></script><script src="runtime.js"></script><script src="provider_results.js"></script><script src="provider_registry.js"></script><script src="analysis_status.js"></script><script src="api_gateway.js"></script>
+<style>
+body[data-thundy-analysis-view="simple"] #hybrid_analysis_api_content,body[data-thundy-analysis-view="simple"] .message-details{display:none}
+.transfer-confirmation{width:min(35rem,calc(100% - 2rem));max-height:calc(100% - 2rem);overflow:auto;overflow-wrap:anywhere;background:var(--card-bg);color:var(--text-color);border:1px solid var(--card-border);border-radius:12px}
+.transfer-confirmation::backdrop{background:rgb(0 0 0 / 55%)}
+.transfer-confirmation button{margin:4px;max-width:100%;white-space:normal}
+</style></head>
 
 <body class="scanner-popup">
 <main>

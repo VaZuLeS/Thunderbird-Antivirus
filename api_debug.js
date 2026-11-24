@@ -46,7 +46,8 @@
             controls();get('diagStatus').textContent=t(paused?'diagPaused':'diagActive');
         }catch(_){if(own===generation&&!disposed){token=null;unlocked=false;wipe();controls();get('diagStatus').textContent=t('securityLocked');}}finally{busy=false;}
     }
-    document.addEventListener('DOMContentLoaded',()=>{
+    document.addEventListener('DOMContentLoaded',async()=>{
+        if (ThundyI18n.ready) await ThundyI18n.ready;
         for(const [id,values,type] of [['diagProvider',['hybridanalysis','virustotal','urlscan','urlhaus','abuseipdb'],'provider'],['diagState',['running','complete','pending','blocked','incomplete','failed','unconfirmed'],'state'],['diagPurpose',['automatic','manual','link','key_test','report','analysis'],'purpose']])for(const value of values){const option=node('option',type==='provider'?({hybridanalysis:'Hybrid Analysis',virustotal:'VirusTotal',urlscan:'urlscan.io',urlhaus:'URLhaus',abuseipdb:'AbuseIPDB'})[value]:label(type,value));option.value=value;get(id).append(option);}
         get('diagAuth').onsubmit=async event=>{event.preventDefault();const own=++generation;try{const value=await send('unlock',{password:get('diagPassword').value});if(own!==generation||disposed)return;token=value.token;port?.disconnect();port=browser.runtime.connect({name:'thundy-admin-session'});port.postMessage({token});await refresh();}catch(_){get('diagStatus').textContent=t('securityLocked');}finally{get('diagPassword').value='';}};
         get('diagLock').onclick=async()=>{const old=token;token=null;unlocked=false;wipe();controls();await browser.runtime.sendMessage({action:'securityCommand',op:'lock',token:old});};

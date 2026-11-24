@@ -13,10 +13,30 @@ files = {name: (receiver / name).read_bytes() for name in (
     'event.py', 'receiver.py', 'receiver.example.toml', 'requirements.txt',
 )}
 files['LICENSE'] = (root / 'LICENSE').read_bytes()
-files['README.md'] = (receiver / 'README.md').read_text(encoding='utf-8').replace(
-    '../../docs/UNTERNEHMENSRICHTLINIE.md', 'UNTERNEHMENSRICHTLINIE.md').encode('utf-8')
-files['UNTERNEHMENSRICHTLINIE.md'] = (root / 'docs' / 'UNTERNEHMENSRICHTLINIE.md').read_text(encoding='utf-8').replace(
-    '../examples/python-receiver/README.md', 'README.md').encode('utf-8')
+docs = root / 'docs'
+site = 'https://vazules.github.io/Thunderbird-Antivirus/'
+manuals = {
+    'python-receiver.md': 'README.md',
+    'python-receiver.en.md': 'README.en.md',
+    'UNTERNEHMENSRICHTLINIE.md': 'UNTERNEHMENSRICHTLINIE.md',
+    'enterprise-policy.en.md': 'enterprise-policy.en.md',
+    'LOCAL_SCORE.md': 'LOCAL_SCORE.md',
+}
+links = {
+    **manuals,
+    'guide-de.md': site + 'guide-de.html',
+    'guide-en.md': site + 'guide-en.html',
+    'privacy_policy.md': site + 'privacy_policy.html',
+    'https://github.com/VaZuLeS/Thunderbird-Antivirus/blob/main/examples/python-receiver/receiver.example.toml': 'receiver.example.toml',
+}
+for source, member in manuals.items():
+    text = (docs / source).read_text(encoding='utf-8')
+    if text.startswith('---\n'):
+        _, _, text = text.split('---\n', 2)
+        text = text.lstrip('\n')
+    for old, new in links.items():
+        text = text.replace(f']({old})', f']({new})').replace(f']({old}#', f']({new}#')
+    files[member] = text.encode('utf-8')
 
 output.parent.mkdir(exist_ok=True)
 with ZipFile(output, 'w') as archive:

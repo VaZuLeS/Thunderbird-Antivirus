@@ -1410,10 +1410,11 @@ def check_hybrid_popup(m, base, out, report, display, baseline=False, actions=Fa
     })();''',[target])
     options='window.gTabmail.tabInfo.filter(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).at(-1).browser'
     if actions:
-        m.page('''const b=window.wrappedJSObject.browser,rows=[];
-          const observer=request=>{if(["uploadAttachment","downloadDisarmed"].includes(request?.action))rows.push({action:request.action,messageId:request.messageId,partName:request.partName});};
+        individual_approval=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,rows=[];
+          const raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject||raw;
+          const observer=request=>{if(["uploadAttachment","prepareProviderTransfer","downloadDisarmed"].includes(request?.action))rows.push({action:request.action,messageId:request.messageId,partName:request.partName});};
           window.wrappedJSObject.__reportActionRows=rows;window.wrappedJSObject.__reportActionObserver=observer;
-          b.runtime.onMessage.addListener(observer);''')
+          b.runtime.onMessage.addListener(observer);return typeof bg.prepareProviderTransfer==='function';})();''')
     m.js('window.gTabmail.switchToTab(window.gTabmail.tabInfo.filter(tab=>tab.mode.name==="mailMessageTab").at(-1));')
     wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status");'))
     if not baseline:
@@ -1445,14 +1446,15 @@ def check_hybrid_popup(m, base, out, report, display, baseline=False, actions=Fa
             report['reportActions']={'passed':True,'baseline':True,'requestCount':0,'uniqueControlIds':False}
         else:
             observed=wait_for(lambda:(lambda rows:rows if rows else None)(json.loads(m.page('return JSON.stringify(window.wrappedJSObject.__reportActionRows);',browser=options))))
-            assert observed==[{'action':'uploadAttachment','messageId':target,'partName':'1.2'}],observed
-            wait_for(lambda:m.page('const b=document.getElementById(arguments[0]),s=document.getElementById(b.getAttribute("aria-describedby"));return !b.disabled&&s.textContent.startsWith(window.wrappedJSObject.browser.i18n.getMessage("ui_045"));',[controls['firstRescan']],browser=popup))
+            expected_request={'action':'prepareProviderTransfer' if individual_approval else 'uploadAttachment','messageId':target,'partName':'1.2'}
+            assert observed==[expected_request],observed
+            wait_for(lambda:m.page('const b=document.getElementById(arguments[0]),s=document.getElementById(b.getAttribute("aria-describedby"));return !b.disabled&&s.textContent.startsWith(window.wrappedJSObject.browser.i18n.getMessage(arguments[1]));',[controls['firstRescan'],'transferFailed' if individual_approval else 'ui_045'],browser=popup))
             assert controls['unique']
             assert m.page('const b=document.getElementById(arguments[0]);return !b.disabled&&document.getElementById(b.getAttribute("aria-describedby")).textContent==="";',[controls['secondRescan']],browser=popup)
             actual=native_download(m,display,out,{'labelKey':'ui_035','index':1},'local-cdr-report.html',browser=options,button_browser=popup,save_button=True)
             data=actual.read_bytes();assert b'Fixture' in data and b'<script' not in data.lower(),data
             observed=json.loads(m.page('return JSON.stringify(window.wrappedJSObject.__reportActionRows);',browser=options))
-            assert observed==[{'action':'uploadAttachment','messageId':target,'partName':'1.2'},{'action':'downloadDisarmed','messageId':target,'partName':'1.3'}],observed
+            assert observed==[expected_request,{'action':'downloadDisarmed','messageId':target,'partName':'1.3'}],observed
             report['reportActions']={'passed':True,'baseline':False,'requests':observed,'uniqueControlIds':True,'externalConsent':False,'realLocalCdrDownload':True,'scriptRemoved':True,'downloadSha256':hashlib.sha256(data).hexdigest(),'inputAttachmentsHaveEqualBytes':True}
         m.page('window.wrappedJSObject.browser.runtime.onMessage.removeListener(window.wrappedJSObject.__reportActionObserver);',browser=options)
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
@@ -1990,6 +1992,17 @@ def check_administration(m, base, out, report):
     report['administration']={'passed':True,'realThunderbirdAPIs':True,'protectedWriteRejected':True,'protectedDisplaySettings':True,'unlockAndRelock':True,'separatePasswordPage':True,'oneApprovedOpening':True,'passwordVerifiers':state,'liveProviderCalls':False}
 
 
+NATIVE_ACCEPTED_REPORT_FIXTURE = '''
+    async (bg, message, hybridId, urlscanId) => {
+      const urls=bg.messageUrlInventory(await bg.getAnalysisFull(message.id));
+      if(!urls.length)throw Error('Missing synthetic URL');
+      await bg.updateStore(await bg.getSharedDB(),'hybridanalysis',bg.resolveMessageStorageKey(message),old=>({
+        ...old, messageHeader:bg.resolveMessageStorageKey(message),links:urls.map(url=>({url,state:'UPLOADED',
+          ...(hybridId?{hybrid_quick_scan_id:hybridId}:{}),urlscan:{status:'SUBMITTED',uuid:urlscanId}}))
+      }),bg.messageReportOptions(message,{preserveReports:true}));
+    }'''
+
+
 def check_automatic_scans(m, base, out, report, display):
     # Real display events, persistence and UI; synthetic transport only.
     open_page(m,base+'options.html')
@@ -2041,8 +2054,10 @@ def check_automatic_scans(m, base, out, report, display):
         else throw Error('Unexpected synthetic provider route');
         return new bg.Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}});
       };
+      const individualApproval=typeof bg.prepareProviderTransfer==='function';
+      if(individualApproval)await ('''+NATIVE_ACCEPTED_REPORT_FIXTURE+''')(bg,message,'native-hybrid-job','native-urlscan-job');
       await b.storage.local.set({scanMode:'allDisplayed',alwaysManual:false,externalAnalysisConsent:true,privacyTier:'max',autoScanLinks:true,apikey:'synthetic-native-ha',urlscanApikey:'synthetic-native-urlscan'});
-      await b.messageDisplay.open({messageId:message.id,location:'tab'});return {messageId:message.id};
+      await b.messageDisplay.open({messageId:message.id,location:'tab'});return {messageId:message.id,individualApproval};
     })();''')
     options='window.gTabmail.tabInfo.filter(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).at(-1).browser'
     def snapshot():
@@ -2053,10 +2068,14 @@ def check_automatic_scans(m, base, out, report, display):
         report['automaticScanFailure']={'snapshot':snapshot(),'errors':m.page('return window.wrappedJSObject.__automaticScanErrors;',browser=options),'calls':m.page('return window.wrappedJSObject.__automaticScanCalls;',browser=options),'probe':m.page('return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;const tab=(await b.tabs.query({active:true,currentWindow:true}))[0];return bg.handleRequestScan({messageId:arguments[0],tabId:tab.id},{});})();',[setup['messageId']],browser=options)}
         raise
     calls=m.page('return window.wrappedJSObject.__automaticScanCalls;',browser=options)
-    ha=[c for c in calls if c['method']=='POST' and 'hybrid-analysis' in c['url']]
-    us=[c for c in calls if c['method']=='POST' and 'urlscan.io' in c['url']]
+    method='GET' if setup['individualApproval'] else 'POST'
+    ha=[c for c in calls if c['method']==method and 'hybrid-analysis' in c['url']]
+    us=[c for c in calls if c['method']==method and 'urlscan.io' in c['url']]
     assert ha and us,calls
-    assert all(json.loads(c['body'])['visibility']=='unlisted' for c in us)
+    if setup['individualApproval']:
+        assert all(c['method']!='POST' for c in calls),calls
+    else:
+        assert all(json.loads(c['body'])['visibility']=='unlisted' for c in us)
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector("[data-focus-key=scan-start]")?.textContent==="Check again";'))
     m.screenshot(out/'automatic-scan-message.png')
     # A second display event attaches to the current scan; it must not submit again.
@@ -2067,6 +2086,9 @@ def check_automatic_scans(m, base, out, report, display):
     wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector("[data-focus-key=scan-start]")?.textContent==="Check again";',browser=popup))
+    if setup['individualApproval']:
+        m.page('''return (async()=>{const b=window.wrappedJSObject.browser,raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject||raw;
+          await ('''+NATIVE_ACCEPTED_REPORT_FIXTURE+''')(bg,await b.messages.get(arguments[0]),'native-hybrid-job','native-urlscan-job');return true;})();''',[setup['messageId']],browser=options)
     m.page('window.wrappedJSObject.__holdRetryResponses=true;',browser=options)
     m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=scan-start]").click();',browser=popup)
     admitted=wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('id')!=finished['scanJob']['id'] and r.get('scanJob',{}).get('state')=='running' else None),20)
@@ -2075,13 +2097,15 @@ def check_automatic_scans(m, base, out, report, display):
     m.page('window.wrappedJSObject.__holdRetryResponses=false;for(const resolve of window.wrappedJSObject.__retryResponseReleases.splice(0))resolve();',browser=options)
     wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('id')!=finished['scanJob']['id'] and r.get('scanJob',{}).get('state')=='completed' else None),100)
     later=m.page('return window.wrappedJSObject.__automaticScanCalls;',browser=options)
-    assert len([c for c in later if c['method']=='POST' and 'urlscan.io' in c['url']])>len(us)
+    assert len([c for c in later if c['method']==method and 'urlscan.io' in c['url']])>len(us)
+    if setup['individualApproval']:
+        assert all(c['method']!='POST' for c in later),later
     report['passed']=True
-    report['automaticScans']={'passed':True,'realDisplayEvents':True,'bothProvidersWithoutLinkClick':True,'popupClosedDuringRetry':True,'duplicateDisplayReused':True,'unlisted':True,'syntheticTransport':True,'liveProviderCalls':False}
-    check_provider_results(m,base,out,report,display,setup['messageId'])
+    report['automaticScans']={'passed':True,'realDisplayEvents':True,'bothProvidersWithoutLinkClick':True,'popupClosedDuringRetry':True,'duplicateDisplayReused':True,'unlisted':not setup['individualApproval'],'noFullSubmission':setup['individualApproval'],'syntheticTransport':True,'liveProviderCalls':False}
+    check_provider_results(m,base,out,report,display,setup['messageId'],setup['individualApproval'])
 
 
-def check_provider_results(m, base, out, report, display, message_id):
+def check_provider_results(m, base, out, report, display, message_id, individual_approval=False):
     # All resources and provider responses are synthetic; real extension UI and persistence.
     options='window.gTabmail.tabInfo.filter(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).at(-1).browser'
     m.page('''return (async()=>{
@@ -2100,12 +2124,11 @@ def check_provider_results(m, base, out, report, display, message_id):
         else throw Error('Unexpected synthetic provider route');
         return new bg.Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}});
       };
-      // This probe exercises mixed findings using already accepted synthetic UUIDs.
-      // Fresh submission timing is exercised separately by the inline probes.
+      // Exercise mixed findings using previously accepted synthetic references.
       const message=await b.messages.get(arguments[0]);
       await bg.updateStore(await bg.getSharedDB(),'hybridanalysis',bg.resolveMessageStorageKey(message),old=>{
         if(!old?.links?.length)throw Error('Missing synthetic resource inventory');
-        return {...old,links:old.links.map(link=>({...link,urlscan:{status:'SUBMITTED',uuid:'provider-urlscan-job'}}))};
+        return {...old,links:old.links.map(link=>({...link,...(typeof bg.prepareProviderTransfer==='function'?{state:'UPLOADED',hybrid_quick_scan_id:'provider-hybrid-job'}:{}),urlscan:{status:'SUBMITTED',uuid:'provider-urlscan-job'}}))};
       },bg.messageReportOptions(message,{preserveReports:true}));return true;
     })();''',[message_id],browser=options)
     def snapshot():
@@ -2181,29 +2204,31 @@ def check_provider_results(m, base, out, report, display, message_id):
         return original(url,options);
       };
       try{
-        const key='native-urlscan-synthetic',first=await bg.checkUrlscanIo('https://synthetic-quota.example.invalid/',key),result=await bg.pollUrlscanIoResult('provider-urlscan-job',key),again=await bg.checkUrlscanIo('https://synthetic-quota.example.invalid/',key);
+        const authorize=typeof bg.prepareProviderTransfer==='function'?()=>async()=>{}:null;
+        const key='native-urlscan-synthetic',first=await bg.checkUrlscanIo('https://synthetic-quota.example.invalid/',key,null,authorize),result=await bg.pollUrlscanIoResult('provider-urlscan-job',key),again=await bg.checkUrlscanIo('https://synthetic-quota.example.invalid/',key,null,authorize);
         return {first:first.errorCode,result:result.status,again:again.errorCode,submissions,wait:first.retryAfter};
       }finally{bg.fetch=original;}
     })();''',browser=options)
     assert quota['first']=='rate_limited' and quota['again']=='rate_limited' and quota['result']=='SUSPICIOUS' and quota['submissions']==1 and quota['wait']>=7195,quota
-    previous_scan=snapshot()['scanJob']['id']
-    m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=scan-start]").click();')
-    limited=wait_for(lambda:(s if (s:=snapshot()).get('scanJob',{}).get('id')!=previous_scan and any(r.get('provider')=='urlscan' and r.get('localBackoff') is True and r.get('quotaRemaining')==0 for r in s.get('rows',[])) else None),20)
-    assert any(r.get('retryAt',0)>0 and r.get('quotaAction')=='submit-unlisted' for r in limited['rows']),limited
-    def quota_details(browser='window.gTabmail.currentTabInfo.browser'):
-        expert_view(m,browser)
-        m.page('const node=document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-key=provider-technical]");if(node)node.open=true;',browser=browser)
-        wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes("This attempt was deferred locally; no new provider request was sent.");',browser=browser))
-        assert m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes("quotaRemaining: 0");',browser=browser)
-        wait_for(lambda:m.page('const node=Array.from(document.getElementById("thundy-analysis-status").shadowRoot.querySelectorAll("p")).find(p=>p.textContent==="This attempt was deferred locally; no new provider request was sent.");node.scrollIntoView({block:"center"});const r=node.getBoundingClientRect();return r.height>0&&r.top>=0&&r.bottom<=innerHeight;',browser=browser))
-    quota_details()
-    m.screenshot(out/'urlscan-quota-inline.png')
-    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser,r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
-    native_click(display,point['x'],point['y'])
-    wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
-    quota_details(popup)
-    subprocess.run(['import','-window','root',str(out/'urlscan-quota-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
-    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    if not individual_approval:
+        previous_scan=snapshot()['scanJob']['id']
+        m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=scan-start]").click();')
+        limited=wait_for(lambda:(s if (s:=snapshot()).get('scanJob',{}).get('id')!=previous_scan and any(r.get('provider')=='urlscan' and r.get('localBackoff') is True and r.get('quotaRemaining')==0 for r in s.get('rows',[])) else None),20)
+        assert any(r.get('retryAt',0)>0 and r.get('quotaAction')=='submit-unlisted' for r in limited['rows']),limited
+        def quota_details(browser='window.gTabmail.currentTabInfo.browser'):
+            expert_view(m,browser)
+            m.page('const node=document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-key=provider-technical]");if(node)node.open=true;',browser=browser)
+            wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes("This attempt was deferred locally; no new provider request was sent.");',browser=browser))
+            assert m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes("quotaRemaining: 0");',browser=browser)
+            wait_for(lambda:m.page('const node=Array.from(document.getElementById("thundy-analysis-status").shadowRoot.querySelectorAll("p")).find(p=>p.textContent==="This attempt was deferred locally; no new provider request was sent.");node.scrollIntoView({block:"center"});const r=node.getBoundingClientRect();return r.height>0&&r.top>=0&&r.bottom<=innerHeight;',browser=browser))
+        quota_details()
+        m.screenshot(out/'urlscan-quota-inline.png')
+        point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser,r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+        native_click(display,point['x'],point['y'])
+        wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+        quota_details(popup)
+        subprocess.run(['import','-window','root',str(out/'urlscan-quota-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
+        m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
     # A deleted accepted result is terminal; its earlier finding remains stored.
     deleted=m.page('''return (async()=>{const w=window.wrappedJSObject,b=w.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
       const cleared=await b.runtime.sendMessage({action:'clearMemoryCaches'});if(!cleared.success)throw Error('Cache clear rejected');const fetch=bg.fetch;
@@ -2256,7 +2281,9 @@ def check_inline_scan(m, base, out, report, display, fresh=False):
       };
       await b.storage.local.set({scanMode:'manual',alwaysManual:true,externalAnalysisConsent:true,privacyTier:'max',autoScanLinks:false,apikey:'',virustotalApikey:'',urlhausApikey:'',urlscanApikey:'inline-synthetic-key',ipReputationProvider:'none'});
       const message=(await b.messages.query({subject:'Thundy AV synthetic live test'})).messages.find(item=>item.subject==='Thundy AV synthetic live test');
-      await b.messageDisplay.open({messageId:message.id,location:'tab'});return {messageId:message.id};
+      const individualApproval=typeof bg.prepareProviderTransfer==='function';
+      if(individualApproval)await ('''+NATIVE_ACCEPTED_REPORT_FIXTURE+''')(bg,message,null,'inline-context-job');
+      await b.messageDisplay.open({messageId:message.id,location:'tab'});return {messageId:message.id,individualApproval};
     })();''')
     options='window.gTabmail.tabInfo.filter(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).at(-1).browser'
     def snapshot():
@@ -2289,25 +2316,29 @@ def check_inline_scan(m, base, out, report, display, fresh=False):
     completed_label=json.loads((ROOT/'_locales/en/messages.json').read_text())['scanState_completed']['message']
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[completed_label]))
     calls=m.page('return window.wrappedJSObject.inlineScanCalls;',browser=options)
-    assert len([row for row in calls if row['method']=='POST'])==1,calls
+    submissions=sum(row['method']=='POST' for row in calls)
+    report_reads=sum(row['method']=='GET' and '/result/' in row['url'] for row in calls)
+    assert report_reads>0 and submissions==(0 if setup['individualApproval'] else 1),calls
     unchanged=m.page('return window.wrappedJSObject.browser.storage.local.get("linkAuditLog").then(value=>JSON.stringify(value.linkAuditLog)===window.wrappedJSObject.inlineAuditBefore);',browser=options)
     assert unchanged
     m.screenshot(out/('inline-scan-fresh-profile.png' if fresh else 'inline-scan-after-cache-clear.png'))
-    report['inlineFreshManualScan' if fresh else 'inlineManualScan']={'passed':True,'realThunderbirdAPIs':True,'syntheticTransport':True,'liveProviderCalls':False,'contextRenewed':before['contextToken']!=renewed['contextToken'],'completed':finished['scanJob']['state']=='completed','visibleCompletion':True,'submissions':1,'historicalAuditUnchanged':unchanged}
+    report['inlineFreshManualScan' if fresh else 'inlineManualScan']={'passed':True,'realThunderbirdAPIs':True,'syntheticTransport':True,'liveProviderCalls':False,'contextRenewed':before['contextToken']!=renewed['contextToken'],'completed':finished['scanJob']['state']=='completed','visibleCompletion':True,'submissions':submissions,'acceptedReportReads':report_reads,'historicalAuditUnchanged':unchanged}
     report['passed']=True
     report['scope']='Linux X11 GUI; actual Thunderbird APIs; controlled synthetic urlscan transport; no live provider calls'
+    return setup['individualApproval']
 
 
 
 def check_scan_coverage(m, base, out, report, display, baseline=False):
     """Actual message/popup rendering with explicit inventory fault injection."""
-    check_inline_scan(m,base,out,report,display,fresh=True)
+    individual_approval=check_inline_scan(m,base,out,report,display,fresh=True)
     options='window.gTabmail.tabInfo.filter(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).at(-1).browser'
     target=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject||raw;
       const message=(await b.messages.query({subject:'Thundy AV synthetic live test'})).messages.find(x=>x.subject==='Thundy AV synthetic live test');
       const list=bg.browser.messages.listAttachments,get=bg.browser.messages.getAttachmentFile;
       bg.browser.messages.listAttachments=async id=>id===message.id?[{partName:'1.2',name:'unreadable.bin',size:12}]:list(id);
       bg.browser.messages.getAttachmentFile=async(id,part)=>{if(id===message.id&&part==='1.2')throw Error('Injected read failure');return get(id,part);};
+      if(typeof bg.prepareProviderTransfer==='function')await ('''+NATIVE_ACCEPTED_REPORT_FIXTURE+''')(bg,message,null,'inline-context-job');
       return message.id;
     })();''',browser=options)
     before=m.page('return window.wrappedJSObject.inlineScanCalls.length;',browser=options)
@@ -2338,6 +2369,7 @@ def check_scan_coverage(m, base, out, report, display, baseline=False):
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
     m.page('''return (async()=>{const b=window.wrappedJSObject.browser,raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject||raw;
       const message=await b.messages.get(arguments[0]),db=await bg.getSharedDB(),key=bg.resolveMessageStorageKey(message);
+      if(typeof bg.prepareProviderTransfer==='function')await ('''+NATIVE_ACCEPTED_REPORT_FIXTURE+''')(bg,message,null,'inline-context-job');
       await bg.updateStore(db,'hybridanalysis',key,old=>{const snapshots={...old.analysisSourceSnapshots};for(let i=Object.keys(snapshots).length;i<64;i++)snapshots['capacity-'+i]={savedAt:Date.now(),snapshot:{schemaVersion:1,rows:[]}};return {...old,analysisSourceSnapshots:snapshots};},{preserveReports:true});
       const ready=await bg.getMessageAnalysisContext(message),active=ready.wrappedJSObject||ready;window.wrappedJSObject.coverageActiveSnapshot=active.snapshotId;
       const record=await bg.getFromStore(db,'hybridanalysis',key);window.wrappedJSObject.coverageHistoryBefore=JSON.stringify(Object.fromEntries(Object.entries(record.analysisSourceSnapshots).filter(([id])=>id!==active.snapshotId)));
@@ -2346,18 +2378,22 @@ def check_scan_coverage(m, base, out, report, display, baseline=False):
     old=final['scanJob']['id']
     m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=scan-start]").click();')
     capacity=wait_for(result,30)
-    assert capacity['scanJob']['state']=='failed',capacity['scanJob']
-    if not baseline:
+    assert capacity['scanJob']['state']==('incomplete' if individual_approval else 'failed'),capacity['scanJob']
+    if individual_approval:
+        assert capacity.get('sourceSessionOnly') is True and capacity.get('sourcePersistenceFailed') is False,capacity
+        label=json.loads((ROOT/'_locales/en/messages.json').read_text())['sourceSessionOnly']['message']
+        wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[label]))
+    elif not baseline:
         assert capacity['scanJob']['reason']=='source_capacity',capacity['scanJob']
         capacity_label=json.loads((ROOT/'_locales/en/messages.json').read_text())['scanFailure_source_capacity']['message']
         wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[capacity_label]))
     preserved=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject||raw,db=await bg.getSharedDB();const record=await bg.getFromStore(db,'hybridanalysis',bg.resolveMessageStorageKey(await b.messages.get(arguments[0])));return {historyEqual:JSON.stringify(Object.fromEntries(Object.entries(record.analysisSourceSnapshots).filter(([id])=>id!==window.wrappedJSObject.coverageActiveSnapshot)))===window.wrappedJSObject.coverageHistoryBefore,callsBefore:window.wrappedJSObject.coverageCallsBefore,callsAfter:window.wrappedJSObject.inlineScanCalls.length,historyCount:Object.keys(record.analysisSourceSnapshots).length};})();''',[target],browser=options)
     report['coverageCapacityDiagnostics']=preserved
-    assert preserved['historyEqual'] and preserved['callsBefore']==preserved['callsAfter'],preserved
+    assert preserved['historyEqual'] and (preserved['callsAfter']>preserved['callsBefore'] if individual_approval else preserved['callsBefore']==preserved['callsAfter']),preserved
     preserved=True
     m.screenshot(out/'scan-capacity-message.png')
     report['identityEventAccess']=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,result={accountsRead:await b.permissions.contains({permissions:['accountsRead']}),events:{}};for(const name of ['onUpdated','onMoved','onCopied','onDeleted']){const listener=()=>{};try{const event=b.messages[name];if(!event){result.events[name]='unavailable';continue;}event.addListener(listener);event.removeListener(listener);result.events[name]='available';}catch(_){result.events[name]='denied';}}return result;})();''',browser=options)
-    report['scanCoverage']={'passed':not baseline,'baselineObserved':baseline,'realThunderbirdAPIs':True,'syntheticTransport':True,'injectedInventoryFailure':True,'liveProviderCalls':False,'state':final['scanJob']['state'],'assessmentIncomplete':final['scanJob'].get('assessmentIncomplete'),'coverage':final['scanJob'].get('coverage'),'visibleState':True,'visiblePopup':True,'sourceCapacityPreserved':preserved,'sourceCapacityReason':capacity['scanJob'].get('reason'),'additionalRequests':m.page('return window.wrappedJSObject.inlineScanCalls.length;',browser=options)-before}
+    report['scanCoverage']={'passed':not baseline,'baselineObserved':baseline,'realThunderbirdAPIs':True,'syntheticTransport':True,'injectedInventoryFailure':True,'liveProviderCalls':False,'state':final['scanJob']['state'],'assessmentIncomplete':final['scanJob'].get('assessmentIncomplete'),'coverage':final['scanJob'].get('coverage'),'visibleState':True,'visiblePopup':True,'sourceCapacityPreserved':preserved,'sourceCapacityReason':capacity['scanJob'].get('reason'),'sourceSessionOnly':capacity.get('sourceSessionOnly') is True,'additionalRequests':m.page('return window.wrappedJSObject.inlineScanCalls.length;',browser=options)-before}
     report['passed']=True
     report['scope']='Linux actual message UI; injected attachment API failure; synthetic provider transport; no live provider calls'
 

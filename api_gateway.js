@@ -223,6 +223,8 @@ class ApiGateway {
         delete fetchOptions.analysisContext;
         delete fetchOptions.keyTest;
         delete fetchOptions.keyTestAuthorization;
+        delete fetchOptions.keyTestIpReputation;
+        delete fetchOptions.authorizeTransfer;
         fetchOptions.redirect = 'error';
         let started = false, responded = false;
 
@@ -245,6 +247,8 @@ class ApiGateway {
                 if(blocked){if(response)break;return localResponse(blocked);}
                 if (info && !started) { emit({ phase: 'start' }); started = true; }
                 if(trace)await ThundyApiDiagnostics.progress(trace.ticket,'attempt',{state:'running',count:attempt+1});
+                if (options.authorizeTransfer) await options.authorizeTransfer(url, fetchOptions);
+                if (controller.signal.aborted) throw Object.assign(Error('Aborted'), {name:'AbortError'});
                 const attemptAt=Date.now();
                 response = await fetch(url, fetchOptions);
                 if(trace){const type=response.headers?.get?.('content-type')||'';trace.attempts.push({status:response.status,durationMs:Math.max(0,Date.now()-attemptAt),contentType:!type?'missing':/json/i.test(type)?'json':/html/i.test(type)?'html':/^text\//i.test(type)?'text':'other'});trace.reason=ThundyApiDiagnostics.classify(null,response.status);}
@@ -256,7 +260,8 @@ class ApiGateway {
                     this.setBackoff(cooldownKey,seconds,quota,ratePolicy?.maxSeconds||3600);
                 }
                 const isGet=(options.method||'GET').toUpperCase()==='GET';
-                if(!isGet||![429,503].includes(response.status)||retrySeconds===null||retrySeconds>2||attempt===2)break;
+                if(!isGet||options.analysisContext?.skipRateLimitWait && response.status===429||
+                    ![429,503].includes(response.status)||retrySeconds===null||retrySeconds>2||attempt===2)break;
                 if(trace)await ThundyApiDiagnostics.progress(trace.ticket,'wait',{reason:'rate_limited',durationMs:Math.max(1,Math.ceil(retrySeconds))*1000});
                 await this.pause(Math.max(1,Math.ceil(retrySeconds))*1000,controller.signal);
             }

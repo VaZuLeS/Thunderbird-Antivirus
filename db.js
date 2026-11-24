@@ -39,7 +39,9 @@ function captureReportState(record) {
     for (const [kind, field] of [['attachment','attachments'],['link','links']]) {
         if (record?.[field] != null && !Array.isArray(record[field])) throw reportArchiveError();
         for (const [slot, item] of (record?.[field] || []).entries()) {
-            if (item && (item.report != null || item.virustotal_stats != null || ['KNOWN','UPLOADED'].includes(item.state))) resources.push({kind,slot,resource:item});
+            if (item && (item.report != null || item.virustotal_stats != null || ['KNOWN','UPLOADED'].includes(item.state) ||
+                ['MALICIOUS','MALICIOUS_VISUAL','SUSPICIOUS'].includes(item.urlscan?.status) ||
+                ['malicious','suspicious'].includes(item.urlscan?.assessment?.verdict))) resources.push({kind,slot,resource:item});
         }
     }
     return {archive,resources:reportJsonCopy(resources, REPORT_CAPTURE_BYTES)};

@@ -3,8 +3,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const { JSDOM } = require('jsdom');
-const catalogs = Object.fromEntries(['en', 'de', 'fr', 'es', 'it', 'pl'].map(language => [language, JSON.parse(fs.readFileSync(`_locales/${language}/messages.json`))]));
+const { locales } = require('../scripts/locale-catalogs.js');
+const catalogs = Object.fromEntries(Object.keys(locales).map(language => [language, JSON.parse(fs.readFileSync(`_locales/${language}/messages.json`, 'utf8'))]));
 const source = fs.readFileSync('i18n.js', 'utf8');
+const pages = ['options.html', 'popup.html', 'privacy.html', 'audit.html', 'enterprise_setup.html', 'security.html', 'source_export.html', 'onboarding.html', 'attachment_download.html', 'hybrid_report.html', 'api_debug.html'];
+const substitutions = /\$[A-Z][A-Z0-9_]*\$|\$\d+|\$\$/g;
 function substitute(item, values = []) {
     return item.message.replace(/\$([A-Z0-9_]+)\$/g, (all, key) => {
         const content = item.placeholders[key.toLowerCase()].content;
@@ -18,9 +21,10 @@ test('mandatory catalogs have complete nonempty keys and matching placeholders',
         for (const locale of Object.keys(catalogs)) assert.ok(catalogs[locale][key].message.trim(), `${locale}/${key}`);
         for (const locale of Object.keys(catalogs)) {
             assert.deepEqual(catalogs.en[key].placeholders || {}, catalogs[locale][key].placeholders || {}, locale + '/' + key);
+            assert.deepEqual((catalogs[locale][key].message.match(substitutions) || []).sort(), (catalogs.en[key].message.match(substitutions) || []).sort(), `${locale}/${key} substitutions`);
         }
     }
-    for (const file of ['options.html', 'popup.html', 'privacy.html', 'api.js', 'options.js', 'background.js', 'risk.js', 'scan_policy.js', 'providers.js', 'message_ui.js', 'link_audit.js', 'audit.html', 'audit.js', 'enterprise_setup.html', 'enterprise_setup.js', 'security.html', 'security_page.js', 'source_export.html', 'source_export.js']) {
+    for (const file of [...pages, 'api.js', 'options.js', 'background.js', 'risk.js', 'scan_policy.js', 'providers.js', 'message_ui.js', 'link_audit.js', 'audit.js', 'enterprise_setup.js', 'security_page.js', 'source_export.js', 'i18n.js', 'onboarding.js']) {
         const text = fs.readFileSync(file, 'utf8');
         const keys = [...text.matchAll(/\b(?:uiText|msg|t)\(['"]([^'"]+)['"]/g)].map(match => match[1]);
         const domKeys = [...text.matchAll(/data-i18n(?:-(?:title|aria-label|placeholder))?="([^"]+)"/g)].map(match => match[1]);
@@ -28,9 +32,9 @@ test('mandatory catalogs have complete nonempty keys and matching placeholders',
     }
 });
 
-for (const locale of ['en', 'de', 'en-GB', 'de-AT', 'fr', 'fr-CA', 'es', 'es-MX', 'it', 'pl', 'ja']) {
-    for (const file of ['options.html', 'popup.html', 'privacy.html', 'audit.html', 'enterprise_setup.html', 'security.html', 'source_export.html']) {
-        test(`${file} renders ${locale} with bundled English fallback`, () => {
+for (const locale of [...Object.keys(locales), 'en-IE', 'de-AT', 'fr-BE', 'nl-BE', 'el-CY', 'ga-IE', 'mt-MT', 'pt-PT', 'sv-SE', 'ja']) {
+    test(`extension pages render ${locale} with bundled English fallback`, () => {
+        for (const file of pages) {
             const dom = new JSDOM(fs.readFileSync(file, 'utf8'));
             const language = catalogs[locale.split('-')[0]] ? locale.split('-')[0] : 'en';
             const context = vm.createContext({ document: dom.window.document, browser: { i18n: {
@@ -40,13 +44,49 @@ for (const locale of ['en', 'de', 'en-GB', 'de-AT', 'fr', 'fr-CA', 'es', 'es-MX'
             vm.runInContext(source + '\nThundyI18n.initialize();', context);
             assert.equal(dom.window.document.documentElement.lang, language);
             for (const el of dom.window.document.querySelectorAll('[data-i18n]')) {
-                assert.equal(el.textContent, substitute(catalogs[language][el.dataset.i18n]));
+                assert.equal(el.textContent, substitute(catalogs[language][el.dataset.i18n]), `${file}/${el.dataset.i18n}`);
                 assert.ok(!/\$[A-Z0-9_]+\$/.test(el.textContent));
             }
+            for (const attr of ['title', 'placeholder', 'aria-label']) {
+                for (const el of dom.window.document.querySelectorAll(`[data-i18n-${attr}]`)) {
+                    assert.equal(el.getAttribute(attr), substitute(catalogs[language][el.getAttribute(`data-i18n-${attr}`)]));
+                }
+            }
             assert.equal(dom.window.document.getElementById('apikey')?.required || false, false);
-        });
-    }
+            dom.window.close();
+        }
+    });
 }
+
+test('an add-on language can be selected across Thunderbird locales and saved without changing protection settings', async () => {
+    const dom = new JSDOM('<label for="addonLanguage" data-i18n="addonLanguage"></label><select id="addonLanguage" disabled><option value="system">System</option></select><p id="addonLanguageStatus"></p>');
+    const document = dom.window.document;
+    const writes = [], requested = [];
+    const context = vm.createContext({ document, fetch: async url => {
+        requested.push(url);
+        return {ok:true,json:async()=>catalogs.mt};
+    }, browser: { i18n: { getUILanguage: () => 'de-AT', getMessage: key => catalogs.de[key]?.message },
+        runtime: { getURL: path => 'moz-extension://test/' + path },
+        storage: { local: { get: async () => ({}), set: async data => writes.push({...data}) } }
+    }});
+    vm.runInContext(source + '\nglobalThis.i18n = ThundyI18n;', context);
+    await new Promise(resolve => setImmediate(resolve));
+    const picker = document.querySelector('select');
+    assert.equal(picker.options.length, 25);
+    assert.deepEqual([...picker.options].slice(1).map(option => [option.value, option.textContent]), Object.entries(locales));
+    picker.value = 'mt';
+    picker.dispatchEvent(new dom.window.Event('change'));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(writes, [{thundyLocale:'mt'}]);
+    assert.deepEqual(requested, ['moz-extension://test/_locales/mt/messages.json']);
+    assert.equal(context.i18n.get('addonLanguage'), catalogs.mt.addonLanguage.message);
+    assert.equal(document.getElementById('addonLanguageStatus').textContent, catalogs.mt.addonLanguageSaved.message);
+    picker.value = 'system';
+    picker.dispatchEvent(new dom.window.Event('change'));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(context.i18n.get('addonLanguage'), catalogs.de.addonLanguage.message);
+    dom.window.close();
+});
 
 test('English fallback substitutes dynamic values without markup parsing', () => {
     const context = vm.createContext({ browser: { i18n: { getMessage: () => '' } } });

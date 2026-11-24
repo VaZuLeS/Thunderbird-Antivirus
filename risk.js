@@ -133,14 +133,20 @@ function parseAuthenticationResults(headers) {
     return methods;
 }
 
+function scoreContribution(reasons, points, label = reasons.at(-1)) {
+    if (!reasons.localPoints) Object.defineProperty(reasons,'localPoints',{value:[]});
+    reasons.localPoints.push({points,label});
+    return points;
+}
+
 function evaluateAuthHeaders(authHeaders, score, reasons) {
     const results = parseAuthenticationResults(authHeaders);
     let authStatus = 'neutral';
     for (const [method, values] of Object.entries(results)) {
         if (values.some(value => value === 'fail' || (method === 'spf' && value === 'softfail'))) {
-            score += 50;
             const messages = { spf: ['ui_087', 'SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).'], dkim: ['ui_088', 'DKIM-Signatur ungültig (Mögliches Spoofing).'], dmarc: ['ui_089', 'DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).'] };
             addReason(reasons, ...messages[method]);
+            score += scoreContribution(reasons,50);
             authStatus = 'fail';
         }
     }
@@ -164,8 +170,8 @@ function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
         const replyDomain = extractEmailDomain(replyToEmail);
 
         if (replyDomain && replyDomain !== senderDomain) {
-            score += 50;
             addReason(reasons, "ui_091", "Diskrepanz erkannt: \"Reply-To\" Domain ($1) weicht von der Absender-Domain ($2) ab.", [replyDomain, senderDomain]);
+            score += scoreContribution(reasons,50);
         }
     }
     return score;
@@ -190,19 +196,19 @@ function evaluateBehavior(subject, messageText, isFirstCommunication, score, rea
 
         if (foundUrgencyWords.some(word => STRONG_URGENCY_SET.has(word))) {
             if (isFirstCommunication) {
-                score += 50;
                 addReason(reasons, "ui_092", "Mögliches BEC (Business Email Compromise): Erste Kommunikation mit diesem Absender und Dringlichkeits-Signalwörter gefunden ($1).", [foundUrgencyWords.join(', ')]);
+                score += scoreContribution(reasons,50);
             } else {
-                score += 20;
                 addReason(reasons, "ui_093", "Dringlichkeits-Signalwörter gefunden ($1). Bitte prüfen Sie die Anfrage sorgfältig.", [foundUrgencyWords.join(', ')]);
+                score += scoreContribution(reasons,20);
             }
             return score;
         }
     }
 
     if (isFirstCommunication) {
-        score += 10;
         addReason(reasons, "ui_094", "Dies ist das erste Mal, dass Sie mit diesem Absender kommunizieren.");
+        score += scoreContribution(reasons,10);
     }
     return score;
 }
@@ -246,8 +252,8 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
 
                 let distance = levenshteinDistance(senderMainDomain, brand);
                 if (distance > 0 && distance <= 2) {
-                    score += 60;
                     addReason(reasons, "ui_095", "Absender-Domain ($1) ähnelt verdächtig der bekannten Marke $2.", [senderMainDomain, brand]);
+                    score += scoreContribution(reasons,60);
                     break;
                 }
             }
@@ -362,13 +368,13 @@ function evaluateLinks(options = {}) {
         }
 
         if (senderDomain && !matchFound) {
-            score += 40;
             if (!(reasons.details || []).some(reason => reason.code === 'ui_097')) {
                  addReason(reasons, "ui_097", "Keiner der Links im Text verweist auf die Absender-Domain ($1).", [senderDomain]);
             }
+            score += scoreContribution(reasons,40);
         }
         if (typosquatLinkFound) {
-            score += 60;
+            score += scoreContribution(reasons,60,uiText('riskLinkBrandRule','At least one link domain resembles a known brand (counted once).'));
         }
     }
     return score;
@@ -488,7 +494,8 @@ function calculateThreatScore(author, urls, options = {}) {
     const listCheck = checkLists(email, senderDomain);
     if (listCheck?.listType === 'blacklist') {
         return { score: 100, heuristicScore: 100, riskModelVersion: 2, reasons: listCheck.reasons,
-            heuristicReasons: listCheck.reasons, providerReasons: [], authStatus: 'neutral' };
+            heuristicReasons: listCheck.reasons, providerReasons: [], localRawScore:100,
+            localContributions:[{points:100,label:listCheck.reasons[0]}], authStatus: 'neutral' };
     }
 
     const authEval = evaluateAuthHeaders(authHeaders, score, reasons);
@@ -511,7 +518,11 @@ function calculateThreatScore(author, urls, options = {}) {
         parsedUrlCache
     });
 
-    if (listCheck?.listType === 'whitelist') reasons.push(...listCheck.reasons);
+    if (listCheck?.listType === 'whitelist') {
+        reasons.push(...listCheck.reasons);
+        scoreContribution(reasons,0);
+    }
+    const localRawScore = score;
     const heuristicScore = Math.min(score, 100);
     const heuristicReasons = reasons.slice();
     score = evaluateUrlhaus(urlhausDomains, score, reasons);
@@ -521,6 +532,7 @@ function calculateThreatScore(author, urls, options = {}) {
     score = evaluateLinkFindings(linkFindings, score, reasons);
     return { score: Math.min(score, 100), heuristicScore, riskModelVersion: 2, reasons,
         heuristicReasons, providerReasons: reasons.slice(heuristicReasons.length),
+        localRawScore, localContributions: reasons.localPoints || [],
         reasonDetails: reasons.details || [], archivedAttachmentReasons, authStatus };
 }
 

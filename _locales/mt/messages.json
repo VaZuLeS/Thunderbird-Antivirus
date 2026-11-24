@@ -1,0 +1,3590 @@
+{
+  "protectionSeverity_low": { "message": "Riskju baxx" },
+  "protectionSeverity_unknown": { "message": "Riskju mhux magħruf" },
+  "protectionSeverity_caution": { "message": "Riskju elevat" },
+  "protectionSeverity_high": { "message": "Riskju għoli" },
+  "protectionSeverity_critical": { "message": "Riskju kritiku" },
+  "linkScanSummary": { "message": "Riżultati tal-iskans tal-URL" },
+  "linkScansPending": { "message": "L-iskans tal-URL għadhom għaddejjin." },
+  "linkNoScanResults": { "message": "M’hemmx riżultati tal-iskans tal-URL." },
+  "protectionCategoryUnavailable": { "message": "Il-fornitur ma indikax kategorija ta’ theddida." },
+  "linkWaitForResults": { "message": "Stenna l-iskans tal-URL li għadhom għaddejjin" },
+  "linkAutoOpenBelow": { "message": "Iftaħ direttament taħt dan il-punteġġ" },
+  "linkOpeningOptionsHelp": { "message": "Ħalli l-punteġġ vojt biex dejjem jintwera d-djalogu tal-link." },
+  "linkAuditRetentionTitle": { "message": "Żamma tar-reġistru tal-links" },
+  "linkAuditLimit": { "message": "Numru massimu ta’ entrati (vojt = bla limitu)" },
+  "linkAuditDays": { "message": "Jiem ta’ żamma (vojt = bla limitu)" },
+  "protectionManagedColors": { "message": "L-organizzazzjoni tiegħek tistabbilixxi l-kuluri tal-livelli tar-riskju." },
+  "linkOpenedAutomatically": { "message": "Infetaħ awtomatikament" },
+  "providerSwitchHelp": {
+    "message": "Ixgħel jew itfi s-servizzi wieħed wieħed u ssejvja s-settings. Meta twaqqaf servizz temporanjament, iċ-ċwievet u s-sejbiet issejvjati jinżammu."
+  },
+  "providerKeyLink": {
+    "message": "Ikseb ċavetta API"
+  },
+  "providerDocsLink": {
+    "message": "Dokumentazzjoni API"
+  },
+  "providerApiKeyLabel": {
+    "message": "Ċavetta tal-API"
+  },
+  "providerUse": {
+    "message": "Uża dan is-servizz"
+  },
+  "providerVirusUse": {
+    "message": "Uża VirusTotal għall-kontrolli tal-fajls"
+  },
+  "providerHybridStrength": {
+    "message": "Isib rapporti eżistenti skont hashes magħrufa tal-fajls. Meta t-tlugħ ikun awtorizzat, Falcon Sandbox jista’ janalizza l-imġiba tal-fajl waqt li jkun qed jitħaddem."
+  },
+  "providerHybridSetup": {
+    "message": "Oħloq kont, imbagħad miftuħ Profil → API Key biex joħolqu ċavetta."
+  },
+  "providerUrlhausStrength": {
+    "message": "Kontrolli link hosts kontra sorsi rrapportati ta 'malware."
+  },
+  "providerUrlhausSetup": {
+    "message": "Sinjal fil għall-abbuż.ch u jiksbu Auth-Key mill-kont tiegħek."
+  },
+  "providerUrlscanStrength": {
+    "message": "Jeżamina URLs sħiħa u ridirezzjonar mill-ġdid għal sinjali ta 'phishing. Thundy juża fil-livell ta 'privatezza Massimu."
+  },
+  "providerUrlscanSetup": {
+    "message": "Oħloq kont u jagħżlu Settings & API → ġodda API key."
+  },
+  "providerVirusTotalStrength": {
+    "message": "Tfittex up fajl jgħajjat SHA-256 hash u turi sejbiet minn magni scanning multipli."
+  },
+  "providerVirusTotalSetup": {
+    "message": "Sinjal fil VirusTotal u kopja tal-muftieħ mill-profil tiegħek jgħajjat API paġna Kodiċi."
+  },
+  "providerIpTitle": {
+    "message": "Reputazzjoni tal-indirizzi IP"
+  },
+  "providerIpUse": {
+    "message": "Iċċekkja r-reputazzjoni IP"
+  },
+  "providerIpChoose": {
+    "message": "Fornitur tar-reputazzjoni IP"
+  },
+  "providerIpKeyNotice": {
+    "message": "Daħħal ċavetta mill-fornitur magħżul. Meta twaqqaf il-verifiki tal-IP temporanjament, l-għażla tal-fornitur u ċ-ċavetta jinżammu."
+  },
+  "providerIpGuide": {
+    "message": "Agħżel u waqqaf fornitur tar-reputazzjoni IP"
+  },
+  "providerVirusIpStrength": {
+    "message": "Jiċċekkja l-IPs pubbliċi kontra magni ta' detezzjoni u klassifikazzjonijiet komunitarji VirusTotal."
+  },
+  "providerAbuseStrength": {
+    "message": "Juża rapporti tal-komunità biex jidentifika l-IPs pubbliċi assoċjati ma' spam, scanning jew abbuż ieħor."
+  },
+  "providerAbuseSetup": {
+    "message": "Oħloq kont AbuseIPDB u jiġġeneraw jew kopja ta 'ċavetta mill-tab API fid-daxxbord."
+  },
+  "providerIpVirusKey": {
+    "message": "Ċavetta tal-API ta’ VirusTotal għar-reputazzjoni tal-IP"
+  },
+  "providerIpAbuseKey": {
+    "message": "Skema AbuseIPDB API"
+  },
+  "providerTestDisabled": {
+    "message": "Ixgħel is-servizz u ssejvja s-settings qabel tittestja ċ-ċavetta."
+  },
+  "analysisReason_provider_disabled": {
+    "message": "Dan il-fornitur jintuża f'settings."
+  },
+  "extensionName": {
+    "message": "Thundy AV – Skennjar tal-email għal Thunderbird"
+  },
+  "extensionDescription": {
+    "message": "Fakultattiv, opt-in skanner għall-annessi email u links. Xejn ma jħalli l-kompjuter tiegħek mingħajr il-kunsens espliċitu tiegħek."
+  },
+  "actionTitle": {
+    "message": "L-istatus ta' skannjar Thundy AV għal dan il-messaġġ"
+  },
+  "bannerScanOnce": {
+    "message": "Scan dan il-messaġġ darba"
+  },
+  "bannerScanSender": {
+    "message": "Dejjem skennja dan il-mittent"
+  },
+  "bannerTitleOptIn": {
+    "message": "Thundy AV: l-iskannjar f'ħin reali ma jkunx jista' jintuża għal dan il-messaġġ."
+  },
+  "bannerNoteOptIn": {
+    "message": "Scanning jittrasmetti data lil servizzi ta 'analiżi esterni, iżda biss jekk inti ppermettiet dan fil-settings add-on u biss wara li inti tagħti l-kunsens tiegħek. Ara l-għażliet add-on."
+  },
+  "bannerScanRunning": {
+    "message": "Qed jiġi skennjat…"
+  },
+  "bannerScanDone": {
+    "message": "Talbiet li tlestew - ara s-sorsi ta' analiżi"
+  },
+  "bannerScanFailed": {
+    "message": "Skan ma rnexxiex"
+  },
+  "bannerPermissionDenied": {
+    "message": "Il-permess ta' ospitanti meħtieġ ġie mċaħħad"
+  },
+  "bannerConsentMissing": {
+    "message": "Talbiet esterni ġodda huma b'diżabilità. Rapporti maħżuna qabel jistgħu għadhom jidhru."
+  },
+  "bannerThreatTitle": {
+    "message": "Twissija Thundy AV"
+  },
+  "bannerThreatScore": {
+    "message": "Punteġġ tar-riskju: $SCORE$ ta' 100",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerSenderOptIn": {
+    "message": "Dan il-mittent issa qed jiġi skennjat awtomatikament."
+  },
+  "notificationScanStarted": {
+    "message": "Scan beda għal: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "Scan sottomessi b'suċċess. ID Ġob: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanError": {
+    "message": "Żball fl-iskan: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Skanner Thundy AV"
+  },
+  "notificationTitleError": {
+    "message": "Żball Thundy AV Skanner"
+  },
+  "bannerAuthPass": {
+    "message": "Rapporti tas-server ta' fiduċja SPF / DKIM / DMARC għadda"
+  },
+  "bannerOpenOptions": {
+    "message": "Għażliet miftuħa"
+  },
+  "menuScanLink": {
+    "message": "Rabta Skan ma' Thundy AV"
+  },
+  "menuScanMessageLinks": {
+    "message": "Scan kollha links ta 'dan il-messaġġ"
+  },
+  "notificationNoLinks": {
+    "message": "L-ebda rabta misjuba f'dan il-messaġġ."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "Il-permess ospitanti għas-servizz ta 'analiżi huwa nieqes. Jekk jogħġbok agħtih fl-għażliet add-on."
+  },
+  "errorHostPermissionMissing": {
+    "message": "Permess ospitanti għas-servizz ta' analiżi huwa nieqes. Jekk jogħġbok agħtih fl-għażliet add-on."
+  },
+  "errorTierUploadBlocked": {
+    "message": "L-aġġornament tal-annessi huwa b'diżabilità fil-livell ta' privatezza \"Strict.\" Swiċċ għal \"Balanced\" jew \"Massimu\" fl-għażliet miżjuda."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "Preżentazzjoni URLs huwa permess biss fil-livell ta 'privatezza \"Massimu.\" Ibdel il-livell fl-għażliet add-on."
+  },
+  "notificationInjectionFailed": {
+    "message": "Il-banner ma setgħux jiddaħħlu fil-fehma messaġġ. Jekk jogħġbok irrapporta dan bil tiegħek Thunderbird verżjoni."
+  },
+  "bannerTierBlocked": {
+    "message": "Din l-azzjoni mhix permessa mill-livell ta 'privatezza attwali. Ara l-għażliet miżjuda."
+  },
+  "ui_001": {
+    "message": "Twissija:"
+  },
+  "ui_002": {
+    "message": "Nru Hybrid Analysis API key configurat. Tista 'tuża kontrolli lokali jew konfigurazzjoni fornitur fil-settings."
+  },
+  "ui_003": {
+    "message": "Is-settings miftuħa"
+  },
+  "ui_004": {
+    "message": "Agħżel email biex jispezzjonaw dan."
+  },
+  "ui_005": {
+    "message": "Riżultati tal-analiżi tat-tagħbija…"
+  },
+  "ui_006": {
+    "message": "L-analiżi esterna hija b'diżabilità: l-ebda hashes, fajls jew links ma jintbagħtu lis-servizzi ta' analiżi."
+  },
+  "ui_007": {
+    "message": "Għal dan il-messaġġ m'hemm l-ebda riżultat ta' twaħħil jew skennjar tal-link maħżun."
+  },
+  "ui_008": {
+    "message": "L-ebda riżultati ta 'analiżi disponibbli għal dan email."
+  },
+  "ui_009": {
+    "message": "Żball mhux mistenni waqt li l-analiżi tat-tagħbija tirriżulta."
+  },
+  "ui_010": {
+    "message": "Stat:"
+  },
+  "ui_011": {
+    "message": "Jekk jogħġbok ipprova mill-ġdid aktar tard."
+  },
+  "ui_012": {
+    "message": "SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_013": {
+    "message": "Punteġġ ta ' theddid:"
+  },
+  "ui_014": {
+    "message": "Verdett:"
+  },
+  "ui_015": {
+    "message": "Familja ta' Malware:"
+  },
+  "ui_016": {
+    "message": "Riżultat multiskan: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_017": {
+    "message": "Informazzjoni addizzjonali:"
+  },
+  "ui_018": {
+    "message": "L-analiżi bdiet: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_019": {
+    "message": "Tikketti: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_020": {
+    "message": "Riżultati VirusTotal:"
+  },
+  "ui_021": {
+    "message": "Malizzjuż: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_022": {
+    "message": "Mhux rilevat: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_023": {
+    "message": "Suwiċidju: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_024": {
+    "message": "Mingħajr ħsara: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_025": {
+    "message": "Skanner: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_026": {
+    "message": "Stat: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_027": {
+    "message": "Riżultati ta ' l- antivirus:"
+  },
+  "ui_028": {
+    "message": "AV: $P1$ verdett: $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_029": {
+    "message": "L-ebda riżultati ta' skanner ma huma disponibbli."
+  },
+  "ui_030": {
+    "message": "Hash SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_031": {
+    "message": "Isem tal-fajl: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_032": {
+    "message": "Daqs: $P1$ bytes",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_033": {
+    "message": "Tip: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_034": {
+    "message": "Skan għal darb'oħra"
+  },
+  "ui_035": {
+    "message": "Santize and download (lokali)"
+  },
+  "ui_036": {
+    "message": "Punt ta' kontroll: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_037": {
+    "message": "Riżultat lokali: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_038": {
+    "message": "SHA-256: L-analiżi esterna ta' $P1$ għandha diżabilità.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_039": {
+    "message": "L-ebda ħarsa esterna minħabba li l-analiżi esterna hija b'diżabilità."
+  },
+  "ui_040": {
+    "message": "analiżi esterna b'diżabbiltà"
+  },
+  "ui_041": {
+    "message": "Il-preżentazzjoni ta' skan…"
+  },
+  "ui_042": {
+    "message": "It-titjib tal-fajl għal skan ġdid…"
+  },
+  "ui_043": {
+    "message": "Scan sottomessi. Riforniment riżultati…"
+  },
+  "ui_044": {
+    "message": "Suċċess"
+  },
+  "ui_045": {
+    "message": "Skan ma rnexxiex:"
+  },
+  "ui_046": {
+    "message": "Żball mhux magħruf"
+  },
+  "ui_047": {
+    "message": "Ipprova mill-ġdid"
+  },
+  "ui_048": {
+    "message": "Żball fil-komunikazzjoni:"
+  },
+  "ui_049": {
+    "message": "Niddeċiedu…"
+  },
+  "ui_050": {
+    "message": "Sanitizing HTML lokalment…"
+  },
+  "ui_051": {
+    "message": "Niżżel beda."
+  },
+  "ui_052": {
+    "message": "Imnaddaf"
+  },
+  "ui_053": {
+    "message": "Niżżel naqset:"
+  },
+  "ui_054": {
+    "message": "Żball API: $P1$ għall-partita $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_055": {
+    "message": "(Iċ-ċavetta API tista' tkun invalida jew nieqsa.)"
+  },
+  "ui_056": {
+    "message": "Żball fin-netwerk: $P1$ għall-punt $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_057": {
+    "message": "Il-preżentazzjoni ta' URL…"
+  },
+  "ui_058": {
+    "message": "L-għoti ta' URL lil Hybrid Analysis…"
+  },
+  "ui_059": {
+    "message": "Scan sottomessi. Riżultati tagħbija…"
+  },
+  "ui_060": {
+    "message": "It-tagħbija żejda ma rnexxilhiex:"
+  },
+  "ui_061": {
+    "message": "URL: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_062": {
+    "message": "Dan URL instab fl-email. Biex jipproteġu l-privatezza tiegħek, kien"
+  },
+  "ui_063": {
+    "message": "mhux imtella' awtomatikament"
+  },
+  "ui_064": {
+    "message": "Scan URL issa"
+  },
+  "ui_065": {
+    "message": "It-titjib…"
+  },
+  "ui_066": {
+    "message": "Il-fajl li jintbagħat lil Hybrid Analysis…"
+  },
+  "ui_067": {
+    "message": "It-tagħbija tlestiet. Riżultati tat-tagħbija…"
+  },
+  "ui_068": {
+    "message": "Fajl Scan issa (tagħbija 'l fuq)"
+  },
+  "ui_069": {
+    "message": "Hemża: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_070": {
+    "message": "L-ebda rapport estern huwa disponibbli għal dan il-fajl. Biex jipproteġu l-privatezza tiegħek, kien"
+  },
+  "ui_071": {
+    "message": "It-tlugħ awtomatiku huwa diżabbiltà; il-livell ta' privatezza għadu japplika għall-iskans manwali."
+  },
+  "ui_072": {
+    "message": "Il-protezzjoni tar-rabta tibqa' disponibbli flimkien ma' skannjar awtomatiku."
+  },
+  "ui_073": {
+    "message": "L - iffrankar…"
+  },
+  "ui_074": {
+    "message": "Settings salvati."
+  },
+  "ui_075": {
+    "message": "Issejvja"
+  },
+  "ui_076": {
+    "message": "Il-permess għat-trażmissjoni tad-dejta ma ngħatax. Mhu se jintbagħat xejn."
+  },
+  "ui_077": {
+    "message": "Il-permess tal-host ma ngħatax:"
+  },
+  "ui_078": {
+    "message": ". Kontrolli għal dawn il-fornituri mhumiex disponibbli mingħajr permess."
+  },
+  "ui_079": {
+    "message": "Ma nistax niffrankaw is-settings."
+  },
+  "ui_080": {
+    "message": "Ċar il-cache? Dan ineħħi r-riżultati kollha ta 'analiżi maħżuna lokalment."
+  },
+  "ui_081": {
+    "message": "L-ikklerjar…"
+  },
+  "ui_082": {
+    "message": "Cache approvat."
+  },
+  "ui_083": {
+    "message": "L-ebda database teżisti s'issa, jew diġà hija vojta."
+  },
+  "ui_084": {
+    "message": "Ma stajtx iċċara l-cache."
+  },
+  "ui_085": {
+    "message": "Kakatu ċar"
+  },
+  "ui_086": {
+    "message": "Iċ-ċavetta API nieqsa."
+  },
+  "ui_087": {
+    "message": "Il-verifika SPF ma rnexxilhiex tirnexxi (il-possibbiltà ta' spoofing)."
+  },
+  "ui_088": {
+    "message": "Il-firma DKIM hija invalida (possibbli li titħarrek)."
+  },
+  "ui_089": {
+    "message": "Il-verifika DMARC ma rnexxilhiex tirnexxi (il-possibbiltà ta' spoofing)."
+  },
+  "ui_090": {
+    "message": "URLhaus jelenka d-dominju ($P1$) bħala malizzjuż.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_091": {
+    "message": "Tweġiba-Lil dominju ($P1$) differenti minn dominju senter ( $P2$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_092": {
+    "message": "Possibbli tan-negozju email kompromess: l-ewwel kuntatt ma 'dan il-kelma keywords senter u urġenza misjuba ($P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_093": {
+    "message": "Kliem ewlieni urġenza misjuba ($P1$). Iċċekkja din it-talba b'attenzjoni.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_094": {
+    "message": "Din hija l-ewwel komunikazzjoni tiegħek ma' dan il-mittent."
+  },
+  "ui_095": {
+    "message": "Id-dominju tal-ħruġ ($P1$) huwa l-istess bħall-marka magħrufa $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_096": {
+    "message": "Il-qasam tal-link ($P1$) huwa l-istess bħall-marka magħrufa $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_097": {
+    "message": "L-ebda wieħed mill-links fit-test punt għad-dominju speditur ($P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_098": {
+    "message": "IL-KLEAN"
+  },
+  "ui_099": {
+    "message": "L-iskan URL ma ħadimx:"
+  },
+  "ui_100": {
+    "message": "Ma stajtx tibda l-iskan urlscan.io:"
+  },
+  "ui_101": {
+    "message": "urlscan.io ma rritornax ID tal-iskan."
+  },
+  "ui_102": {
+    "message": "urlscan.io identifika l-URL bħala malizzjuż."
+  },
+  "ui_103": {
+    "message": "Sejba viżwali: il-paġna impersonalates"
+  },
+  "ui_104": {
+    "message": "(tisfija ssuspettata)."
+  },
+  "ui_105": {
+    "message": "Ma nistax nikseb riżultati urlscan.io:"
+  },
+  "ui_106": {
+    "message": "Thundy AV 00_ Email Scanner"
+  },
+  "ui_107": {
+    "message": "Ara s-sottomissjonijiet kollha Hybrid Analysis"
+  },
+  "ui_108": {
+    "message": "Ara s-sottomissjonijiet kollha Hybrid Analysis (tiftaħ tab ġdid)"
+  },
+  "ui_109": {
+    "message": "Suġġett:"
+  },
+  "ui_110": {
+    "message": "Minn:"
+  },
+  "ui_111": {
+    "message": "ID tal-messaġġ:"
+  },
+  "ui_112": {
+    "message": "Is-settings Thundy AV"
+  },
+  "ui_113": {
+    "message": "Hybrid Analysis huwa servizz ta 'analiżi malware. Tista 'tissottometti fajls għall-analiżi statika u dinamika."
+  },
+  "ui_114": {
+    "message": "Hybrid Analysis juża CrowdSrike Falcon Sandbox biex jinvestiga theddid mhux magħruf."
+  },
+  "ui_115": {
+    "message": "Kontijiet ta' fornitur u termini tas-servizz japplikaw għal analiżi esterna. Il-kontrolli lokali ma jeħtiġux kont."
+  },
+  "ui_116": {
+    "message": "Is-settings Thundy AV"
+  },
+  "ui_117": {
+    "message": "X'inhu Hybrid Analysis?"
+  },
+  "ui_118": {
+    "message": "Għall-analiżi fajl estern, jiksbu key API minn"
+  },
+  "ui_119": {
+    "message": "Wara l-iffirmar fi, mur fil-profil tiegħek u jsibu s-sezzjoni API KEY."
+  },
+  "ui_120": {
+    "message": "Paste-API ċavetta hawn. kontrolli lokali jaħdmu mingħajrha."
+  },
+  "ui_121": {
+    "message": "L-istruttura ewlenija API"
+  },
+  "ui_122": {
+    "message": "hybrid-analysis.com"
+  },
+  "ui_123": {
+    "message": "hybrid-analysis.com (jiftaħ tab ġdid)"
+  },
+  "ui_124": {
+    "message": "Ippermetti analiżi esterna (ibgħat data lil fornituri terzi)"
+  },
+  "ui_125": {
+    "message": "Mingħajr dan il-kunsens,"
+  },
+  "ui_126": {
+    "message": "hashes, fajls, links jew indirizzi IP jintbagħtu lil servizzi esterni. Wara l-kunsens, scans awtorizzati jistgħu jibagħtu data ta 'sekwestru u link għal Hybrid Analysis, VirusTotal, urlscan.io, URLhaus jew AbuseIPDB, jiddependi fuq il-livell tal-privatezza. Dawwar din l-għażla off biex jirtiraw kunsens. Dettalji:"
+  },
+  "ui_127": {
+    "message": "im"
+  },
+  "ui_128": {
+    "message": "Politika ta' privatezza"
+  },
+  "ui_129": {
+    "message": "Politika ta' privatezza (tiftaħ tab ġdid)"
+  },
+  "ui_130": {
+    "message": "L-iskema Hybrid Analysis API (fakultattiva):"
+  },
+  "ui_131": {
+    "message": "eż. abcdef123456…"
+  },
+  "ui_132": {
+    "message": "Kodiċi URLhaus API (reputazzjoni tad-dominju mhux obbligatorja):"
+  },
+  "ui_133": {
+    "message": "Tista 'tikseb ċavetta API fuq"
+  },
+  "ui_134": {
+    "message": "."
+  },
+  "ui_135": {
+    "message": "urlhaus.abuse.ch"
+  },
+  "ui_136": {
+    "message": "urlhaus.abuse.ch (jiftaħ tab ġdid)"
+  },
+  "ui_137": {
+    "message": "L-iskema urlscan.io API (analiżi fakultattiva URL):"
+  },
+  "ui_138": {
+    "message": "Tista 'tikseb ċavetta API fuq"
+  },
+  "ui_139": {
+    "message": "urlscan.io"
+  },
+  "ui_140": {
+    "message": "urlscan.io (jiftaħ tab ġdid)"
+  },
+  "ui_141": {
+    "message": "L-iskema VirusTotal API (reputazzjoni mhux obbligatorja tal-fajl):"
+  },
+  "ui_142": {
+    "message": "virustotal.com"
+  },
+  "ui_143": {
+    "message": "virustotal.com (jiftaħ tab ġdid)"
+  },
+  "ui_144": {
+    "message": "Livell ta' privatezza:"
+  },
+  "ui_145": {
+    "message": "DETTALJAT (default: hashes u dominji biss, ebda uploads)"
+  },
+  "ui_146": {
+    "message": "Bilanċjat (tagħbija fajls mhux magħrufa, l-ebda URLs kompluta)"
+  },
+  "ui_147": {
+    "message": "Analiżi massima (tagħbija fajls mhux magħrufa u kompluta URLs)"
+  },
+  "ui_148": {
+    "message": "Limiti tad-dejta mibgħuta lill-fornituri tal-analiżi. Tapplika biss meta l-analiżi esterna tkun inizjata."
+  },
+  "ui_149": {
+    "message": "Ir-reputazzjoni ta' IP (iċċekkja l-kapijiet li rċevew):"
+  },
+  "ui_150": {
+    "message": "Diżabilità"
+  },
+  "ui_151": {
+    "message": "VirusTotal (jirrikjedi ċavetta VirusTotal API)"
+  },
+  "ui_152": {
+    "message": "AbuseIPDB (jirrikjedi ċavetta AbuseIPDB API)"
+  },
+  "ui_153": {
+    "message": "L-iskema IP ta' reputazzjoni API:"
+  },
+  "ui_154": {
+    "message": "Sends pubbliku IP indirizzi mill-headers riċevuti tal-email lill-fornitur magħżul. Jirrikjedi kunsens analiżi esterna u awtorizzazzjoni scan."
+  },
+  "ui_155": {
+    "message": "Lista ta' permessi (dominji separati mill-komuni jew indirizzi tal-email):"
+  },
+  "ui_156": {
+    "message": "eż. example.com, test@example.com"
+  },
+  "ui_157": {
+    "message": "L-entrati ta' min jibgħat ta' fiduċja jrażżnu t-twissijiet lokali ta' min jibgħathom. Huma ma jawtorizzawx skans esterni."
+  },
+  "ui_158": {
+    "message": "Lista ta' blokok (dominji jew indirizzi tal-posta elettronika separati minn komuni):"
+  },
+  "ui_159": {
+    "message": "Ikteb oqsma imblukkati jew indirizzi email."
+  },
+  "ui_160": {
+    "message": "Dejjem skanja manwalment (l-ebda uploads awtomatiċi)"
+  },
+  "ui_161": {
+    "message": "Jipprevjeni skans esterni awtomatiċi. Azzjonijiet manwali espliċiti xorta jeħtieġu l-kunsens u l-livell ta 'privatezza xierqa."
+  },
+  "ui_162": {
+    "message": "Aġġorna awtomatikament ir-rapporti pendenti tal-links"
+  },
+  "ui_163": {
+    "message": "Il-kontrolli tal-link jeħtieġu l-kunsens, awtorizzazzjoni ta' skanjar u l-livell ta' privatezza xierqa."
+  },
+  "ui_164": {
+    "message": "Iċċekkja l-links qabel tiftaħhom"
+  },
+  "ui_165": {
+    "message": "Il-Kummissjoni tinnota li l-kummenti ta' Franza dwar id-deċiżjoni ta' ftuħ, il-punti 137 u 131. URL L-analiżi teħtieġ il-Livell Massimu. Links sħaħ u sekwestri jeħtieġu konferma individwali."
+  },
+  "ui_166": {
+    "message": "Ftakar biex jiffrankaw settings tiegħek."
+  },
+  "ui_167": {
+    "message": "Ġestjoni tad-dejta"
+  },
+  "ui_168": {
+    "message": "Riżultati maħżuna lokalment ċari u kaxxetti reputazzjoni."
+  },
+  "linkChecking": {
+    "message": "Link ta' kontroll…"
+  },
+  "linkWarning": {
+    "message": "Din ir-rabta kienet irrappurtata bħala suspettuża jew malizzjuża."
+  },
+  "linkUnknown": {
+    "message": "Din ir-rabta ma setgħetx tiġi vverifikata. Ftuħ tista 'tkun riskjuża."
+  },
+  "linkNoDetection": {
+    "message": "L-ebda theddida misjuba mill-fornitur. Dan mhuwiex garanzija ta 'sikurezza."
+  },
+  "linkProceed": {
+    "message": "Link miftuħ xorta waħda"
+  },
+  "linkCancel": {
+    "message": "Ikkanċella"
+  },
+  "localMode": {
+    "message": "Kontrolli lokali xogħol mingħajr ċwievet API. Scans esterni jeħtieġu l-kunsens tiegħek u messaġġ jew awtorizzazzjoni min jibgħat."
+  },
+  "statusNormal": {
+    "message": "(L-ebda detezzjoni)"
+  },
+  "statusSuspicious": {
+    "message": "(Suspicious)"
+  },
+  "statusCritical": {
+    "message": "(Kritiku)"
+  },
+  "noSubject": {
+    "message": "(L-ebda suġġett)"
+  },
+  "noSender": {
+    "message": "(Mhix magħrufa min bagħatha)"
+  },
+  "noId": {
+    "message": "(Nru ID)"
+  },
+  "unknownAttachment": {
+    "message": "Mhux magħruf"
+  },
+  "statusDangerous": {
+    "message": "(Perikoluż)"
+  },
+  "sizeLimit": {
+    "message": "L-hemża taqbeż il-25 MiB tal-limitu tad-daqs lokali u ma ntlaħqitx jew ttellgħet."
+  },
+  "trustedAuthLabel": {
+    "message": "servers ta' awtentikazzjoni affidabbli (komuni separati)"
+  },
+  "trustedAuthHelp": {
+    "message": "Biss lista riċevitur posta servers inti tamministra jew espliċitament fiduċja. Rapporti header mhux figurati jibqgħu unverified."
+  },
+  "consentHelp": {
+    "message": "Mingħajr il-kunsens ma tintbagħat ebda data lil servizzi esterni. Wara l-kunsens, jiġu ċċekkjati biss messaġġi jew mittenti approvati espliċitament. Fil-livell strett jistgħu jintbagħtu hashes, dominji u indirizzi IP pubbliċi. Il-livell ibbilanċjat jippermetti wkoll it-tlugħ ta’ fajls mhux magħrufa, u l-ogħla livell jippermetti wkoll li jintbagħtu URLs sħaħ. Itfi din l-għażla biex twaqqaf trasferimenti ġodda u tikkanċella talbiet pendenti. Data li tkun diġà ntbagħtet ma tistax tiġi rtirata. Links sħaħ u sekwestri jeħtieġu konferma individwali."
+  },
+  "visualImpersonation": {
+    "message": "Sejbien viżwali: il-paġna timpersonalizza $BRANDS$ (tisfija ssuspettata).",
+    "placeholders": {
+      "brands": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedEmail": {
+    "message": "email Sender ($P1$) huwa fuq il-blocklist.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedDomain": {
+    "message": "Sender domain ($P1$) huwa fuq il-blocklist ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedEmail": {
+    "message": "Posta elettronika tas-sender ($P1$) tinsab fuq il-lista ta' permessi.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedDomain": {
+    "message": "Sender domain ($P1$) huwa fuq il-lista ta \" permessi ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanVisibility": {
+    "message": "Is-sottomissjonijiet urlscan.io mhumiex elenkati, mhux privati. A URL kompluta jista 'jkun fihom data personali jew tokens aċċess. Submit biss URLs inti permess li jaqsmu."
+  },
+  "notificationScanCount": {
+    "message": "Skens sottomessi: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "gatewayRequestTimeout": {
+    "message": "It-talba tal-fornitur ġiet ikkanċellata jew mogħtija fil-ħin."
+  },
+  "gatewayInvalidJson": {
+    "message": "Il-fornitur irritorna tweġiba li ma tistax tinqara."
+  },
+  "gatewayNetworkError": {
+    "message": "Il-fornitur ma setax jintlaħaq."
+  },
+  "noMessageFound": {
+    "message": "Ma nstab ebda messaġġ."
+  },
+  "providerNoDetection": {
+    "message": "L-ebda theddida ma ġiet rilevata"
+  },
+  "providerMalicious": {
+    "message": "Malizzjuż"
+  },
+  "providerSuspicious": {
+    "message": "Suspettuż"
+  },
+  "providerPending": {
+    "message": "Analiżi pendenti"
+  },
+  "privacyLocalData": {
+    "message": "Thundy AV jaqra l-messaġġ murija, il-mittent tiegħu, suġġett, headers, test u annessi biex iwettqu kontrolli lokali. Kontrolli lokali xogħol mingħajr ċwievet API. M'hemm l-ebda telemetrija u l-ebda server analiżi iżviluppatur."
+  },
+  "privacyProviders": {
+    "message": "Talbiet esterni awtorizzati jmorru direttament lill-fornituri kkonfigurati: Hybrid Analysis għall hashes fajl u uploads, VirusTotal għal hashes fajl jew IP reputazzjoni, URLhaus għal dominji, urlscan.io għal URLs kompluta u AbuseIPDB għal IPs pubbliċi. Hashes jistgħu jidentifikaw fajls magħrufa. Termini fornitur u politiki ta 'privatezza japplikaw; data sottomessa tista' tiġi kondiviża mill-fornitur."
+  },
+  "privacyRetention": {
+    "message": "Settings, kunsens, l-awtorizzazzjonijiet ta 'mittenti u API ċwievet huma maħżuna fil-profil Thunderbird tiegħek. ċwievet API mhumiex encrypted hemmhekk. rekords scan lokali jistgħu jinkludu suġġetti, indirizzi ta 'mittent, links kompluti u metadata sekwestru. Il-cache jżomm sa 1,000 rekords messaġġ għal 30 jum u hija mnaddfa fuq startup database. Riżultati reputazzjoni fil-memorja jiskadi wara 15 minuti."
+  },
+  "privacyControl": {
+    "message": "Aqleb l-analiżi esterna biex twaqqaf talbiet ġodda u tikkanċella talbiet pendenti. diġà trażmessa data ma tistax tiġi mfakkra. Uża cache ċara li tħassar ir-riżultati ta 'analiżi maħżuna u kaxuni reputazzjoni. Awtorizzazzjonijiet b'mittent individwali jistgħu jitneħħew fl-settings."
+  },
+  "privacyDetailed": {
+    "message": "Politika dettaljata dwar il-privatezza (Ingliż/Ġermaniż)"
+  },
+  "senderAuthorizationsLabel": {
+    "message": "Mittenti awtorizzati (indirizz wieħed tal-posta elettronika għal kull linja)"
+  },
+  "senderAuthorizationsHelp": {
+    "message": "Dawn il-mittenti jistgħu jiġu skennjati awtomatikament meta l-analiżi esterna hija ▁Whatable. Neħħi indirizz biex twaqqaf scans awtomatiċi għal messaġġi futuri Din il-lista ma tevitax il-livell ta 'privatezza jew il-modalità manwali."
+  },
+  "invalidSenderAddress": {
+    "message": "Ikteb indirizzi email sempliċi, wieħed għal kull linja."
+  },
+  "popupSubtitle": {
+    "message": "Ħarsa ġenerali lejn is-sigurtà tal-messaġġi"
+  },
+  "popupDetails": {
+    "message": "Dettalji tal-messaġġ tekniku"
+  },
+  "popupLocalAssessment": {
+    "message": "Valutazzjoni tar-riskju lokali"
+  },
+  "popupLocalExplanation": {
+    "message": "Indikaturi lokali biss. Dan il-punteġġ mhuwiex verdett antivirus jew garanzija ta 'sigurtà."
+  },
+  "linkDialogTitle": {
+    "message": "Iċċekkja qabel ma tiftaħ"
+  },
+  "linkDestination": {
+    "message": "Il-websajt tad-destinazzjoni"
+  },
+  "linkUrlDetails": {
+    "message": "Uri l-indirizz rabta sħiħa"
+  },
+  "linkOpenBrowser": {
+    "message": "Iftaħ fil-brawżer"
+  },
+  "linkOpening": {
+    "message": "Ftuħ…"
+  },
+  "linkOpenFailed": {
+    "message": "Il-link ma setax jinfetaħ. Erġa’ pprova jew iċċekkja s-settings tal-brawżer prestabbilit."
+  },
+  "linkCheckLimited": {
+    "message": "Ir-riżultati tal-iskan disponibbli biss jistgħu jintwerew. Kontrolli neqsin ma jfissrux li link hija sikura."
+  },
+  "auditTitle": {
+    "message": "Reġistru tad-deċiżjonijiet dwar il-links"
+  },
+  "auditOpen": {
+    "message": "Reġistru tal-link ta' reviżjoni"
+  },
+  "auditScope": {
+    "message": "Logs HTTP (S) ikklikkja interċettat mill-protezzjoni rabta. MGĦAŻLA tfisser Thunderbird aċċettat it-talba tal-ftuħ mingħajr ma tirrapporta żball. Dan ma jikkonfermax li s-sistema operattiva bdiet browser jew li l-websajt kienet miżjura. Nattivi kuntest-menu jiftaħ mhumiex irreġistrati."
+  },
+  "auditPrivacy": {
+    "message": "Miżmuma lokalment sa 30 jum, 2,000 rekords jew 2 MiB (entrati l-aktar antiki jitneħħew). URLs sħiħa jista 'jkun fihom data personali jew tokens aċċess. Xejn huwa mtella awtomatikament. Il-log lokali jistgħu jinbidlu jew jitħassru mill-utenti profil; mhuwiex traċċa ċentrali verifika li ma jistax jitbagħbas. Il-punteġġ lokali juża l-link u l-kuntest messaġġ clicked, mhux punteġġ fornitur. Raġunijiet ta 'valutazzjoni jistgħu jinkludu speditur jew dettalji tad-dominju."
+  },
+  "auditSearch": {
+    "message": "URL, dominju jew avveniment ID"
+  },
+  "auditOutcome": {
+    "message": "Deċiżjoni"
+  },
+  "auditAll": {
+    "message": "Kollha ≤ 10. 6 > 10. 6"
+  },
+  "auditOpened": {
+    "message": "Il-ftuħ mitlub"
+  },
+  "auditAborted": {
+    "message": "Imħalltin mod ieħor"
+  },
+  "auditOpenError": {
+    "message": "Il-ftuħ falla"
+  },
+  "auditPending": {
+    "message": "L-ebda deċiżjoni kompluta"
+  },
+  "auditMinScore": {
+    "message": "Punteġġ ta' deċiżjoni minima"
+  },
+  "auditFrom": {
+    "message": "Minn"
+  },
+  "auditTo": {
+    "message": "Għal"
+  },
+  "auditRefresh": {
+    "message": "Ir-Regolament (UE) Nru 1308/2013"
+  },
+  "auditJson": {
+    "message": "Esportazzjoni JSON"
+  },
+  "auditCsv": {
+    "message": "Esportazzjoni CSV"
+  },
+  "auditClear": {
+    "message": "Ħassar ir-reġistru lokali"
+  },
+  "auditExportHelp": {
+    "message": "L-esportazzjonijiet jinkludu r-ringieli ffiltrati kollha, mhux biss il-paġna attwali. JSON jinkludi checkum SHA-256 għall-verifika; ma jipprovax l-awtentiċità. CSV jinnewtralizza l-formuli spreadsheets. L-esportazzjonijiet fihom URLs kompluti: sehem biss ma \"reviżuri awtorizzati."
+  },
+  "auditTime": {
+    "message": "Ikklikkja / ħin tad-deċiżjoni"
+  },
+  "auditLocalScore": {
+    "message": "Punteġġ lokali (link u messaġġ)"
+  },
+  "auditVerdict": {
+    "message": "Riżultat tal-fornitur"
+  },
+  "auditAddress": {
+    "message": "URL u dettalji"
+  },
+  "auditPrevious": {
+    "message": "Ta' qabel"
+  },
+  "auditNext": {
+    "message": "Li jmiss"
+  },
+  "auditClearConfirm": {
+    "message": "Ħassar l-entrati kollha lokali link log? Esportazzjoni meħtieġa evidenza ewwel. Riżultati Scan u settings huma miżmuma."
+  },
+  "auditFailure": {
+    "message": "Il-log link lokali ma setgħux jinqraw jew jiġu salvati."
+  },
+  "auditUnavailable": {
+    "message": "Mhux disponibbli"
+  },
+  "auditScoreAtDecision": {
+    "message": "Punt fid-deċiżjoni"
+  },
+  "auditRecords": {
+    "message": "Rekords"
+  },
+  "auditDetails": {
+    "message": "Uri URL u evidenza"
+  },
+  "auditEventId": {
+    "message": "ID tal-avveniment"
+  },
+  "auditCancelReason": {
+    "message": "Ir-raġuni għall-kanċellazzjoni"
+  },
+  "auditFinalResult": {
+    "message": "L-aħħar riżultat tal-verifika"
+  },
+  "auditProfile": {
+    "message": "ID tal-profil lokali"
+  },
+  "auditExported": {
+    "message": "Esportazzjoni ffrankata."
+  },
+  "auditRiskyOpened": {
+    "message": "Ftuħ li jintalab f'riskju għoli"
+  },
+  "auditExportFailed": {
+    "message": "L-esportazzjoni falliet jew ġiet ikkanċellata."
+  },
+  "profilesTitle": {
+    "message": "Profili fakultattivi tal-intrapriżi"
+  },
+  "profilesIntro": {
+    "message": "Agħżel sistemi komuni indipendentement jew tħalli integrazzjonijiet b'diżabilità. Dawn il-profili jippreparaw konfigurazzjoni; dawn ma jgħaqqdux ma 'servizz kumpanija jew jattivaw qtugħ ċentrali."
+  },
+  "profilesOpen": {
+    "message": "Agħżel profili tal-intrapriżi"
+  },
+  "profilesBundle": {
+    "message": "Kombinazzjoni li ġiet suġġetuta"
+  },
+  "profilesLocal": {
+    "message": "Preparazzjoni lokali"
+  },
+  "profilesCustom": {
+    "message": "Għażla doganali"
+  },
+  "profilesHosting": {
+    "message": "L-ospitar"
+  },
+  "profilesSso": {
+    "message": "Sinjal wieħed (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Ġestjoni tal-apparat"
+  },
+  "profilesSiem": {
+    "message": "Monitoraġġ tas-sigurtà (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Sistema tal-biljetti"
+  },
+  "profilesRequirements": {
+    "message": "Konfigurazzjoni meħtieġa"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Punt ta 'tmiem u settings kont huma pprovduti matul setup aktar tard. L-ismijiet hawn taħt jidentifikaw settings meħtieġa u referenzi sigrieti; daħħal l-ebda kredenzjali hawnhekk."
+  },
+  "profilesPreview": {
+    "message": "Abbozz ta' konfigurazzjoni"
+  },
+  "profilesPrivacy": {
+    "message": "Konnessjonijiet jibqgħu b'diżabilità. L-abbozz ma fih l-ebda ċwievet API, tokens, clicked URLs jew data messaġġ. Data ċentrali hija ppjanata ma dominju biss reazzjoni."
+  },
+  "profilesSave": {
+    "message": "Issalva l-għażla lokalment"
+  },
+  "profilesExport": {
+    "message": "Abbozz ta' konfigurazzjoni tal-esportazzjoni"
+  },
+  "profilesReset": {
+    "message": "Irrisettja l-għażla"
+  },
+  "profilesNone": {
+    "message": "Diżabilità / mhux magħżula"
+  },
+  "profilesSelfHosted": {
+    "message": "Awtoospitat/fuq il-post"
+  },
+  "profilesNoExternalSettings": {
+    "message": "L-ebda settings ta' integrazzjoni esterna meħtieġa għal din l-għażla."
+  },
+  "profilesSaved": {
+    "message": "Għażla ffrankat lokalment. Konnessjonijiet jibqgħu b'diżabilità."
+  },
+  "profilesExported": {
+    "message": "Abbozz ta 'konfigurazzjoni esportati. Xejn ma ġie attivat."
+  },
+  "profilesFailed": {
+    "message": "L-għażla ma setgħetx tiġi kkargata, salvati jew esportata, jew l-operazzjoni ġiet ikkanċellata."
+  },
+  "wizardTitle": {
+    "message": "Issettja Thundy AV"
+  },
+  "wizardLanguage": {
+    "message": "Lingwa tal-assistent"
+  },
+  "wizardLanguageNote": {
+    "message": "Din l-għażla tapplika biss għall-assistent tas-setup. Tista’ tibdel il-lingwa tas-suppliment fis-settings."
+  },
+  "wizardWelcome": {
+    "message": "Merħba"
+  },
+  "wizardProtection": {
+    "message": "Protezzjoni mir-rabta"
+  },
+  "wizardExternal": {
+    "message": "Analiżi fakultattiva"
+  },
+  "wizardIntro": {
+    "message": "Tibda bil-kontrolli lokali. Biex jispezzjonaw email, uża banner Thundy AV tagħha jew azzjoni skan. Tista 'tiddeċiedi aktar tard jekk konfigurazzjoni fornituri ta' analiżi."
+  },
+  "wizardLocalNotice": {
+    "message": "Mingħajr il-kunsens għal analiżi esterna, l-ebda data hija mibgħuta lill-fornituri ta 'analiżi. Dan Wizard qatt ma jagħti dak il-kunsens."
+  },
+  "wizardPrivacy": {
+    "message": "Informazzjoni dwar il-privatezza"
+  },
+  "wizardLinkChoice": {
+    "message": "Gwerra qabel tiftaħ links u jirreġistraw deċiżjonijiet lokalment"
+  },
+  "wizardLinkExplanation": {
+    "message": "Il dialog link turi d-destinazzjoni u valutazzjoni tar-riskju disponibbli. Jiftħu idejn il-link għall-browser tiegħek; ma jipprova żjara websajt."
+  },
+  "wizardAuditNotice": {
+    "message": "Il-log rabta lokali jistgħu jinkludu URLs sħiħ u raġunijiet ta 'valutazzjoni. Hija żżomm sa 30 jum, 2,000 entrati jew 2 MiB. Utenti profil tista 'taqra, bidla jew tħassarha; mhuwiex verifika korporattiva protetta."
+  },
+  "wizardExternalExplanation": {
+    "message": "Fornituri esterni huma fakultattivi u jistgħu jeħtieġu API ċwievet. Jiddependi fuq il-livell ta 'privatezza tiegħek, hashes, oqsma, IPs pubbliċi, fajls jew sħiħa URLs jistgħu jiġu trażmessi. fornituri confiction u jagħtu kunsens fl-settings."
+  },
+  "wizardNextAction": {
+    "message": "X'tixtieq tagħmel li jmiss?"
+  },
+  "wizardKeepLocal": {
+    "message": "Tmiem b'verifiki lokali"
+  },
+  "wizardKeepExisting": {
+    "message": "Iżomm is-settings esterni eżistenti"
+  },
+  "wizardExistingExternal": {
+    "message": "Analiżi esterna hija diġà ppermettiet f'dan il-profil. Il-Wizard ma jibdlux dak il-kunsens. Użu settings li jiddiżattivaw jew permessi reviżjoni."
+  },
+  "wizardConfigure": {
+    "message": "Analiżi ta' figura esterna f'settings"
+  },
+  "wizardNoConsent": {
+    "message": "Tagħżel din l-għażla tiftaħ biss settings. Xejn huwa uploaded u l-ebda permess hija mitluba minn dan Wizard."
+  },
+  "wizardBack": {
+    "message": "Lura"
+  },
+  "wizardNext": {
+    "message": "Li jmiss"
+  },
+  "wizardFinish": {
+    "message": "Setup ta' salvataġġ"
+  },
+  "wizardFinishConfigure": {
+    "message": "Issejvja u iftaħ is-settings"
+  },
+  "wizardSkip": {
+    "message": "Mhux issa"
+  },
+  "wizardDone": {
+    "message": "It-twaqqif iffrankat"
+  },
+  "wizardDoneText": {
+    "message": "Your link-protezzjoni għażla ġiet salvata lokalment. Nru API ċavetta, kunsens estern jew l-approvazzjoni senter inbidlet. Tista 'terġa' tiftaħ il-wizard mill-settings."
+  },
+  "wizardSettings": {
+    "message": "Is-settings miftuħa"
+  },
+  "wizardProfilesNotice": {
+    "message": "Profili ta 'intrapriża huma abbozzi konfigurazzjoni fakultattivi. Għażla tagħhom ma jattivaw konnessjoni korporattiva."
+  },
+  "wizardDeferred": {
+    "message": "It-twaqqif pospost"
+  },
+  "wizardDeferredText": {
+    "message": "L-ebda settings kienu mibdula. Iftaħ mill-ġdid il-wizard minn settings meta inti lest."
+  },
+  "wizardSettingsOpened": {
+    "message": "Settings miftuħa. Configura fornituri u jiffrankaw il-kunsens tiegħek hemmhekk."
+  },
+  "wizardSettingsFailed": {
+    "message": "Issettjar ma setgħux jinfetħu. Setup tiegħek hija ffrankata; użu Open settings li rery."
+  },
+  "wizardSaveFailed": {
+    "message": "Setup ma setgħux jiġu ffrankati. għażliet tiegħek jibqgħu hawn; jekk jogħġbok rry."
+  },
+  "wizardLoadFailed": {
+    "message": "Settings ma setgħux jiġu mgħobbija. Xejn kien iffrankat. Iġbed din il-paġna biex rery."
+  },
+  "wizardLanguageFailed": {
+    "message": "Il-lingwa ma setgħetx titgħabba. Il-lingwa preċedenti tibqa 'magħżula."
+  },
+  "wizardReopen": {
+    "message": "Wizard setup miftuħ"
+  },
+  "settingsAppearance": {
+    "message": "Dehra"
+  },
+  "settingsPrivacy": {
+    "message": "Privatezza"
+  },
+  "settingsScanning": {
+    "message": "Protezzjoni"
+  },
+  "settingsProviders": {
+    "message": "Servizzi ta’ analiżi"
+  },
+  "settingsSenders": {
+    "message": "Regoli tal-mittenti"
+  },
+  "settingsData": {
+    "message": "Data u għodod"
+  },
+  "settingsWorkspace": {
+    "message": "XOGĦOL GĦAX-XOGĦOL TIEGĦEK"
+  },
+  "settingsEyebrow": {
+    "message": "AĦSEB GĦALIH"
+  },
+  "settingsSubtitle": {
+    "message": "Ippersonalizza d-dehra ta’ Thundy AV u l-protezzjoni tal-email tiegħek."
+  },
+  "settingsLocalBadge": {
+    "message": "Lokali b'mod default"
+  },
+  "settingsLocalNote": {
+    "message": "Il-preferenzi tiegħek. Aħżen fuq dan l-apparat."
+  },
+  "settingsSkip": {
+    "message": "Aqbeż għas-settings"
+  },
+  "settingsProviderGuide": {
+    "message": "Dwar il-fornituri u l-kodiċi API"
+  },
+  "settingsWizardHelp": {
+    "message": "Irrevedi l - mod gwidat fi kwalunkwe ħin."
+  },
+  "themeIntro": {
+    "message": "Jagħmlu Thundy AV jħossu bħal tiegħek. Bidliet fid-dehra huma ffrankati immedjatament matul l-add-on."
+  },
+  "themeMode": {
+    "message": "Dehra"
+  },
+  "themeSystem": {
+    "message": "Uża t-tema ta’ Thunderbird"
+  },
+  "themeLight": {
+    "message": "Ċar"
+  },
+  "themeDark": {
+    "message": "Skur"
+  },
+  "themeAccent": {
+    "message": "Kulur fl-aċent"
+  },
+  "themeOcean": {
+    "message": "L-Oċean"
+  },
+  "themeViolet": {
+    "message": "Vjola"
+  },
+  "themeForest": {
+    "message": "Foresti"
+  },
+  "themeAmber": {
+    "message": "Ambra"
+  },
+  "themeReady": {
+    "message": "Dehra jiffranka awtomatikament. settings oħra jużaw il-buttuna Save."
+  },
+  "themeSaving": {
+    "message": "Dehru li ma jħallux…"
+  },
+  "themeSaved": {
+    "message": "Id-dehra ffrankata."
+  },
+  "themeLoadError": {
+    "message": "Dehra ma setgħux jiġu mgħobbija. Ipprova ftuħ mill-ġdid settings."
+  },
+  "themeSaveError": {
+    "message": "Dehra ma setgħux jiġu salvati. Agħżel l-għażla tiegħek mill-ġdid biex rery."
+  },
+  "themeRetry": {
+    "message": "Dehru li jiffrankaw ir-raj"
+  },
+  "themeDensity": {
+    "message": "Densità tal-informazzjoni"
+  },
+  "themeComfortable": {
+    "message": "Li jistgħu jiġu mfarrka"
+  },
+  "themeCompact": {
+    "message": "Patt"
+  },
+  "themeDensityHelp": {
+    "message": "Aġġusta l-ispazju f'settings u għodod amministrattivi lokali."
+  },
+  "profilesChanges": {
+    "message": "Bidliet meta mqabbla mal-għażla ffrankata"
+  },
+  "profilesDiscard": {
+    "message": "Armi l-bidliet li ma jkunux inqalgħu"
+  },
+  "profilesLoadRetry": {
+    "message": "L-għażla mfaddla mill-ġdid"
+  },
+  "profilesNotLoaded": {
+    "message": "L-għażla mhux mgħobbija ffrankata"
+  },
+  "profilesUnsaved": {
+    "message": "Bidliet mhux savjati · abbozz inattiv"
+  },
+  "profilesUnchanged": {
+    "message": "L-għażla ta' salvataġġ · abbozz inattiv"
+  },
+  "profilesSaving": {
+    "message": "Insalvaw l-għażla lokali…"
+  },
+  "settingsUnsaved": {
+    "message": "Bidliet mhux savjati"
+  },
+  "providerUnknown": {
+    "message": "Riżultat mhux magħruf"
+  },
+  "auditVerdictAtDecision": {
+    "message": "Riżultat fid-deċiżjoni"
+  },
+  "ui_169": {
+    "message": "Protokoll ta' analiżi: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "ID tal-impjieg: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "ID tas-sottomissjoni: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protokoll li ġie rċevut: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": "L-analiżi għadu qed jaħdem (IN_PROGRESS). Ir-riżultat huwa awtomatikament rikontrollat kull $P1$ sekondi (biex jiġi ssanzjonat $P2$); il-protokoll ta 'analiżi lest jidher hawn mingħajr talba ġdida ladarba jinħażen.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "L-ebda deċiżjoni kompluta hija rreġistrata. Wara l-bidu mill-ġdid jew telf tal-proċess, dan jibqa pendenti; ma tinferix li r-rabta kienet miftuħa jew ikkanċellata."
+  },
+  "auditCancelUser": {
+    "message": "Ikklampjati mill-utent"
+  },
+  "auditCancelEscape": {
+    "message": "Magħluq b'ħarba"
+  },
+  "auditCancelDestination": {
+    "message": "Id-destinazzjoni nbidlet"
+  },
+  "auditCancelContext": {
+    "message": "Kuntest tal-messaġġ magħluq"
+  },
+  "auditCancelUnknown": {
+    "message": "Raġuni għall-kanċellazzjoni mhux magħrufa"
+  },
+  "reportNotSaved": {
+    "message": "Ir-rapport huwa viżibbli, iżda ma setgħux jiġu ffrankati lokalment. Jiftħu mill-ġdid biex rery."
+  },
+  "checkOrigin_live": {
+    "message": "Riżultat tal-fornitur attwali"
+  },
+  "checkOrigin_stored": {
+    "message": "Riżultat maħzuna"
+  },
+  "checkOrigin_none": {
+    "message": "L-ebda osservazzjoni tal-fornitur"
+  },
+  "checkOutcome_success": {
+    "message": "It-talba rnexxielha"
+  },
+  "checkOutcome_failed": {
+    "message": "It-talba falliet"
+  },
+  "checkOutcome_disabled": {
+    "message": "Analiżi esterna b'diżabilità"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Il-permess tal-host nieqes"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Il-muftieħ tal-fornitur nieqes"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "L-ebda referenza għall-fornitur"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Ebda talba ġdida"
+  },
+  "checkOutcome_no_result": {
+    "message": "L-ebda riżultat li jista' jintuża ġdid"
+  },
+  "checkAttempted": {
+    "message": "Ipprovat ta' kontroll"
+  },
+  "checkObserved": {
+    "message": "Riżultat osservat"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Raġunijiet fid-deċiżjoni"
+  },
+  "auditReasonsLatest": {
+    "message": "L-aħħar raġunijiet disponibbli"
+  },
+  "auditReasonsMissing": {
+    "message": "Mhux irreġistrati fil-ħin"
+  },
+  "coverageSummary": {
+    "message": "Kopertura TY identifikati: $1; eliġibbli: $2; ipproċessati: $3; fallew: $4; skiped: $5. Oġġetti maqtugħa mhumiex evalwati."
+  },
+  "supportTitle": {
+    "message": "Rapport ta' appoġġ lokali"
+  },
+  "supportHelp": {
+    "message": "Preview a minimu ta 'rapport dijanjostiku, imbagħad ħlief lokalment. Xejn ma jintbagħat. Checksums ma awtentikazzjoni sors tiegħu."
+  },
+  "supportPreview": {
+    "message": "Rapport ta' reviżjoni"
+  },
+  "supportConfiguration": {
+    "message": "Inkludi settings raff (l-ebda ċwievet jew listi ta' dawk li jibagħtu)"
+  },
+  "supportSave": {
+    "message": "Rapport ta' salvataġġ lokali"
+  },
+  "coverageAttachments": {
+    "message": "Hemża"
+  },
+  "coverageDomains": {
+    "message": "Oqsma uniċi"
+  },
+  "coverageBatch": {
+    "message": "Links tal-lott"
+  },
+  "coverageLimits": {
+    "message": "Limiti għal kull pass: 100 aċċessorji, 25 MiB għal kull twaħħil, 100 dominju uniku, 20 links lott. Ipproċessati ma jfissirx esternament skannjati jew sikuri."
+  },
+  "localProfileTitle": {
+    "message": "Profili lokali"
+  },
+  "localProfileHelp": {
+    "message": "L-esportazzjoni ffrankat dehra jew settings ta 'protezzjoni lokali separatament. Preview u jikkonfermaw l-importazzjonijiet. Kodiċijiet, kunsens, permessi, mittenti fdati u l-istorja tal-verifika huma esklużi."
+  },
+  "localProfileExport": {
+    "message": "Dehra tal-esportazzjoni"
+  },
+  "localProfileFile": {
+    "message": "Agħżel fajl tal-profil (JSON, sa 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Profil JSON (jew pejst hawnhekk)"
+  },
+  "localProfilePreview": {
+    "message": "Bidliet fil-valutazzjoni"
+  },
+  "localProfileApply": {
+    "message": "Applika bidliet murija"
+  },
+  "localProfileDiscard": {
+    "message": "Importazzjoni ta' skart"
+  },
+  "localProfileInvalid": {
+    "message": "Profil invalidu, verżjoni mhux appoġġjati jew oqsma pprojbiti. Ma ġie applikat xejn."
+  },
+  "localProfileChanged": {
+    "message": "Dehra mibdula mill-preview. Preview mill-ġdid qabel ma japplikaw."
+  },
+  "localProfileFailed": {
+    "message": "Il-profil ma setgħux jiġu ffrankati. Reviżjoni tal-settings attwali u rery."
+  },
+  "localProfileApplied": {
+    "message": "Il-profil tad-dehra applikat. Il-protezzjoni u l-kunsens mhumiex mibdula."
+  },
+  "analysisTitle": {
+    "message": "Sorsi ta' analiżi"
+  },
+  "analysisMixed": {
+    "message": "Kontrolli lokali + esterni"
+  },
+  "analysisExternal": {
+    "message": "Osservazzjonijiet esterni disponibbli"
+  },
+  "analysisLocal": {
+    "message": "Lokali · ebda riżultati esterni rreġistrati"
+  },
+  "analysisLocalChecked": {
+    "message": "Il-messaġġ lokali/l-eristiċi tal-link tlestew."
+  },
+  "analysisLocalPending": {
+    "message": "Il-valutazzjoni lokali għadha ma ġietx irreġistrata."
+  },
+  "analysisUnknown": {
+    "message": "Mhux magħruf"
+  },
+  "analysisTimeUnknown": {
+    "message": "Ħin mhux irrekordjat"
+  },
+  "analysisObserved": {
+    "message": "L-aħħar rispons li jista' jintuża"
+  },
+  "analysisFindingObserved": {
+    "message": "Is-sejba rreġistrata"
+  },
+  "analysisAttempted": {
+    "message": "L-aħħar tentattiv ta' talba"
+  },
+  "analysisPartial": {
+    "message": "Xi talbiet fallew; is-sejbiet disponibbli ma jkoprux kull oġġett."
+  },
+  "analysisOtherServices": {
+    "message": "Servizzi oħra/mhux iċċekkjati"
+  },
+  "analysisLimit": {
+    "message": "A punteġġ lokali mhuwiex verdett antivirus. Talbiet u uploads mhumiex analiżi lesti. Riżultati maħżuna jżommu l-età oriġinali tagħhom; rekords nieqsa ma jipprova li l-ebda talba aktar kmieni seħħew."
+  },
+  "analysisScope_hash": {
+    "message": "Ir-reputazzjoni ta' hash tal-fajl"
+  },
+  "analysisScope_file": {
+    "message": "Is-sottomissjoni tal-fajl"
+  },
+  "analysisScope_url": {
+    "message": "Analiżi URL"
+  },
+  "analysisScope_domain": {
+    "message": "Ir-reputazzjoni tad-dominju"
+  },
+  "analysisScope_ip": {
+    "message": "Ir-reputazzjoni pubblika IP"
+  },
+  "analysisScope_report": {
+    "message": "Rapport ta' analiżi"
+  },
+  "analysisState_running": {
+    "message": "Mitluba · ebda riżultat lest s'issa"
+  },
+  "analysisState_checked": {
+    "message": "Riżultat li wasal"
+  },
+  "analysisState_received": {
+    "message": "Rispons li wasal · verdett mhux disponibbli"
+  },
+  "analysisState_submitted": {
+    "message": "Is-sottomissjoni aċċettata · analiżi mhux ikkonfermata kompluta"
+  },
+  "analysisState_not_found": {
+    "message": "L-ebda rekord ta' fornitur ma nstab"
+  },
+  "analysisState_failed": {
+    "message": "It-talba falliet · ebda verdett ġdid"
+  },
+  "analysisState_incomplete": {
+    "message": "L-ebda analiżi kompluta rreġistrata"
+  },
+  "analysisSource_remote": {
+    "message": "Servizz estern ikkuntattjat"
+  },
+  "analysisSource_cache": {
+    "message": "Karaċi tal-memorja · ebda talba ġdida għall-fornitur"
+  },
+  "analysisSource_stored": {
+    "message": "Osservazzjoni esterna maħżuna"
+  },
+  "analysisSource_attempt": {
+    "message": "It-talba għal tentattiv · ir-reazzjoni mhix ikkonfermata"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Verdett mhux disponibbli"
+  },
+  "analysisVerdict_none": {
+    "message": "Sejbiet disponibbli: l-ebda detezzjoni (l-ebda garanzija ta' sikurezza)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "Is-sejbiet disponibbli jinkludu indikaturi suspettużi"
+  },
+  "analysisVerdict_malicious": {
+    "message": "Is-sejbiet disponibbli jinkludu d-detezzjoni tat-theddid"
+  },
+  "analysisReason_unconfigured": {
+    "message": "Bħalissa mhux konfigurat"
+  },
+  "analysisReason_disabled": {
+    "message": "Talbiet esterni ġodda b'diżabilità"
+  },
+  "analysisReason_permission": {
+    "message": "Permess ta' ospitanti nieqes għal talbiet ġodda"
+  },
+  "analysisReason_authorization": {
+    "message": "L-ebda awtorizzazzjoni awtomatika għal dan il-messaġġ / modalità manwali"
+  },
+  "analysisReason_policy": {
+    "message": "Mhux permess mill-livell ta' privatezza attwali"
+  },
+  "analysisReason_on_action": {
+    "message": "Tiġrijiet biss wara azzjoni ta' rabta espliċita"
+  },
+  "analysisReason_unrecorded": {
+    "message": "L-ebda verifika rreġistrata għal dan il-messaġġ"
+  },
+  "analysisUnavailable": {
+    "message": "Sorsi ta' analiżi bħalissa mhumiex disponibbli"
+  },
+  "analysisModeUnknown": {
+    "message": "Status ta' analiżi li għadu ma ġiex irrekordjat"
+  },
+  "analysisModeRunning": {
+    "message": "It-talba esterna għadha għaddejja · riżultat pendenti"
+  },
+  "analysisModeSubmitted": {
+    "message": "Imressqa esternament · analiżi għadha mhix kompluta"
+  },
+  "analysisModeIncomplete": {
+    "message": "Verifika esterna mhux kompluta · tlestija mhix ikkonfermata"
+  },
+  "analysisModePartial": {
+    "message": "Riżultati esterni disponibbli · xi talbiet fallew"
+  },
+  "analysisModeFailed": {
+    "message": "It-talba esterna falliet · ebda riżultat li jista' jintuża ma ġie rrekordjat"
+  },
+  "analysisModeResults": {
+    "message": "Risponsi esterni disponibbli · ara l-kontrolli hawn taħt"
+  },
+  "analysisResourceMessage": {
+    "message": "Kuntest tal-messaġġ / reputazzjoni tat-trasport"
+  },
+  "analysisResourceAttachment": {
+    "message": "Hemża"
+  },
+  "analysisResourceLink": {
+    "message": "Link"
+  },
+  "analysisResourceUnknown": {
+    "message": "Sommarju preċedenti · riżorsa mhux irreġistrata"
+  },
+  "analysisTruncated": {
+    "message": "Xi dettalji dwar ir-riżorsi tħallew barra minħabba li ntlaħaq il-limitu tal-wiri lokali."
+  },
+  "analysisResources": {
+    "message": "Riżorsi f'dan il-messaġġ"
+  },
+  "analysisResourceLocal": {
+    "message": "Hemża maħżuna bil-messaġġ · mhux prova ta' skan antivirus"
+  },
+  "analysisResourceTarget": {
+    "message": "Destinazzjoni llinkjata · kontenut ta' tagħbija mill-bogħod mhuwiex prova ta' analiżi esterna"
+  },
+  "analysisResourceNoExternal": {
+    "message": "L-ebda kontroll estern ma ġie rrekordjat għal din ir-riżorsa"
+  },
+  "analysisContextChanged": {
+    "message": "Il-kuntest messaġġ inbidel. Agħlaq u tiftaħ mill-ġdid il-popup qabel ma jissottomettu mill-ġdid."
+  },
+  "analysisLocalIncomplete": {
+    "message": "L-analiżi lokali mhijiex kompluta: xi kontenut tal-messaġġ mhuwiex disponibbli."
+  },
+  "analysisLocalUnavailable": {
+    "message": "L-analiżi lokali mhijiex disponibbli: il-messaġġ ma setax jinqara."
+  },
+  "analysisHistoryTitle": {
+    "message": "Storja ta' storja maħżuna · assoċjazzjoni mhux ikkonfermata"
+  },
+  "analysisHistoryWarning": {
+    "message": "Dawn ir-rekords storiċi jistgħu jappartjenu għal messaġġ ieħor bl-istess Message-ID. Huma ma jikkonfermawx kontroll ta 'dan il-messaġġ."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Osservazzjonijiet ġodda sors ma setgħux jiġu salvati. istorja eżistenti inżammet."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "Ma setax jiġi ffrankat rapport ta' aġġornament. Inżammu protokolli preċedenti."
+  },
+  "sourceExportOpen": {
+    "message": "Rapport tas-sors ta' analiżi ta' reviżjoni"
+  },
+  "sourceExportTitle": {
+    "message": "Rapport tas-sors tal-analiżi"
+  },
+  "sourceExportIntro": {
+    "message": "Oħloq stampa lokali tal-kontrolli rreġistrati. Dan ma jwettaq analiżi ġdida. Osservazzjonijiet kurrenti u l-istorja maħżuna ma 'assoċjazzjoni mhux konfermati jinżammu separati."
+  },
+  "sourceExportPrivacy": {
+    "message": "Jinkludi servizzi, stati, verdetts u ħinijiet ta 'osservazzjoni eżatta. Excludes URLs, fajls ismijiet, hashes, IPs, ċwievet, test messaġġ u identifikaturi interni. Numri tar-riżorsi japplikaw biss fi ħdan dan ir-rapport. Din mhix storja sħiħa jew rekord awtentikat. Xejn ma jintbagħat awtomatikament. Reviżjoni qabel qsim."
+  },
+  "sourceExportCancel": {
+    "message": "Analiżi minn qabel tar-rimi"
+  },
+  "sourceExportContentLabel": {
+    "message": "Rapport ta' reviżjoni (JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "Il-kuntest messaġġ m'għadux disponibbli. Iftaħ mill-ġdid ir-rapport mill-poppa tagħha għodda messaġġ bar."
+  },
+  "sourceExportChanged": {
+    "message": "L-istat rekordjati mibdula. Oħloq preview ġdid qabel jiffrankaw."
+  },
+  "sourceExportReady": {
+    "message": "Irrevedi l-preeżami qabel ma tiffranka jew taqsam."
+  },
+  "sourceExportRequested": {
+    "message": "Ħlief mitluba. Iċċekkja t-tlestija fil Thunderbird downloads."
+  },
+  "sourceExportFailed": {
+    "message": "Ir-rapport ma ġiex iffrankat. Oħloq preview ġdid biex tipprova mill-ġdid."
+  },
+  "analysisHistoryPages": {
+    "message": "Paġni tal-istorja"
+  },
+  "analysisHistoryEntries": {
+    "message": "Entrati"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Sejba ta' theddid jew malizzjuż fl-istorja · assoċjazzjoni mhux ikkonfermata"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Uri l-ewwel twissija storika"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Uri konstatazzjoni kurrenti aktar b'saħħitha"
+  },
+  "reportDisplayFailed": {
+    "message": "Ma setax jintwera rapport li nħażen."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Xi dettalji tar-rapport għandhom format mhux appoġjat u ma setgħux jintwerew."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Xi dejta tal-analiżi maħżuna ma setgħetx tinqara. Riżultati oħra jibqgħu disponibbli."
+  },
+  "analysisModeResponses": {
+    "message": "Ir-risposti riċevuti · L-ebda verdett li jista' jitkejjel ma huma disponibbli"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "It-tweġibiet li waslu mingħajr verdett li jista' jiġi mistħarreġ · xi talbiet fallew"
+  },
+  "analysisCurrentAvailability": {
+    "message": "Għal talbiet ġodda"
+  },
+  "reasonMaliciousIp": {
+    "message": "server malizzjuż IP indirizz detect ($IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "Indikaturi Esterni tat-Theddid (Reputazzjoni URLhaus & IP)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus ▼M Oqsma magħrufa ta' malware identifikati: $DOMAINS$",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "Ir-Reputazzjoni IP ($PROVIDER$) ---- server server Suspettużi IPs: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "Riżultati urlscan.io:"
+  },
+  "urlscanStatus": {
+    "message": "Stat: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridReportLink": {
+    "message": "Rapport sħiħ miftuħ dwar Hybrid Analysis"
+  },
+  "hybridProviderMessage": {
+    "message": "Messaġġ ta' Fornitur: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "Il-limitu jew il-kwota tar-rata Hybrid Analysis intlaħqet. Jekk jogħġbok erġa' pprova aktar tard."
+  },
+  "reasonArchivedMaliciousAttachment": {
+    "message": "Sejba storika ($OBSERVED$). $PROVIDER$ irbit fil-klassifikat$NAME$rejl-baħar bħala malizzjuż.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonArchivedSuspiciousAttachment": {
+    "message": "Sejba storika ($OBSERVED$). $PROVIDER$ ikklasifikat it-twaħħil κ $NAME$ και bħala suspettuż.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonMaliciousAttachment": {
+    "message": "L-hemża \" $NAME$ \" ġiet klassifikata bħala malizzjuża minn $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "Id-dokument \" $NAME$ \" ġie kklassifkat bħala suspettat minn $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanReportLink": {
+    "message": "Rapport sħiħ miftuħ dwar urlscan.io"
+  },
+  "hybridLinkVerdictStatus": {
+    "message": "Hybrid Analysis: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonMaliciousLinkVerdict": {
+    "message": "Link \" $URL$ \" ġie kklassifikat bħala malizzjuż minn $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousLinkVerdict": {
+    "message": "Link \" $URL$ \" ġie kklassifkat bħala suspettat minn $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanErrorDetails": {
+    "message": "Raġuni: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "Il-limitu jew il-kwota tar-rata urlscan.io intlaħqet. Jekk jogħġbok erġa' pprova aktar tard."
+  },
+  "urlscanInvalidKey": {
+    "message": "Kodiċi urlscan.io API invalidu jew mhux awtorizzat."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Ir-riżultat ma kienx lest fil-tieqa votazzjoni. L-iskan aċċettati jistgħu jiġu ċċekkjati mill-ġdid mingħajr sottomissjoni ġdida."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Id-dominju ma setax jiġi rriżolvut minn urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Element li għadu ma ġiex irrekordjat f'Hybrid Analysis (l-ebda analiżi preċedenti ma nstabet)."
+  },
+  "virustotalNotFound": {
+    "message": "Element li għadu ma ġiex irrekordjat fid-database VirusTotal."
+  },
+  "virustotalRateLimited": {
+    "message": "Il-limitu jew il-kwota tar-rata VirusTotal intlaħqet. Jekk jogħġbok erġa' pprova aktar tard."
+  },
+  "virustotalInvalidKey": {
+    "message": "Kodiċi VirusTotal API invalidu jew mhux awtorizzat."
+  },
+  "abuseipdbRateLimited": {
+    "message": "Il-limitu jew il-kwota tar-rata AbuseIPDB intlaħqet. Jekk jogħġbok erġa' pprova aktar tard."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Kodiċi AbuseIPDB API invalidu jew mhux awtorizzat."
+  },
+  "urlhausRateLimited": {
+    "message": "Il-limitu jew il-kwota tar-rata URLhaus intlaħqet. Jekk jogħġbok erġa' pprova aktar tard."
+  },
+  "urlhausInvalidKey": {
+    "message": "Kodiċi URLhaus API invalidu jew mhux awtorizzat."
+  },
+  "testApiKeyButton": {
+    "message": "Ittestja l-konnessjoni"
+  },
+  "testApiKeyTesting": {
+    "message": "Konnessjoni tal-ittestjar…"
+  },
+  "testApiKeyValid": {
+    "message": "Talba aċċettata. Dan ma jikkonfermax drittijiet upload jew kwota li jifdal."
+  },
+  "testApiKeyInvalid": {
+    "message": "Konnessjoni naqset: Invalidu API key."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Il-limitu tar-rata jew il-kwota milħuqa. Jekk jogħġbok erġa' pprova aktar tard."
+  },
+  "testApiKeyError": {
+    "message": "It-test tal-konnessjoni ma rnexxilux isir."
+  },
+  "testApiKeyEmpty": {
+    "message": "Jekk jogħġbok daħħal ċavetta API l-ewwel."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "Il-permess biex wieħed iqabbad ma' min jospita s-servizz ġie mċaħħad."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Jekk jogħġbok agħżel fornitur tar-reputazzjoni IP l-ewwel."
+  },
+  "rateLimitWithWait": {
+    "message": "Limitu jew kwota tar-rata milħuqa. Jekk jogħġbok erġa' pprova f'$SECONDS$ sekondi.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Limitu tar-rata li ntlaħaq"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Kodiċi API invalidu"
+  },
+  "auditErrorCode": {
+    "message": "Kodiċi tal-iżball"
+  },
+  "auditErrorDetails": {
+    "message": "Dettalji tal-iżball"
+  },
+  "auditRetryAfter": {
+    "message": "Ħin ta' stennija"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "Sekwenzi $SECONDS$",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "securityTitle": {
+    "message": "Amministrazzjoni u l-protezzjoni tal-konnessjoni"
+  },
+  "securityScope": {
+    "message": "Lokali għal dan il-profil Thunderbird. Ma jipprevjenux bidliet fil-profil, jiddiżabilita l-add-on jew tiftaħ links kkupjati x'imkien ieħor."
+  },
+  "securityAdminPassword": {
+    "message": "password Amministratur (12+ karattri; ħalli vojt biex iżżomm)"
+  },
+  "securityApprovalPassword": {
+    "message": "password tal-approvazzjoni ta' rabta separata (12+ karattri; ħalli vojt biex iżżomm)"
+  },
+  "securityThreshold": {
+    "message": "Teħtieġ l-approvazzjoni fil-punteġġ tar-riskju (0/00/100, inklużi)"
+  },
+  "securityEnablePolicy": {
+    "message": "Jippermettu l-protezzjoni tar-rabta infurzata"
+  },
+  "securityUnknownApproval": {
+    "message": "Teħtieġ approvazzjoni għal kontrolli mhux kompluti wkoll"
+  },
+  "securityUnlock": {
+    "message": "Is-settings tal-għeluq"
+  },
+  "securitySave": {
+    "message": "Ħlief għall-konfigurazzjonijiet ta' protezzjoni"
+  },
+  "securityLock": {
+    "message": "Lock issa"
+  },
+  "securityDisable": {
+    "message": "Neħħi l-password tas-settings"
+  },
+  "securityRecovery": {
+    "message": "Kodiċi tal-irkupru"
+  },
+  "securityRecover": {
+    "message": "Irrisettja password admin bl-użu tal-kodiċi"
+  },
+  "securityStopTransfers": {
+    "message": "Twaqqaf it-trasferimenti esterni"
+  },
+  "securityLocked": {
+    "message": "Is-settings imsakkra. Daħħal il-password tal-amministratur biex tiftaħhom."
+  },
+  "securityUnlocked": {
+    "message": "Issettjar li nfetaħ; issakkar wara ħames minuti mingħajr attività."
+  },
+  "securityOptional": {
+    "message": "Protezzjoni password hija fakultattiva u bħalissa off. Mingħajr password approvazzjoni, links protetti jibqgħu imblukkati."
+  },
+  "securityError": {
+    "message": "Operazzjoni miċħuda. Iċċekkja l-password tiegħek, sessjoni u input."
+  },
+  "securityWait": {
+    "message": "Wisq tentattivi. Stenna qabel retrying."
+  },
+  "securityLength": {
+    "message": "Uża mill-inqas tnax-il karattru u passwords distinti."
+  },
+  "securityRecoverySave": {
+    "message": "Ħlief dan il-kodiċi ta \"irkupru darba separatament. Mhuwiex se jintwera mill-ġdid:"
+  },
+  "securitySaved": {
+    "message": "Is-settings ta' protezzjoni ffrankati."
+  },
+  "securityDisableConfirm": {
+    "message": "Neħħi l-password settings? Protezzjoni Link tibqa konfigurata."
+  },
+  "securityStopped": {
+    "message": "It-trasferimenti esterni waqfu."
+  },
+  "securityApprovalTitle": {
+    "message": "Il-kontenut li jista' jkun ta' periklu ma għandux jiġi nkluż"
+  },
+  "securityConfirmDanger": {
+    "message": "Irrid niftaħ dan il-kontenut potenzjalment perikoluż xorta waħda."
+  },
+  "securityApproveOnce": {
+    "message": "Japprova u iftaħ darba"
+  },
+  "securityExpired": {
+    "message": "L-approvazzjoni skadiet jew il-kuntest inbidel. Erġa' ibda mill-messaġġ."
+  },
+  "securityOpened": {
+    "message": "Thunderbird aċċettat it-talba għall-ftuħ."
+  },
+  "securityApprovalFailed": {
+    "message": "Il-ftuħ ġie miċħud. Iċċekkja l-password jew, jekk l-approvazzjoni skadiet, ibda mill-ġdid mill-messaġġ."
+  },
+  "providerTestDisclosure": {
+    "message": "Dan jibgħat API key u data test fiss tiegħek lill-fornitur magħżul, mingħajr kontenut messaġġ. Test aqra b'suċċess ma jivverifika uploads jew kwota disponibbli. Kompli?"
+  },
+  "analysisSimple": {
+    "message": "Ħarsa ġenerali"
+  },
+  "analysisExpert": {
+    "message": "Dettalji tekniċi"
+  },
+  "analysisSimpleNone": {
+    "message": "L-ebda sinjali suspettużi ma nstabu"
+  },
+  "analysisSimpleCaution": {
+    "message": "Suspizju"
+  },
+  "analysisSimpleDanger": {
+    "message": "Sejba malizzjuża"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Verifika mhux kompluta"
+  },
+  "analysisScoreExplanation": {
+    "message": "Il-punteġġ tar-riskju huwa bbażat fuq regoli u ma jirrappreżentax probabbiltà jew garanzija ta’ sigurtà."
+  },
+  "analysisSimpleBasis": {
+    "message": "Servizzi b'sejbiet/mhux disponibbli"
+  },
+  "analysisProviderSetup": {
+    "message": "Aċċess għall-fornituri u żvelar tad-dejta"
+  },
+  "analysisProviderConfigured": {
+    "message": "key configurat; ħażna ma jibdiex skan."
+  },
+  "analysisProviderNoKey": {
+    "message": "Ebda ċavetta kkonfigurata"
+  },
+  "analysisDataHash": {
+    "message": "Marka tal-marki tas-swaba' (SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Twaħħil komplet"
+  },
+  "analysisDataUrl": {
+    "message": "URL komplet; jista \" jkun fih tokens kunfidenzjali"
+  },
+  "analysisDataDomain": {
+    "message": "Oqsma ta' konnessjoni"
+  },
+  "analysisDataIp": {
+    "message": "IP pubbliku mill-headers tal-messaġġi"
+  },
+  "analysisDataReport": {
+    "message": "Identifikatur tar-rapport"
+  },
+  "analysisApprovalRequired": {
+    "message": "Approvazzjoni addizzjonali meħtieġa; tikkanċella jew titlob lil amministratur."
+  },
+  "analysisContinueWarning": {
+    "message": "Irrevedi r-raġunijiet qabel tkompli."
+  },
+  "analysisConflict": {
+    "message": "Il-fornituri ma jaqblux; dwar is-sejbiet jieħdu prijorità."
+  },
+  "analysisExportSensitive": {
+    "message": "Reviżjoni qabel l-esportazzjoni: id-dettalji tekniċi jistgħu jidentifikaw ir-riżorsi tal-messaġġi."
+  },
+  "scanActions": {
+    "message": "Kontrolli esterni"
+  },
+  "scanStart": {
+    "message": "Iċċekkja issa"
+  },
+  "scanRepeat": {
+    "message": "Erġa’ ċċekkja"
+  },
+  "scanRefresh": {
+    "message": "Aġġorna r-riżultati"
+  },
+  "scanRunning": {
+    "message": "Verifika esterna li għaddejja"
+  },
+  "scanProgress": {
+    "message": "Riżorsi kompluti"
+  },
+  "scanMigrationNotice": {
+    "message": "Agħżel modalità scan awtomatiku fil-settings. Sa dakinhar, jibgħat u regoli manwali preċedenti japplikaw."
+  },
+  "scanState_idle": {
+    "message": "L-ebda xogħol ta' skannjar ma huwa attiv f'din il-fehma."
+  },
+  "scanState_queued": {
+    "message": "Iċċekkja aċċettat; stennija biex tibda"
+  },
+  "scanState_running": {
+    "message": "Verifika esterna li għaddejja"
+  },
+  "scanState_completed": {
+    "message": "Verifika kompluta"
+  },
+  "scanState_pending": {
+    "message": "Il-fornitur għadu qed jipproċessa; ir-riżultati ta' aġġornament"
+  },
+  "scanState_incomplete": {
+    "message": "Iċċekkja li mhumiex kompluti; xi riżultati huma nieqsa"
+  },
+  "scanState_failed": {
+    "message": "Iċċekkja falla; erġa' pprova"
+  },
+  "scanState_blocked": {
+    "message": "L-ebda kontroll estern ma nbeda; ara r-rekwiżiti ta' hawn taħt"
+  },
+  "analysisReason_manual": {
+    "message": "Modalità manwali"
+  },
+  "analysisReason_sender": {
+    "message": "L-emittent mhux approvat"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Analiżi tar-rabta awtomatika off"
+  },
+  "analysisReason_no_resources": {
+    "message": "L-ebda riżorsi li jaqblu"
+  },
+  "analysisReason_quota": {
+    "message": "Kwota milħuqa; stenna qabel it-tluq"
+  },
+  "analysisReason_running": {
+    "message": "Il-fornitur huwa l-ipproċessar"
+  },
+  "analysisReason_provider_error": {
+    "message": "It-talba tal-fornitur falliet"
+  },
+  "scanModeLabel": {
+    "message": "Scans esterni awtomatiċi"
+  },
+  "scanModeKeep": {
+    "message": "Żomm is-setting ta' qabel (agħżel modalità)"
+  },
+  "scanModeAll": {
+    "message": "Il-messaġġi kollha li nfetħu"
+  },
+  "scanModeSenders": {
+    "message": "Mittenti approvati biss"
+  },
+  "scanModeManual": {
+    "message": "Manwalment biss"
+  },
+  "scanModeHelp": {
+    "message": "Il-verifiki awtomatiċi jibagħtu biss hashes, dominji u indirizzi IP pubbliċi. Ikkonferma links sħaħ u sekwestri separatament. Il-messaġġi li ma nfetħux jibqgħu lokali."
+  },
+  "assessmentCompletion": {
+    "message": "Status tal-ipproċessar"
+  },
+  "assessmentCompletion_pending": {
+    "message": "Il-fornitur għadu qed jipproċessa"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Rapport tal-irkupru komplut"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "L-ebda valutazzjoni konklużiva ma hija disponibbli"
+  },
+  "assessmentCompletion_failed": {
+    "message": "L-ipproċessar tekniku falla"
+  },
+  "assessmentConflict": {
+    "message": "Valutazzjonijiet parzjali differenti; l-aktar sejba b'saħħitha tiddetermina l-azzjoni."
+  },
+  "assessmentSignals": {
+    "message": "Bażi ta' valutazzjoni"
+  },
+  "assessmentJob": {
+    "message": "ID tal-fornitur"
+  },
+  "assessmentSignal_verdict": {
+    "message": "verdett tal-fornitur"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Is-sejba tal-iskanner"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Punteġġ ta' theddid oriġinali"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Riżultat ta' multiskan oriġinali"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Il-livell ta' theddid oriġinali"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Indikazzjoni tal-lista bajda tal-fornituri"
+  },
+  "assessmentSignal_overall": {
+    "message": "Valutazzjoni ġenerali urlscan"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Valutazzjoni tal-magna urlscan"
+  },
+  "assessmentSignal_engines": {
+    "message": "Sejbiet oħra tal-magna"
+  },
+  "assessmentSignal_brand": {
+    "message": "Indikazzjoni tal-marka; ma tiddeterminax ir-riskju waħdu"
+  },
+  "assessmentSignal_report": {
+    "message": "Stat tar-rapport"
+  },
+  "assessmentOriginal": {
+    "message": "Verdett tal-fornitur oriġinali"
+  },
+  "hybridExpertTitle": {
+    "message": "Dettalji tar-rapport API v2"
+  },
+  "hybridExpertScope": {
+    "message": "Biss oqsma attwalment riċevuti huma murija. A Scan Quick ma jipprovax eżekuzzjoni sandbox sħiħa. Dejta nieqsa mhix sejba negattiva. URLs tħalli barra kredenzjali, kordi mistoqsija u frammenti; linji ta 'kmand u rapporti mhux ipproċessati mhumiex murija. Ftuħ dawn id-dettalji jibgħat l-ebda talba."
+  },
+  "hybridExpertMissing": {
+    "message": "Mhux ipprovduti f'dan ir-rapport"
+  },
+  "hybridExpertYes": {
+    "message": "Iva"
+  },
+  "hybridExpertNo": {
+    "message": "Le"
+  },
+  "hybridExpert_identity": {
+    "message": "Fajl u identità tar-riżorsi"
+  },
+  "hybridExpert_assessment": {
+    "message": "Il-valutazzjoni u l-ipproċessar oriġinali"
+  },
+  "hybridExpert_scanners": {
+    "message": "Riżultati tal-iskanner"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Detezzjonijiet individwali ta' antivirus"
+  },
+  "hybridExpert_reports": {
+    "message": "Rapporti referenzjati tal-kaxxa tar-ramel"
+  },
+  "hybridExpert_counts": {
+    "message": "Totali rrapportati"
+  },
+  "hybridExpert_signatures": {
+    "message": "Il - firem taʼ l - għajnuna"
+  },
+  "hybridExpert_mitre": {
+    "message": "ATT U CK MITRE"
+  },
+  "hybridExpert_network": {
+    "message": "Indikaturi tan-netwerk"
+  },
+  "hybridExpert_processes": {
+    "message": "Proċessi"
+  },
+  "hybridExpert_extracted": {
+    "message": "Fajls estratti"
+  },
+  "hybridExpert_certificates": {
+    "message": "Ċertifikati"
+  },
+  "hybridExpertEmpty": {
+    "message": "Applikati bħala lista vojta; l-ebda entrati rrapportati"
+  },
+  "securityPasswordHelp": {
+    "message": "Protezzjoni fakultattiva għal dan il-profil. Uża passwords differenti ta 'mill-inqas tnax-il karattru għall-amministrazzjoni u link approvazzjoni. Ħalli oqsma ġodda password vojta biex iżommu passwords eżistenti. Ħlief il-kodiċi ta 'irkupru darba separatament."
+  },
+  "securityAdminConfirm": {
+    "message": "Ikkonferma l-password ġdida tal-amministratur"
+  },
+  "securityApprovalConfirm": {
+    "message": "Ikkonferma l-password ta' approvazzjoni tal-link ġdida"
+  },
+  "securityRecoveryPassword": {
+    "message": "password ta' amministratur ġdid għall-irkupru"
+  },
+  "securityApprovalConfigured": {
+    "message": "A password link approvazzjoni hija kkonfigurata; tista 'tiġi sostitwita iżda qatt murija."
+  },
+  "securityApprovalMissing": {
+    "message": "L-ebda rabta password approvazzjoni hija kkonfigurata. Links li jeħtieġu l-approvazzjoni password jibqgħu imblukkati."
+  },
+  "securityConfirmMismatch": {
+    "message": "Il-passwords il-ġodda u l-konfermi tagħhom ma jaqblux."
+  },
+  "securityUnlockPassword": {
+    "message": "password tal-amministratur attwali"
+  },
+  "displaySettingsTitle": {
+    "message": "Displej ta' l-analiżi"
+  },
+  "displaySettingsHelp": {
+    "message": "Preferenzi Display ma jibdlux scans, trasferimenti esterni, punteġġi jew link protezzjoni. Inti xorta tista 'taqleb bejn ħarsa ġenerali u l-opinjoni esperta waqt qari riżultati."
+  },
+  "displayDefaultView": {
+    "message": "Ħarsa default għall-messaġġ u popup"
+  },
+  "displayHybridDetails": {
+    "message": "Uri t-taqsimiet addizzjonali tar-rapport API ibridi"
+  },
+  "displaySave": {
+    "message": "Preferenzi ta' wiri ta' salvataġġ"
+  },
+  "displaySaved": {
+    "message": "Il-preferenzi tad-displej salvati."
+  },
+  "urlscanDnsError": {
+    "message": "Il-fornitur ma setax isolvi d-dominju fil-mira."
+  },
+  "urlscanInvalidRequest": {
+    "message": "Il-fornitur irrifjuta parametri ta' sottomissjoni invalidi."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "Il-fornitur irrifjuta s-sottomissjoni; ir-risposta ma tistabbilixxix falliment tad-DNS."
+  },
+  "analysisQuotaReset": {
+    "message": "Risettjar tal-kwota rrapportata"
+  },
+  "analysisRetryAt": {
+    "message": "Ritry earliest"
+  },
+  "analysisLocalBackoff": {
+    "message": "Dan it-tentattiv ġie ddifferit lokalment; ma ntbagħtet l-ebda talba ġdida għal fornitur."
+  },
+  "scanState_deferred": {
+    "message": "Analiżi differita: slots kollha tal-isfond huma okkupati. Rery wara analiżi oħra jintemm."
+  },
+  "scanCoverage": {
+    "message": "Xi riżorsi ma ġewx iċċekkjati."
+  },
+  "scanCoverageAttachments": {
+    "message": "Dokumenti mehmuża ppreparati"
+  },
+  "scanCoverageLinks": {
+    "message": "Rabtiet magħżula"
+  },
+  "scanCoverage_read_failed": {
+    "message": "It - twaħħil ma setax jinqara jew jiġi mħaffer."
+  },
+  "scanCoverage_size_limit": {
+    "message": "Twaħħil jaqbeż il-limitu ta' 25 MiB scan."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "Il-limitu tar-riżorsi tal-iskennjar intlaħaq."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "L-inventarju ta' sekwestru mhuwiex komplut."
+  },
+  "scanFailure_source_capacity": {
+    "message": "L-istorja tas-sors hija sħiħa. Dan il-kontroll ma bediex; jinżammu rekords eżistenti."
+  },
+  "scanFailure_cancelled": {
+    "message": "Il-verifika ġiet ikkanċellata. L-ebda riżultat komplut ma huwa implikat."
+  },
+  "scanFailure_timeout": {
+    "message": "Il-ħin tal-verifika. Riżultati jibqgħu mhux kompluti."
+  },
+  "scanFailure_scan_failed": {
+    "message": "Il-verifika ma setgħetx tispiċċa. Rekords eżistenti nżammu."
+  },
+  "localProtectionProfileExport": {
+    "message": "Is-settings għall-protezzjoni tal-esportazzjoni"
+  },
+  "localProfileYes": {
+    "message": "Iva"
+  },
+  "localProfileNo": {
+    "message": "Le"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Profili ta' protezzjoni aktar anzjani ma jistgħux jespandu l-ambitu ta' skan awtomatiku jew iduru fuq sottomissjoni URL. Il-preview juri r-riżultat effettiv."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "L-istorja tas-sors eżistenti ma tistax tinqara u ġiet preservata mingħajr tibdil."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "Kunflitt taʼ ħażna żamm l - istorja tas - sors milli tiġi estiża."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "L-arkivju tas-sors għal dan il-messaġġ laħaq il-limitu ta' dħul tiegħu."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "L-arkivju tas-sors għal dan il-messaġġ laħaq il-limitu tal-ħżin tiegħu."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "L-aċċess għall-ħżin lokali falla."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Sejbiet disponibbli • dokumentazzjoni mhux kompluta"
+  },
+  "apiDebugTitle": {
+    "message": "Il-modalità tad-debug API"
+  },
+  "apiDebugHelp": {
+    "message": "Qbid API tentattivi ġodda lokalment biex jiġu ddijanjostikati fallimenti. Jippermettu, jirriproduċu l-falliment, imbagħad preview jew esportazzjoni r-rapport. Admin nisfruttaw huwa meħtieġ meta password admin huwa stabbilit. Keys, privata URLs, kontenut messaġġ u korpi mhux maħduma huma esklużi; IDs ta 'referenza huma psewdonimizzati. Sa 100 entrati / 1 MiB jinżammu fil-memorja għal siegħa u mitlufa fuq terġa' tibda. Disabilitazzjoni tiċċara r-rapport. M'hemm l-ebda talba servizz addizzjonali ssir."
+  },
+  "apiDebugEnable": {
+    "message": "Jippermettu d-dijanjostika API"
+  },
+  "apiDebugSave": {
+    "message": "Ħlief l-issettjar tad-debug"
+  },
+  "apiDebugPreview": {
+    "message": "Rapport ta' debug ta' reviżjoni"
+  },
+  "apiDebugExport": {
+    "message": "Rapport dwar l-esportazzjoni tal-merkanzija taħt proċedura ta' tranżitu"
+  },
+  "apiDebugClear": {
+    "message": "Rapport ta' debug ċar"
+  },
+  "apiDebugSaved": {
+    "message": "Setting Debug salvati. Dijanjostiċi preċedenti approvati."
+  },
+  "apiDebugCleared": {
+    "message": "Rapport ta' debug approvat."
+  },
+  "apiDebugFailed": {
+    "message": "Operazzjoni ta ' debug falla. Ibblokka l- għoti u erġa ' pprova."
+  },
+  "apiDebugFailureHint": {
+    "message": "Għal rapport ta' ħsara fid-dettall, ippermetti l-modalità API debug fis-settings, riproduċi l-kontroll u l-esportazzjoni tar-rapport tal-debug."
+  },
+  "urlscanResultGone": {
+    "message": "Dan ir-riżultat ġie mħassar minn urlscan.io. Aġġornament ma tistax terġa 'tibda; sottomissjoni ġdida teħtieġ skan espliċitu."
+  },
+  "apiDebugOpen": {
+    "message": "Dijanjostika miftuħa API"
+  },
+  "diagTitle": {
+    "message": "Dijanjostika API"
+  },
+  "diagHelp": {
+    "message": "Kontrolli fil-memorja lokali. ċwievet, privati URLs u kontenut mhux ipproċessat jibqgħu moħbija. HTTP suċċess mhuwiex verdett tas-sigurtà kompluta. biss passi rreġistrati wara l-attivazzjoni huma disponibbli."
+  },
+  "diagOff": {
+    "message": "Modalità Debug huwa off. Jippermettuha fil-settings."
+  },
+  "diagEmpty": {
+    "message": "L-ebda rekords ta' tqabbil."
+  },
+  "diagPause": {
+    "message": "Ħarsa bil-mod"
+  },
+  "diagResume": {
+    "message": "Dehra mill-ġdid"
+  },
+  "diagPaused": {
+    "message": "Il- kif tidher; ir-reġistrazzjoni tibqa' attiva."
+  },
+  "diagActive": {
+    "message": "Irrekordjar attiv; rifreskanti darba fis-sekonda."
+  },
+  "diagProvider": {
+    "message": "Fornitur"
+  },
+  "diagState": {
+    "message": "Stat"
+  },
+  "diagPurpose": {
+    "message": "Tip ta' operazzjoni"
+  },
+  "diagFrom": {
+    "message": "Minn"
+  },
+  "diagTo": {
+    "message": "Għal"
+  },
+  "diagAll": {
+    "message": "Kollha ≤ 10. 6 > 10. 6"
+  },
+  "diagRuns": {
+    "message": "Flussi ta' kontroll"
+  },
+  "diagDetails": {
+    "message": "Dettalji tal-fluss magħżula"
+  },
+  "diagDropped": {
+    "message": "Rekords jew stadji maqtugħa"
+  },
+  "diagNoHttp": {
+    "message": "Nru sejħa HTTP rreġistrati għal dan il-fluss."
+  },
+  "diagNotCaptured": {
+    "message": "Mhux maqbudin"
+  },
+  "diagTimeline": {
+    "message": "Skeda taż-żmien"
+  },
+  "diagRequest": {
+    "message": "Talba ffiltrata"
+  },
+  "diagResponse": {
+    "message": "Trasport u rispons ffiltrat"
+  },
+  "diagReset": {
+    "message": "Filtri ta' refet"
+  },
+  "diagTruncated": {
+    "message": "Dan il-fluss kien tqassar minħabba l-limiti ta' reġistrazzjoni."
+  },
+  "diag_phase_precondition": {
+    "message": "Prerekwiżiti"
+  },
+  "diag_phase_queue": {
+    "message": "Kweue"
+  },
+  "diag_phase_attempt": {
+    "message": "Ibgħat attentat"
+  },
+  "diag_phase_response": {
+    "message": "Ir-rispons HTTP/it-tlestija tat-trasport"
+  },
+  "diag_phase_parse": {
+    "message": "L-ipproċessar ta' JSON"
+  },
+  "diag_phase_assessment": {
+    "message": "Valutazzjoni"
+  },
+  "diag_phase_persistence": {
+    "message": "Persistenza"
+  },
+  "diag_phase_cache": {
+    "message": "Il-hit tal-kaċċ"
+  },
+  "diag_phase_wait": {
+    "message": "Stennija"
+  },
+  "diag_phase_cancelled": {
+    "message": "Ikkalkulati"
+  },
+  "diag_phase_expired": {
+    "message": "Ir-reġistrazzjoni skadiet mingħajr tlestija kkonfermata"
+  },
+  "diag_purpose_automatic": {
+    "message": "Kontroll awtomatiku"
+  },
+  "diag_purpose_manual": {
+    "message": "Kontroll manwali"
+  },
+  "diag_purpose_link": {
+    "message": "Verifika tal-link"
+  },
+  "diag_purpose_key_test": {
+    "message": "Test tat-tip key"
+  },
+  "diag_purpose_report": {
+    "message": "Talba għar-rapport"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analiżi"
+  },
+  "diag_state_running": {
+    "message": "Tħaddim"
+  },
+  "diag_state_complete": {
+    "message": "Operazzjoni mitmuma"
+  },
+  "diag_state_pending": {
+    "message": "Sakemm jintlaħaq"
+  },
+  "diag_state_blocked": {
+    "message": "Mhux startjat/imblukkat"
+  },
+  "diag_state_incomplete": {
+    "message": "Mhux komplut"
+  },
+  "diag_state_failed": {
+    "message": "Falliment"
+  },
+  "diag_state_unconfirmed": {
+    "message": "It-tlestija mhux ikkonfermata"
+  },
+  "localScoreMessage": {
+    "message": "Punteġġ tal-messaġġ lokali"
+  },
+  "localScoreLink": {
+    "message": "Punteġġ lokali għal din il-link fil-messaġġ"
+  },
+  "localScoreNoIndicators": {
+    "message": "L-ebda indikaturi ta' twissija lokali ma nstabu."
+  },
+  "localScoreIndicators": {
+    "message": "Indikaturi ta 'twissija lokali misjuba. Reviżjoni tar-raġunijiet qabel il-ftuħ."
+  },
+  "uploadSentLabel": {
+    "message": "It-tagħbija mibgħuta"
+  },
+  "uploadSentUnassigned": {
+    "message": "Il upload kien mibgħut, iżda r-riżultat tagħha ma setgħux jiġu assenjati għal dan l-attachment. Agħlaq u terġa 'tiftaħ il-popup qabel jissottomettu mill-ġdid."
+  },
+  "hybridReportTitle": {
+    "message": "Rapport Hybrid Analysis"
+  },
+  "hybridReportIntro": {
+    "message": "L-opinjoni ta' Aqra biss tar-riżultati li waslu. Il-ftuħ ta' dan ir-rapport ma jibgħat l-ebda talba għal fornitur."
+  },
+  "hybridReportOpen": {
+    "message": "Rapport ta' analiżi ta' viżjoni"
+  },
+  "hybridReportUnavailable": {
+    "message": "Irrapporta mhux disponibbli. Iftaħ mill-messaġġ attwali."
+  },
+  "hybridReportTechnical": {
+    "message": "Fornitur u dettalji ta' konnessjoni"
+  },
+  "hybridReportExplanation": {
+    "message": "Dwar din il-valutazzjoni"
+  },
+  "hybridReportSummary": {
+    "message": "Valutazzjoni u provenjenza"
+  },
+  "hybridReportSnapshot": {
+    "message": "Rapport ta' aġġornament li jinżamm; mhux skan ġdid"
+  },
+  "hybridReportScope": {
+    "message": "Riżultati tal-fornitur u l-punteġġ lokali huma separati. oqsma nieqsa mhumiex sejbiet negattivi. biss disponibbli, data konfini hija murija."
+  },
+  "hybridReportCopy": {
+    "message": "Kopja"
+  },
+  "hybridReportCopied": {
+    "message": "Ikkopjat bħala test."
+  },
+  "hybridReportCopyFailed": {
+    "message": "Ma nistax kopja. Agħżel u kopja tat-test manwalment."
+  },
+  "hybridReportAvailableOnly": {
+    "message": "Ringiela fid-dejta disponibbli"
+  },
+  "hybridReportNoMatches": {
+    "message": "L-ebda oqsma ta' tqabbil fid-dejta disponibbli."
+  },
+  "hybridReportAvailability": {
+    "message": "Disponibbiltà u limitazzjonijiet"
+  },
+  "hybridReportRun": {
+    "message": "Studju ta' analiżi"
+  },
+  "hybridReportSearch": {
+    "message": "Fittex it-taqsimiet disponibbli"
+  },
+  "hybridReportReady": {
+    "message": "Irrapporta mgħobbija. Ma nbeda l-ebda skan ġdid."
+  },
+  "hybridReportResource_name": {
+    "message": "Isem id-dokument mehmuż"
+  },
+  "hybridReportResource_url": {
+    "message": "Mira ta' limitu URL"
+  },
+  "hybridReportResource_sha256": {
+    "message": "Riżorsa SHA-256"
+  },
+  "hybridField_type": {
+    "message": "Tip ta' fajl"
+  },
+  "hybridField_type_short": {
+    "message": "Tip ta' fajl fil-qosor"
+  },
+  "hybridField_size": {
+    "message": "Daqs f'bytes"
+  },
+  "hybridField_last_file_name": {
+    "message": "Isem l-aħħar fajl"
+  },
+  "hybridField_submit_name": {
+    "message": "Isem is-sottomissjoni"
+  },
+  "hybridField_url_analysis": {
+    "message": "Analiżi URL"
+  },
+  "hybridField_target_url": {
+    "message": "Mira tal-fornitur URL (tista' titqassar)"
+  },
+  "hybridField_id": {
+    "message": "ID tar-rispons (tip mhux speċifikati)"
+  },
+  "hybridField_job_id": {
+    "message": "ID tal-impjieg"
+  },
+  "hybridField_submission_id": {
+    "message": "ID tas-sottomissjoni"
+  },
+  "hybridField_state": {
+    "message": "Stat ta' provditur"
+  },
+  "hybridField_finished": {
+    "message": "Imdewbin"
+  },
+  "hybridField_verdict": {
+    "message": "verdett tal-fornitur"
+  },
+  "hybridField_threat_score": {
+    "message": "Punteġġ ta' theddida Hybrid Analysis"
+  },
+  "hybridField_threat_level": {
+    "message": "Livell ta' theddid tal-fornitur"
+  },
+  "hybridField_multiscan_result": {
+    "message": "Riżultat ta' multiscan (valur tal-fornitur)"
+  },
+  "hybridField_av_detect": {
+    "message": "Valur ta' detezzjoni AV (valur tal-fornitur)"
+  },
+  "hybridField_whitelisted": {
+    "message": "L-entrata tal-lista bajda tal-fornituri"
+  },
+  "hybridField_vx_family": {
+    "message": "Familja ta' malware li tipprovdi"
+  },
+  "hybridField_classification_tags": {
+    "message": "Tikketti tal-klassifikazzjoni"
+  },
+  "hybridField_tags": {
+    "message": "Tikketti"
+  },
+  "hybridField_analysis_start_time": {
+    "message": "Ħin tal-bidu tal-analiżi"
+  },
+  "hybridField_environment_id": {
+    "message": "ID tal-Ambjent"
+  },
+  "hybridField_environment_description": {
+    "message": "L-ambjent tal-kaxxa tar-ramel"
+  },
+  "hybridField_error_type": {
+    "message": "Tip ta' żball tal-fornitur"
+  },
+  "hybridField_error_origin": {
+    "message": "L-oriġini tal-iżbalji tal-fornitur"
+  },
+  "hybridField_name": {
+    "message": "Isem"
+  },
+  "hybridField_status": {
+    "message": "Stat"
+  },
+  "hybridField_progress": {
+    "message": "Progress (valur tal-fornitur)"
+  },
+  "hybridField_positives": {
+    "message": "Ditekters pożittivi"
+  },
+  "hybridField_total": {
+    "message": "Kontrolli totali"
+  },
+  "hybridField_percent": {
+    "message": "Perċentwali (valur tal-fornitur)"
+  },
+  "hybridField_scan_time": {
+    "message": "Tul ta' żmien tal-iskan (unità ta' provditur)"
+  },
+  "hybridField_scan_date": {
+    "message": "Data tal-iskanjar"
+  },
+  "hybridField_product": {
+    "message": "Prodott tal-iskanner"
+  },
+  "hybridField_version": {
+    "message": "Verżjoni Skanner"
+  },
+  "hybridField_update": {
+    "message": "Aġġornament tal-iskanner"
+  },
+  "hybridField_total_network_connections": {
+    "message": "Konnessjonijiet tan-netwerk"
+  },
+  "hybridField_total_processes": {
+    "message": "Proċessi"
+  },
+  "hybridField_total_signatures": {
+    "message": "Firma"
+  },
+  "hybridField_category": {
+    "message": "Kategorija"
+  },
+  "hybridField_attck_id": {
+    "message": "ID tat-teknika MITRE ATT&CK"
+  },
+  "hybridField_tactic": {
+    "message": "Tattika MITRE ATT&CK"
+  },
+  "hybridField_technique": {
+    "message": "Teknika tal-MITRE ATT&CK"
+  },
+  "hybridField_description": {
+    "message": "Deskrizzjoni"
+  },
+  "hybridField_domains": {
+    "message": "Il-qasam osservat"
+  },
+  "hybridField_hosts": {
+    "message": "Ost osservat"
+  },
+  "hybridField_compromised_hosts": {
+    "message": "L-Istat ta' inkorporazzjoni tal-entità ospitanti"
+  },
+  "hybridField_domain": {
+    "message": "Dominju"
+  },
+  "hybridField_host": {
+    "message": "L-Istat Membru"
+  },
+  "hybridField_ip": {
+    "message": "Indirizz IP"
+  },
+  "hybridField_port": {
+    "message": "Port"
+  },
+  "hybridField_protocol": {
+    "message": "Protokoll"
+  },
+  "hybridField_country": {
+    "message": "Pajjiż"
+  },
+  "hybridField_asn": {
+    "message": "Numru tas-sistema awtonoma"
+  },
+  "hybridField_uid": {
+    "message": "UID tal-Proċess"
+  },
+  "hybridField_process_id": {
+    "message": "ID tal-Proċess (PID)"
+  },
+  "hybridField_parent_uid": {
+    "message": "UID tal-proċess tal-ġenituri"
+  },
+  "hybridField_file_path": {
+    "message": "Rotta tal-fajl"
+  },
+  "hybridField_subject": {
+    "message": "Suġġett taċ-ċertifikat"
+  },
+  "hybridField_issuer": {
+    "message": "Emittent taċ-ċertifikat"
+  },
+  "hybridField_valid_from": {
+    "message": "Validu minn"
+  },
+  "hybridField_valid_until": {
+    "message": "Validu sa"
+  },
+  "hybridField_serial_number": {
+    "message": "Numru tas-serje taċ-ċertifikat"
+  },
+  "hybridField_sha256": {
+    "message": "SHA-256"
+  },
+  "hybridField_sha1": {
+    "message": "SHA-1"
+  },
+  "hybridField_md5": {
+    "message": "MD5"
+  },
+  "hybridField_sha512": {
+    "message": "SHA-512"
+  },
+  "hybridField_imphash": {
+    "message": "Hash tal-importazzjoni"
+  },
+  "hybridReportResource_quickScanId": {
+    "message": "ID tal-Iskanja Malajr Irreġistrata"
+  },
+  "analysisLocalOnly": {
+    "message": "Iċċekkjati lokalment biss"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "Servizzi bir-riżultati"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Servizzi pendenti"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Servizzi bi żbalji"
+  },
+  "hybridReportSection": {
+    "message": "Taqsima"
+  },
+  "hybridReportAllSections": {
+    "message": "Is-sezzjonijiet kollha"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "Proċessar komplet"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "L-ipproċessar għadu pendenti"
+  },
+  "hybridReportProcessing_failed": {
+    "message": "L-ipproċessar ma rnexxiex"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "Status ta' proċessar mhux magħruf"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Rapport li nkiseb"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Snapshot maħluqa"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Is-sejba miżmuma Hybrid Analysis għal din ir-riżorsa"
+  },
+  "hybridReportSaved": {
+    "message": "Rapport Hybrid Analysis iffrankat"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Kopja UTC"
+  },
+  "hybridReportWhy": {
+    "message": "Għaliex din il-valutazzjoni?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Sinjali oħra ta' valutazzjoni"
+  },
+  "hybridReportCompare": {
+    "message": "Sforzi ta' analiżi tal-paragun"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Taqsimiet bid-dejta"
+  },
+  "hybridReportAssessment": {
+    "message": "Valutazzjoni Thundy minn Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Sors u kronogramma"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Is-sejba disponibbli · it-tlestija mhix ikkonfermata"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Rapport dwar Ibrida Miftuħa"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Uri d-dettalji tas-sejba"
+  },
+  "attachmentProtectionTitle": {
+    "message": "Protezzjoni tad-dokument ta' akkumpanjament"
+  },
+  "attachmentProtectionScope": {
+    "message": "Din ir-regola tapplika meta l-iffrankar ma Thundy. Thunderbird jikkmanda sekwestru stess jibqgħu disponibbli."
+  },
+  "attachmentPolicyMode": {
+    "message": "Meta jintlaħaq il-limitu"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Limitu tal-punteġġ Hybrid Analysis"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Twaħħil mingħajr punteġġ ikkonfermat"
+  },
+  "attachmentModeOff": {
+    "message": "Mitfi"
+  },
+  "attachmentModeWarn": {
+    "message": "Imsaġar"
+  },
+  "attachmentModeApproval": {
+    "message": "Teħtieġ approvazzjoni"
+  },
+  "attachmentModeBlock": {
+    "message": "Blokk"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Issejvja b’Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "Ħlief it-twaħħil"
+  },
+  "attachmentCancelSave": {
+    "message": "Ikkanċella"
+  },
+  "attachmentThresholdReached": {
+    "message": "Il-punteġġ tal-ibridu jilħaq il-limitu kkonfigurat."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis ikklassifika dan il-fajl bħala malizzjuż."
+  },
+  "attachmentUnknown": {
+    "message": "L-ebda punteġġ ikkonfermat għal dan it-twaħħil."
+  },
+  "attachmentBlocked": {
+    "message": "It-tnaqqis b'Thundy huwa mblukkat."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Ikteb il-password approvazzjoni biex jiffranka dan il-fajl."
+  },
+  "attachmentFailed": {
+    "message": "Ma nistax tibda tiffranka l-irbit."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy ma setax jaqra din it-twaħħil."
+  },
+  "attachmentContextChanged": {
+    "message": "Il-messaġġ jew twaħħil mibdula. Agħżel mill-ġdid it-twaħħil."
+  },
+  "attachmentRefresh": {
+    "message": "Iċċekkja s-sejbiet salvati mill-ġdid"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "Is-sejba mfaddla ma tinbidilx."
+  },
+  "attachmentDecisionChanged": {
+    "message": "Ir-riżultat jew il-politika nbidlet. Reviżjoni tad-deċiżjoni aġġornata."
+  },
+  "attachmentSaveRequested": {
+    "message": "Bdiet it - talba ħliefa."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Salv ikkanċellati."
+  },
+  "auditDecisionScore": {
+    "message": "Punteġġ tad-deċiżjoni"
+  },
+  "linkHandoffPending": {
+    "message": "Il-handoff browser kienet mitluba. Thunderbird ma kkonfermat dan għadu. Inti tista 'tagħlaq din id-dijalog."
+  },
+  "linkPreflightTimeout": {
+    "message": "Il-verifika ma setgħux jitlestew. Agħlaq dan dialog u agħżel il-link mill-ġdid."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Sejba storika ta' Hybrid Analysis"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Sejba kurrenti Hybrid Analysis"
+  },
+  "auditShare": {
+    "message": "Awditjar mill-ġdid tal-esportazzjoni"
+  },
+  "auditFullNotice": {
+    "message": "Il-verifika sħiħa fiha URLs privat u d-dettalji. Jaqsmuha biss ma 'riċevituri awtorizzati."
+  },
+  "auditFullSave": {
+    "message": "Verifika sħiħa tal-esportazzjoni"
+  },
+  "managedByCompany": {
+    "message": "Meħuda mill-organizzazzjoni tiegħek"
+  },
+  "managedLocal": {
+    "message": "Sors: dan il-profil Thunderbird"
+  },
+  "managedRevision": {
+    "message": "Verżjoni tal-politika"
+  },
+  "managedThreshold": {
+    "message": "Limitu"
+  },
+  "managedPolicyInvalid": {
+    "message": "Il-politika tal-kumpanija hija invalidu. Ikkuntattja tim IT tiegħek."
+  },
+  "managedLinkBlocked": {
+    "message": "L - organizzazzjoni tiegħek bblukkat din ir - rabta."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Iftaħ b’Thundy"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Twaħħil fil-miftuħ"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy jikkontrolla dan it-twaħħil qabel ma jagħtih lil Thunderbird."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird aċċetta t-talba biex jinfetaħ it-twaħħil."
+  },
+  "attachmentOpenFailed": {
+    "message": "It-twaħħil ma setax jinfetaħ."
+  },
+  "reportingTitle": {
+    "message": "Rapporti dwar is-sigurtà tal-kumpaniji"
+  },
+  "reportingOff": {
+    "message": "Ir-rappurtar awtomatiku huwa mitfi."
+  },
+  "reportingNeedsConsent": {
+    "message": "Ir-rappurtar jeħtieġ il-kunsens tiegħek u tokens."
+  },
+  "reportingNeedsPermission": {
+    "message": "Il-permess ta' rappurtar huwa nieqes. Ir-rappurtar jista' jerġa' jiġi rrestawrat."
+  },
+  "reportingReady": {
+    "message": "L - organizzazzjoni tiegħek tistaʼ tirċievi rapporti awtomatiċi."
+  },
+  "reportingQueued": {
+    "message": "Rapporti pendenti:"
+  },
+  "reportingMalicious": {
+    "message": "Sejbiet malizzjużi"
+  },
+  "reportingSuspicious": {
+    "message": "Sejbiet malizzjużi u ksur tal-limitu"
+  },
+  "reportingConsent": {
+    "message": "Naqbel li nibgħat l-ID tal-avveniment, il-ħin, l-azzjoni, is-sejba, id-deċiżjoni u l-verżjoni politika lill-indirizz tal-kumpanija muri hawn fuq."
+  },
+  "reportingConsentIndicators": {
+    "message": "Naqbel li nibgħat l-ID tal-avveniment, ħin, azzjoni, sejba, deċiżjoni, verżjoni ta' politika, u rabta hostname jew sekwestru SHA-256 fl-indirizz tal-kumpanija muri hawn fuq."
+  },
+  "reportingToken": {
+    "message": "Ibgħat tokens mit-tim tal-IT tiegħek"
+  },
+  "reportingActivate": {
+    "message": "Jippermettu r-rappurtar jew it-tokens"
+  },
+  "reportingRevoke": {
+    "message": "Iġbed kunsens u rapporti pendenti ċari"
+  },
+  "reportingSetupFailed": {
+    "message": "Is-settings tar-rappurtar ma setgħux jiġu applikati."
+  },
+  "reportingAuthentication": {
+    "message": "Is-server irrifjuta l-token jibgħat."
+  },
+  "reportingRejected": {
+    "message": "Is-server irrifjuta rapport."
+  },
+  "reportingStorage": {
+    "message": "Thundy ma setax jaqra jew jikteb il-kju ta' rappurtar."
+  },
+  "reportingFull": {
+    "message": "Il-kju huwa sħiħ. Rapporti jistgħu jintilfu."
+  },
+  "reportingExpired": {
+    "message": "Rapport skada qabel it-twassil."
+  },
+  "reportingPrivacy": {
+    "message": "Bil-kunsens separat, Thundy jibgħat dettalji ta 'attentati kwalifikanti biex tiftaħ links jew tiftaħ jew ħlief l-attachments għall-indirizz kumpanija konfigurat. Rapporti fihom l-ID avveniment, ħin, azzjoni, sejba, deċiżjoni u l-verżjoni politika, flimkien ma' isem hostname mhux obbligatorji jew attachment SHA-256. Thundy kjuwijiet pendenti lokalment sa 24 siegħa. Tista 'tirtiri kunsens u tħassar il-kju fl Settings."
+  },
+  "reportingConsentDetails": {
+    "message": "Naqbel ukoll li nibgħat ir-raġuni għad-deċiżjoni, il-punteġġi disponibbli, l-isem tal-fajl ta' sekwestru, il-verdetts tal-fornitur u r-referenzi tar-rapport disponibbli."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Rapporti dettaljati jistgħu jinkludu l-isem tal-fajl ta' sekwestru u links għar-rapporti tal-fornitur."
+  },
+  "analysisRunningHeading": {
+    "message": "Għaddejja l-verifika"
+  },
+  "analysisLocalNoFinding": {
+    "message": "Il-verifika lokali ma sabet l-ebda sinjal ta’ theddida"
+  },
+  "analysisLinksGroup": {
+    "message": "Links"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Hemża"
+  },
+  "protectionOpenAllowed": {
+    "message": "Il-ftuħ huwa permess"
+  },
+  "protectionSaveAllowed": {
+    "message": "L-issejvjar huwa permess"
+  },
+  "protectionWarn": {
+    "message": "Twissija"
+  },
+  "protectionApproval": {
+    "message": "Tinħtieġ approvazzjoni"
+  },
+  "protectionRequestApproval": {
+    "message": "Talba għall-approvazzjoni"
+  },
+  "protectionBlocked": {
+    "message": "Imblukkat"
+  },
+  "protectionMalicious": {
+    "message": "Fornitur irrapporta sejba malizzjuża."
+  },
+  "protectionThreshold": {
+    "message": "Intlaħaq il-limitu tal-protezzjoni"
+  },
+  "protectionManagedThreshold": {
+    "message": "Intlaħaq il-limitu tal-kumpanija"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "Is-settings applikabbli jippermettu din l-azzjoni."
+  },
+  "linkContextChanged": {
+    "message": "Il-link jew il-messaġġ inbidel matul il-verifika."
+  },
+  "auditPolicyBlocked": {
+    "message": "Imblukkat mill-politika"
+  },
+  "reportingLastReceipt": {
+    "message": "L-aħħar irċevuta kkonfermata mis-server"
+  },
+  "reportingOldestPending": {
+    "message": "L-eqdem rapport pendenti"
+  },
+  "addonLanguage": {
+    "message": "Lingwa tas-suppliment"
+  },
+  "addonLanguageSystem": {
+    "message": "Uża l-lingwa ta’ Thunderbird"
+  },
+  "addonLanguageSaved": {
+    "message": "Il-lingwa ġiet issejvjata. Erġa’ iftaħ il-veduti ta’ Thundy biex tapplikaha."
+  },
+  "addonLanguageFailed": {
+    "message": "Il-lingwa ma setgħetx tiġi ssejvjata."
+  },
+  "profilesOpenSource": {
+    "message": "Sors miftuħ"
+  },
+  "transferReview": {
+    "message": "Irrevedi s-sottomissjoni esterna"
+  },
+  "transferSend": {
+    "message": "Ibgħat lill-fornitur"
+  },
+  "transferVisibility": {
+    "message": "Viżibbiltà: mhux elenkat. Kull min għandu l-link jista’ jiftaħ ir-rapport."
+  },
+  "transferAccepted": {
+    "message": "Il-fornitur aċċetta t-talba. Ir-rapport jista’ jkun għadu pendenti."
+  },
+  "transferFailed": {
+    "message": "Is-sottomissjoni lill-fornitur ma setgħetx titlesta."
+  },
+  "transferUsePopup": {
+    "message": "Iftaħ il-pannell ta’ Thundy biex tirrevedi u tapprova link jew sekwestru partikolari."
+  },
+  "providerGrantAccess": {
+    "message": "Agħti aċċess lil dan il-fornitur"
+  },
+  "sourceSessionOnly": {
+    "message": "L-arkivju tas-sorsi huwa mimli. Il-veduta attwali tas-sorsi hi disponibbli biss f’din is-sessjoni."
+  },
+  "analysisReason_transfer_approval": {
+    "message": "Links sħaħ u sekwestri jeħtieġu konferma individwali."
+  },
+  "analysisCompactDetails": {
+    "message": "Dettalji tal-verifika"
+  },
+  "riskScoreFormula": {
+    "message": "Il-punteġġ lokali jiġbor il-punti sa 100. Is-sejbiet tal-fornituri jiġu evalwati separatament."
+  },
+  "riskScoreNoPoints": {
+    "message": "Ebda regola lokali ma żiedet punti."
+  },
+  "riskScoreTotal": {
+    "message": "Kalkolu lokali"
+  },
+  "riskLinkBrandRule": {
+    "message": "Mill-inqas dominju wieħed jixbah marka magħrufa. Il-punti jingħaddu darba."
+  },
+  "reportingConsentDetections": {
+    "message": "Ir-rapporti jistgħu jinkludu ismijiet, kategoriji, firem u marki imitati."
+  },
+  "detectionKind_family": {
+    "message": "Familja tal-malware"
+  },
+  "detectionKind_category": {
+    "message": "Kategorija"
+  },
+  "detectionKind_brand": {
+    "message": "Marka imitata"
+  },
+  "detectionKind_signature": {
+    "message": "Firma tal-fornitur"
+  },
+  "detectionCategory_fraudulent_shop": {
+    "message": "Ħanut frawdolenti"
+  },
+  "detectionCategory_phishing_shop": {
+    "message": "Ħanut tal-phishing"
+  },
+  "analysisDetectionGrouping": {
+    "message": "Iġbor is-sejbiet fi gruppi"
+  },
+  "detectionCategory_malware": {
+    "message": "Malware"
+  },
+  "detectionCategory_virus": {
+    "message": "Virus"
+  },
+  "detectionCategory_trojan": {
+    "message": "Trojan"
+  },
+  "detectionCategory_ransomware": {
+    "message": "Ransomware"
+  },
+  "detectionCategory_worm": {
+    "message": "Dudu"
+  },
+  "detectionCategory_spyware": {
+    "message": "Spyware"
+  },
+  "detectionCategory_adware": {
+    "message": "Adware"
+  },
+  "detectionCategory_backdoor": {
+    "message": "Backdoor"
+  },
+  "detectionCategory_downloader": {
+    "message": "Downloader"
+  },
+  "detectionCategory_dropper": {
+    "message": "Dropper"
+  },
+  "detectionCategory_infostealer": {
+    "message": "Serq tad-dejta"
+  },
+  "detectionCategory_rootkit": {
+    "message": "Rootkit"
+  },
+  "detectionCategory_phishing": {
+    "message": "Phishing"
+  },
+  "detectionCategory_scam": {
+    "message": "Frodi"
+  }
+}

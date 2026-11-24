@@ -25,10 +25,14 @@ const ThundySecurity = (() => {
             !Number.isSafeInteger(saved.attachmentPolicy.revision) || saved.attachmentPolicy.revision < 1)) {
             throw error('SECURITY_STATE_INVALID');
         }
+        if (Object.hasOwn(saved.policy,'waitForResults') && typeof saved.policy.waitForResults !== 'boolean' ||
+            Object.hasOwn(saved.policy,'autoOpenBelow') && !ThundyManagedPolicy.automaticThreshold(saved.policy.autoOpenBelow)) {
+            throw error('SECURITY_STATE_INVALID');
+        }
         return saved;
     }
     async function effective(saved) {
-        const managed = typeof ThundyManagedPolicy === 'undefined' ? {} : await ThundyManagedPolicy.read();
+        const managed = await ThundyManagedPolicy.read();
         const { links, attachments, revision } = managed;
         let localInvalid = false;
         try {
@@ -40,12 +44,20 @@ const ThundySecurity = (() => {
         }
         return {
             managed,
-            policy: links ? { ...links, enabled: true, revision, managed: true } :
-                { ...defaults, ...saved.policy, ...(localInvalid ? {enabled:true,invalid:true} : {}) },
+            policy: links ? { waitForResults:false,...links, enabled: true, revision, managed: true } :
+                { waitForResults:false,...defaults, ...saved.policy, ...(localInvalid ? {enabled:true,invalid:true} : {}) },
             attachmentPolicy: attachments ? { ...attachments, mode: attachments.invalid ? 'block' : attachments.action, revision, managed: true } :
                 { ...attachmentDefaults, ...saved.attachmentPolicy, ...(localInvalid ? {mode:'block',invalid:true} : {}) },
+            linkAudit: managed.linkAudit || auditSettings(saved),
             approval: saved.approval, localInvalid
         };
+    }
+    async function auditConfiguration() {
+        const managed = await ThundyManagedPolicy.read();
+        return managed.linkAudit || auditSettings((await browser.storage.local.get(KEY))[KEY]);
+    }
+    function auditSettings(saved) {
+        return saved?.linkAudit === undefined ? ThundyManagedPolicy.historyDefaults : ThundyManagedPolicy.audit(saved.linkAudit);
     }
     async function digest(password, salt) {
         const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
@@ -87,7 +99,9 @@ const ThundySecurity = (() => {
         const current = await effective(saved);
         const reporting = typeof ThundyIncidentReporting === 'undefined' ? undefined :
             await ThundyIncidentReporting.status(current.managed.reporting).catch(() => ({ state: 'storage' }));
-        return {protected:!!saved.admin,unlocked,approvalConfigured:!!saved.approval,policy:current.policy,attachmentPolicy:current.attachmentPolicy,reporting};
+        return {protected:!!saved.admin,unlocked,approvalConfigured:!!saved.approval,policy:current.policy,attachmentPolicy:current.attachmentPolicy,
+            linkAudit:{...current.linkAudit,managed:!!current.managed.linkAudit},
+            severityColorsManaged:!!current.managed.severityColors,severityColorsInvalid:current.managed.severityColors?.invalid === true,reporting};
     }
     function serialized(fn) { const job=queue.then(fn);queue=job.catch(()=>{});return job; }
     async function command(request,sender) {
@@ -131,7 +145,8 @@ const ThundySecurity = (() => {
             let recovery;
             if (op==='configure') {
                 const { managed } = await effective(saved);
-                if (managed.links && request.policy !== undefined || managed.attachments && request.attachmentPolicy !== undefined) throw error('POLICY_MANAGED');
+                if (managed.links && request.policy !== undefined || managed.attachments && request.attachmentPolicy !== undefined ||
+                    managed.linkAudit && request.linkAudit !== undefined) throw error('POLICY_MANAGED');
                 if (request.adminPassword) {
                     if (request.adminPassword===request.approvalPassword) throw error('PASSWORDS_DISTINCT');
                     if (saved.approval && await digest(request.adminPassword,saved.approval.salt)===saved.approval.hash) throw error('PASSWORDS_DISTINCT');
@@ -144,6 +159,13 @@ const ThundySecurity = (() => {
                 }
                 const policy=request.policy;
                 if (!managed.links && (!policy || typeof policy.enabled!=='boolean' || !Number.isInteger(policy.threshold) || policy.threshold<0 || policy.threshold>100 || !['warn','approval'].includes(policy.unknown))) throw error('POLICY_INVALID');
+                if (policy && (Object.hasOwn(policy,'waitForResults') && typeof policy.waitForResults !== 'boolean' ||
+                    Object.hasOwn(policy,'autoOpenBelow') && !ThundyManagedPolicy.automaticThreshold(policy.autoOpenBelow))) throw error('POLICY_INVALID');
+                if (request.linkAudit !== undefined) {
+                    const next = ThundyManagedPolicy.audit(request.linkAudit);
+                    if (next.invalid) throw error('POLICY_INVALID');
+                    saved.linkAudit = next;
+                }
                 if (request.attachmentPolicy !== undefined) {
                     const next = request.attachmentPolicy;
                     if (!validAttachmentPolicy(next)) throw error('POLICY_INVALID');
@@ -168,12 +190,16 @@ const ThundySecurity = (() => {
         // Stopping transfers is always available, but cannot smuggle other edits.
         if (!(Object.keys(values).length===1 && values.externalAnalysisConsent===false)) await authorized(sender,token);
         else if (!sender?.id || sender.id!==browser.runtime.id) throw error('ADMIN_PAGE_REQUIRED');
-        const allowed = new Set(['apikey','virustotalApikey','urlhausApikey','urlscanApikey','privacyTier','alwaysManual','scanMode','autoScanLinks','timeOfClickProtection','ipReputationProvider','ipReputationApiKey','externalAnalysisConsent','scanningEnabledSenders','trustedAuthServers','customWhitelist','customBlacklist','onboardingState','thundyAppearance','thundyAccent','thundyDensity','analysisDefaultView','analysisShowHybridDetails','enterpriseProfile','enterpriseConfiguration','enterpriseProfileSelection']);
+        const allowed = new Set(['apikey','virustotalApikey','urlhausApikey','urlscanApikey','disabledProviders','privacyTier','alwaysManual','scanMode','autoScanLinks','timeOfClickProtection','ipReputationEnabled','ipReputationProvider','ipReputationApiKey','externalAnalysisConsent','scanningEnabledSenders','trustedAuthServers','customWhitelist','customBlacklist','onboardingState','thundyAppearance','thundyAccent','thundyDensity','analysisDefaultView','analysisShowHybridDetails','enterpriseProfile','enterpriseConfiguration','enterpriseProfileSelection']);
         if (Object.keys(values).some(k=>!allowed.has(k))) throw error('SETTINGS_INVALID');
         if ('timeOfClickProtection' in values && (await effective()).managed.links) throw error('POLICY_MANAGED');
         if('scanMode' in values && !['allDisplayed','approvedSenders','manual'].includes(values.scanMode))throw error('SETTINGS_INVALID');
         if('analysisDefaultView' in values && !['simple','expert'].includes(values.analysisDefaultView))throw error('SETTINGS_INVALID');
         if('analysisShowHybridDetails' in values && typeof values.analysisShowHybridDetails!=='boolean')throw error('SETTINGS_INVALID');
+        if ('disabledProviders' in values && (!Array.isArray(values.disabledProviders) || values.disabledProviders.length > 4 ||
+            new Set(values.disabledProviders).size !== values.disabledProviders.length ||
+            values.disabledProviders.some(id=>!['hybridanalysis','virustotal','urlhaus','urlscan'].includes(id)))) throw error('SETTINGS_INVALID');
+        if ('ipReputationEnabled' in values && typeof values.ipReputationEnabled !== 'boolean') throw error('SETTINGS_INVALID');
         const changedKeys=['apikey','virustotalApikey','urlhausApikey','urlscanApikey','ipReputationApiKey','ipReputationProvider'];
         if(changedKeys.some(key=>Object.prototype.hasOwnProperty.call(values,key))) {
             const old=await browser.storage.local.get([...changedKeys,'providerConnectionTests']);
@@ -196,5 +222,5 @@ const ThundySecurity = (() => {
     if (browser.runtime.onConnect) browser.runtime.onConnect.addListener(port=>{
         if(port.name!=='thundy-admin-session')return;let bound;port.onMessage.addListener(value=>{const session=sessions.get(value.token);if(session?.identity===identity(port.sender))bound=value.token;});port.onDisconnect.addListener(()=>{sessions.delete(bound);});
     });
-    return {read,effective,status,command,authorized,write,decision,verify,identity,page,defaults,attachmentDefaults,serialized};
+    return {read,effective,auditConfiguration,status,command,authorized,write,decision,verify,identity,page,defaults,attachmentDefaults,serialized};
 })();

@@ -4,6 +4,7 @@ const LINK_AUDIT_DAYS = 30;
 const LINK_AUDIT_LIMIT = 2000;
 const LINK_AUDIT_BYTES = 2 * 1024 * 1024;
 let linkAuditQueue = Promise.resolve();
+let auditDatabase;
 const linkAuditSessions = new ExpiringMap(60 * 60 * 1000);
 
 function pruneLinkAudit(records, now = Date.now()) {
@@ -22,11 +23,25 @@ function withinAuditDeadline(work, deadline, fallback) {
     })]).finally(() => clearTimeout(timer));
 }
 
-function editLinkAudit(edit, { readOnly = false, deadline = Date.now() + LINK_AUDIT_WAIT } = {}) {
+function queueLinkAudit(run, deadline) {
     let expired = false;
     const check = () => { if (expired || Date.now() >= deadline) throw auditTimeout(); };
     const job = linkAuditQueue.then(async () => {
         check();
+        return run(check);
+    });
+    linkAuditQueue = job.catch(() => {});
+    // A delayed commit must finish before a second edit may proceed.
+    return withinAuditDeadline(job, deadline).catch(error => { expired = true; throw error; });
+}
+
+function editLinkAudit(edit, {readOnly = false, deadline, operation} = {}) {
+    return queueLinkAudit(async check => {
+        const configured = typeof ThundySecurity === 'undefined' ? null : await ThundySecurity.auditConfiguration?.();
+        const limits = configured?.invalid ? {maxRecords:null,retentionDays:null} : configured || {maxRecords:LINK_AUDIT_LIMIT,retentionDays:LINK_AUDIT_DAYS};
+        const custom = limits.maxRecords !== LINK_AUDIT_LIMIT || limits.retentionDays !== LINK_AUDIT_DAYS;
+        const marker = operation && typeof indexedDB !== 'undefined' ? await browser.storage.local.get('linkAuditIndexed') : {};
+        if (operation && (custom || marker.linkAuditIndexed)) return indexedLinkAudit(operation,limits,check);
         const stored = await browser.storage.local.get([LINK_AUDIT_KEY, 'linkAuditProfileId']);
         check();
         const original = Array.isArray(stored[LINK_AUDIT_KEY]) ? stored[LINK_AUDIT_KEY] : [];
@@ -36,12 +51,95 @@ function editLinkAudit(edit, { readOnly = false, deadline = Date.now() + LINK_AU
         const unchanged = readOnly && stored.linkAuditProfileId && original.length === records.length && records.every((record, index) => record === original[index]);
         check();
         if (!unchanged) await browser.storage.local.set({ [LINK_AUDIT_KEY]: readOnly ? records : pruneLinkAudit(records), linkAuditProfileId: profileId });
-        return { result, profileId };
+        return { result, profileId, limits:{...limits,maxBytes:LINK_AUDIT_BYTES} };
+    }, deadline ?? Date.now() + LINK_AUDIT_WAIT);
+}
+
+function openAuditDatabase() {
+    auditDatabase ??= new Promise((resolve,reject) => {
+        const request = indexedDB.open('thundy-link-audit',1);
+        request.onupgradeneeded = () => {
+            request.result.createObjectStore('events',{keyPath:'id'}).createIndex('clickedAt','clickedAt');
+            request.result.createObjectStore('metadata');
+        };
+        request.onsuccess = () => {
+            const db = request.result;
+            db.onversionchange = () => { db.close(); auditDatabase = null; };
+            resolve(db);
+        };
+        request.onerror = () => reject(request.error);
+    }).catch(error => { auditDatabase = null; throw error; });
+    return auditDatabase;
+}
+
+function auditTransaction(db, run) {
+    return new Promise((resolve,reject) => {
+        const transaction = db.transaction(['events','metadata'],'readwrite');
+        let value;
+        transaction.oncomplete = () => resolve(value);
+        transaction.onabort = () => reject(transaction.error || Error('Audit transaction aborted'));
+        run(transaction.objectStore('events'),transaction.objectStore('metadata'),result=>{value=result;});
     });
-    linkAuditQueue = job.catch(() => {});
-    // Keep the real write in the queue even if its caller times out. A second
-    // write must never race a delayed first commit and replace newer history.
-    return withinAuditDeadline(job, deadline).catch(error => { expired = true; throw error; });
+}
+
+function pruneIndexedAudit(events, limits, done) {
+    const cutoff = limits.retentionDays === null ? -Infinity : Date.now() - limits.retentionDays * 86400000;
+    if (cutoff === -Infinity && limits.maxRecords === null) { done(); return; }
+    const count = events.count();
+    count.onsuccess = () => {
+        let excess = limits.maxRecords === null ? 0 : count.result - limits.maxRecords;
+        const request = events.index('clickedAt').openCursor();
+        request.onsuccess = () => {
+            const cursor = request.result;
+            if (!cursor || excess <= 0 && cursor.key >= cutoff) { done(); return; }
+            cursor.delete();
+            excess--;
+            cursor.continue();
+        };
+    };
+}
+
+async function indexedLinkAudit(operation, limits, check) {
+    const db = await openAuditDatabase();
+    const stored = await browser.storage.local.get(['linkAuditIndexed','linkAuditProfileId',LINK_AUDIT_KEY]);
+    check();
+    let profileId = stored.linkAuditProfileId;
+    if (!stored.linkAuditIndexed || !profileId) {
+        profileId = await auditTransaction(db,(events,metadata,done) => {
+            const request = metadata.get('profileId');
+            request.onsuccess = () => {
+                if (request.result) { done(request.result); return; }
+                const id = profileId || crypto.randomUUID();
+                const legacy = Array.isArray(stored[LINK_AUDIT_KEY]) ? stored[LINK_AUDIT_KEY] : [];
+                for (const event of legacy) if (event?.id && Number.isFinite(event.clickedAt)) events.put(event);
+                metadata.put(id,'profileId');
+                done(id);
+            };
+        });
+        await browser.storage.local.set({linkAuditIndexed:true,linkAuditProfileId:profileId,[LINK_AUDIT_KEY]:[]});
+    }
+    check();
+    const result = await auditTransaction(db,(events,_,done) => {
+        const index = events.index('clickedAt');
+        if (operation.type === 'clear') { events.clear(); return; }
+        if (operation.type === 'insert') events.put(operation.record);
+        if (operation.type === 'update') {
+            const request = events.get(operation.id);
+            request.onsuccess = () => {
+                const event = request.result;
+                if (!event) { done(false); return; }
+                events.put({...event,...operation.changes});
+                done(true);
+            };
+            return;
+        }
+        pruneIndexedAudit(events,limits,()=>{
+            if (operation.type !== 'read') return;
+            const request = index.getAll();
+            request.onsuccess = () => done(request.result.reverse());
+        });
+    });
+    return {result,profileId,limits:{...limits,maxBytes:null}};
 }
 
 function reportLinkAuditFailure() {
@@ -61,7 +159,7 @@ async function updateLinkAudit(id, changes, options) {
         if (!record) return false; // Retention or explicit deletion removed this interaction.
         Object.assign(record, changes);
         return pruneLinkAudit(records).some(retained => retained.id === id);
-    }, options);
+    }, {...options,operation:{type:'update',id,changes}});
     return result;
 }
 
@@ -73,6 +171,8 @@ async function handleAuditedLinkCheck(request, sender) {
     if (!key || linkAuditSessions.has(key)) return { status: 'ERROR', auditSaved: false };
     if (linkAuditSessions.size >= LINK_AUDIT_LIMIT) linkAuditSessions.delete(linkAuditSessions.keys().next().value);
     const session = { auditSaved: true, url: request.url, messageId: request.messageId, checked: false, terminal: false, opening: false, score: null, local: {state:'pending',score:null,reasons:[],observedAt:null,scope:'link-in-message'} };
+    const controller = new AbortController();
+    session.stopChecking = () => controller.abort();
     linkAuditSessions.set(key, session);
     session.ready = withinAuditDeadline((async () => {
         const url = new URL(request.url);
@@ -84,7 +184,7 @@ async function handleAuditedLinkCheck(request, sender) {
         session.auditReady = (async () => { try {
             if (new TextEncoder().encode(JSON.stringify(record)).length + 2 > LINK_AUDIT_BYTES) throw new Error('Audit event exceeds retention budget');
             const initial = copyAuditValue(record);
-            await editLinkAudit(records => records.unshift(initial), {deadline});
+            await editLinkAudit(records => records.unshift(initial), {deadline,operation:{type:'insert',record:initial}});
             return true;
         }
         catch (error) { session.auditSaved = false; reportLinkAuditFailure(); return false; } })();
@@ -94,12 +194,11 @@ async function handleAuditedLinkCheck(request, sender) {
         const message = await session.ready;
         // Read policy while checks are running. Starting it only at the end
         // would incorrectly exhaust its budget after a provider timeout.
-        const securityEnabled = typeof ThundyLinkSecurity === 'undefined' ? Promise.resolve(false) : bounded(
-            Promise.resolve().then(() => ThundySecurity.effective()).then(saved => saved.policy).catch(() => 'unavailable'), 'unavailable');
+        const security = typeof ThundyLinkSecurity === 'undefined' ? Promise.resolve(null) : bounded(
+            Promise.resolve().then(() => ThundySecurity.effective()).catch(() => null), null);
+        const securityEnabled = security.then(saved => saved?.policy || (typeof ThundyLinkSecurity === 'undefined' ? false : 'unavailable'));
         const managedAssessment = securityEnabled.then(policy => policy?.managed && !policy.invalid ?
             ThundyLinkSecurity.evaluate(session,sender).catch(() => null) : null);
-        // Provider availability is not a prerequisite for an explicit warning
-        // confirmation. Keep the click dialog bounded; background scans may continue.
         let localActive=true;
         const localCheck = (async () => {
             try {
@@ -112,18 +211,35 @@ async function handleAuditedLinkCheck(request, sender) {
                 session.heuristicScore = Number.isFinite(threat.heuristicScore) ? threat.heuristicScore : null;
                 session.scoredAt = Date.now();
                 session.local = {state:session.score===null?'failed':typeof localContentCoverage==='function'?localContentCoverage(fullMessage).state:'checked',score:session.heuristicScore ?? session.score,decisionScore:session.score,providerReasons:copyAuditValue((threat.providerReasons||[]).slice(0,20)),reasons:copyAuditValue((threat.heuristicReasons||threat.reasons||[]).slice(0,20)),reasonDetails:copyAuditValue((threat.reasonDetails||[]).slice(0,20)),observedAt:session.scoredAt,scope:'link-in-message'};
+                session.local.localRawScore = threat.localRawScore;
+                session.local.localContributions = copyAuditValue((threat.localContributions || []).slice(0,20));
                 session.reasons = copyAuditValue((threat.reasons || []).slice(0, 20));
                 session.reasonDetails = copyAuditValue((threat.reasonDetails || []).slice(0, 20));
             } catch (error) { if(localActive){session.score = null;session.local={state:'failed',score:null,reasons:[],observedAt:null,scope:'link-in-message'};} }
         })();
         const localReady=bounded(localCheck,null).finally(()=>{localActive=false;if(session.local.state==='pending')session.local={...session.local,state:'failed',reason:'timeout'};});
         const unavailable={status:'UNKNOWN',provider:'none',check:{origin:'none',outcome:'no_result',errorCode:'LINK_CHECK_TIMEOUT',attemptedAt:clickedAt,observedAt:null}};
-        const {incidentEvidence,...verdict} = await bounded(new Promise(resolve => {Promise.resolve().then(()=>handleCheckLinkState(request,sender,resolve)).catch(()=>resolve(unavailable));}),unavailable);
+        const enabled = await securityEnabled;
+        const wait = enabled?.waitForResults === true;
+        const providerDeadline = wait ? Date.now() + 30000 : deadline;
+        const check = enabled === 'unavailable' ? Promise.resolve(unavailable) : new Promise(resolve => {
+            if (wait) {
+                controller.signal.addEventListener('abort',()=>resolve(unavailable),{once:true});
+                if (controller.signal.aborted) return resolve(unavailable);
+            }
+            Promise.resolve().then(()=>handleCheckLinkState(request,sender,resolve,
+                {waitForResults:wait,deadline:providerDeadline,signal:controller.signal})).catch(()=>resolve(unavailable));
+        });
+        const {incidentEvidence,...verdict} = await withinAuditDeadline(check,providerDeadline,()=>unavailable);
+        controller.abort();
+        if (wait && session.terminal) return {status:'ERROR',auditSaved:session.auditSaved};
         session.incidentEvidence = incidentEvidence;
         session.providerReasons = copyAuditValue((verdict.reasons || []).slice(0, 20));
         session.check = verdict.check || null;
+        session.scanReports = new Map((verdict.scans || []).filter(row=>row.report).map(row=>[row.provider,row.report]));
         session.verdict = verdict.status || 'UNKNOWN'; session.provider = verdict.provider || 'none'; session.checked = true; session.providerCheckedAt = Date.now();
         await localReady;
+        const finalDeadline = wait ? Date.now() + LINK_AUDIT_WAIT : deadline;
         let saved = false;
         try { if (await session.auditReady) saved = await updateLinkAudit(session.record.id, {
             score: session.score, heuristicScore:session.heuristicScore, scoredAt: session.scoredAt || null,
@@ -137,19 +253,20 @@ async function handleAuditedLinkCheck(request, sender) {
             httpStatus: verdict.check?.httpStatus ?? null,
             retryAfter: verdict.check?.retryAfter || verdict.retryAfter || null,
             providerReasons: (verdict.reasons || []).slice(0, 20)
-        }, {deadline}); }
+        }, {deadline:finalDeadline}); }
         catch (error) { reportLinkAuditFailure(); }
+        if (session.terminal) return {status:session.verdict,auditSaved:saved};
         let protection=null, assessment;
-        const enabled = await securityEnabled;
-        if (enabled?.enabled) {
+        if (enabled?.enabled || Number.isInteger(enabled?.autoOpenBelow)) {
             const fallback = enabled.managed || enabled.invalid ? {mode:'block',reason:enabled.invalid?'policy_invalid':'context_changed',revision:enabled.revision} :
                 {required:true,reason:'context_changed'};
             if (enabled.managed) {
-                assessment = await bounded(managedAssessment,null);
+                assessment = wait ? await withinAuditDeadline(ThundyLinkSecurity.evaluate(session,sender).catch(()=>null),finalDeadline,()=>null) :
+                    await bounded(managedAssessment,null);
                 protection = assessment ? ThundySecurity.decision(assessment.policy,
                     {...assessment.input,verdict:session.verdict,check:session.check}) : fallback;
             } else {
-                assessment = enabled.invalid ? null : await bounded(ThundyLinkSecurity.evaluate(session,sender).catch(() => null), null);
+                assessment = enabled.invalid ? null : await withinAuditDeadline(ThundyLinkSecurity.evaluate(session,sender).catch(() => null),finalDeadline,()=>null);
                 protection = assessment?.decision || fallback;
             }
             if (enabled.managed) {
@@ -161,12 +278,33 @@ async function handleAuditedLinkCheck(request, sender) {
             }
         } else if (enabled === 'unavailable') protection = {required:true,reason:'context_changed'};
         if (protection && assessment) protection = linkDecisionPresentation(protection,assessment);
-        return { ...verdict, score: session.score, local: copyAuditValue(session.local), protection, auditSaved: saved && session.auditSaved };
+        const auditSaved = saved && session.auditSaved;
+        session.localOnly = verdict.attempted === false && verdict.check?.outcome === 'not_requested';
+        session.automaticEligible = !!(auditSaved && assessment && automaticLinkOpening(assessment.policy,
+            {...assessment.input,verdict:session.verdict,check:session.check},protection,session));
+        const managed = (await security)?.managed;
+        const presentation = typeof ThundySeverity === 'undefined' ? null : ThundySeverity.presentation({
+            mode:protection?.mode || (protection?.required ? 'approval' : session.verdict === 'SUSPICIOUS' ? 'warn' : undefined),score:protection?.score ?? session.score,
+            incomplete:verdict.check?.outcome !== 'success' || session.local.state !== 'checked',
+            malicious:['MALICIOUS','MALICIOUS_VISUAL'].includes(session.verdict) || protection?.reason === 'malicious'
+        },managed?.severityColors);
+        return { ...verdict, score: session.score, local: copyAuditValue(session.local), protection, auditSaved,
+            presentation,autoOpen:session.automaticEligible };
     } catch (error) {
         // Consume ready rejection even when cancellation arrives while initialising.
         reportLinkAuditFailure();
         return { status: 'ERROR', score: session.score, local:{...session.local,state:'failed'}, auditSaved: false };
     }
+}
+
+function automaticLinkOpening(policy, input, decision, session) {
+    const {autoOpenBelow,threshold,enabled} = policy;
+    const complete = input.verdict === 'CLEAN' && input.check?.outcome === 'success';
+    const localOnly = !policy.managed && session.localOnly && input.check?.outcome === 'not_requested';
+    return Number.isInteger(autoOpenBelow) && !policy.invalid && !!decision && !decision.required &&
+        (!decision.mode || decision.mode === 'allow') && (Number.isFinite(input.score) && input.score < autoOpenBelow) &&
+        (!enabled || input.score < threshold) && input.coverage === 'checked' && (complete || localOnly) &&
+        !input.malicious && !input.suspicious && session.local?.state === 'checked';
 }
 
 function linkDecisionPresentation(decision, assessment) {
@@ -183,10 +321,13 @@ async function reportManagedLinkAttempt(session,decision,assessment) {
     if (!reporting?.endpoint || session.incidentReported ||
         decision.reason === 'threshold' && reporting.mode !== 'suspicious') return;
     session.incidentReported = true;
+    const evidence = [...(session.incidentEvidence || []),...(assessment?.incidentEvidence || [])];
+    const phishing = session.verdict === 'MALICIOUS_VISUAL' || evidence.some(row => row.verdict === 'malicious' &&
+        row.detections?.some(entry=>entry.kind==='category' && ['phishing','phishing_shop'].includes(entry.value)));
     await ThundyIncidentReporting.capture({id:session.record.id,kind:'link_open',mode:decision.mode,reason:decision.reason,
-        finding:session.verdict === 'MALICIOUS_VISUAL' ? 'phishing' : 'malicious',indicator:session.url,
+        finding:phishing ? 'phishing' : 'malicious',indicator:session.url,
         score:assessment?.input.score,threshold:assessment?.policy.threshold,
-        evidence:[...(session.incidentEvidence || []),...(assessment?.incidentEvidence || [])]});
+        evidence});
 }
 
 function copyAuditValue(value) { return value == null ? null : JSON.parse(JSON.stringify(value)); }
@@ -205,6 +346,7 @@ async function handleCancelAuditedLink(request, sender) {
     if (!session || session.url !== request.url || session.messageId !== request.messageId || session.opening || session.terminal) return { success: false };
     const decidedAt = Date.now();
     session.terminal = true;
+    session.stopChecking?.();
     const deadline = decidedAt + LINK_AUDIT_WAIT;
     const reason = ['cancel', 'escape', 'destination_changed', 'context_closed'].includes(request.reason) ? request.reason : 'cancel';
     const changes = { outcome:'ABORTED', decidedAt, cancelReason:reason, scoreAtDecision:session.scoredAt <= decidedAt ? session.score : null, heuristicScoreAtDecision:session.scoredAt <= decidedAt ? session.heuristicScore ?? null : null, verdictAtDecision:session.verdict || 'UNKNOWN', providerAtDecision:session.provider || 'none', ...decisionReasons(session, decidedAt) };
@@ -216,15 +358,25 @@ async function handleCancelAuditedLink(request, sender) {
     } catch (error) { reportLinkAuditFailure(); return { success: false }; }
 }
 
+async function openAuditedScanReport(request,sender) {
+    const session = linkAuditSessions.get(auditSessionKey(request,sender));
+    if (!session?.checked || session.terminal || session.url !== request.url || session.messageId !== request.messageId) return {success:false};
+    const report = session.scanReports?.get(request.provider);
+    if (!report || (await getFirstDisplayedMessage(sender.tab.id))?.id !== session.messageId) return {success:false};
+    await browser.windows.openDefaultBrowser(report);
+    return {success:true};
+}
+
 async function finishLinkHandoff(session, result, granted) {
     session.record.openAttempts++;
     session.terminal = result.success || session.handoffUnconfirmed === true;
     const decidedAt = Date.now();
     const deadline = decidedAt + LINK_AUDIT_WAIT;
+    const {automaticOpen,...authorization} = granted || {};
     const changes = {outcome:result.success ? 'OPENED' : 'OPEN_ERROR', decidedAt, openAttempts:session.record.openAttempts,
         scoreAtDecision:session.score, heuristicScoreAtDecision:session.heuristicScore ?? null,
         verdictAtDecision:session.verdict || 'UNKNOWN', providerAtDecision:session.provider || 'none',
-        ...decisionReasons(session, decidedAt),...granted};
+        ...decisionReasons(session, decidedAt),...authorization,...(automaticOpen && result.success ? {automaticOpen:true} : {})};
     try {
         if (await withinAuditDeadline(session.auditReady, deadline)) {
             const saved = await updateLinkAudit(session.record.id, changes, {deadline});
@@ -241,6 +393,10 @@ async function handleOpenAuditedLink(request, sender, {approval} = {}) {
     let dispatched = false;
     try {
         await withinAuditDeadline(session.ready, Date.now() + LINK_AUDIT_WAIT);
+        if (request.automatic === true && (!session.automaticEligible || typeof ThundyLinkSecurity === 'undefined' ||
+            !await updateLinkAudit(session.record.id,{automaticRequestedAt:Date.now()}))) {
+            return {success:false,code:'LINK_AUTOMATIC_UNAVAILABLE',auditSaved:false};
+        }
         const result = await handleOpenCheckedLink(request, sender, {deferHandoff:true,approval});
         if (result.handoff) {
             dispatched = true;
@@ -253,7 +409,7 @@ async function handleOpenAuditedLink(request, sender, {approval} = {}) {
             });
             return acknowledgement ? await receipt : {success:false,code:'LINK_HANDOFF_PENDING',auditSaved:session.auditSaved};
         }
-        if (result.required || ['LINK_CHECK_REQUIRED','LINK_CONTEXT_CHANGED','MESSAGE_CONTEXT_CHANGED',
+        if (result.required || ['LINK_AUTOMATIC_UNAVAILABLE','LINK_CHECK_REQUIRED','LINK_CONTEXT_CHANGED','MESSAGE_CONTEXT_CHANGED',
             'APPROVAL_CHANGED','LINK_PREFLIGHT_TIMEOUT','LINK_HANDOFF_PENDING','LINK_SCHEME_INVALID'].includes(result.code)) {
             return {...result,auditSaved:session.auditSaved};
         }
@@ -263,9 +419,12 @@ async function handleOpenAuditedLink(request, sender, {approval} = {}) {
 }
 
 async function readLinkAudit() {
-    const { result, profileId } = await editLinkAudit(records => records.map(record => ({ ...record })), { readOnly: true });
-    return { records: result, profileId, retentionDays: LINK_AUDIT_DAYS, maxRecords: LINK_AUDIT_LIMIT, maxBytes: LINK_AUDIT_BYTES };
+    const { result, profileId, limits } = await editLinkAudit(records => records, {readOnly:true,operation:{type:'read'}});
+    return {records:result,profileId,...limits};
 }
+
+const prepareLinkAudit = () => editLinkAudit(()=>{}, {readOnly:true,operation:{type:'prune'}});
+const clearLinkAuditRecords = () => editLinkAudit(records=>{records.length=0;},{operation:{type:'clear'}});
 
 function isLinkAuditAdminPage(sender) {
     return !!sender && sender.url === browser.runtime.getURL('audit.html');

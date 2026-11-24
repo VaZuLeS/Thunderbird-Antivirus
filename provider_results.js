@@ -8,6 +8,86 @@ var ThundyProviderResults = (function () {
     const word=x=>typeof x==='string'?x.trim().toUpperCase():'';
     const number=x=>Number.isFinite(x)&&x>=0;
     const judgement=x=>({MALICIOUS:'malicious',MALICIOUS_VISUAL:'malicious',SUSPICIOUS:'suspicious',CLEAN:'none',WHITELISTED:'none',HARMLESS:'none','NO SPECIFIC THREAT':'none','NO THREAT':'none','NO-THREAT':'none',NO_THREAT:'none'})[word(x)]||'unknown';
+    const detectionCategories = {
+        malware:'malware', virus:'virus', trojan:'trojan', ransomware:'ransomware', ransom:'ransomware',
+        worm:'worm', spyware:'spyware', adware:'adware', backdoor:'backdoor', downloader:'downloader',
+        dropper:'dropper', infostealer:'infostealer', stealer:'infostealer', rootkit:'rootkit',
+        phishing:'phishing', 'credential-phishing':'phishing', scam:'scam', fraud:'scam',
+        'fake-shop':'fraudulent_shop', 'fraudulent-shop':'fraudulent_shop', 'phishing-shop':'phishing_shop'
+    };
+    const category = text => typeof text === 'string' && Object.hasOwn(detectionCategories,text.trim().toLowerCase().replace(/[ _]+/g,'-'))
+        ? detectionCategories[text.trim().toLowerCase().replace(/[ _]+/g,'-')] : null;
+    const labels = new Set(Object.values(detectionCategories));
+    function detectionLabel(value) {
+        if (typeof value !== 'string') return null;
+        const text = value.trim();
+        return /^[A-Za-z0-9][A-Za-z0-9 ._+!():/-]{0,79}$/.test(text) &&
+            !/[:][/][/]|\bwww\.|^(?:unknown|generic|malicious|suspicious|clean|undetected|none|n\/a)$/i.test(text) ? text : null;
+    }
+    function projectDetections(entries) {
+        const result = new Map();
+        for (const entry of Array.isArray(entries) ? entries.slice(0,250) : []) {
+            if (!['category','family','signature','brand'].includes(entry?.kind)) continue;
+            const value = entry.kind === 'category' ? (labels.has(entry.value) ? entry.value : null) : detectionLabel(entry.value);
+            if (value) result.set(entry.kind+':'+value.toLowerCase(),{kind:entry.kind,value});
+        }
+        const values = [...result.values()];
+        const phishing = entry => entry.kind === 'category' && ['phishing','phishing_shop'].includes(entry.value);
+        values.sort((a,b)=>Number(phishing(b))-Number(phishing(a)));
+        return ['category','family','brand','signature'].flatMap(kind => values.filter(entry=>entry.kind===kind &&
+            (kind !== 'brand' || values.some(phishing))).slice(0,3));
+    }
+    const categories = values => values.map(value=>({kind:'category',value:category(value)}));
+    const list = value => Array.isArray(value) ? value.slice(0,50) : [];
+    function hybridDetections(data) {
+        const detections = [];
+        for (const report of (Array.isArray(data) ? data.slice(0,20) : [data])) {
+            if (!object(report) || !['suspicious','malicious'].includes(hybrid(report).verdict)) continue;
+            const tags = [...list(report.classification_tags),...list(report.tags)];
+            detections.push(...categories(tags));
+            if (!category(report.vx_family)) detections.push({kind:'family',value:report.vx_family});
+            else detections.push(...categories([report.vx_family]));
+            for (const signature of list(report.signatures)) {
+                if (signature?.threat_level === 2) detections.push({kind:'signature',value:signature.name});
+            }
+            const v2 = Array.isArray(report.scanners_v2) ? list(report.scanners_v2) : Object.values(report.scanners_v2 || {}).slice(0,20);
+            for (const scanner of [...list(report.scanners),...v2]) {
+                for (const av of list(scanner?.anti_virus_results)) {
+                    if (typeof av?.verdict === 'string' && /^(?:trojan|virus|worm|ransom|malware|backdoor)[.:/!_ -]/i.test(av.verdict)) {
+                        detections.push({kind:'signature',value:av.verdict});
+                        detections.push(...categories([av.verdict.split(/[.:/!_ -]/,1)[0]]));
+                    }
+                }
+            }
+        }
+        return projectDetections(detections);
+    }
+    function virusTotalDetections(attributes) {
+        const stats = attributes?.last_analysis_stats;
+        if (!(stats?.malicious > 0 || stats?.suspicious > 0)) return [];
+        const popular = attributes.popular_threat_classification;
+        const result = categories(list(popular?.popular_threat_category).map(row=>row?.value));
+        for (const row of list(popular?.popular_threat_name)) {
+            if (!category(row?.value)) result.push({kind:'family',value:row?.value});
+        }
+        for (const engine of Object.values(attributes.last_analysis_results || {}).slice(0,150)) {
+            if (!['malicious','suspicious'].includes(engine?.category) || typeof engine.result !== 'string') continue;
+            result.push({kind:'signature',value:engine.result});
+            result.push(...categories([engine.result.split(/[.:/!_ -]/,1)[0]]));
+        }
+        return projectDetections(result);
+    }
+    function urlscanDetections(data, assessment) {
+        if (!['suspicious','malicious'].includes(assessment?.verdict)) return [];
+        const {urlscan:verdict,overall} = data?.verdicts || {};
+        const flagged = part => part?.malicious === true || Number.isFinite(part?.score) && part.score >= 50;
+        const own = flagged(verdict) ? categories(list(verdict.categories)) : [];
+        const result = [...own,...(flagged(overall) ? categories(list(overall.categories)) : [])];
+        if (verdict?.malicious === true && own.some(entry=>['phishing','phishing_shop'].includes(entry.value))) {
+            for (const brand of list(verdict.brands)) result.push({kind:'brand',value:typeof brand==='string' ? brand : brand?.name || brand?.key});
+        }
+        return projectDetections(result);
+    }
     function result(signals,completion,receipt=false,invalid=false){
         if(invalid)completion='failed';
         const observed=signals.filter(s=>verdicts.includes(s.verdict)&&s.verdict!=='unknown');
@@ -88,7 +168,7 @@ var ThundyProviderResults = (function () {
         const warning = status => ['MALICIOUS','MALICIOUS_VISUAL','SUSPICIOUS'].includes(status);
         const observed = warning(record.status) || record.status==='CLEAN';
         const retained=previous?.retainedFinding || (warning(previous?.status)
-            ? {status:previous.status,observedAt:previous.observedAt} : null);
+            ? {status:previous.status,observedAt:previous.observedAt,reference:previous.uuid,detections:projectDetections(previous.detections)} : null);
         return {...record,attemptedAt:now,observedAt:observed ? now : previous?.observedAt ?? null,
             ...(!observed && retained ? {retainedFinding:retained} : {})};
     }
@@ -134,14 +214,14 @@ var ThundyProviderResults = (function () {
         const fetchedAt=Date.parse(item?.report_fetched_at);
         const hybrid = {provider:'hybridanalysis',reference:item?.hybrid_sha256,jobId:item?.hybrid_job_id};
         return [
-            {...hybrid,verdict:ha.verdict,observedAt:Number.isFinite(fetchedAt)?fetchedAt:null,completion:ha.completion},
-            {...hybrid,verdict:judgement(live?.status),observedAt:live?.observedAt??null,completion:live?.completion},
-            {verdict:judgement(retained?.status),provider:'urlscan',observedAt:retained?.observedAt||null},
-            {verdict:us.verdict,provider:'urlscan',observedAt:item?.urlscan?.observedAt||null,completion:us.completion,reference:item?.urlscan?.uuid}
+            {...hybrid,verdict:ha.verdict,observedAt:Number.isFinite(fetchedAt)?fetchedAt:null,completion:ha.completion,detections:hybridDetections(item?.report)},
+            {...hybrid,verdict:judgement(live?.status),observedAt:live?.observedAt??null,completion:live?.completion,detections:projectDetections(live?.detections)},
+            {verdict:judgement(retained?.status),provider:'urlscan',observedAt:retained?.observedAt||null,reference:retained?.reference,detections:projectDetections(retained?.detections)},
+            {verdict:us.verdict,provider:'urlscan',observedAt:item?.urlscan?.observedAt||null,completion:us.completion,reference:item?.urlscan?.uuid,detections:projectDetections(item?.urlscan?.detections)}
         ];
     }
     function resource(item){
-        const values=linkObservations(item).map(({reference,jobId,...finding})=>finding);
+        const values=linkObservations(item).map(({reference,jobId,detections,...finding})=>finding);
         const completedAt = {};
         for (const value of values) {
             if (value.completion === 'complete' && value.verdict !== 'unknown' && Number.isFinite(value.observedAt)) {
@@ -238,5 +318,5 @@ var ThundyProviderResults = (function () {
         if(scanners.some(s=>Array.isArray(s.anti_virus_results))&&scanners.filter(s=>Array.isArray(s.anti_virus_results)).every(s=>s.anti_virus_results.length===0))emptySections.push('antivirus');
         return {schemaVersion:1,sections,emptySections,truncated};
     }
-    return {evaluate,project,merge,stored,resource,linkObservations,legacy,hybridDetails,hybridCompletionConfirmed,boundAttachmentReports,urlscanStatus,urlscanRecord,urlscanPending,urlscanRejection,projectQuota};
+    return {evaluate,project,merge,stored,resource,linkObservations,legacy,hybridDetails,hybridCompletionConfirmed,boundAttachmentReports,urlscanStatus,urlscanRecord,urlscanPending,urlscanRejection,projectQuota,projectDetections,hybridDetections,virusTotalDetections,urlscanDetections};
 }());

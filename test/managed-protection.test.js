@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const { webcrypto } = require('node:crypto');
 
-const source = ['managed_policy.js','incident_reporting.js','security.js']
+const source = ['managed_policy.js','provider_results.js','incident_reporting.js','security.js']
     .map(file => fs.readFileSync(file,'utf8')).join('\n');
 const endpoint = 'https://soc.example.test/ingest';
 const token = 'fixture-send-token-123456789';
@@ -47,7 +47,7 @@ function fixture(managed = policy, local = {}) {
             return {ok:state.status>=200&&state.status<300,status:state.status,headers:{get:()=>state.retryAfter}};
         }
     });
-    vm.runInContext(source+'\nObject.assign(globalThis,{managed:ThundyManagedPolicy,reports:ThundyIncidentReporting,security:ThundySecurity});',context);
+    vm.runInContext(source+'\nObject.assign(globalThis,{managed:ThundyManagedPolicy,reports:ThundyIncidentReporting,security:ThundySecurity,severity:ThundySeverity});',context);
     const {security,reports} = context;
     const sender = {id:'addon',url:browser.runtime.getURL('options.html'),tab:{id:1}};
     return {
@@ -101,6 +101,26 @@ test('missing policy, malformed declarations, thresholds and unknown evidence ar
     const insecure = fixture({...policy,reporting:{mode:'malicious',endpoint:'http://soc.example.test'}});
     assert.equal((await insecure.status()).state,'invalid');
     assert.equal((await insecure.security.effective()).policy.threshold,50);
+});
+
+test('organizations configure waiting, exclusive auto-opening, colors and unlimited audit retention independently',async()=>{
+    const f = fixture({...policy,links:{waitForResults:true,autoOpenBelow:20},
+        severityColors:{critical:'#8d0532'},linkAudit:{maxRecords:null,retentionDays:null}});
+    const status = await f.security.status(f.sender);
+    assert.equal(status.policy.waitForResults,true);
+    assert.equal(status.policy.autoOpenBelow,20);
+    assert.equal(status.linkAudit.maxRecords,null);
+    assert.equal(status.linkAudit.retentionDays,null);
+    await assert.rejects(f.security.command({op:'configure',linkAudit:{maxRecords:3}},f.sender),/POLICY_MANAGED/);
+    const palette = (await f.managed.read()).severityColors;
+    assert.equal(f.severity.presentation({mode:'block'},palette).color,'#8d0532');
+    for (const [score,severity] of [[0,'low'],[24,'low'],[25,'caution'],[49,'caution'],[50,'high'],[79,'high'],[80,'critical']]) {
+        assert.equal(f.severity.presentation({score},palette).severity,severity);
+    }
+    assert.equal(f.severity.presentation({score:0,incomplete:true},palette).severity,'unknown');
+    const bad = fixture({...policy,links:{autoOpenBelow:101},severityColors:{low:'url(example)'}});
+    assert.equal((await bad.security.status(bad.sender)).policy.invalid,true);
+    assert.equal((await bad.managed.read()).severityColors.invalid,true);
 });
 
 test('consent and exact host grant gate a minimized, idempotent HTTPS event',async () => {
@@ -174,6 +194,22 @@ test('detailed evidence requires its own consent and rebuilds only known provide
     assert.equal(event.details.providers[1].suspiciousCount,2);
     assert.ok(!JSON.stringify(event).includes('do not forward'));
     assert.ok(!JSON.stringify(event).includes('other.example'));
+});
+
+test('detection names require an explicit scope and version only the enriched events',async () => {
+    const reporting = {...policy.reporting,details:true,detections:true};
+    const f = fixture({...policy,reporting});
+    const setup = {op:'enableReporting',consent:true,details:true,endpoint,credential:token};
+    await assert.rejects(f.security.command(setup,f.sender),/REPORTING_SETUP_INVALID/);
+    await f.security.command({...setup,detections:true},f.sender);
+    await f.reports.capture({...malicious,evidence:[{provider:'urlscan',verdict:'malicious',source:'stored',detections:[
+        {kind:'category',value:'phishing'},{kind:'brand',value:'PayPal'},{kind:'signature',value:'https://private.invalid'}]}]});
+    await until(() => f.requests.length === 1);
+    assert.equal(f.requests[0].event.schemaVersion,2);
+    assert.deepEqual(f.requests[0].event.details.providers[0].detections,[{kind:'category',value:'phishing'},{kind:'brand',value:'PayPal'}]);
+    await f.reports.capture({...malicious,id:id(2)});
+    await until(() => f.requests.length === 2);
+    assert.equal(f.requests[1].event.schemaVersion,1);
 });
 
 test('authentication failure pauses delivery and the queue is capped and expired',async () => {

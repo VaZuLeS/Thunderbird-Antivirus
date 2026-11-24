@@ -84,6 +84,7 @@ const ThundySourceExport = (() => {
     }
     return {project,mount};
 })();
-if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded',() => {
+if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded',async () => {
+    if (ThundyI18n.ready) await ThundyI18n.ready;
     ThundySourceExport.mount(browser,document,location);
 },{once:true});

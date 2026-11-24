@@ -3,10 +3,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.resolve(__dirname, '../../incident_reporting.js'), 'utf8');
+const providerSource = fs.readFileSync(path.resolve(__dirname, '../../provider_results.js'), 'utf8');
 
-async function capture(attempt, indicators, details, mode = 'suspicious') {
+async function capture(attempt, indicators, details, mode = 'suspicious', detections = false) {
     const endpoint = 'https://soc.example.org/thundy/events';
-    const reporting = {mode, endpoint, origin:'https://soc.example.org/*', indicators, details};
+    const reporting = {mode, endpoint, origin:'https://soc.example.org/*', indicators, details, detections};
     const policy = {revision:7, links:{}, attachments:{}, reporting};
     const storage = {};
     const credential = 'contract-test-token-never-deploy';
@@ -25,9 +26,9 @@ async function capture(attempt, indicators, details, mode = 'suspicious') {
             resolve({body:options.body,key:options.headers['Idempotency-Key']});
             return {ok:true,status:204};
         }});
-    const sender = vm.runInContext(source+'\nThundyIncidentReporting',sandbox);
+    const sender = vm.runInContext(providerSource+'\n'+source+'\nThundyIncidentReporting',sandbox);
     try {
-        await sender.configure(reporting,{op:'enableReporting',consent:true,details,endpoint,credential});
+        await sender.configure(reporting,{op:'enableReporting',consent:true,details,detections,endpoint,credential});
         await new Promise(setImmediate);
         await sender.capture(attempt);
         return await posted;
@@ -51,7 +52,11 @@ async function main() {
         capture({...file,id:id(4),score:91,threshold:70,evidence:[{...hybrid,source:'archive'},
             {provider:'virustotal',verdict:'malicious',source:'stored',maliciousCount:3,suspiciousCount:0}]},true,true),
         capture({...file,id:id(5),kind:'attachment_save',score:0,threshold:0,mode:'warn',reason:'threshold'},false,true),
-        capture({...file,id:id(6),kind:'attachment_save'},true,false)
+        capture({...file,id:id(6),kind:'attachment_save'},true,false),
+        capture({...file,id:id(7),evidence:[{...hybrid,detections:[{kind:'family',value:'Emotet'},
+            {kind:'signature',value:'Trojan:Win32/Emotet!X'},{kind:'category',value:'trojan'}]}]},false,true,'malicious',true),
+        capture({...link,id:id(8),evidence:[{provider:'urlscan',verdict:'malicious',source:'stored',reference:id(90),
+            detections:[{kind:'category',value:'phishing'},{kind:'brand',value:'PayPal'}]}]},false,true,'malicious',true),
     ]);
     process.stdout.write(JSON.stringify(result));
 }

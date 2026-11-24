@@ -1,4 +1,8 @@
 {
+  "1.26.3": {
+    "version": "1.26.2",
+    "sha256": "abe2a8d2f766ab7ab88ccb64f6cf5d7223dea68181fec22fff0d23fb549cc30c"
+  },
   "1.26.2": {
     "version": "1.25.9",
     "sha256": "21c4df27b24211268f7a96873c43da26eba93b28be84b6d7f9f37cebc388c661"

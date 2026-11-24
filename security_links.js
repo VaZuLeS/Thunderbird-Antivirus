@@ -19,9 +19,10 @@ const ThundyLinkSecurity = (() => {
         let scan=typeof ThundyScans!=='undefined'?ThundyScans.get?.(message.id):null;
         // A capacity rejection has no admitted job. Its local display context
         // still records incomplete coverage and must not authorize as complete.
-        if(!scan && typeof getMessageAnalysisContext==='function')scan=(await getMessageAnalysisContext(message)).scanJob;
+        if(!scan && typeof getMessageAnalysisContext==='function')scan=(await getMessageAnalysisContext(message))?.scanJob;
         const findings = policy.managed ? linkFindings : [...(options.linkFindings || []), ...(options.attachmentFindings || [])];
-        const input={score:threat.score,coverage:scan?.assessmentIncomplete?'incomplete':localContentCoverage(full).state,verdict:session.verdict||'UNKNOWN',check:session.check,malicious:findings.some(x=>x.verdict==='malicious')};
+        const input={score:threat.score,coverage:scan?.assessmentIncomplete?'incomplete':localContentCoverage(full).state,verdict:session.verdict||'UNKNOWN',check:session.check,malicious:findings.some(x=>x.verdict==='malicious'),
+            suspicious:findings.some(x=>x.verdict==='suspicious')};
         const reasons=(threat.reasons||[]).slice(0,20);
         const reasonDetails=(threat.reasonDetails||[]).slice(0,20);
         const token=await fingerprint({scanRevision,messageId:message.id,url:session.url,text,parts:full,score:input.score,coverage:input.coverage,verdict:input.verdict,check:session.check,reasons,reasonDetails,revision:policy.revision});
@@ -42,10 +43,20 @@ const ThundyLinkSecurity = (() => {
     async function prepareOpening(request,sender,session) {
         const saved = await ThundySecurity.effective();
         let current;
-        if (saved.policy?.enabled) {
+        if (saved.policy?.enabled || request.automatic === true) {
             if (!session || !session.checked || session.terminal || session.url !== request.url ||
                 session.messageId !== request.messageId) return failure('LINK_CHECK_REQUIRED');
             current = await evaluate(session,sender);
+            if (request.automatic === true) {
+                const latest = await new Promise((resolve,reject)=>{
+                    Promise.resolve(handleCheckLinkState(request,sender,resolve,{waitForResults:false})).catch(reject);
+                });
+                const input = {...current.input,verdict:latest.status,check:latest.check};
+                const refreshed = ThundySecurity.decision(current.policy,input);
+                if (!automaticLinkOpening(current.policy,input,refreshed,{
+                    ...session,localOnly:latest.attempted === false && latest.check?.outcome === 'not_requested'
+                })) return failure('LINK_AUTOMATIC_UNAVAILABLE');
+            }
         }
         const url=new URL(request.url);
         if (!['http:','https:'].includes(url.protocol)) return failure('LINK_SCHEME_INVALID');
@@ -61,6 +72,8 @@ const ThundyLinkSecurity = (() => {
             catch (error) { return failure(['LINK_PREFLIGHT_TIMEOUT','APPROVAL_CHANGED'].includes(error.message) ? error.message : 'LINK_CONTEXT_CHANGED'); }
             if (!ready.url) return ready;
             const {saved,current,url,messageId}=ready;
+            if (request.automatic === true && (!session.automaticEligible || approval ||
+                !automaticLinkOpening(current.policy,current.input,current.decision,session))) return failure('LINK_AUTOMATIC_UNAVAILABLE');
             const destination=JSON.stringify([sender.tab.id,messageId,url.href]);
             if (handoffs.has(destination)) return failure('LINK_HANDOFF_PENDING');
             if (handoffs.size >= 100) return failure('LINK_PREFLIGHT_TIMEOUT');
@@ -77,7 +90,10 @@ const ThundyLinkSecurity = (() => {
                 if (d.mode === 'block') {
                     void updateLinkAudit(session.record.id,{blockedAt:Date.now(),blockReason:d.reason,policyRevision:d.revision}).catch(()=>{});
                     const blocked = failure(d.reason === 'policy_invalid' ? 'POLICY_INVALID' : 'LINK_POLICY_BLOCKED');
-                    return {...blocked,protection:typeof linkDecisionPresentation === 'function' ? linkDecisionPresentation(d,current) : d};
+                    const protection = typeof linkDecisionPresentation === 'function' ? linkDecisionPresentation(d,current) : d;
+                    const presentation = typeof ThundySeverity === 'undefined' ? null :
+                        ThundySeverity.presentation({mode:'block'},saved.managed?.severityColors);
+                    return {...blocked,protection:{...protection,presentation}};
                 }
                 if (current.policy.managed && (session.managedDecision?.mode !== d.mode || session.managedDecision?.reason !== d.reason)) {
                     return failure('APPROVAL_CHANGED');
@@ -97,7 +113,8 @@ const ThundyLinkSecurity = (() => {
                 .then(()=>({success:true}),()=>failure('LINK_OPEN_FAILED'))
                 .finally(()=>handoffs.delete(destination));
             handoffs.set(destination,handoff);
-            const granted=approval ? {approvalDecision:'granted',approvedAt:Date.now(),policyRevision:current.policy.revision} : null;
+            const granted=approval ? {approvalDecision:'granted',approvedAt:Date.now(),policyRevision:current.policy.revision} :
+                request.automatic === true ? {automaticOpen:true,policyRevision:current.policy.revision} : null;
             return {handoff,granted};
         });
         if (!prepared.handoff || deferHandoff) return prepared;

@@ -1,5 +1,6 @@
 /* No secret is ever returned to the email document. Background opens the link. */
-(() => {
+(async () => {
+    if (ThundyI18n.ready) await ThundyI18n.ready;
     const challenge=new URL(location.href).searchParams.get('approval');
     const t=key=>ThundyI18n.get(key),status=document.getElementById('status'),form=document.getElementById('approvalForm');
     const send=async(op,extra={})=>{const result=await browser.runtime.sendMessage({action:'linkApprovalCommand',op,challenge,...extra});if(!result?.success&&result?.code)throw Error(result.code);return result;};

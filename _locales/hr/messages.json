@@ -1,0 +1,3590 @@
+{
+  "protectionSeverity_low": { "message": "Nizak rizik" },
+  "protectionSeverity_unknown": { "message": "Nepoznat rizik" },
+  "protectionSeverity_caution": { "message": "Povećan rizik" },
+  "protectionSeverity_high": { "message": "Visok rizik" },
+  "protectionSeverity_critical": { "message": "Kritičan rizik" },
+  "linkScanSummary": { "message": "Rezultati provjera URL-a" },
+  "linkScansPending": { "message": "Provjere URL-a još su u tijeku." },
+  "linkNoScanResults": { "message": "Nema rezultata provjera URL-a." },
+  "protectionCategoryUnavailable": { "message": "Pružatelj nije naveo kategoriju prijetnje." },
+  "linkWaitForResults": { "message": "Pričekaj dovršetak provjera URL-a" },
+  "linkAutoOpenBelow": { "message": "Otvori izravno ispod ove ocjene" },
+  "linkOpeningOptionsHelp": { "message": "Ostavi ocjenu praznom da se dijalog za poveznicu uvijek prikaže." },
+  "linkAuditRetentionTitle": { "message": "Zadržavanje zapisa o poveznicama" },
+  "linkAuditLimit": { "message": "Najviše zapisa (prazno = neograničeno)" },
+  "linkAuditDays": { "message": "Dani zadržavanja (prazno = neograničeno)" },
+  "protectionManagedColors": { "message": "Organizacija određuje boje razina rizika." },
+  "linkOpenedAutomatically": { "message": "Automatski otvoreno" },
+  "providerSwitchHelp": {
+    "message": "Uključi ili isključi svaku uslugu zasebno i spremi postavke. Spremljeni ključevi i nalazi ostaju dostupni kada pauziraš uslugu."
+  },
+  "providerKeyLink": {
+    "message": "Dobijte ključ API"
+  },
+  "providerDocsLink": {
+    "message": "API dokumentacija"
+  },
+  "providerApiKeyLabel": {
+    "message": "API ključ"
+  },
+  "providerUse": {
+    "message": "Koristi ovu uslugu"
+  },
+  "providerVirusUse": {
+    "message": "Koristite VirusTotal za provjere datoteke"
+  },
+  "providerHybridStrength": {
+    "message": "Pronalazi postojeća izvješća prema poznatim sažecima datoteka. Uz odobren prijenos Falcon Sandbox može analizirati ponašanje datoteke pri pokretanju."
+  },
+  "providerHybridSetup": {
+    "message": "Stvorite račun, a nakon toga otvorite profil → API ključ kako bi se stvori ključ."
+  },
+  "providerUrlhausStrength": {
+    "message": "Provjerava link hostove protiv zabilježenih izvora malware."
+  },
+  "providerUrlhausSetup": {
+    "message": "Prijavite se na abuse.ch i dobijte Auth-Key s vašeg računa."
+  },
+  "providerUrlscanStrength": {
+    "message": "Provjerava URLs i preusmjerava znakove phishinga.Thundy koristi ga na Maksimalnom razini privatnosti."
+  },
+  "providerUrlscanSetup": {
+    "message": "Stvorite račun i odaberite Sastavke & API → Novi API ključ."
+  },
+  "providerVirusTotalStrength": {
+    "message": "Izgleda hash datoteke SHA-256 i prikazuje rezultate iz više skeniranja motora."
+  },
+  "providerVirusTotalSetup": {
+    "message": "Prijavite se na VirusTotal i kopirajte ključ s profila API ključne strane."
+  },
+  "providerIpTitle": {
+    "message": "Ugled IP adresa"
+  },
+  "providerIpUse": {
+    "message": "Provjerite IP reputaciju"
+  },
+  "providerIpChoose": {
+    "message": "IP dobavljač ugleda"
+  },
+  "providerIpKeyNotice": {
+    "message": "Unesi ključ odabranog pružatelja usluge. Pauziranjem IP provjera zadržavaš odabir pružatelja i ključ."
+  },
+  "providerIpGuide": {
+    "message": "Izaberite i postavite IP dobavljač ugleda"
+  },
+  "providerVirusIpStrength": {
+    "message": "Provjerava javne IP-ove protiv detekcijskih motora i ocjenjivanja Zajednice VirusTotal."
+  },
+  "providerAbuseStrength": {
+    "message": "Koristi izvješća za komunitet kako bi se identificirali javni IP-ovi povezani sa spamom, skeniranjem ili drugim zlouporabama."
+  },
+  "providerAbuseSetup": {
+    "message": "Stvorite račun AbuseIPDB i generirajte ili kopirajte ključ iz kartice API u ploči."
+  },
+  "providerIpVirusKey": {
+    "message": "VirusTotal API ključ za IP reputacija"
+  },
+  "providerIpAbuseKey": {
+    "message": "AbuseIPDB API ključ"
+  },
+  "providerTestDisabled": {
+    "message": "Uključi uslugu i spremi postavke prije testiranja ključa."
+  },
+  "analysisReason_provider_disabled": {
+    "message": "Ovaj pružatelj je pauziran u postavkama."
+  },
+  "extensionName": {
+    "message": "Thundy AV – Provjera e-pošte za Thunderbird"
+  },
+  "extensionDescription": {
+    "message": "Opcionalni, opt-in skener za e-mail priloge i poveznice.Ništa ne odlazi iz računala bez vaše izričite suglasnosti."
+  },
+  "actionTitle": {
+    "message": "Thundy AV – skeniranje stanja za ovu poruku"
+  },
+  "bannerScanOnce": {
+    "message": "Skanirajte ovu poruku jednom"
+  },
+  "bannerScanSender": {
+    "message": "Uvijek skenirajte ovaj pošiljatelj"
+  },
+  "bannerTitleOptIn": {
+    "message": "Thundy AV : Skaniranje u stvarnom vremenu nije uključeno za ovu poruku."
+  },
+  "bannerNoteOptIn": {
+    "message": "Skaniranje prenosi informacije na vanjske analitičke usluge, ali samo ako ga aktivirate u postavkama dodataka i tek nakon što ste dali svoju pristanak."
+  },
+  "bannerScanRunning": {
+    "message": "Skaniranje…"
+  },
+  "bannerScanDone": {
+    "message": "Ispunjeno upitno - pogledajte izvore analize"
+  },
+  "bannerScanFailed": {
+    "message": "Skeniranje neuspje"
+  },
+  "bannerPermissionDenied": {
+    "message": "Potrebno dopuštenje za posjedovanje je odbijeno"
+  },
+  "bannerConsentMissing": {
+    "message": "Novi vanjski zahtjevi su onemogućeni. ranije pohranjeni izvješća još uvijek mogu biti prikazana."
+  },
+  "bannerThreatTitle": {
+    "message": "Thundy AV upozorenje"
+  },
+  "bannerThreatScore": {
+    "message": "Rizik: $SCORE$ od 100",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerSenderOptIn": {
+    "message": "Ovaj pošiljatelj se sada automatski skenira."
+  },
+  "notificationScanStarted": {
+    "message": "Skaniranje počelo za: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "Skaniranje je poslano s uspjehom. ID rada: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanError": {
+    "message": "Skaniranje pogreške: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Thundy AV skener"
+  },
+  "notificationTitleError": {
+    "message": "Thundy AV Skener pogreška"
+  },
+  "bannerAuthPass": {
+    "message": "Povjerljivi server izvješća SPF / DKIM/ DMARC prošli"
+  },
+  "bannerOpenOptions": {
+    "message": "Otvorene opcije"
+  },
+  "menuScanLink": {
+    "message": "Skaniranje poveznice s Thundy AV"
+  },
+  "menuScanMessageLinks": {
+    "message": "Skanirajte sve poveznice ove poruke"
+  },
+  "notificationNoLinks": {
+    "message": "U ovom poruci nema poveznica."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "Odobrenje za host za analizu je nedostajalo. molimo da ga dodate u opcijama dodataka."
+  },
+  "errorHostPermissionMissing": {
+    "message": "Odobrenje za host za analitičku uslugu nedostaje. molimo da ga dodate u opcijama dodataka."
+  },
+  "errorTierUploadBlocked": {
+    "message": "Prenos priloga je onemogućen u razini privatnosti \"Strict\". Priključite se na \"Balanced\" ili \"Maximum\" u opcijama dodataka."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "Podnošenje URLs je dopušteno samo u razini privatnosti \"Maximum\"."
+  },
+  "notificationInjectionFailed": {
+    "message": "Banner se ne može unijeti u pogledu poruke. molimo obavijestite o tome sa svojim Thunderbird verzijom."
+  },
+  "bannerTierBlocked": {
+    "message": "Ova akcija nije dopuštena od strane trenutačnog razine privatnosti. pogledajte opcije dodataka."
+  },
+  "ui_001": {
+    "message": "Upozorenje :"
+  },
+  "ui_002": {
+    "message": "Ne Hybrid Analysis API ključ je konfiguracija. možete upotrijebiti lokalne provjere ili konfiguraciju pružatelja u postavkama."
+  },
+  "ui_003": {
+    "message": "Otvorena postavka"
+  },
+  "ui_004": {
+    "message": "Odaberite e-mail kako bi ga provjerili."
+  },
+  "ui_005": {
+    "message": "Rezultat analize…"
+  },
+  "ui_006": {
+    "message": "Vanjska analiza je onemogućena: nema hashova, datoteka ili poveznica za analizne službe."
+  },
+  "ui_007": {
+    "message": "Za ovu poruku nisu dostupni ni pohranjeni dodatci ni rezultate skeniranja poveznica."
+  },
+  "ui_008": {
+    "message": "Nema rezultata analize dostupnih za ovaj e-mail."
+  },
+  "ui_009": {
+    "message": "Neizvjesna pogreška dok se analiziraju rezultate."
+  },
+  "ui_010": {
+    "message": "Stanje je:"
+  },
+  "ui_011": {
+    "message": "Analiza je još uvijek u toku, molim vas, ponovite ponovnu analizu."
+  },
+  "ui_012": {
+    "message": "SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_013": {
+    "message": "Opasnost od ugroženosti:"
+  },
+  "ui_014": {
+    "message": "Odlukom je:"
+  },
+  "ui_015": {
+    "message": "Obitelj malware:"
+  },
+  "ui_016": {
+    "message": "Rezultat multiskan: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_017": {
+    "message": "Dodatne informacije :"
+  },
+  "ui_018": {
+    "message": "Analiza je započela: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_019": {
+    "message": "Tagovi: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_020": {
+    "message": "VirusTotal rezultat:"
+  },
+  "ui_021": {
+    "message": "Štetni: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_022": {
+    "message": "Izvor: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_023": {
+    "message": "Osumnjičeni je: $P1$$P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_024": {
+    "message": "Neškodljiva: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_025": {
+    "message": "Skener: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_026": {
+    "message": "Stanje: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_027": {
+    "message": "Antivirusni učinci:"
+  },
+  "ui_028": {
+    "message": "$P1$ – presuda: $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_029": {
+    "message": "Nema rezultata skeniranja dostupnih."
+  },
+  "ui_030": {
+    "message": "SHA-256 hash: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_031": {
+    "message": "Posljednje ime datoteke: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_032": {
+    "message": "Veličina: $P1$ bajti",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_033": {
+    "message": "Vrsta: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_034": {
+    "message": "Skaniranje opet"
+  },
+  "ui_035": {
+    "message": "Sanitizacija i download (lokalno)"
+  },
+  "ui_036": {
+    "message": "Pregledani članak: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_037": {
+    "message": "Lokalni rezultat: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_038": {
+    "message": "SHA-256 : $P1$ – vanjska analiza je onemogućena.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_039": {
+    "message": "Nema vanjskog pretraživanja jer je vanjska analiza onemogućena."
+  },
+  "ui_040": {
+    "message": "Analiza - vanjski analitički"
+  },
+  "ui_041": {
+    "message": "Slijedeći članakSkaniranje…"
+  },
+  "ui_042": {
+    "message": "Slijedeći članakSlijedeći Članak Slijedeće Slijedeća Slijedeć: Slijedeću Slijede…"
+  },
+  "ui_043": {
+    "message": "Skaniranje je podneseno.Reloading rezultata…"
+  },
+  "ui_044": {
+    "message": "Uspješno"
+  },
+  "ui_045": {
+    "message": "Skeniranje je neuspješno:"
+  },
+  "ui_046": {
+    "message": "Nepoznata pogreška"
+  },
+  "ui_047": {
+    "message": "Ponovno probajte"
+  },
+  "ui_048": {
+    "message": "Komunikacijska pogreška:"
+  },
+  "ui_049": {
+    "message": "Sanitarni…"
+  },
+  "ui_050": {
+    "message": "Smanjenje HTML-a lokalno…"
+  },
+  "ui_051": {
+    "message": "Preuzimanje je počelo."
+  },
+  "ui_052": {
+    "message": "sanitarno"
+  },
+  "ui_053": {
+    "message": "Preuzimanje je neuspješno:"
+  },
+  "ui_054": {
+    "message": "API pogreška: $P1$ za element $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_055": {
+    "message": "(Klavir API može biti nevažeći ili nedostaje.)"
+  },
+  "ui_056": {
+    "message": "Mreža pogreška: $P1$ za element $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_057": {
+    "message": "podnošenje URL…"
+  },
+  "ui_058": {
+    "message": "Pošaljite URL na Hybrid Analysis…"
+  },
+  "ui_059": {
+    "message": "Skaniranje je podneseno. rezultatovi punjenja…"
+  },
+  "ui_060": {
+    "message": "Ulaznice su neuspjele:"
+  },
+  "ui_061": {
+    "message": "URL: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_062": {
+    "message": "Ovaj URL je našao u e-pošti. da bi zaštitili vašu privatnost, to je bio"
+  },
+  "ui_063": {
+    "message": "Ne prenosi se automatski"
+  },
+  "ui_064": {
+    "message": "Skaniranje URL sada"
+  },
+  "ui_065": {
+    "message": "Uklanjanje…"
+  },
+  "ui_066": {
+    "message": "Pošaljite datoteku na Hybrid Analysis…"
+  },
+  "ui_067": {
+    "message": "Slijedeći članakSlijedeći Članak Slijedeće Slijedeća…"
+  },
+  "ui_068": {
+    "message": "Skaniranje datoteke sada (upload)"
+  },
+  "ui_069": {
+    "message": "Uključivanje : $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_070": {
+    "message": "Za ovaj datoteku nije dostupna nijedna vanjska izvješća. da bi zaštitili vašu privatnost, to je bilo"
+  },
+  "ui_071": {
+    "message": "Otvorene su automatske upale; razina privatnosti još uvijek se primjenjuje na ručne skeniranje."
+  },
+  "ui_072": {
+    "message": "Zaštita poveznica ostaje dostupna uz automatsko skeniranje."
+  },
+  "ui_073": {
+    "message": "Ušteda…"
+  },
+  "ui_074": {
+    "message": "Sastav je sačuvana."
+  },
+  "ui_075": {
+    "message": "Spremi"
+  },
+  "ui_076": {
+    "message": "Neće biti dozvoljeno prijenos informacija, neće biti dozvoljenih."
+  },
+  "ui_077": {
+    "message": "Odobrenje za gostovanje nije dodijeljeno za:"
+  },
+  "ui_078": {
+    "message": "Provjere za ove pružatelje nisu dostupne bez odobrenja."
+  },
+  "ui_079": {
+    "message": "Ne mogu spasiti postavke."
+  },
+  "ui_080": {
+    "message": "To uklanja sve rezultate analize koje su lokalno pohranjene."
+  },
+  "ui_081": {
+    "message": "Čišćenje…"
+  },
+  "ui_082": {
+    "message": "Cache je očistila."
+  },
+  "ui_083": {
+    "message": "Database još uvijek ne postoje, ili je već prazan."
+  },
+  "ui_084": {
+    "message": "Ne mogu očistiti cache."
+  },
+  "ui_085": {
+    "message": "Jasna cache"
+  },
+  "ui_086": {
+    "message": "API ključ nedostaje."
+  },
+  "ui_087": {
+    "message": "SPF provjera nije uspjela (možda je spoofing)."
+  },
+  "ui_088": {
+    "message": "DKIM potpisa je nevažeća (možda je spoofing)."
+  },
+  "ui_089": {
+    "message": "DMARC provjera nije uspjela (možda je spoofing)."
+  },
+  "ui_090": {
+    "message": "URLhaus zabilježi domenu ( $P1$) kao zlonamjernu.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_091": {
+    "message": "Odgovor na domenu ($P1$(a) razlikuje se od broja broja brojeva ($P2$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_092": {
+    "message": "Mogući kompromis poslovne e-pošte: prvi kontakt s ovim pošiljateljom i hitne ključne reči naći ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_093": {
+    "message": "Pronađene su ključne riječ za hitne slučajeve ( $P1$). pažljivo provjerite ovu uputstvo.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_094": {
+    "message": "Ovo je vaša prva komunikacija s ovim pošiljateljom."
+  },
+  "ui_095": {
+    "message": "Domain za pošiljku ( $P1$) sličan je poznatoj marci $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_096": {
+    "message": "Link domena ( $P1$) slična je poznatoj marci $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_097": {
+    "message": "Nijedan od poveznica u tekstnoj točki na domenu pošiljatelja ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_098": {
+    "message": "Čista"
+  },
+  "ui_099": {
+    "message": "URL skeniranje nije uspjelo:"
+  },
+  "ui_100": {
+    "message": "Ne može početi skeniranje urlscan.io:"
+  },
+  "ui_101": {
+    "message": "urlscan.io nije vratio ID skeniranja."
+  },
+  "ui_102": {
+    "message": "urlscan.io identificirao URL kao štetne."
+  },
+  "ui_103": {
+    "message": "Vizualna detekcija: stranica se osjeća"
+  },
+  "ui_104": {
+    "message": "(Prijevodni je i FISHING)"
+  },
+  "ui_105": {
+    "message": "Ne mogu vratiti urlscan.io rezultate:"
+  },
+  "ui_106": {
+    "message": "Thundy AV – E-mail skener"
+  },
+  "ui_107": {
+    "message": "Pronađi sve Hybrid Analysis podnošenja"
+  },
+  "ui_108": {
+    "message": "Pronađi sve Hybrid Analysis podnošenja (otvara se nova kartica)"
+  },
+  "ui_109": {
+    "message": "Područje je:"
+  },
+  "ui_110": {
+    "message": "Od :"
+  },
+  "ui_111": {
+    "message": "ID poruka za:"
+  },
+  "ui_112": {
+    "message": "Thundy AV postavke"
+  },
+  "ui_113": {
+    "message": "Hybrid Analysis je malware analitička usluga. možete poslati datoteke za statsku i dinamičnu analizu."
+  },
+  "ui_114": {
+    "message": "Hybrid Analysis koristi CrowdStrike Falcon Sandbox za istragu nepoznatih pretnji."
+  },
+  "ui_115": {
+    "message": "Konti i uvjeti usluga pružatelja primjenjuju se na vanjsku analizu. lokalni provjeri ne zahtijevaju račun."
+  },
+  "ui_116": {
+    "message": "Thundy AV postavke"
+  },
+  "ui_117": {
+    "message": "Što je Hybrid Analysis?"
+  },
+  "ui_118": {
+    "message": "Za vanjsku analizu datoteke, dobijte ključ API od"
+  },
+  "ui_119": {
+    "message": "Nakon što se prijavite, idite na svoj profil i nađite odjeljak API KEY."
+  },
+  "ui_120": {
+    "message": "Upišite ključ API ovdje. lokalni kontrolori rade bez njega."
+  },
+  "ui_121": {
+    "message": "API ključ postavke"
+  },
+  "ui_122": {
+    "message": "hybrid-analysis.com"
+  },
+  "ui_123": {
+    "message": "hybrid-analysis.com (otvara se nova kartica)"
+  },
+  "ui_124": {
+    "message": "Dopusti vanjsku analizu (slanje podataka vanjskim pružateljima)"
+  },
+  "ui_125": {
+    "message": "bez tog pristanka,"
+  },
+  "ui_126": {
+    "message": "hashes, datoteke, poveznice ili IP adresa se šalje vanjskim uslugama. nakon odobrenja, ovlašteno skeniranje može poslati prilog i povezati informacije na Hybrid Analysis, VirusTotal, urlscan.io, URLhaus ili AbuseIPDBOdstupanje ove opcije za povlačenje saglasnosti. detalji:"
+  },
+  "ui_127": {
+    "message": "Ne"
+  },
+  "ui_128": {
+    "message": "Povijest privatnosti"
+  },
+  "ui_129": {
+    "message": "Povijest privatnosti (otvara se nova kartica)"
+  },
+  "ui_130": {
+    "message": "Hybrid Analysis API ključ (opcionalno):"
+  },
+  "ui_131": {
+    "message": "Naime, u ovom članku je riječ o 123456…"
+  },
+  "ui_132": {
+    "message": "URLhaus API ključ (opcionalna domena reputacija):"
+  },
+  "ui_133": {
+    "message": "Možete se vratiti na ključ API"
+  },
+  "ui_134": {
+    "message": "."
+  },
+  "ui_135": {
+    "message": "urlhaus.abuse.ch"
+  },
+  "ui_136": {
+    "message": "urlhaus.abuse.ch (otvara se nova kartica)"
+  },
+  "ui_137": {
+    "message": "urlscan.io API ključ (opcionalna URL analizu):"
+  },
+  "ui_138": {
+    "message": "Možete se vratiti na ključ API"
+  },
+  "ui_139": {
+    "message": "urlscan.io"
+  },
+  "ui_140": {
+    "message": "urlscan.io (otvara se nova kartica)"
+  },
+  "ui_141": {
+    "message": "VirusTotal API ključ (opcionalna reputacija datoteke):"
+  },
+  "ui_142": {
+    "message": "virustotal.com"
+  },
+  "ui_143": {
+    "message": "virustotal.com (otvara se nova kartica)"
+  },
+  "ui_144": {
+    "message": "Površina privatnosti:"
+  },
+  "ui_145": {
+    "message": "Striktno (default: samo hash i domene, nema up-up)"
+  },
+  "ui_146": {
+    "message": "Uravnotežena (prenos nepoznatih datoteka, bez potpune URLs)"
+  },
+  "ui_147": {
+    "message": "Maksimalna analiza (prenos nepoznatih datoteka i dovršetak URLs)"
+  },
+  "ui_148": {
+    "message": "Ograniči podaci koje se šalju pružateljima analize. primjenjuje se samo kada je vanjska analiza uključena."
+  },
+  "ui_149": {
+    "message": "IP reputacija (proverite primljene glave):"
+  },
+  "ui_150": {
+    "message": "Oštećeni"
+  },
+  "ui_151": {
+    "message": "VirusTotal (potrebno je VirusTotal API ključ)"
+  },
+  "ui_152": {
+    "message": "AbuseIPDB (potrebno je ključ AbuseIPDB API)"
+  },
+  "ui_153": {
+    "message": "IP reputacija API ključ:"
+  },
+  "ui_154": {
+    "message": "Pošaljite javnu IP adresa iz primljenih naslovnika e-pošte odabranom pružatelju. zahtijeva vanjsku analizu suglasnost i odobrenje za skeniranje."
+  },
+  "ui_155": {
+    "message": "Poveznica (odvojena domena ili e-mail adresa):"
+  },
+  "ui_156": {
+    "message": "e.g. example.com, test@ example.com"
+  },
+  "ui_157": {
+    "message": "Povjerljivi pošiljatelji unose potiskuju lokalne upozorenja pošiljatelja. oni ne dozvoljavaju vanjske skeniranja."
+  },
+  "ui_158": {
+    "message": "Bloklista (odvojene domene ili e-mail adresa):"
+  },
+  "ui_159": {
+    "message": "Upišite blokirane domene ili e-mail adresa."
+  },
+  "ui_160": {
+    "message": "Uvijek ručno skeniranje (bez automatskih prijenosa)"
+  },
+  "ui_161": {
+    "message": "Izričito ručno djelovanje još uvijek zahtijeva suglasnost i prikladnu razinu privatnosti."
+  },
+  "ui_162": {
+    "message": "Automatski osvježi izvješća o poveznicama na čekanju"
+  },
+  "ui_163": {
+    "message": "Linkovi zahtijevaju suglasnost, dozvolu za skeniranje i prikladnu razinu privatnosti."
+  },
+  "ui_164": {
+    "message": "Provjerite poveznice prije nego što ih otvorite"
+  },
+  "ui_165": {
+    "message": "Navigacija se prekida kako bi se prikazala rezultat.Neproverene poveznice i pogreške su očito identificirane.Punna URL analiza zahtijeva Maksimalni nivo. Cijele poveznice i privitci traže pojedinačnu potvrdu."
+  },
+  "ui_166": {
+    "message": "Zapamtite kako sačuvati svoje postavke."
+  },
+  "ui_167": {
+    "message": "Upravljanje podacima"
+  },
+  "ui_168": {
+    "message": "Jasni lokalno pohranjeni rezultat i reputacija cache."
+  },
+  "linkChecking": {
+    "message": "Provjerite link…"
+  },
+  "linkWarning": {
+    "message": "Ovaj link je bio podignuti kao sumnjiv ili zlonamjeran."
+  },
+  "linkUnknown": {
+    "message": "Ovaj link nije bio mogući za provjeru. otvaranje može biti opasno."
+  },
+  "linkNoDetection": {
+    "message": "Nema opasnosti otkrivenih od strane pružatelja. ovo nije jamstvo sigurnosti."
+  },
+  "linkProceed": {
+    "message": "Otvorena poveznica u svakom"
+  },
+  "linkCancel": {
+    "message": "Odustani"
+  },
+  "localMode": {
+    "message": "Lokalni kontrolori rade bez ključa API. vanjski skeneri zahtijevaju vaš pristanak i odobrenje za poruku ili pošiljku."
+  },
+  "statusNormal": {
+    "message": "(Nema otkrića za sve)"
+  },
+  "statusSuspicious": {
+    "message": "(Pričito je da"
+  },
+  "statusCritical": {
+    "message": "(Kritika je u"
+  },
+  "noSubject": {
+    "message": "(ne ima ni predmeta)"
+  },
+  "noSender": {
+    "message": "(Neznati odjeljak za izlazak)"
+  },
+  "noId": {
+    "message": "(Nema broja ID)"
+  },
+  "unknownAttachment": {
+    "message": "neznan"
+  },
+  "statusDangerous": {
+    "message": "(Opasno je da"
+  },
+  "sizeLimit": {
+    "message": "Priključak prekoračuje lokalnu granicu veličine od 25 MiB i nije pročitan ili prenesen."
+  },
+  "trustedAuthLabel": {
+    "message": "Povjerljivi autenticirani serveri (komma-odvojeni)"
+  },
+  "trustedAuthHelp": {
+    "message": "Samo popisite primatelje poštanskih servera koje upravljate ili izričito povjerujete."
+  },
+  "consentHelp": {
+    "message": "Bez pristanka ništa se ne šalje vanjskim uslugama. Nakon pristanka provjeravaju se samo izričito odobrene poruke ili pošiljatelji. Na strogoj razini mogu se slati sažeci, domene i javne IP adrese. Uravnotežena razina dopušta i prijenos nepoznatih datoteka, a najviša još i slanje punih URL-ova. Isključi opciju za zaustavljanje novih prijenosa i otkazivanje zahtjeva na čekanju. Podaci koji su već poslani ne mogu se povući. Cijele poveznice i privitci traže pojedinačnu potvrdu."
+  },
+  "visualImpersonation": {
+    "message": "Vizualna detekcija: stranica impersonalizira $BRANDS$ (pričano phising).",
+    "placeholders": {
+      "brands": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedEmail": {
+    "message": "Pošaljite e-mail ( $P1$) na blokovnom popisu.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedDomain": {
+    "message": "Slijedeći članakDomain ($P1$Na ovom je listu ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedEmail": {
+    "message": "Pošaljite e-mail ( $P1$) na dopuštenoj listi.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedDomain": {
+    "message": "Slijedeći članakDomain ($P1$(a) na raspolaganju je u skladu s člankom ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanVisibility": {
+    "message": "urlscan.io podnošenja su nepisane, ne privatne. Cjeloviti URL može sadržavati osobne informacije ili tokene pristupa. Podnošenje samo URLs možete podijeliti."
+  },
+  "notificationScanCount": {
+    "message": "Slijedeći Skaniranje: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "gatewayRequestTimeout": {
+    "message": "Zahtjev pružatelja je otkazan ili odgođen."
+  },
+  "gatewayInvalidJson": {
+    "message": "Proizvođač je vratio nečitan odgovor."
+  },
+  "gatewayNetworkError": {
+    "message": "Proizvođač nije bio dostupan."
+  },
+  "noMessageFound": {
+    "message": "Nije se našao prikazani poruka."
+  },
+  "providerNoDetection": {
+    "message": "Nema otkrivenih pretnji"
+  },
+  "providerMalicious": {
+    "message": "Zlonamjerno"
+  },
+  "providerSuspicious": {
+    "message": "Sumnjivo"
+  },
+  "providerPending": {
+    "message": "Analiza u nastavku"
+  },
+  "privacyLocalData": {
+    "message": "Thundy AV čita prikazano poruku, njezin pošiljatelj, predmeta, naslovnice, tekst i priloge za obavljanje lokalnih provjera. Lokalni provjeri rade bez ključa API. Nema telemetrije i nema servera za analizu."
+  },
+  "privacyProviders": {
+    "message": "Ovlaštena vanjska zahtjeva odlaze izravno na konfiguracije pružatelja: Hybrid Analysis za arhive hashes i uvrštavanja, VirusTotal za arhivske hashes ili IP i reputacije, URLhaus za domaće, urlscan.io Za sveobuhvatno URLs i AbuseIPDB Za javne IP-ove.Hashes može identificirati poznate datoteke.Provoditelj uvjeti i politika privatnosti primjenjuju se; podneseni podaci mogu biti podijeljeni od strane pružatelja."
+  },
+  "privacyRetention": {
+    "message": "Sastavke, suglasnost, odobrenja za slanje i ključeve API pohranjene su u vašem profilu Thunderbird. ključeve API nisu šifrirane tamo. Lokalni skenerski zapisi mogu uključivati teme, adrese slanja, potpune poveznice i metadata prijenosa. Cache čuva do 1000 poruka zapisa za 30 dana i čisti se na baznoj startu."
+  },
+  "privacyControl": {
+    "message": "Otključite vanjsku analizu kako bi se zaustavili novi zahtjevi i otkazali tražeći zahtjevi. već preneseni podaci se ne mogu vratiti. Koristite čisti cache kako bi se uklonili pohranjeni rezultatovi analize i reputacije cache."
+  },
+  "privacyDetailed": {
+    "message": "Detaljna politika privatnosti (engleski/nemacki)"
+  },
+  "senderAuthorizationsLabel": {
+    "message": "Pošaljci (jedna e-mail adresa po liniji)"
+  },
+  "senderAuthorizationsHelp": {
+    "message": "Ti pošiljatelji mogu se automatski skenirati kada je vanjska analiza uključena. uklonite adresu kako bi se zaustavili automatski skeniranje za buduće poruke."
+  },
+  "invalidSenderAddress": {
+    "message": "Upišite ravne e-mail adresa, jedan po liniji."
+  },
+  "popupSubtitle": {
+    "message": "Pregled sigurnosti poruka"
+  },
+  "popupDetails": {
+    "message": "Tehničke poruke detalje"
+  },
+  "popupLocalAssessment": {
+    "message": "Lokalna procjena rizika"
+  },
+  "popupLocalExplanation": {
+    "message": "Ovaj rezultat nije antivirusna presuda ili jamstvo sigurnosti."
+  },
+  "linkDialogTitle": {
+    "message": "Provjerite prije otvaranja"
+  },
+  "linkDestination": {
+    "message": "Destination web stranica"
+  },
+  "linkUrlDetails": {
+    "message": "Prikazati cijeli link adresa"
+  },
+  "linkOpenBrowser": {
+    "message": "Otvori u pregledniku"
+  },
+  "linkOpening": {
+    "message": "Otvaranje…"
+  },
+  "linkOpenFailed": {
+    "message": "Poveznicu nije bilo moguće otvoriti. Pokušaj ponovno ili provjeri postavke zadanog preglednika."
+  },
+  "linkCheckLimited": {
+    "message": "Samo dostupni rezultate skeniranja mogu se prikazati. nedostajući provjeri ne znače da je link siguran."
+  },
+  "auditTitle": {
+    "message": "Odluka o log"
+  },
+  "auditOpen": {
+    "message": "Pregled link log"
+  },
+  "auditScope": {
+    "message": "Logs HTTP (S) klikovi su prekinuti zaštitom poveznica. OPENED znači Thunderbird je prihvatao otvaranje zahtjeva bez prijavljivanja pogreške. To ne potvrđuje da je operacijsko sustavo pokrenuo pretraživač ili da je web-mjesto posjetio."
+  },
+  "auditPrivacy": {
+    "message": "Lokalno pohranjeno do 30 dana, 2000 zapisa ili 2 MiB (najstariji upisi uklonjeni). Full URLs može sadržavati osobne informacije ili tokene pristupa. Ništa se automatski ne prenosi. Lokalni log može biti promijenjen ili izbrisan od strane korisnika profila; to nije tamper-proof centralni revizorski trail. Lokalni rezultat koristi kliknut link i poruku konteksta, a ne provoditeljski rezultat. Razlozi za ocjenu mogu uključivati pošiljatelja ili detalje domena."
+  },
+  "auditSearch": {
+    "message": "URL, domena ili ID događaja"
+  },
+  "auditOutcome": {
+    "message": "Odluka"
+  },
+  "auditAll": {
+    "message": "sve"
+  },
+  "auditOpened": {
+    "message": "Otvaranje zatraženo"
+  },
+  "auditAborted": {
+    "message": "Abortus"
+  },
+  "auditOpenError": {
+    "message": "Otvaranje neuspje"
+  },
+  "auditPending": {
+    "message": "Nema završene odluke"
+  },
+  "auditMinScore": {
+    "message": "Minimalni rezultat odluke"
+  },
+  "auditFrom": {
+    "message": "od"
+  },
+  "auditTo": {
+    "message": "u"
+  },
+  "auditRefresh": {
+    "message": "osvježavanje"
+  },
+  "auditJson": {
+    "message": "Izvoz JSON"
+  },
+  "auditCsv": {
+    "message": "Izvoz CSV"
+  },
+  "auditClear": {
+    "message": "Izbjegavajte lokalni log"
+  },
+  "auditExportHelp": {
+    "message": "Izvoz uključuje sve filtrirane redove, a ne samo sadašnju stranicu. JSON uključuje SHA-256 kontrolni broj za provjeru; ne dokaže autenticitet. CSV nevtralizira formule raspršene ploče. Izvoz sadrži potpunu URLs : podijeliti samo s ovlaštenim revizorima."
+  },
+  "auditTime": {
+    "message": "Vrijeme odluke / time"
+  },
+  "auditLocalScore": {
+    "message": "Lokalni rezultat (link i poruka)"
+  },
+  "auditVerdict": {
+    "message": "Proizvođač rezultata"
+  },
+  "auditAddress": {
+    "message": "URL i detalji"
+  },
+  "auditPrevious": {
+    "message": "Prethodni"
+  },
+  "auditNext": {
+    "message": "Dalje"
+  },
+  "auditClearConfirm": {
+    "message": "Izbrisati sve lokalne link log uloge? izvoz zahtijeva dokaze prvo. rezultate skeniranja i postavke se čuvaju."
+  },
+  "auditFailure": {
+    "message": "Lokalni log poveznice nije bio čitan ili sačuvani."
+  },
+  "auditUnavailable": {
+    "message": "Ne dostupno"
+  },
+  "auditScoreAtDecision": {
+    "message": "Score na odluci"
+  },
+  "auditRecords": {
+    "message": "Rekord"
+  },
+  "auditDetails": {
+    "message": "Prikaz URL i dokazi"
+  },
+  "auditEventId": {
+    "message": "ID događaja"
+  },
+  "auditCancelReason": {
+    "message": "Razlog za otkazivanje"
+  },
+  "auditFinalResult": {
+    "message": "Posljednji rezultat provjere"
+  },
+  "auditProfile": {
+    "message": "Lokalni profil ID"
+  },
+  "auditExported": {
+    "message": "Izvoz je sačuvana."
+  },
+  "auditRiskyOpened": {
+    "message": "Otvaranje zatraženo na visokom riziku"
+  },
+  "auditExportFailed": {
+    "message": "Izvoz je neuspješan ili je otkazan."
+  },
+  "profilesTitle": {
+    "message": "Opcionalni poslovni profili"
+  },
+  "profilesIntro": {
+    "message": "Izaberite uobičajene sustave neovisno ili oslobodite integracije.Ovi profili se konfiguraciju čine; oni se ne povezuju s uslugom tvrtke ili aktiviraju centralni logging."
+  },
+  "profilesOpen": {
+    "message": "Izaberite poslovne profile"
+  },
+  "profilesBundle": {
+    "message": "Predložena kombinirana"
+  },
+  "profilesLocal": {
+    "message": "Lokalna priprema"
+  },
+  "profilesCustom": {
+    "message": "Korišteno odabir"
+  },
+  "profilesHosting": {
+    "message": "Smještaj"
+  },
+  "profilesSso": {
+    "message": "Jedinstveni sign-on (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Upravljanje uređajem"
+  },
+  "profilesSiem": {
+    "message": "Sigurnosni praćenje (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Ulaznice za sistem"
+  },
+  "profilesRequirements": {
+    "message": "Potrebna konfiguracija"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Krajnje točke i postavke računa pružaju se u kasnijim postavkama.Ime ispod identificiraju potrebne postavke i tajne reference; ovdje ne unesite potvrde."
+  },
+  "profilesPreview": {
+    "message": "Konfiguracijska rasprava"
+  },
+  "profilesPrivacy": {
+    "message": "Poveznice ostaju onemogućene. projekt ne sadrži ključeve API, tokene, kliknuti URLs ili poruke."
+  },
+  "profilesSave": {
+    "message": "Sljedeći članakSavjetovanje lokalno"
+  },
+  "profilesExport": {
+    "message": "Izvozni konfiguracijski projekt"
+  },
+  "profilesReset": {
+    "message": "Odabir ponovnog"
+  },
+  "profilesNone": {
+    "message": "Oštećeni/neizabrani"
+  },
+  "profilesSelfHosted": {
+    "message": "Samostalno gostovanje / na nagrade"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Za ovu odabir nije potrebna nijedna vanjska integracija."
+  },
+  "profilesSaved": {
+    "message": "Izbor je sačuvana lokalno. poveznice ostaju onemogućene."
+  },
+  "profilesExported": {
+    "message": "Izvozni je projekt konfiguracije.Ništa nije aktivirano."
+  },
+  "profilesFailed": {
+    "message": "Izbor se ne može nabaviti, sačuvati ili izvoziti, ili je operacija otkazana."
+  },
+  "wizardTitle": {
+    "message": "Postavi Thundy AV"
+  },
+  "wizardLanguage": {
+    "message": "Jezik čarobnjaka"
+  },
+  "wizardLanguageNote": {
+    "message": "Odabir vrijedi samo za čarobnjak. Jezik dodatka možeš promijeniti u postavkama."
+  },
+  "wizardWelcome": {
+    "message": "Dobrodošli"
+  },
+  "wizardProtection": {
+    "message": "Link zaštićen"
+  },
+  "wizardExternal": {
+    "message": "Opcionalna analiza"
+  },
+  "wizardIntro": {
+    "message": "Za provjeru e-pošte, upotrijebite njegovu Thundy AV baneru ili skeniranje akcije. možete kasnije odlučiti hoće li postaviti pružatelje analize."
+  },
+  "wizardLocalNotice": {
+    "message": "Bez suglasnosti za vanjsku analizu, podaci se ne šalju pružateljima analize.Ovaj čarobnjak nikad ne daje tu suglasnost."
+  },
+  "wizardPrivacy": {
+    "message": "Informacije o privatnosti"
+  },
+  "wizardLinkChoice": {
+    "message": "Upozorenje prije otvaranja poveznica i snimanja odluka lokalno"
+  },
+  "wizardLinkExplanation": {
+    "message": "U dijalogu poveznica prikazuje se odredište i dostupna ocjena rizika. otvaranje ruku poveznica na vaš pretraživač; to ne dokaže posjet web-mjestu."
+  },
+  "wizardAuditNotice": {
+    "message": "Lokalni log poveznice može uključivati punu URLs i razlozi za ocjenu. zadrža se do 30 dana, 2000 ulazaka ili 2 MiB. Korisnici profila mogu pročitati, promijeniti ili izbrisati; to nije zaštićena korporacijska revizija."
+  },
+  "wizardExternalExplanation": {
+    "message": "Vanjski pružatelji su opcionalni i mogu zahtijevati ključeve API. Ovisno o vašem razini privatnosti, hashima, domena, javnim IP-ovima, datotekama ili punim URLs može se prenijeti."
+  },
+  "wizardNextAction": {
+    "message": "Što bi voljela učiniti sledeće?"
+  },
+  "wizardKeepLocal": {
+    "message": "Završetak lokalnih provjera"
+  },
+  "wizardKeepExisting": {
+    "message": "Održavanje postojećih vanjskih postavki"
+  },
+  "wizardExistingExternal": {
+    "message": "Vanjski analizi su već uključeni u ovom profilu. čarobnjak ne mijenja tu suglasnost. Koristite postavke da ga onemogućite ili preispitivate dozvole."
+  },
+  "wizardConfigure": {
+    "message": "Konfiguriranje vanjske analize u postavkama"
+  },
+  "wizardNoConsent": {
+    "message": "Izbor ove opcije samo otvara postavke.Ništa se ne prenosi i nije zatraženo dozvolu od strane ovog čarobnjaka."
+  },
+  "wizardBack": {
+    "message": "Natrag"
+  },
+  "wizardNext": {
+    "message": "Dalje"
+  },
+  "wizardFinish": {
+    "message": "Shrani setup"
+  },
+  "wizardFinishConfigure": {
+    "message": "Shrani i otvoriti postavke"
+  },
+  "wizardSkip": {
+    "message": "Ne sada"
+  },
+  "wizardDone": {
+    "message": "Uređaj spašeno"
+  },
+  "wizardDoneText": {
+    "message": "Vaš izbor za zaštitu od poveznica sačuvano je lokalno. nema ključa API, vanjskog suglasnosti ili odobrenja pošiljatelja promijenjeno. možete otvoriti čarobnjak iz postavki."
+  },
+  "wizardSettings": {
+    "message": "Otvorena postavka"
+  },
+  "wizardProfilesNotice": {
+    "message": "Poduzetnički profili su opcionalni konfiguracijski nacrt. odabir ih ne aktivira povezivanje tvrtke."
+  },
+  "wizardDeferred": {
+    "message": "Uređaj odgođen"
+  },
+  "wizardDeferredText": {
+    "message": "Niti se nije promijenilo postavke. ponovite čarobnjak iz postavki kada ste spremni."
+  },
+  "wizardSettingsOpened": {
+    "message": "Konfigurirajte pružatelje i sačuvajte svoju suglasnost tamo."
+  },
+  "wizardSettingsFailed": {
+    "message": "Nastave se ne mogu otvoriti. vaša se postavka sačuvaju; upotrijebite otvorene postavke za povlačenje."
+  },
+  "wizardSaveFailed": {
+    "message": "Nastavak se ne može spasiti. vaše odluke ostaju ovdje; molimo, povući se."
+  },
+  "wizardLoadFailed": {
+    "message": "Nastavitve se ne mogu prenijeti.Ništa nije sačuvano.Povratak ove strane za povlačenje."
+  },
+  "wizardLanguageFailed": {
+    "message": "Jezik se ne može prenijeti.Prednji je jezik još uvijek odabran."
+  },
+  "wizardReopen": {
+    "message": "Otvoreni čarobnjak"
+  },
+  "settingsAppearance": {
+    "message": "Izgled"
+  },
+  "settingsPrivacy": {
+    "message": "Privatnost"
+  },
+  "settingsScanning": {
+    "message": "Zaštita"
+  },
+  "settingsProviders": {
+    "message": "Usluge analize"
+  },
+  "settingsSenders": {
+    "message": "Pravila za pošiljatelje"
+  },
+  "settingsData": {
+    "message": "Podaci i alati"
+  },
+  "settingsWorkspace": {
+    "message": "Vaš radni prostor"
+  },
+  "settingsEyebrow": {
+    "message": "Učinite to svojim"
+  },
+  "settingsSubtitle": {
+    "message": "Prilagodi izgled Thundy AV-a i zaštitu svoje e-pošte."
+  },
+  "settingsLocalBadge": {
+    "message": "Lokalni porez na default"
+  },
+  "settingsLocalNote": {
+    "message": "Vaše preferencije. pohranjeno na ovom uređaju."
+  },
+  "settingsSkip": {
+    "message": "Skijanje na postavke"
+  },
+  "settingsProviderGuide": {
+    "message": "O dobavljačima i ključima API"
+  },
+  "settingsWizardHelp": {
+    "message": "Provjerite upute u bilo kojem vremenu."
+  },
+  "themeIntro": {
+    "message": "Thundy AV osjeća kao tvoj. promjene u pogledu pojave se spašavaju izravno kroz dodatak."
+  },
+  "themeMode": {
+    "message": "Izgled"
+  },
+  "themeSystem": {
+    "message": "Slijedi temu Thunderbirda"
+  },
+  "themeLight": {
+    "message": "Svijetla"
+  },
+  "themeDark": {
+    "message": "Tamna"
+  },
+  "themeAccent": {
+    "message": "Akcent boja"
+  },
+  "themeOcean": {
+    "message": "Oceani"
+  },
+  "themeViolet": {
+    "message": "Violetni"
+  },
+  "themeForest": {
+    "message": "Šumski"
+  },
+  "themeAmber": {
+    "message": "Jantarna"
+  },
+  "themeReady": {
+    "message": "Izgled se automatski spašava.Ostatak postavki koristi gumb Spasite."
+  },
+  "themeSaving": {
+    "message": "Ušteda u vidu…"
+  },
+  "themeSaved": {
+    "message": "Izgled je spasio."
+  },
+  "themeLoadError": {
+    "message": "Izgled se ne može natjecati.Pokušajte ponoviti postavke."
+  },
+  "themeSaveError": {
+    "message": "Izgled se ne može spasiti. izaberite svoj izbor za povlačenje."
+  },
+  "themeRetry": {
+    "message": "Izgled za spašavanje"
+  },
+  "themeDensity": {
+    "message": "Informacijska gustoća"
+  },
+  "themeComfortable": {
+    "message": "udobno"
+  },
+  "themeCompact": {
+    "message": "Kompaktni"
+  },
+  "themeDensityHelp": {
+    "message": "Prilagoditi prostor u postavkama i lokalnim alatima za upravljanje."
+  },
+  "profilesChanges": {
+    "message": "Promjene u usporedbi sa sačuvane odabire"
+  },
+  "profilesDiscard": {
+    "message": "Izbjegavajte neispravne promjene"
+  },
+  "profilesLoadRetry": {
+    "message": "Sljedeći članakReload sačuvani izbor"
+  },
+  "profilesNotLoaded": {
+    "message": "Savršen izbor nije opterećen"
+  },
+  "profilesUnsaved": {
+    "message": "Neizvjesne promjene · neaktivni nacrt"
+  },
+  "profilesUnchanged": {
+    "message": "Savršen izbor · neaktivni nacrt"
+  },
+  "profilesSaving": {
+    "message": "Savjeti za lokalni izbor…"
+  },
+  "settingsUnsaved": {
+    "message": "Nepoznate promjene"
+  },
+  "providerUnknown": {
+    "message": "Rezultat nepoznat"
+  },
+  "auditVerdictAtDecision": {
+    "message": "Rezultat odluke"
+  },
+  "ui_169": {
+    "message": "Protokol za analizu: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "ID radnog mjesta: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "ID podnošenja: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protokol dobiven: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": "Rezultat se automatski povlači svakih $P1$ sekundi (prijatelj $P2$); završni analizni prototip se ovdje prikazuje bez nove zahtjeve nakon što je pohranjen.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "Nakon ponovnog pokretanja ili gubitka obrade, to ostaje na raspolaganju; nemojte pretpostaviti da je poveznica otvorena ili otkazana."
+  },
+  "auditCancelUser": {
+    "message": "otkazano od strane korisnika"
+  },
+  "auditCancelEscape": {
+    "message": "Završen s bijegom"
+  },
+  "auditCancelDestination": {
+    "message": "Promjena mjesta"
+  },
+  "auditCancelContext": {
+    "message": "Kontekst poruke je završen"
+  },
+  "auditCancelUnknown": {
+    "message": "Nepoznati razlozi za otkazivanje"
+  },
+  "reportNotSaved": {
+    "message": "Izvješće je vidljivo, ali nije moglo biti spašeno lokalno."
+  },
+  "checkOrigin_live": {
+    "message": "Trenutačni ishod pružatelja"
+  },
+  "checkOrigin_stored": {
+    "message": "Skladišten rezultat"
+  },
+  "checkOrigin_none": {
+    "message": "Nema promatranja pružatelja"
+  },
+  "checkOutcome_success": {
+    "message": "Zahtjev uspio"
+  },
+  "checkOutcome_failed": {
+    "message": "Zahtjev neuspješan"
+  },
+  "checkOutcome_disabled": {
+    "message": "Analiza vanjske funkcije"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Izgubljeno dopuštenje za gostovanje"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Ključni pružatelj nedostaje"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Nema referencije pružatelja"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Nema novih zahtjeva"
+  },
+  "checkOutcome_no_result": {
+    "message": "Ne koristi se novi rezultat"
+  },
+  "checkAttempted": {
+    "message": "Provjerite pokušaje"
+  },
+  "checkObserved": {
+    "message": "Rezultat je primijetio"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Razlozi za odluku"
+  },
+  "auditReasonsLatest": {
+    "message": "Najnovije dostupne razlike"
+  },
+  "auditReasonsMissing": {
+    "message": "Nije snimljen u to vrijeme"
+  },
+  "coverageSummary": {
+    "message": "Pregled – otkriveno je: $1• Prihvatljivi su: $2• Proizvodi se: $3Neuspjeh je: $4Uspješno je: $5Izgubljeni predmeti su neprocjenjivi."
+  },
+  "supportTitle": {
+    "message": "Izvješće o lokalnoj potpori"
+  },
+  "supportHelp": {
+    "message": "Predvidite minimalni dijagnostički izvještaj, a onda ga sačuvajte lokalno.Ništa se ne šalje."
+  },
+  "supportPreview": {
+    "message": "Pregled izvješća"
+  },
+  "supportConfiguration": {
+    "message": "Uključite uske postavke (bez ključa ili popisa šalica)"
+  },
+  "supportSave": {
+    "message": "Shrani izvješće lokalno"
+  },
+  "coverageAttachments": {
+    "message": "Priključci"
+  },
+  "coverageDomains": {
+    "message": "Jedinstvena domena"
+  },
+  "coverageBatch": {
+    "message": "Linija Batch"
+  },
+  "coverageLimits": {
+    "message": "Ograničenja po prolazu: 100 prijenosa, 25 MiB po prijenosu, 100 unikatnih domena, 20 poveznica u skupini."
+  },
+  "localProfileTitle": {
+    "message": "Lokalni profili"
+  },
+  "localProfileHelp": {
+    "message": "Izvoz sačuvani prikaz ili lokalna zaštita postavke odvojeno. Pregled i potvrda uvoza. Ključi, suglasnost, dozvole, povjerljivi pošiljatelji i povijest revizije su izuzeti."
+  },
+  "localProfileExport": {
+    "message": "Izvozni vid"
+  },
+  "localProfileFile": {
+    "message": "Izaberite profil datoteku (JSON, do 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Profile JSON (ili prilepite ovdje)"
+  },
+  "localProfilePreview": {
+    "message": "Prethodni članakPredviđanje promjena"
+  },
+  "localProfileApply": {
+    "message": "Prikazuje se izmjene"
+  },
+  "localProfileDiscard": {
+    "message": "Izbjegavali uvoz"
+  },
+  "localProfileInvalid": {
+    "message": "Nevažeći profil, nepodržana verzija ili zabranjeno polje."
+  },
+  "localProfileChanged": {
+    "message": "Izgled je promijenjen od predvidljivog. predvidljiv još jednom prije podnošenja zahtjeva."
+  },
+  "localProfileFailed": {
+    "message": "Profili se ne mogu sačuvati. pregleda sadašnje postavke i povlačenje."
+  },
+  "localProfileApplied": {
+    "message": "Izgled profil primijenjen. zaštita i suglasnost nepromijenjena."
+  },
+  "analysisTitle": {
+    "message": "Analiza izvora"
+  },
+  "analysisMixed": {
+    "message": "Lokalni + vanjski kontrolni"
+  },
+  "analysisExternal": {
+    "message": "Vanjske primjedbe dostupne"
+  },
+  "analysisLocal": {
+    "message": "Lokalni · nema vanjskih rezultata zabilježeno"
+  },
+  "analysisLocalChecked": {
+    "message": "Lokalna poruka/link heuristička je završena."
+  },
+  "analysisLocalPending": {
+    "message": "Lokalna procjena još nije zabilježena."
+  },
+  "analysisUnknown": {
+    "message": "neznan"
+  },
+  "analysisTimeUnknown": {
+    "message": "Vrijeme nije zabilježeno"
+  },
+  "analysisObserved": {
+    "message": "Posljednji korisni odgovor"
+  },
+  "analysisFindingObserved": {
+    "message": "Pronađite snimljen"
+  },
+  "analysisAttempted": {
+    "message": "Posljednji pokušaja"
+  },
+  "analysisPartial": {
+    "message": "Neke zahtjeve nisu uspjele; dostupni otkrici ne pokrivaju svaku stvar."
+  },
+  "analysisOtherServices": {
+    "message": "Ostale usluge / ne provjerene"
+  },
+  "analysisLimit": {
+    "message": "Lokalni rezultat nije antivirusna presuda. zahtjevi i popisi nisu završeni analize. pohranjeni rezultati čuvaju svoj originalni vijek; nedostajući zapisi ne pokazuju da se ranije zahtjeve nisu dogodile."
+  },
+  "analysisScope_hash": {
+    "message": "Hash reputacija"
+  },
+  "analysisScope_file": {
+    "message": "File podnošenje"
+  },
+  "analysisScope_url": {
+    "message": "URL analize"
+  },
+  "analysisScope_domain": {
+    "message": "Domain reputacija"
+  },
+  "analysisScope_ip": {
+    "message": "Javna reputacija IP"
+  },
+  "analysisScope_report": {
+    "message": "Analitički izvještaj"
+  },
+  "analysisState_running": {
+    "message": "Zatraženo · još nema završnog rezultata"
+  },
+  "analysisState_checked": {
+    "message": "Rezultat je primljen"
+  },
+  "analysisState_received": {
+    "message": "Odgovor primljen · presuda nedostajuća"
+  },
+  "analysisState_submitted": {
+    "message": "Prijave prihvaćene · analize nisu potvrđene"
+  },
+  "analysisState_not_found": {
+    "message": "Nije se našao rekord dobavljača"
+  },
+  "analysisState_failed": {
+    "message": "Neuspjeh zahtjeva, nema novih presuda"
+  },
+  "analysisState_incomplete": {
+    "message": "Nije objavljena završna analiza"
+  },
+  "analysisSource_remote": {
+    "message": "Vanjski kontakt"
+  },
+  "analysisSource_cache": {
+    "message": "Memory cache · nema zahtjeva za novi pružatelj"
+  },
+  "analysisSource_stored": {
+    "message": "Sadržavanje vanjske promatranja"
+  },
+  "analysisSource_attempt": {
+    "message": "Pokušaj zahtjeva · odgovor nije potvrđen"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Odluka nije dostupna"
+  },
+  "analysisVerdict_none": {
+    "message": "Dostupni otkrici: bez otkrića (bez jamstva sigurnosti)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "Prilagođeni podaci uključuju sumnjive pokazatelje"
+  },
+  "analysisVerdict_malicious": {
+    "message": "Prilagođeni otkrici uključuju detekciju pretnje"
+  },
+  "analysisReason_unconfigured": {
+    "message": "Trenutno nije konfiguran"
+  },
+  "analysisReason_disabled": {
+    "message": "Novi vanjski zahtjevi su otkazani"
+  },
+  "analysisReason_permission": {
+    "message": "Nedostatak dopuštenja za nove zahtjeve"
+  },
+  "analysisReason_authorization": {
+    "message": "Nema automatskog odobrenja za ovu poruku / ručni način"
+  },
+  "analysisReason_policy": {
+    "message": "Ne dopušta se od strane trenutačnog stupnja privatnosti"
+  },
+  "analysisReason_on_action": {
+    "message": "Samo nakon izričito povezanog djelovanja"
+  },
+  "analysisReason_unrecorded": {
+    "message": "Nema prijavljenog pregleda za ovu poruku"
+  },
+  "analysisUnavailable": {
+    "message": "Analiza izvora za sada nije dostupna"
+  },
+  "analysisModeUnknown": {
+    "message": "Analiza još nije zabilježena"
+  },
+  "analysisModeRunning": {
+    "message": "Vanjski zahtjevi za rad · rezultat čekajući"
+  },
+  "analysisModeSubmitted": {
+    "message": "Izvješće je objavljeno na vanjskom; analizu još nije završeno"
+  },
+  "analysisModeIncomplete": {
+    "message": "Vanjski provjer neispunjen · završetak nije potvrđen"
+  },
+  "analysisModePartial": {
+    "message": "Vanjski dostupni rezultati · Neki zahtjevi nisu uspjeli"
+  },
+  "analysisModeFailed": {
+    "message": "Izvanjska zahteva neuspjela · nema korisnih rezultata zabilježeno"
+  },
+  "analysisModeResults": {
+    "message": "Vanjski odgovori dostupni · pogledajte provjere ispod"
+  },
+  "analysisResourceMessage": {
+    "message": "Povijest poruke / Reputacija prijevoza"
+  },
+  "analysisResourceAttachment": {
+    "message": "prijenos"
+  },
+  "analysisResourceLink": {
+    "message": "Poveznica"
+  },
+  "analysisResourceUnknown": {
+    "message": "Prethodni članakRazgovor: Ne registrirani izvori"
+  },
+  "analysisTruncated": {
+    "message": "Neki podaci o resursima propustio je jer je dosegnut lokalni ograničenje prikaza."
+  },
+  "analysisResources": {
+    "message": "Izvješće u ovom poruci"
+  },
+  "analysisResourceLocal": {
+    "message": "Priključak pohranjen s porukom · ne dokazi o antivirusnom skenovanju"
+  },
+  "analysisResourceTarget": {
+    "message": "Povezani cilj · Preuzimanje daljinskog sadržaja nije dokaza vanjske analize"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Nema vanjskih provjera za ovaj resurs"
+  },
+  "analysisContextChanged": {
+    "message": "Kontekst poruke se promijenio. Završetak i ponovnu otvaranje pop-up prije ponovnog podnošenja."
+  },
+  "analysisLocalIncomplete": {
+    "message": "Lokalna je analiza neiskrivna: neki sadržaji poruke nisu dostupni."
+  },
+  "analysisLocalUnavailable": {
+    "message": "Lokalna je analitička situacija nepristupa: poruka se nije čitala."
+  },
+  "analysisHistoryTitle": {
+    "message": "Sadržana povijest · udruga ne potvrđena"
+  },
+  "analysisHistoryWarning": {
+    "message": "Ovi povijesni zapisi mogu pripadaju drugom poruci s istim Message-ID. Oni ne potvrđuju provjeru ove poruke."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Novi izvori primjedbi nisu mogli biti spašeni. postojeće povijest je sačuvana."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "Ne može se sačuvati ažuriranje izvješća. ranije su se održavale prototipe."
+  },
+  "sourceExportOpen": {
+    "message": "Izvješće izvora analize"
+  },
+  "sourceExportTitle": {
+    "message": "Izvješće izvora analize"
+  },
+  "sourceExportIntro": {
+    "message": "Stvorite lokalni snimak snimljenih provjera.To ne provodi novu analizu. Trenutačne opažanja i pohranjena povijest s ne-potvrđenom udruženjem čuvaju se odvojeno."
+  },
+  "sourceExportPrivacy": {
+    "message": "Uključuje uslugu, stanja, presude i točne vremena promatranja. Izuzima URLs, ime datoteke, hash, IP-ove, ključeve, tekst poruke i unutarnje identifikacije. Brojni podaci primjenjuju se samo u ovom izvješću. Ovo nije potpuna povijest ili autentiran rekord. Ništa se ne šalje automatski. Pregled prije dijeljenja."
+  },
+  "sourceExportCancel": {
+    "message": "Pregled Discard"
+  },
+  "sourceExportContentLabel": {
+    "message": "Pregled izvješća ( JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "Kontekst poruke više nije dostupan. ponovite izvješće iz popup-a naručnog vrpca poruke."
+  },
+  "sourceExportChanged": {
+    "message": "Zabilježen je status promijenjen. stvaranje nove predviđanja prije štednje."
+  },
+  "sourceExportReady": {
+    "message": "Pregledajte predviđanje prije spašivanja ili dijeljenja."
+  },
+  "sourceExportRequested": {
+    "message": "Provjerite završetak u Thunderbird download."
+  },
+  "sourceExportFailed": {
+    "message": "Izvješće nije sačuvano. stvaranje nove predviđanja da probate još jednom."
+  },
+  "analysisHistoryPages": {
+    "message": "Povijesne stranice"
+  },
+  "analysisHistoryEntries": {
+    "message": "ulaznica"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Osumnjičeni ili zlonamjerni povijesni otkriće · udruga ne potvrđena"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Prvo povijesno upozorenje"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Prikaz najjače sadašnje otkriće"
+  },
+  "reportDisplayFailed": {
+    "message": "Ne može se prikazati pohranjeni izvještaj; Ostali rezultati ostaju dostupni."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Neki podaci izvješća imaju nepodrženi format i ne bi se mogli prikazati."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Neki pohranjeni podaci analize nisu mogli biti pročitani. drugi podaci ostaju dostupni."
+  },
+  "analysisModeResponses": {
+    "message": "Odgovori primljeni · nema procjenjivog presude dostupno"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Odgovori primljeni bez procjenjivog presude · Neki zahtjevi nisu uspjeli"
+  },
+  "analysisCurrentAvailability": {
+    "message": "Za nove zahtjeve"
+  },
+  "reasonMaliciousIp": {
+    "message": "Zlonamjerni server IP adresa otkrivena ( $IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "URLhaus i IP Reputation (izvanjski pokazatelji pretnje)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus – ZZZZZ ZZZ $DOMAINS$ ZZ ZZXZ ZXXZ ZNZZ ZNXZ Z",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "IP Reputation ( $PROVIDER$) – Osumnjičeni server IPs: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "urlscan.io Izložba:"
+  },
+  "urlscanStatus": {
+    "message": "Stanje: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridReportLink": {
+    "message": "Otvoreno izvješće o Hybrid Analysis"
+  },
+  "hybridProviderMessage": {
+    "message": "Poruka pružatelja: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "Hybrid Analysis granica ili kvota je dosegnuta. molimo, probajte još jednom."
+  },
+  "reasonArchivedMaliciousAttachment": {
+    "message": "Povijesni uspjeh ($OBSERVED$). $PROVIDER$ Klasificirani prijelaz »$NAME$“Kako je to zlonamjerno.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonArchivedSuspiciousAttachment": {
+    "message": "Povijesni uspjeh ($OBSERVED$). $PROVIDER$ Klasificirani prijelaz »$NAME$“Kao sumnjivi.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonMaliciousAttachment": {
+    "message": "Priključak \" $NAME$ \" klasificiran je kao štetan od strane $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "Priključak \" $NAME$ \" klasificiran je kao sumnjiv od strane $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanReportLink": {
+    "message": "Otvoreno izvješće o urlscan.io"
+  },
+  "hybridLinkVerdictStatus": {
+    "message": "Hybrid Analysis: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonMaliciousLinkVerdict": {
+    "message": "Link \" $URL$ \" klasificiran je kao zlonamjeran od strane $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousLinkVerdict": {
+    "message": "Link \" $URL$ \" klasificiran je kao sumnjiv od strane $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanErrorDetails": {
+    "message": "Razlog: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "urlscan.io granica ili kvota je dosegnuta. molimo, probajte još jednom."
+  },
+  "urlscanInvalidKey": {
+    "message": "Nevažeći ili neovlašteno urlscan.io API ključ."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Rezultat nije bio spreman u prozoru za ispitivanje.Skaniranje koje je prihvaćeno može se provjeriti bez nove podnošenja."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Domain se ne može riješiti urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Elemenat još nije zabilježen u Hybrid Analysis (ne nalazi se ranije analize)."
+  },
+  "virustotalNotFound": {
+    "message": "Elemenat još nije zabilježen u VirusTotal baznoj bazi."
+  },
+  "virustotalRateLimited": {
+    "message": "VirusTotal granica ili kvota je dosegnuta. molimo, probajte još jednom."
+  },
+  "virustotalInvalidKey": {
+    "message": "Nevažeći ili neovlašteno VirusTotal API ključ."
+  },
+  "abuseipdbRateLimited": {
+    "message": "AbuseIPDB granica ili kvota je dosegnuta. molimo, probajte još jednom."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Nevažeći ili neovlašteno AbuseIPDB API ključ."
+  },
+  "urlhausRateLimited": {
+    "message": "URLhaus granica ili kvota je dosegnuta. molimo, probajte još jednom."
+  },
+  "urlhausInvalidKey": {
+    "message": "Nevažeći ili neovlašteno URLhaus API ključ."
+  },
+  "testApiKeyButton": {
+    "message": "Testiraj vezu"
+  },
+  "testApiKeyTesting": {
+    "message": "Test povezanosti…"
+  },
+  "testApiKeyValid": {
+    "message": "To ne potvrđuje prava na prijenos ili preostale kvote."
+  },
+  "testApiKeyInvalid": {
+    "message": "Neuspjeh povezivanja: Invalid API ključ."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Rate limit ili kvota dostignuta. molimo, probajte još jednom."
+  },
+  "testApiKeyError": {
+    "message": "Test povezivanja nije uspio."
+  },
+  "testApiKeyEmpty": {
+    "message": "Molimo prvo unesite ključ API."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "Odbijena je dozvola za povezivanje s servisnim hostom."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Molimo odaberite IP dobavljača ugleda prvo."
+  },
+  "rateLimitWithWait": {
+    "message": "Rate limit ili kvota dostignuta. molimo, probajte još jednom u $SECONDS$ sekundi.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Rate granice dostignuta"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Nevažeći ključ API"
+  },
+  "auditErrorCode": {
+    "message": "Kod pogreške"
+  },
+  "auditErrorDetails": {
+    "message": "Pogrešne detalje"
+  },
+  "auditRetryAfter": {
+    "message": "Čekaj vrijeme"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ sekunde",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "securityTitle": {
+    "message": "Upravljanje i zaštita poveznica"
+  },
+  "securityScope": {
+    "message": "Lokalno na ovaj profil Thunderbird. Ne sprečava promjene profila, onemogućuje dodatak ili otvara kopirane poveznice negdje drugdje."
+  },
+  "securityAdminPassword": {
+    "message": "Prijavni lozinka administratora (12+ znakova; pustite prazan da se zadrži)"
+  },
+  "securityApprovalPassword": {
+    "message": "Odvojeno lozinku za odobrenje lozinke (12+ znakova; pustite bijelo da se zadrži)"
+  },
+  "securityThreshold": {
+    "message": "Potrebno je odobrenje na rizikovom broju (0-100, uključujući)"
+  },
+  "securityEnablePolicy": {
+    "message": "Omogućuje obveznu zaštitnu poveznicu"
+  },
+  "securityUnknownApproval": {
+    "message": "Potrebno je odobrenje za neispunjene provjere"
+  },
+  "securityUnlock": {
+    "message": "Otključivanje postavki"
+  },
+  "securitySave": {
+    "message": "Uklanjanje zaštitnih mjera"
+  },
+  "securityLock": {
+    "message": "Zatim zatvori"
+  },
+  "securityDisable": {
+    "message": "uklanjanje postavki lozinke"
+  },
+  "securityRecovery": {
+    "message": "Kod za oporavak"
+  },
+  "securityRecover": {
+    "message": "Obnovite admin lozinku pomoću koda"
+  },
+  "securityStopTransfers": {
+    "message": "Zaustavljanje vanjskih prijenosa"
+  },
+  "securityLocked": {
+    "message": "Postavke su zaključane. Za otključavanje unesi administratorsku lozinku."
+  },
+  "securityUnlocked": {
+    "message": "Uredi su otključeni; zatvori se nakon pet minuta bez aktivnosti."
+  },
+  "securityOptional": {
+    "message": "Zaštita lozinke je opcionalna i trenutačno je otvorena. bez lozinke za odobrenje, zaštićeni linkovi ostaju blokirani."
+  },
+  "securityError": {
+    "message": "Operacija je odbijena. provjerite lozinku, sjednicu i ulaz."
+  },
+  "securityWait": {
+    "message": "Previše pokušaja. čekajte prije nego što se povuče."
+  },
+  "securityLength": {
+    "message": "Koristite barem dvanaest znakova i različite lozinke."
+  },
+  "securityRecoverySave": {
+    "message": "Shrani ovaj kod za jednom oporavku odvojeno. neće se više prikazati:"
+  },
+  "securitySaved": {
+    "message": "Zaštita je sačuvana."
+  },
+  "securityDisableConfirm": {
+    "message": "Odstranite lozinku za postavke? zaštita poveznica ostaje konfiguracija."
+  },
+  "securityStopped": {
+    "message": "Zadržavanje vanjskih prijenosa je zaustavljeno."
+  },
+  "securityApprovalTitle": {
+    "message": "Potrebno je odobriti opasno sadržaje"
+  },
+  "securityConfirmDanger": {
+    "message": "U svakom se slučajevima želim otvoriti ovaj potencialno opasni sadržaj."
+  },
+  "securityApproveOnce": {
+    "message": "Odobri i otvori jednom"
+  },
+  "securityExpired": {
+    "message": "Odobrenje je isteklo ili se promijenio kontext. početi iznova s poruke."
+  },
+  "securityOpened": {
+    "message": "Thunderbird je prihvaćao zahtjeve za otvaranje."
+  },
+  "securityApprovalFailed": {
+    "message": "Otvaranje je odbijeno. Provjeri lozinku ili, ako je odobrenje isteklo, ponovno pokreni postupak iz poruke."
+  },
+  "providerTestDisclosure": {
+    "message": "To šalje vašu ključnu i fiksnu testne informacije API odabranom pružatelju, bez sadržaja poruke.Uspješni test čitanja ne provjerava popise ili dostupne kvote."
+  },
+  "analysisSimple": {
+    "message": "Pregled"
+  },
+  "analysisExpert": {
+    "message": "Tehnički detalji"
+  },
+  "analysisSimpleNone": {
+    "message": "Nema sumnjivih znakova"
+  },
+  "analysisSimpleCaution": {
+    "message": "sumnja"
+  },
+  "analysisSimpleDanger": {
+    "message": "Zlonamjerno otkriće"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Provjera je nepotpuna"
+  },
+  "analysisScoreExplanation": {
+    "message": "Ocjena rizika temelji se na pravilima i ne predstavlja vjerojatnost ni jamstvo sigurnosti."
+  },
+  "analysisSimpleBasis": {
+    "message": "Službe s otkrićima / nedostaju"
+  },
+  "analysisProviderSetup": {
+    "message": "Pristup pružatelju i otkrivanje informacija"
+  },
+  "analysisProviderConfigured": {
+    "message": "Ključ je konfiguracija; pohranjivanje ga ne pokreće skeniranje."
+  },
+  "analysisProviderNoKey": {
+    "message": "Nema ključa za konfiguraciju"
+  },
+  "analysisDataHash": {
+    "message": "Prsteni otisak datoteke (SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Cjelovita prijenosna"
+  },
+  "analysisDataUrl": {
+    "message": "Popunjeno URL; može sadržavati povjerljive tokene"
+  },
+  "analysisDataDomain": {
+    "message": "Link domena"
+  },
+  "analysisDataIp": {
+    "message": "Javni IP iz naslovnika poruka"
+  },
+  "analysisDataReport": {
+    "message": "Izvješće identifikacija"
+  },
+  "analysisApprovalRequired": {
+    "message": "Potrebno je dodatno odobrenje; otkazati ili zatražiti administratora."
+  },
+  "analysisContinueWarning": {
+    "message": "Pregledajte razlozi prije nastavka. možete otkazati."
+  },
+  "analysisConflict": {
+    "message": "Proizvođači se ne slažu; u pogledu zaključaka uzimaju prednost."
+  },
+  "analysisExportSensitive": {
+    "message": "Pregled prije izvoza: Tehnički podaci mogu identificirati poruke."
+  },
+  "scanActions": {
+    "message": "vanjski kontrolori"
+  },
+  "scanStart": {
+    "message": "Provjeri sada"
+  },
+  "scanRepeat": {
+    "message": "Provjeri ponovno"
+  },
+  "scanRefresh": {
+    "message": "Osvježi rezultate"
+  },
+  "scanRunning": {
+    "message": "Vanjski kontrolni postupak"
+  },
+  "scanProgress": {
+    "message": "Popunjeni izvori"
+  },
+  "scanMigrationNotice": {
+    "message": "Odaberite način automatskog skeniranja u postavkama. do tada se primjenjuju rječni i rječni propisi."
+  },
+  "scanState_idle": {
+    "message": "U tom pogledu nema aktivnog radnog mjesta za skeniranje."
+  },
+  "scanState_queued": {
+    "message": "Pregled prihvaćen; čekanje za početak"
+  },
+  "scanState_running": {
+    "message": "Vanjski kontrolni postupak"
+  },
+  "scanState_completed": {
+    "message": "Provjerite završeno"
+  },
+  "scanState_pending": {
+    "message": "Proizvođač još uvijek obrađuje; ažurirati rezultate"
+  },
+  "scanState_incomplete": {
+    "message": "Provjerite neispunjeno; neki rezultatovi su nestali"
+  },
+  "scanState_failed": {
+    "message": "Neuspjeh provjere; ponovite"
+  },
+  "scanState_blocked": {
+    "message": "Nema vanjskog provjere; pogledajte zahtjeve ispod"
+  },
+  "analysisReason_manual": {
+    "message": "Manualni način"
+  },
+  "analysisReason_sender": {
+    "message": "Izdavač nije odobren"
+  },
+  "analysisReason_links_disabled": {
+    "message": "automatski analizirani link"
+  },
+  "analysisReason_no_resources": {
+    "message": "Nema odgovora za resurs"
+  },
+  "analysisReason_quota": {
+    "message": "Sljedeći članakSljedeći Članak: Čekaj prije nego što se povuče"
+  },
+  "analysisReason_running": {
+    "message": "Proizvođač je obrad"
+  },
+  "analysisReason_provider_error": {
+    "message": "Zahtjev za pružanje usluga neuspješan"
+  },
+  "scanModeLabel": {
+    "message": "Automatski vanjski skeniranje"
+  },
+  "scanModeKeep": {
+    "message": "U nastavku nastavite (izaberite način)"
+  },
+  "scanModeAll": {
+    "message": "Sve otvorene poruke"
+  },
+  "scanModeSenders": {
+    "message": "Samo odobreni pošiljatelji"
+  },
+  "scanModeManual": {
+    "message": "Samo ručno"
+  },
+  "scanModeHelp": {
+    "message": "Automatske provjere šalju samo sažetke, domene i javne IP adrese. Cijele poveznice i privitci traže pojedinačnu potvrdu. Neotvorene poruke ostaju lokalno."
+  },
+  "assessmentCompletion": {
+    "message": "Postupak obrade"
+  },
+  "assessmentCompletion_pending": {
+    "message": "Proizvođač još uvijek obrađuje"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Izvješće o povlačenju"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "Nema dostupnih zaključnih procjena"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Tehnički postupak neuspješan"
+  },
+  "assessmentConflict": {
+    "message": "Različiti djelomični procjeni; najjači otkriće određuje djelovanje."
+  },
+  "assessmentSignals": {
+    "message": "Osnova ocjenjivanja"
+  },
+  "assessmentJob": {
+    "message": "ID radnog mjesta"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Sudac sudac"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Scanner otkrivanje"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Orijinalni rezultat prijete"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Izvorni multiscan rezultat"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Prethodni članakNajveća razina prijete"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Proizvođač belog lista"
+  },
+  "assessmentSignal_overall": {
+    "message": "Uslscan Opća ocjena"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Urlscan ocjena motora"
+  },
+  "assessmentSignal_engines": {
+    "message": "Ostali motori"
+  },
+  "assessmentSignal_brand": {
+    "message": "Oznaka o znaku; ne određuje rizik sam po sebi"
+  },
+  "assessmentSignal_report": {
+    "message": "Izvješće države"
+  },
+  "assessmentOriginal": {
+    "message": "Prethodni članakOriginalni sudac"
+  },
+  "hybridExpertTitle": {
+    "message": "API v2 izvješće detalje"
+  },
+  "hybridExpertScope": {
+    "message": "Samo polja koja su stvarno primljena prikazani. brz skeniranje ne dokaže punu ispravnost sandbox. nedostajući podaci nisu negativno otkriće. URLs propusti povjerljivanja, lance i fragmente upitnika; zapovjedne linije i sirove izvješća nisu prikazani. otvaranje tih detalja ne šalje zahtjeve."
+  },
+  "hybridExpertMissing": {
+    "message": "Ne sadržava se u ovom izvješću"
+  },
+  "hybridExpertYes": {
+    "message": "Da"
+  },
+  "hybridExpertNo": {
+    "message": "Ne"
+  },
+  "hybridExpert_identity": {
+    "message": "Identifikacija datoteke i izvora"
+  },
+  "hybridExpert_assessment": {
+    "message": "Prvotna ocjena i obrada"
+  },
+  "hybridExpert_scanners": {
+    "message": "Scanner rezultata"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Individualna antivirusna detekcija"
+  },
+  "hybridExpert_reports": {
+    "message": "Referentni sandbox izvješća"
+  },
+  "hybridExpert_counts": {
+    "message": "Izvješćeni ukupni"
+  },
+  "hybridExpert_signatures": {
+    "message": "Prijateljski potpis"
+  },
+  "hybridExpert_mitre": {
+    "message": "Sljedeći članakMITRE AT&CK"
+  },
+  "hybridExpert_network": {
+    "message": "Mrežni pokazatelji"
+  },
+  "hybridExpert_processes": {
+    "message": "postupci"
+  },
+  "hybridExpert_extracted": {
+    "message": "Izvučeni datoteci"
+  },
+  "hybridExpert_certificates": {
+    "message": "certifikati"
+  },
+  "hybridExpertEmpty": {
+    "message": "Dostava kao prazan list; nema prijavljenih ulaznica"
+  },
+  "securityPasswordHelp": {
+    "message": "Opcionalna zaštita za ovaj profil. Koristite različite lozinke od barem dvanaest znakova za administraciju i odobrenje poveznica. Ostavite nove lozinke prazne kako bi se zadržavale postojeće lozinke. Sačuvajte kod za jednom oporavku odvojeno."
+  },
+  "securityAdminConfirm": {
+    "message": "Potvrdite novu administratorsku lozinku"
+  },
+  "securityApprovalConfirm": {
+    "message": "Potvrdite novu lozinku za odobrenje"
+  },
+  "securityRecoveryPassword": {
+    "message": "Novi administrator lozinke za oporavak"
+  },
+  "securityApprovalConfigured": {
+    "message": "Konfigurirano je lozinko za odobrenje poveznice; može se zamijeniti, ali se nikad ne prikazuje."
+  },
+  "securityApprovalMissing": {
+    "message": "Ne postavlja se lozinka za odobrenje poveznica.Links zahtijevajući odobrenja lozinke ostaju blokirani."
+  },
+  "securityConfirmMismatch": {
+    "message": "Novi lozinke i njihovi potvrde ne usklađuju se."
+  },
+  "securityUnlockPassword": {
+    "message": "Trenutačno upravljačko lozinko"
+  },
+  "displaySettingsTitle": {
+    "message": "Analiza prikazivanja"
+  },
+  "displaySettingsHelp": {
+    "message": "Preferencije prikazivanja ne mijenjaju skeniranje, vanjske prijenose, ocjene ili zaštitu poveznica. još uvijek možete prebaciti između pregleda i eksperta dok čitate rezultate."
+  },
+  "displayDefaultView": {
+    "message": "Podrazumevano prikazivanje poruke i pop-up"
+  },
+  "displayHybridDetails": {
+    "message": "Prikaz dodatnih odjeljaka izvješća o hibridnom API"
+  },
+  "displaySave": {
+    "message": "Shrani prikaz preferencija"
+  },
+  "displaySaved": {
+    "message": "Preferencije prikazivanja sačuvane."
+  },
+  "urlscanDnsError": {
+    "message": "Proizvođač nije uspio riješiti ciljnu domenu."
+  },
+  "urlscanInvalidRequest": {
+    "message": "Proizvođač je odbio nevažeće paramete podnošenja."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "Proizvođač je odbio podnošenje; odgovor ne utvrđuje neuspjeh DNS-a."
+  },
+  "analysisQuotaReset": {
+    "message": "Obavijest o ponovnom kvoti"
+  },
+  "analysisRetryAt": {
+    "message": "Najranije povlačenje"
+  },
+  "analysisLocalBackoff": {
+    "message": "Ovaj je pokušaje odbačen lokalno; nije poslata nova zahtjeva za pružateljem."
+  },
+  "scanState_deferred": {
+    "message": "Analiza je odbačena: sve pozadine su zauzete. povlačenje nakon drugog završetka analize."
+  },
+  "scanCoverage": {
+    "message": "Neki od tih izvora nisu provjereni."
+  },
+  "scanCoverageAttachments": {
+    "message": "Priprema za prijenos"
+  },
+  "scanCoverageLinks": {
+    "message": "Odabrane poveznice"
+  },
+  "scanCoverage_read_failed": {
+    "message": "Priključak se ne može čitati ili hashirati."
+  },
+  "scanCoverage_size_limit": {
+    "message": "Priključak prekoračuje granicu skeniranja od 25 MiB."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "Došao je do granice skeniranja."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "Inventor za prijenos je neispunjen."
+  },
+  "scanFailure_source_capacity": {
+    "message": "Povijest izvora je puna.Ovaj se provjer nije počeo; postojeće evidencije su se zadržavale."
+  },
+  "scanFailure_cancelled": {
+    "message": "Provjera je otkazana, a rezultat nije dovršen."
+  },
+  "scanFailure_timeout": {
+    "message": "Vrijeme provjere je isteklo, a rezultat je još uvijek neispunjen."
+  },
+  "scanFailure_scan_failed": {
+    "message": "Ne mogu se završiti, a postojeće su evidencije zadržavane."
+  },
+  "localProtectionProfileExport": {
+    "message": "Izvozna zaštita"
+  },
+  "localProfileYes": {
+    "message": "Da"
+  },
+  "localProfileNo": {
+    "message": "Ne"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Stariji zaštitni profili ne mogu proširiti automatski skan ili se okrenuti na URL podnošenje."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "Stvarna povijest izvora nije čitana i čuvana je nepromijenjena."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "Konflikt skladištenja spriječio je proširenje povijesti izvora."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "Izvori za ovu poruku dostigli su svoj ulazni limit."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "Izvornica za ovu poruku dosegla je granicu skladištenja."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "Pristup lokalnom skladištenju nije uspio."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Prilike dostupne • dokumentacija je neispunjena"
+  },
+  "apiDebugTitle": {
+    "message": "API debug način"
+  },
+  "apiDebugHelp": {
+    "message": "Uzimanje novih API pokušaja lokalno dijagnosticirati neuspjehe. Omogućiti, ponoviti neuspjeh, a onda predvidjeti ili izvoziti izvješće. Odblokiranje administratora je potrebno kada je postavljen administrator lozinka. Ključi, privatni URLs, sadržaji poruke i sirovi tijelovi su propusti; referentni ID-ovi su psevdonimizirani. Do 100 ulazaka / 1 MiB se čuvaju u pamćenju za sat vremena i gube na ponovnom pokretanju. Odblokiranje očisti izvješće. Nema dodatnih zahtjeva za uslugu."
+  },
+  "apiDebugEnable": {
+    "message": "API dijagnoza"
+  },
+  "apiDebugSave": {
+    "message": "Sastav debug"
+  },
+  "apiDebugPreview": {
+    "message": "Pregled izvješća o debug"
+  },
+  "apiDebugExport": {
+    "message": "Izvješće o izvozu"
+  },
+  "apiDebugClear": {
+    "message": "Jasni izvještaj o debugama"
+  },
+  "apiDebugSaved": {
+    "message": "Sastav debug je sačuvana.Predviđene dijagnoze su očiste."
+  },
+  "apiDebugCleared": {
+    "message": "Izvješće o debugu je očistjeno."
+  },
+  "apiDebugFailed": {
+    "message": "Debug operacija nije uspjela. otključite administraciju i probajte još jednom."
+  },
+  "apiDebugFailureHint": {
+    "message": "Za detaljni izvještaj o neuspjehu, API je u nastavku u režimu otpadne opcije, ponavlja se provjera i izvozi izvješće o otpadnoj opciji."
+  },
+  "urlscanResultGone": {
+    "message": "Ovaj rezultat je uklonjen od strane urlscan.io. ažuriranje ga ne može vratiti; nova podnošenja zahtijevaju izričito skeniranje."
+  },
+  "apiDebugOpen": {
+    "message": "Otvorena dijagnoza API"
+  },
+  "diagTitle": {
+    "message": "API dijagnoza"
+  },
+  "diagHelp": {
+    "message": "Filtrirani kontrolni radovi u lokalnoj pamćenju. ključi, privatni URLs i sirov sadržaji ostaju skriveni. uspjeh HTTP nije završena sigurnosna presuda. dostupni su samo koraki zabilježen nakon aktivacije."
+  },
+  "diagOff": {
+    "message": "Debug način je ispušten. aktivirati ga u postavkama."
+  },
+  "diagEmpty": {
+    "message": "Nema prikladnih zapisa."
+  },
+  "diagPause": {
+    "message": "Pauza pogled"
+  },
+  "diagResume": {
+    "message": "Pregled povijesnog"
+  },
+  "diagPaused": {
+    "message": "Vidi se zaustavljeno; snimanje ostaje aktivno."
+  },
+  "diagActive": {
+    "message": "Aktivno snimanje; osvježavanje jednom u sekundi."
+  },
+  "diagProvider": {
+    "message": "Pružatelj"
+  },
+  "diagState": {
+    "message": "Država"
+  },
+  "diagPurpose": {
+    "message": "Operacijska vrsta"
+  },
+  "diagFrom": {
+    "message": "od"
+  },
+  "diagTo": {
+    "message": "u"
+  },
+  "diagAll": {
+    "message": "sve"
+  },
+  "diagRuns": {
+    "message": "Provjerite struje"
+  },
+  "diagDetails": {
+    "message": "Odabrane detalje protoka"
+  },
+  "diagDropped": {
+    "message": "Izgubljeni zapisi ili korake"
+  },
+  "diagNoHttp": {
+    "message": "Za ovaj tok nije zabilježen HTTP poziva."
+  },
+  "diagNotCaptured": {
+    "message": "Ne uhvaćeni"
+  },
+  "diagTimeline": {
+    "message": "Timelini"
+  },
+  "diagRequest": {
+    "message": "Filtrirana zahtjeva"
+  },
+  "diagResponse": {
+    "message": "Transport i filtrirana reakcija"
+  },
+  "diagReset": {
+    "message": "Preuzimanje filtera"
+  },
+  "diagTruncated": {
+    "message": "Ovaj tok je trunčen zbog ograničenja snimanja."
+  },
+  "diag_phase_precondition": {
+    "message": "Preduvjeti"
+  },
+  "diag_phase_queue": {
+    "message": "Vjerovanje"
+  },
+  "diag_phase_attempt": {
+    "message": "Pošaljite pokušaje"
+  },
+  "diag_phase_response": {
+    "message": "HTTP odgovor / prijevoz završetak"
+  },
+  "diag_phase_parse": {
+    "message": "JSON obrada"
+  },
+  "diag_phase_assessment": {
+    "message": "ocjena"
+  },
+  "diag_phase_persistence": {
+    "message": "upornost"
+  },
+  "diag_phase_cache": {
+    "message": "Pronađeno u predmemoriji"
+  },
+  "diag_phase_wait": {
+    "message": "Čekanje"
+  },
+  "diag_phase_cancelled": {
+    "message": "otkazani"
+  },
+  "diag_phase_expired": {
+    "message": "Slijedeći članakSlijedeći Članak Slijedeća bez potvrđene završetka"
+  },
+  "diag_purpose_automatic": {
+    "message": "automatski kontrolor"
+  },
+  "diag_purpose_manual": {
+    "message": "Priručnik za provjeru"
+  },
+  "diag_purpose_link": {
+    "message": "Link provjera"
+  },
+  "diag_purpose_key_test": {
+    "message": "Ključni test"
+  },
+  "diag_purpose_report": {
+    "message": "Zahtjev za izvješćivanje"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analiza"
+  },
+  "diag_state_running": {
+    "message": "trčanje"
+  },
+  "diag_state_complete": {
+    "message": "Operacija je završena"
+  },
+  "diag_state_pending": {
+    "message": "Punić"
+  },
+  "diag_state_blocked": {
+    "message": "Ne započinje / blokira"
+  },
+  "diag_state_incomplete": {
+    "message": "Nepotpuno"
+  },
+  "diag_state_failed": {
+    "message": "neuspjeh"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Neovjerena završetka"
+  },
+  "localScoreMessage": {
+    "message": "Lokalni poruke za poruke"
+  },
+  "localScoreLink": {
+    "message": "Lokalni rezultat za ovaj link u poruci"
+  },
+  "localScoreNoIndicators": {
+    "message": "Lokalni upozorenja nisu otkrivenih."
+  },
+  "localScoreIndicators": {
+    "message": "Lokalni upozorenja pokazatelji su našli. preispitivanje razlozi prije otvaranja."
+  },
+  "uploadSentLabel": {
+    "message": "Slijedeći članakUpload"
+  },
+  "uploadSentUnassigned": {
+    "message": "Ulazak je poslan, ali rezultat se nije moglo dodijeliti ovom prilogu."
+  },
+  "hybridReportTitle": {
+    "message": "Hybrid Analysis izvješće"
+  },
+  "hybridReportIntro": {
+    "message": "Čitanje samo pogled na primljene rezultate. otvaranje ovog izvješća ne šalje zahtjeve pružatelja."
+  },
+  "hybridReportOpen": {
+    "message": "Izvješće o analizi"
+  },
+  "hybridReportUnavailable": {
+    "message": "Izvješće nije dostupno. ponovite ga iz tekuće poruke."
+  },
+  "hybridReportTechnical": {
+    "message": "Proizvođač i poveznice detalje"
+  },
+  "hybridReportExplanation": {
+    "message": "O ovoj procjeni"
+  },
+  "hybridReportSummary": {
+    "message": "Procjena i izvori"
+  },
+  "hybridReportSnapshot": {
+    "message": "Shraničen snimak izvješća; ne novi skeniranje"
+  },
+  "hybridReportScope": {
+    "message": "Poslužiteljski rezultat i lokalni rezultat su odvojeni. nedostaju polja nisu negativni otkrici. prikazani su samo dostupni, ograničeni podaci."
+  },
+  "hybridReportCopy": {
+    "message": "kopiranje"
+  },
+  "hybridReportCopied": {
+    "message": "Kopirajte kao tekst."
+  },
+  "hybridReportCopyFailed": {
+    "message": "Ne možete kopirati. izaberite i kopirajte tekst ručno."
+  },
+  "hybridReportAvailableOnly": {
+    "message": "Uvođenje u dostupne informacije"
+  },
+  "hybridReportNoMatches": {
+    "message": "Nema polja za usklađivanje u dostupnim podacima."
+  },
+  "hybridReportAvailability": {
+    "message": "Dostupnost i ograničenja"
+  },
+  "hybridReportRun": {
+    "message": "Analiza trčanja"
+  },
+  "hybridReportSearch": {
+    "message": "Pronađite dostupna polja"
+  },
+  "hybridReportReady": {
+    "message": "Izvješće je punjeno. nije počelo novo skeniranje."
+  },
+  "hybridReportResource_name": {
+    "message": "Naziv prijenosa"
+  },
+  "hybridReportResource_url": {
+    "message": "Ovisni cilj URL"
+  },
+  "hybridReportResource_sha256": {
+    "message": "Središte SHA-256"
+  },
+  "hybridField_type": {
+    "message": "Vrsta datoteke"
+  },
+  "hybridField_type_short": {
+    "message": "Kratki tip datoteke"
+  },
+  "hybridField_size": {
+    "message": "Veličina u bajtima"
+  },
+  "hybridField_last_file_name": {
+    "message": "Posljednje ime datoteke"
+  },
+  "hybridField_submit_name": {
+    "message": "Ime podnošenja"
+  },
+  "hybridField_url_analysis": {
+    "message": "URL analize"
+  },
+  "hybridField_target_url": {
+    "message": "Ciljni pružatelj URL (može se skraćivati)"
+  },
+  "hybridField_id": {
+    "message": "ID odgovora (tj. ne određeni tip)"
+  },
+  "hybridField_job_id": {
+    "message": "Sandbox ID radna mjesta"
+  },
+  "hybridField_submission_id": {
+    "message": "ID podnošenja"
+  },
+  "hybridField_state": {
+    "message": "Država dobavljača"
+  },
+  "hybridField_finished": {
+    "message": "Završeno"
+  },
+  "hybridField_verdict": {
+    "message": "Sudac sudac"
+  },
+  "hybridField_threat_score": {
+    "message": "Hybrid Analysis rezultat prijete"
+  },
+  "hybridField_threat_level": {
+    "message": "Razina pretnje pružatelja"
+  },
+  "hybridField_multiscan_result": {
+    "message": "Multiscan rezultat (vrijednost pružatelja)"
+  },
+  "hybridField_av_detect": {
+    "message": "Vrijednost otkrivanja AV (Vrijednost pružatelja)"
+  },
+  "hybridField_whitelisted": {
+    "message": "Proizvođač belog ulaza"
+  },
+  "hybridField_vx_family": {
+    "message": "Obitelj malware"
+  },
+  "hybridField_classification_tags": {
+    "message": "Klasifikacija tagova"
+  },
+  "hybridField_tags": {
+    "message": "Tagovi"
+  },
+  "hybridField_analysis_start_time": {
+    "message": "Analiza početak vremena"
+  },
+  "hybridField_environment_id": {
+    "message": "ID okoliša"
+  },
+  "hybridField_environment_description": {
+    "message": "Sandbox okolina"
+  },
+  "hybridField_error_type": {
+    "message": "Vrsta pogreške pružatelja"
+  },
+  "hybridField_error_origin": {
+    "message": "Izvor pogreške"
+  },
+  "hybridField_name": {
+    "message": "Ime"
+  },
+  "hybridField_status": {
+    "message": "status"
+  },
+  "hybridField_progress": {
+    "message": "Vrijednost pružatelja (providiteljski učinak)"
+  },
+  "hybridField_positives": {
+    "message": "Pozitivna detekcija"
+  },
+  "hybridField_total": {
+    "message": "Ukupni kontrolori"
+  },
+  "hybridField_percent": {
+    "message": "Procjenjuje se procjenom (proizvođač cijene)"
+  },
+  "hybridField_scan_time": {
+    "message": "Trajanje skeniranja (jedinstvo pružatelja)"
+  },
+  "hybridField_scan_date": {
+    "message": "Skaniranje datuma"
+  },
+  "hybridField_product": {
+    "message": "Scanner za proizvod"
+  },
+  "hybridField_version": {
+    "message": "Skener verzija"
+  },
+  "hybridField_update": {
+    "message": "Skener za ažuriranje"
+  },
+  "hybridField_total_network_connections": {
+    "message": "mrežne veze"
+  },
+  "hybridField_total_processes": {
+    "message": "postupci"
+  },
+  "hybridField_total_signatures": {
+    "message": "Potpisivanje"
+  },
+  "hybridField_category": {
+    "message": "Kategorija"
+  },
+  "hybridField_attck_id": {
+    "message": "MITRE ATT&CK Tehnički ID"
+  },
+  "hybridField_tactic": {
+    "message": "MITRE ATT & CK taktika"
+  },
+  "hybridField_technique": {
+    "message": "MITRE ATT & CK tehnika"
+  },
+  "hybridField_description": {
+    "message": "Opis"
+  },
+  "hybridField_domains": {
+    "message": "promatrani domena"
+  },
+  "hybridField_hosts": {
+    "message": "Posmatran gost"
+  },
+  "hybridField_compromised_hosts": {
+    "message": "Kompromisni host (priloga pružatelja)"
+  },
+  "hybridField_domain": {
+    "message": "Domaćin"
+  },
+  "hybridField_host": {
+    "message": "gostiteljica"
+  },
+  "hybridField_ip": {
+    "message": "IP adresa"
+  },
+  "hybridField_port": {
+    "message": "Portovi"
+  },
+  "hybridField_protocol": {
+    "message": "Protokol"
+  },
+  "hybridField_country": {
+    "message": "Zemlja"
+  },
+  "hybridField_asn": {
+    "message": "Broj samostalnog sistema"
+  },
+  "hybridField_uid": {
+    "message": "UID proces"
+  },
+  "hybridField_process_id": {
+    "message": "ID postupka (PID)"
+  },
+  "hybridField_parent_uid": {
+    "message": "Roditeljski proces UID"
+  },
+  "hybridField_file_path": {
+    "message": "File put"
+  },
+  "hybridField_subject": {
+    "message": "Certifikati predmeta"
+  },
+  "hybridField_issuer": {
+    "message": "izdavač certifikata"
+  },
+  "hybridField_valid_from": {
+    "message": "Valjan od"
+  },
+  "hybridField_valid_until": {
+    "message": "Valjan do"
+  },
+  "hybridField_serial_number": {
+    "message": "Serijski broj certifikata"
+  },
+  "hybridField_sha256": {
+    "message": "SHA-256"
+  },
+  "hybridField_sha1": {
+    "message": "SHA-1"
+  },
+  "hybridField_md5": {
+    "message": "MD5"
+  },
+  "hybridField_sha512": {
+    "message": "SHA-512"
+  },
+  "hybridField_imphash": {
+    "message": "Uvozni hash"
+  },
+  "hybridReportResource_quickScanId": {
+    "message": "Sljedeći članakSljedeći ČlanakSljedići ČlanciSljedeće"
+  },
+  "analysisLocalOnly": {
+    "message": "Provjerena samo lokalno"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "Službe s rezultatima"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Službe u nastavku"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Službe s pogreškom"
+  },
+  "hybridReportSection": {
+    "message": "Odjeljak"
+  },
+  "hybridReportAllSections": {
+    "message": "Svi odjeljci"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "Obrada je potpuna"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "Proizvodnja pending"
+  },
+  "hybridReportProcessing_failed": {
+    "message": "Neuspjeh obrade"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "Obrazovanje nepoznatog statusa"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Izvješće povučeno"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Snapshot je napravljen"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Hybrid Analysis zadržan na ovom izvoru"
+  },
+  "hybridReportSaved": {
+    "message": "Savršen Hybrid Analysis izvješće"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Slijedeći članak UTC"
+  },
+  "hybridReportWhy": {
+    "message": "Zašto ova procjena?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Ostali znakovi ocjenjivanja"
+  },
+  "hybridReportCompare": {
+    "message": "Usporedite analizu"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Odjeljci s podacima"
+  },
+  "hybridReportAssessment": {
+    "message": "Thundy ocjena od Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Izvor i časovi"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Pronađite dostupne · završetak ne potvrđeno"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Otvoreni hibridni izvještaj"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Prikaz detalja"
+  },
+  "attachmentProtectionTitle": {
+    "message": "zaštita prijenosa"
+  },
+  "attachmentProtectionScope": {
+    "message": "Ova se pravila primjenjuje kada se štedi s Thundy. Thunderbird 's vlastite zapovijedi za dodavanje ostaju dostupni."
+  },
+  "attachmentPolicyMode": {
+    "message": "Kada se dostigne granica"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Hybrid Analysis granica ocjene"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Slijedeći članakSlijedeći Članak Bez potvrđenog rezultata"
+  },
+  "attachmentModeOff": {
+    "message": "Izbacivanje"
+  },
+  "attachmentModeWarn": {
+    "message": "Opozorenje"
+  },
+  "attachmentModeApproval": {
+    "message": "Potrebno odobrenje"
+  },
+  "attachmentModeBlock": {
+    "message": "blok"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Spremi uz Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "Spasite prijenos"
+  },
+  "attachmentCancelSave": {
+    "message": "Odustani"
+  },
+  "attachmentThresholdReached": {
+    "message": "Hybridni rezultat doseže konfiguraciju."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis klasificira ovaj datoteku kao zlonamjerno."
+  },
+  "attachmentUnknown": {
+    "message": "Nema potvrđenih rezultata za ovu prijenosnu priču."
+  },
+  "attachmentBlocked": {
+    "message": "Ušteda s Thundy je blokirana."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Upišite lozinku za odobrenje kako bi se sačuvala ova datoteka."
+  },
+  "attachmentFailed": {
+    "message": "Ne može početi štedjeti prijenos."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy nije čitao ovaj dodatak."
+  },
+  "attachmentContextChanged": {
+    "message": "Promenu ili prilog promijenili. izaberite prilog opet."
+  },
+  "attachmentRefresh": {
+    "message": "Provjerite sačuvane rezultate"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "Spasio je otkriće nepromijenjeno."
+  },
+  "attachmentDecisionChanged": {
+    "message": "Izvršeno ili promijenjeno rješenje.Pogledajte ažurirano rješenje."
+  },
+  "attachmentSaveRequested": {
+    "message": "Počela je zatražba za spašavanje."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Spasite otkazano"
+  },
+  "auditDecisionScore": {
+    "message": "Odluka o rezultatima"
+  },
+  "linkHandoffPending": {
+    "message": "Thunderbird još nije potvrdio. možete zaustaviti ovaj dijalog."
+  },
+  "linkPreflightTimeout": {
+    "message": "Provjera se ne može završiti.Otvorite ovaj dijalog i odaberite link."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Povijesni Hybrid Analysis otkriće"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Trenutačno Hybrid Analysis Pronađeno"
+  },
+  "auditShare": {
+    "message": "Izvozni redoviti revizor"
+  },
+  "auditFullNotice": {
+    "message": "Cjeloviti revizor sadrži privatne URLs i detalje. podijeliti ga samo s ovlaštenim primateljima."
+  },
+  "auditFullSave": {
+    "message": "Potpuni izvozni revizor"
+  },
+  "managedByCompany": {
+    "message": "Upravlja se vašom organizacijom"
+  },
+  "managedLocal": {
+    "message": "Izvor: ovaj profil Thunderbird"
+  },
+  "managedRevision": {
+    "message": "Vrijednost politike"
+  },
+  "managedThreshold": {
+    "message": "granice"
+  },
+  "managedPolicyInvalid": {
+    "message": "Tvrtka je nevažeća.Kontaktirajte svoj IT tim."
+  },
+  "managedLinkBlocked": {
+    "message": "Vaša je tvrtka blokirala ovaj link."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Otvori uz Thundy"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Otvorena prijava"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy provjerava ovaj dodatak prije nego što ga preda Thunderbird."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird je primio zahtjeve za otvaranje priloga."
+  },
+  "attachmentOpenFailed": {
+    "message": "Priključak se nije moglo otvoriti."
+  },
+  "reportingTitle": {
+    "message": "Izvješće o sigurnosti tvrtke"
+  },
+  "reportingOff": {
+    "message": "Automatski izvještaj je ispušten."
+  },
+  "reportingNeedsConsent": {
+    "message": "Prijava zahtijeva vaš pristanak i pošiljku tokena."
+  },
+  "reportingNeedsPermission": {
+    "message": "Izjava o dopuštenju je nedostajala. Omogućite ponovnu izvješćivanje kako bi se vratila."
+  },
+  "reportingReady": {
+    "message": "Vaša tvrtka može primiti automatske izvješća."
+  },
+  "reportingQueued": {
+    "message": "Uskrsni izvješća:"
+  },
+  "reportingMalicious": {
+    "message": "Štetni otkrici"
+  },
+  "reportingSuspicious": {
+    "message": "Zlonamjerni otkrici i kršenja granica"
+  },
+  "reportingConsent": {
+    "message": "Slažem se da ću poslati ID, vrijeme, akciju, pronalaženje, odluku i verziju politike na gore prikazani adresu tvrtke."
+  },
+  "reportingConsentIndicators": {
+    "message": "Slažem se da ću poslati ID, vrijeme, akciju, pronalaženje, odluku, verziju politike i povezivanje zodiaka ili priloga SHA-256 na gore prikazani adresu tvrtke."
+  },
+  "reportingToken": {
+    "message": "Pošaljite token iz vašeg IT tima"
+  },
+  "reportingActivate": {
+    "message": "Omogućiti izvješćivanje ili zamjenu tokena"
+  },
+  "reportingRevoke": {
+    "message": "Povlačenje suglasnosti i jasne izvješća"
+  },
+  "reportingSetupFailed": {
+    "message": "Izjava o izvješćivanju nije primjenjiva."
+  },
+  "reportingAuthentication": {
+    "message": "Službena služba odbacila je token."
+  },
+  "reportingRejected": {
+    "message": "Službena služba odbacila je izvješće."
+  },
+  "reportingStorage": {
+    "message": "Thundy nije bio u pravu čitati ili pisati izvješćivanje."
+  },
+  "reportingFull": {
+    "message": "Puno je kutije, a izvješća mogu biti nestala."
+  },
+  "reportingExpired": {
+    "message": "Izvješće je isteklo prije isporuke."
+  },
+  "reportingPrivacy": {
+    "message": "Uz odvojeno odobrenje, Thundy šalje detalje kvalificiranih pokušaja otvaranja poveznica ili otvaranja ili spašavanje priloga na konfiguracijsku tvrtku. Izvješća sadrže ID događaja, vrijeme, akciju, pronalazak, odluku i verziju politike, plus opcionalno ime domaćeg doma ili priloga SHA-256. Thundy čaše čekaju izvješća lokalno do 24 sata."
+  },
+  "reportingConsentDetails": {
+    "message": "Slažem se i da ću poslati razlozi odluke, dostupne rezultate, ime prijenosa, presude pružatelja i dostupne reference za izvješće."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Detaljni izvješća mogu uključivati ime priloga i poveznice na izvješća pružatelja."
+  },
+  "analysisRunningHeading": {
+    "message": "Provjera je u tijeku"
+  },
+  "analysisLocalNoFinding": {
+    "message": "Lokalna provjera nije pronašla znakove prijetnje"
+  },
+  "analysisLinksGroup": {
+    "message": "Levića"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Priključci"
+  },
+  "protectionOpenAllowed": {
+    "message": "Otvaranje dopušteno"
+  },
+  "protectionSaveAllowed": {
+    "message": "Spremanje dopušteno"
+  },
+  "protectionWarn": {
+    "message": "Upozorenje"
+  },
+  "protectionApproval": {
+    "message": "Potrebno odobrenje"
+  },
+  "protectionRequestApproval": {
+    "message": "Zahtjev za odobrenje"
+  },
+  "protectionBlocked": {
+    "message": "Blokirano"
+  },
+  "protectionMalicious": {
+    "message": "Pružatelj usluge prijavio je zlonamjeran nalaz."
+  },
+  "protectionThreshold": {
+    "message": "Dosegnut je prag zaštite"
+  },
+  "protectionManagedThreshold": {
+    "message": "Dosegnut je prag tvrtke"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "Primjenjive postavke omogućuju tu akciju."
+  },
+  "linkContextChanged": {
+    "message": "Poveznica ili poruka promijenila se u vrijeme provjere."
+  },
+  "auditPolicyBlocked": {
+    "message": "Blokirano pravilima"
+  },
+  "reportingLastReceipt": {
+    "message": "Posljednji prijem potvrđen od strane servera"
+  },
+  "reportingOldestPending": {
+    "message": "Najstariji izvještaj"
+  },
+  "addonLanguage": {
+    "message": "Jezik dodatka"
+  },
+  "addonLanguageSystem": {
+    "message": "Upotrebljavaj jezik Thunderbirda"
+  },
+  "addonLanguageSaved": {
+    "message": "Jezik je spremljen. Ponovno otvori prikaze Thundyja da bi se primijenio."
+  },
+  "addonLanguageFailed": {
+    "message": "Jezik nije spremljen."
+  },
+  "profilesOpenSource": {
+    "message": "Otvoreni kod"
+  },
+  "transferReview": {
+    "message": "Pregled vanjskog slanja"
+  },
+  "transferSend": {
+    "message": "Pošalji pružatelju usluge"
+  },
+  "transferVisibility": {
+    "message": "Vidljivost: nije na popisu. Izvješće može otvoriti svatko tko ima njegovu poveznicu."
+  },
+  "transferAccepted": {
+    "message": "Pružatelj usluge prihvatio je zahtjev. Izvješće možda još nije spremno."
+  },
+  "transferFailed": {
+    "message": "Slanje pružatelju usluge nije dovršeno."
+  },
+  "transferUsePopup": {
+    "message": "Otvori ploču Thundyja i potvrdi slanje određene poveznice ili privitka."
+  },
+  "providerGrantAccess": {
+    "message": "Dopusti pristup ovom pružatelju"
+  },
+  "sourceSessionOnly": {
+    "message": "Arhiva izvora je puna. Trenutni je prikaz izvora dostupan samo tijekom ove sesije."
+  },
+  "analysisReason_transfer_approval": {
+    "message": "Cijele poveznice i privitci traže pojedinačnu potvrdu."
+  },
+  "analysisCompactDetails": {
+    "message": "Pojedinosti provjere"
+  },
+  "riskScoreFormula": {
+    "message": "Lokalna ocjena zbraja bodove do najviše 100. Nalazi pružatelja ocjenjuju se zasebno."
+  },
+  "riskScoreNoPoints": {
+    "message": "Lokalna pravila nisu dodala bodove."
+  },
+  "riskScoreTotal": {
+    "message": "Lokalni izračun"
+  },
+  "riskLinkBrandRule": {
+    "message": "Najmanje jedna domena nalikuje poznatoj marki. Bodovi se računaju jednom."
+  },
+  "reportingConsentDetections": {
+    "message": "Prijave mogu uključivati nazive, kategorije, potpise i oponašane marke."
+  },
+  "detectionKind_family": {
+    "message": "Obitelj zlonamjernog softvera"
+  },
+  "detectionKind_category": {
+    "message": "Kategorija"
+  },
+  "detectionKind_brand": {
+    "message": "Oponašana marka"
+  },
+  "detectionKind_signature": {
+    "message": "Potpis proizvođača"
+  },
+  "detectionCategory_fraudulent_shop": {
+    "message": "Lažna trgovina"
+  },
+  "detectionCategory_phishing_shop": {
+    "message": "Phishing trgovina"
+  },
+  "analysisDetectionGrouping": {
+    "message": "Grupiraj nalaze"
+  },
+  "detectionCategory_malware": {
+    "message": "Zlonamjerni softver"
+  },
+  "detectionCategory_virus": {
+    "message": "Virus"
+  },
+  "detectionCategory_trojan": {
+    "message": "Trojanac"
+  },
+  "detectionCategory_ransomware": {
+    "message": "Ucjenjivački softver"
+  },
+  "detectionCategory_worm": {
+    "message": "Crv"
+  },
+  "detectionCategory_spyware": {
+    "message": "Špijunski softver"
+  },
+  "detectionCategory_adware": {
+    "message": "Oglasni softver"
+  },
+  "detectionCategory_backdoor": {
+    "message": "Stražnja vrata"
+  },
+  "detectionCategory_downloader": {
+    "message": "Preuzimač"
+  },
+  "detectionCategory_dropper": {
+    "message": "Dropper"
+  },
+  "detectionCategory_infostealer": {
+    "message": "Kradljivac podataka"
+  },
+  "detectionCategory_rootkit": {
+    "message": "Rootkit"
+  },
+  "detectionCategory_phishing": {
+    "message": "Krađa identiteta"
+  },
+  "detectionCategory_scam": {
+    "message": "Prijevara"
+  }
+}

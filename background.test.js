@@ -587,9 +587,9 @@ describe('background.js', () => {
 
         assert.ok(savedResults);
         assert.strictEqual(savedResults.length, 1);
-        assert.strictEqual(savedResults[0].hybrid_data.state, 'UNKNOWN');
-        assert.strictEqual(savedResults[0].hybrid_data.submission_id, 'PENDING_UPLOAD');
-        assert.strictEqual(savedResults[0].hybrid_data.job_id, 'PENDING_UPLOAD');
+        assert.strictEqual(savedResults[0].hybrid_data.state, 'MANUAL_CHECK_PENDING');
+        assert.strictEqual(savedResults[0].hybrid_data.submission_id, 'MANUAL_CHECK');
+        assert.strictEqual(savedResults[0].hybrid_data.job_id, 'MANUAL_CHECK');
         assert.strictEqual(savedResults[0].attachmentName, 'unknown.exe');
     });
 
@@ -617,14 +617,14 @@ describe('background.js', () => {
         assert.strictEqual(f.record.attachments[0].state,'UNKNOWN');
     });
 
-    it('runtime.onMessage listener processes uploadAttachment action', async () => {
+    it('runtime.onMessage rejects the legacy upload action without individual approval', async () => {
         const listener = context.browser.runtime.onMessage.listeners[0];
         assert.ok(listener);
 
         let sentResponse = null;
 
-        // Mock handleManualUpload for the listener
-        context.handleManualUpload = async () => ({ success: true });
+        let uploaded = false;
+        context.handleManualUpload = async () => { uploaded = true; };
 
         listener(
             { action: "uploadAttachment", messageId: 1, partName: '1', attachmentName: 'test', hash: 'hash', headerMessageId: 'header' },
@@ -636,7 +636,8 @@ describe('background.js', () => {
         await new Promise(resolve => setTimeout(resolve, 0));
 
         assert.ok(sentResponse);
-        assert.strictEqual(sentResponse.status, 'success');
+        assert.strictEqual(sentResponse.code, 'TRANSFER_APPROVAL_REQUIRED');
+        assert.equal(uploaded, false);
     });
 
     it('runtime.onMessage requestScan returns permission_denied when request fails', async () => {
@@ -2921,111 +2922,31 @@ describe('background.js', () => {
     });
 
     describe('handle_unknown_attachment', () => {
-        it('should auto-upload when privacyTier is balanced or max', async () => {
-            let fetchCalled = false;
-            let appendedData = null;
+        it('unknown attachments never submit bytes and retain local facts at every tier', async () => {
             context.set_apikey('test-key');
-            context.fetch = async (url, options) => {
-                fetchCalled = true;
-                assert.strictEqual(url, 'https://hybrid-analysis.com/api/v2/quick-scan/file');
-                appendedData = options.body;
-                return {
-                    status: 200,
-                    json: async () => ({ id:'quick_789', submission_id: 'sub_123', job_id: 'job_456', sha256: 'hash_api' })
-                };
-            };
-
-            const result = await context.handle_unknown_attachment({
-                attachment: { name: 'test.pdf', partName: 'part1' },
-                content_of_attachment: new ArrayBuffer(8),
-                local_hash: 'hash123',
-                virustotal_stats: null,
-                privacyTier: 'balanced',
-                fileType: 'application/pdf'
-            });
-
-            assert.strictEqual(fetchCalled, true);
-            assert.ok(appendedData);
-            assert.deepEqual(result, {
-                hybrid_data: {
-                    quick_scan_id: 'quick_789',
-                    submission_id: 'sub_123',
-                    job_id: 'job_456',
-                    sha256: 'hash_api',
-                    state: 'UPLOADED',
-                    partName: 'part1'
-                },
-                attachmentName: 'test.pdf'
-            });
-        });
-
-        it('falls back to PENDING_UPLOAD when privacyTier is off or default', async () => {
-            const result = await context.handle_unknown_attachment({
-                attachment: { name: 'test.pdf', partName: 'part1' },
-                content_of_attachment: new ArrayBuffer(8),
-                local_hash: 'hash123',
-                virustotal_stats: { malicious: 0 },
-                privacyTier: 'off'
-            });
-
-            assert.deepEqual(result, {
-                hybrid_data: {
-                    submission_id: 'PENDING_UPLOAD',
-                    job_id: 'PENDING_UPLOAD',
-                    sha256: 'hash123',
-                    state: 'UNKNOWN',
-                    partName: 'part1'
-                },
-                attachmentName: 'test.pdf',
-                virustotal_stats: { malicious: 0 }
-            });
-        });
-
-        it('falls back to PENDING_UPLOAD when API key is missing during auto-upload', async () => {
-            context.set_apikey_hybridanalysis(null);
-            const result = await context.handle_unknown_attachment({
-                attachment: { name: 'test.pdf', partName: 'part1' },
-                content_of_attachment: new ArrayBuffer(8),
-                local_hash: 'hash123',
-                virustotal_stats: { malicious: 1 },
-                privacyTier: 'balanced'
-            });
-
-            assert.deepEqual(result, {
-                hybrid_data: {
-                    submission_id: 'PENDING_UPLOAD',
-                    job_id: 'PENDING_UPLOAD',
-                    sha256: 'hash123',
-                    state: 'UNKNOWN',
-                    partName: 'part1'
-                },
-                attachmentName: 'test.pdf',
-                virustotal_stats: { malicious: 1 }
-            });
-        });
-
-        it('falls back to PENDING_UPLOAD when auto-upload fetch fails or throws', async () => {
-            context.set_apikey('test-key');
-            context.fetch = async () => ({ status: 500 });
-
-            const result = await context.handle_unknown_attachment({
-                attachment: { name: 'test.pdf', partName: 'part1' },
-                content_of_attachment: new ArrayBuffer(8),
-                local_hash: 'hash123',
-                virustotal_stats: null,
-                privacyTier: 'max'
-            });
-
-            assert.deepEqual(result, {
-                hybrid_data: {
-                    submission_id: 'PENDING_UPLOAD',
-                    job_id: 'PENDING_UPLOAD',
-                    sha256: 'hash123',
-                    state: 'UNKNOWN',
-                    partName: 'part1'
-                },
-                attachmentName: 'test.pdf'
-            });
+            let requests = 0;
+            context.fetch = async () => { requests++; };
+            for (const privacyTier of ['strict', 'balanced', 'max', 'off']) {
+                const result = await context.handle_unknown_attachment({
+                    attachment: { name: 'test.pdf', partName: 'part1' },
+                    content_of_attachment: new ArrayBuffer(8),
+                    local_hash: 'hash123',
+                    virustotal_stats: { malicious: 1 },
+                    privacyTier
+                });
+                assert.deepEqual(result, {
+                    hybrid_data: {
+                        submission_id: 'MANUAL_CHECK',
+                        job_id: 'MANUAL_CHECK',
+                        sha256: 'hash123',
+                        state: 'MANUAL_CHECK_PENDING',
+                        partName: 'part1'
+                    },
+                    attachmentName: 'test.pdf',
+                    virustotal_stats: { malicious: 1 }
+                });
+            }
+            assert.equal(requests, 0);
         });
 
         it('returns UNKNOWN without a message and resolves the fallback key without a Message-ID', async () => {
@@ -3052,44 +2973,17 @@ describe('background.js', () => {
             assert.equal(response.status, 'UNKNOWN'); assert.equal(response.check.origin, 'none'); assert.equal(response.check.outcome, 'missing_reference'); assert.equal(response.check.observedAt, null);
         });
 
-        it('checks urlscan.io if no link object is found and urlscan is active, returning MALICIOUS', async () => {
+        it('never submits a full URL on click, even with urlscan configured', async () => {
             context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
             context.set_urlscanApikey('test-urlscan');
-
-            // Mock checkUrlscanIo behaviour via fetch
-            let callCount = 0;
-            context.fetch = async (url) => {
-                callCount++;
-                if (callCount === 1) return { ok: true, status: 200, json: async () => ({ uuid: 'uuid-1' }) };
-                if (callCount === 2) return { status: 200, json: async () => ({ verdicts: { overall: { malicious: true } } }) };
-            };
-
-            context.getFromStore = async () => ({ links: [] });
-            context.openDB = async () => ({});
-
-            let response;
-            await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.strictEqual(response.status, 'MALICIOUS');
-        });
-
-        it('keeps a response without a urlscan verdict incomplete when no Hybrid hash exists', async () => {
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
-            context.set_urlscanApikey('test-urlscan');
-
-            let callCount = 0;
-            context.fetch = async (url) => {
-                callCount++;
-                if (callCount === 1) return { ok: true, status: 200, json: async () => ({ uuid: 'uuid-2' }) };
-                if (callCount === 2) return { status: 200, json: async () => ({ verdicts: {} }) };
-            };
-
+            let requests = 0;
+            context.fetch = async () => { requests++; };
             context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'UNKNOWN' }] });
-            context.openDB = async () => ({});
-
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.equal(response.status, 'UNKNOWN'); assert.equal(response.provider, 'urlscan.io');
-            assert.equal(response.check.observedAt,null); assert.equal(response.check.outcome, 'incomplete');
+            assert.equal(response.status, 'UNKNOWN');
+            assert.equal(response.check.outcome, 'missing_reference');
+            assert.equal(requests, 0);
         });
 
         it('fetches overview from hybrid analysis if hybrid_sha256 exists, returning CLEAN for no specific threat', async () => {
@@ -3506,8 +3400,8 @@ describe('background.js', () => {
             });
 
             assert.strictEqual(fetchCalls, 0);
-            assert.strictEqual(result.hybrid_data.state, 'UNKNOWN');
-            assert.strictEqual(result.hybrid_data.submission_id, 'PENDING_UPLOAD');
+            assert.strictEqual(result.hybrid_data.state, 'MANUAL_CHECK_PENDING');
+            assert.strictEqual(result.hybrid_data.submission_id, 'MANUAL_CHECK');
         });
 
         it('does not persist a sender when a one-off scan finishes', async () => {

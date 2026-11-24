@@ -31,22 +31,37 @@ const ThundyProviders = (() => {
         return action?{key:config.rateLimits.host+':'+action,host:config.rateLimits.host,action,maxSeconds:config.rateLimits.maxSeconds,headerActions:config.rateLimits.headerActions}:null;
     }
     for(const [id,config] of Object.entries(registry))config.normalize=(info,status,data)=>({...ThundyAnalysis.response({...info,provider:id},status,data),...(['hybridanalysis','urlscan'].includes(id)&&status>=200&&status<300?ThundyProviderResults.evaluate(id,data,info.scope):['hybridanalysis','urlscan'].includes(id)?{assessmentVersion:1,completion:status===404?id==='urlscan'?'pending':'unknown':'failed',signals:[],conflicts:[]}:{} )});
+    function enabled(settings, provider, scope) {
+        if (scope === 'ip') return settings.ipReputationEnabled !== false;
+        return !Array.isArray(settings.disabledProviders) || !settings.disabledProviders.includes(provider);
+    }
+    function requiresTransferApproval(address, method = 'GET') {
+        const {scope} = identify(address, method);
+        return method.toUpperCase() === 'POST' && (scope === 'url' || scope === 'file');
+    }
     async function enforce(address,options={}) {
-        const {config,scope}=identify(address,options.method);
-        if(!await browser.permissions.contains({origins:[config.origin]}))throw Object.assign(Error('HOST_PERMISSION_MISSING'),{code:'HOST_PERMISSION_MISSING'});
+        const {provider,config,scope}=identify(address,options.method);
         const test=options.keyTest===true;
         if(test) {
             if(address!==config.test.url || (options.method||'GET')!==(config.test.method||'GET') || (options.body||'')!==(config.test.body||''))throw Error('KEY_TEST_INVALID');
-            return;
         }
-        const settings=await browser.storage.local.get(['externalAnalysisConsent','privacyTier']);
+        if (!test && requiresTransferApproval(address, options.method) && typeof options.authorizeTransfer !== 'function') {
+            throw Object.assign(Error('TRANSFER_APPROVAL_REQUIRED'), {code:'TRANSFER_APPROVAL_REQUIRED'});
+        }
+        if(!await browser.permissions.contains({origins:[config.origin]}))throw Object.assign(Error('HOST_PERMISSION_MISSING'),{code:'HOST_PERMISSION_MISSING'});
+        const settings=await browser.storage.local.get(['externalAnalysisConsent','privacyTier','disabledProviders','ipReputationEnabled']);
+        // VirusTotal uses a fixed IP to test either credential. Its file key can
+        // still be tested when only IP reputation is paused.
+        const testScope = test && provider === 'virustotal' && !options.keyTestIpReputation ? undefined : scope;
+        if(!enabled(settings,provider,testScope))throw Object.assign(Error('PROVIDER_DISABLED'),{code:'PROVIDER_DISABLED'});
+        if(test)return;
         if(settings.externalAnalysisConsent!==true)throw Object.assign(Error('EXTERNAL_ANALYSIS_DISABLED'),{code:'EXTERNAL_ANALYSIS_DISABLED'});
         const order={strict:0,balanced:1,max:2};
         if((order[settings.privacyTier]??0)<order[config.capabilities[scope]||'max'])throw Object.assign(Error('TIER_BLOCKS_REQUEST'),{code:'TIER_BLOCKS_REQUEST'});
     }
-    async function test(provider,key,authorization=null) {
+    async function test(provider,key,authorization=null,ipReputation=false) {
         const config=registry[provider];if(!config||typeof key!=='string'||!key.trim())return {status:'empty'};
-        const options={method:config.test.method||'GET',headers:{[config.header]:key.trim(),Accept:'application/json'},keyTest:true,keyTestAuthorization:authorization};
+        const options={method:config.test.method||'GET',headers:{[config.header]:key.trim(),Accept:'application/json'},keyTest:true,keyTestAuthorization:authorization,keyTestIpReputation:ipReputation};
         if(provider==='hybridanalysis')options.headers['User-Agent']='Falcon activity client';
         if(config.test.body){options.body=config.test.body;options.headers['Content-Type']='application/x-www-form-urlencoded';}
         try {
@@ -54,7 +69,7 @@ const ThundyProviders = (() => {
             const data=typeof response.json==='function'?await response.json().catch(()=>null):null;
             const status=response.status===401||response.status===403||data?.query_status==='invalid_api_key'?'invalid_key':response.status===429?'rate_limited':response.status===200||response.status===404?'valid':'error';
             return {status,...(status==='error'?{code:response.status}:{}),httpStatus:response.localBackoff?null:response.status,...(response.localBackoff?{localBackoff:true}:{}),capability:'read-test',uploadVerified:false,observedAt:Date.now()};
-        }catch(e){return {status:e.code==='HOST_PERMISSION_MISSING'?'permission_denied':'error',message:'Connection failed'};}
+        }catch(e){return {status:e.code==='PROVIDER_DISABLED'?'disabled':e.code==='HOST_PERMISSION_MISSING'?'permission_denied':'error',message:'Connection failed'};}
     }
     function metadata(provider,data,httpStatus) {
         const result={httpStatus};
@@ -70,5 +85,5 @@ const ThundyProviders = (() => {
         if(['malicious','suspicious','clean','whitelisted','no specific threat'].includes(verdict))result.providerVerdict=verdict;
         return result;
     }
-    return {registry,identify,enforce,test,metadata,rateLimit};
+    return {registry,identify,enabled,enforce,test,metadata,rateLimit,requiresTransferApproval};
 })();

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="{{ page.lang | default: 'en' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page.title | escape }} – Thundy AV</title>
+  <link rel="stylesheet" href="{{ '/site.css' | relative_url }}">
+</head>
+<body>
+  <header>
+    <nav aria-label="{% if page.lang == 'de' %}Projekt{% else %}Project{% endif %}">
+      <a href="{{ '/index.html' | relative_url }}">Thundy AV</a>
+      {% if page.lang == 'de' %}
+      <a href="{{ '/guide-de.html' | relative_url }}">Dokumentation</a>
+      <a href="{{ '/index_de.html' | relative_url }}">Download</a>
+      {% else %}
+      <a href="{{ '/guide-en.html' | relative_url }}">Documentation</a>
+      <a href="{{ '/index_en.html' | relative_url }}">Download</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main class="guide">
+    {{ content }}
+  </main>
+  <footer>
+    <a href="{{ '/privacy_policy.html' | relative_url }}">{% if page.lang == 'de' %}Datenschutz{% else %}Privacy{% endif %}</a>
+    <a href="{{ '/license.html' | relative_url }}">GNU GPL v3</a>
+    <a href="https://github.com/VaZuLeS/Thunderbird-Antivirus">GitHub</a>
+  </footer>
+</body>
+</html>

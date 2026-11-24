@@ -5,7 +5,7 @@
 **Add-on:** Thundy AV – Email Scanner for Thunderbird
 **Short name:** Thundy AV
 **Add-on ID:** thundy-av@bludau-it-services.de
-**Version:** 1.26.2 (Manifest V3, `strict_min_version` 140.0)
+**Version:** 1.26.3 (Manifest V3, `strict_min_version` 140.0)
 **License:** GNU GPL v3 (`GPL-3.0-only`)
 **Homepage:** https://vazules.github.io/Thunderbird-Antivirus/
 **Privacy policy URL:** https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html
@@ -35,14 +35,11 @@ it.**
   headers (sender, recipients, subject, Received), the text and HTML body, links and attachments —
   and scores it locally: mismatched sender domains, first contact with a sender, urgency or payment
   wording, risky attachment types, suspicious links.
-- **Opt-in scanning, in two steps.** Nothing is ever sent anywhere until you enable the global
-  checkbox *"Allow external analysis"* in the options. In addition, each sender needs an opt-in: the
-  banner above the message offers *"Scan this message only"* for a single scan and *"Scan this
-  sender permanently"* if that sender should be checked automatically from now on.
-- **Privacy tiers.** You choose how much may leave your computer:
-  *strict* — only SHA-256 hashes of attachments, and the manual upload / manual URL scan in the popup
-  are disabled; *balanced* — additionally the complete file of unknown attachments (automatic scan and
-  manual upload); *max* — additionally URLs found in the message (automatic scan and manual URL scan).
+- **Opt-in scanning.** External analysis requires global consent and the provider's host permission.
+  Choose all displayed messages, approved senders or on-demand scanning. The message banner can
+  authorize a single scan or save an approved sender.
+- **Privacy tiers.** *Strict* allows reputation and existing report lookups. *Balanced* also allows
+  individually approved file uploads. *Maximum* also allows individually approved full URL submissions.
 - **External analysis you control.** With your own API keys, Thundy AV can query
   [Hybrid Analysis](https://www.hybrid-analysis.com/) (file, hash and URL analysis in the Falcon
   Sandbox), VirusTotal (hash and IP checks), urlscan.io (link and phishing analysis), URLhaus
@@ -50,10 +47,9 @@ it.**
   Received headers). Host access to those providers is optional and is only requested when you save
   a key for that provider.
 - **Time-of-Click protection.** Links in the message can be checked at the moment you click them.
-- **Manual controls.** Whitelist and blacklist for domains and senders, a *"always scan manually"*
-  switch that blocks any automatic upload, an entry in the link context menu for a manual link
-  scan, a popup with the message header data and a one-click *"Clear cache"* button for the local
-  analysis database.
+- **Manual controls.** Use allowlists and blocklists for domains and senders, choose on-demand
+  scanning, or inspect the message and grant an individual submission in the popup. The local
+  analysis database can be cleared from the settings.
 
 ### What is transmitted, and when
 
@@ -61,10 +57,8 @@ Transmission happens **only** after you have enabled "Allow external analysis" *
 triggered. Depending on your privacy tier, the following can be sent to the providers named above:
 
 - SHA-256 hashes of attachments (Hybrid Analysis, VirusTotal — all tiers),
-- the complete attachment of unknown files (Hybrid Analysis, tier *balanced*/*max* only; via the
-  automatic scan or the manual upload in the popup),
-- URLs from the message (Hybrid Analysis in tier *max* — automatic scan or manual URL scan; urlscan.io
-  when configured, in all tiers),
+- complete attachments (Hybrid Analysis, tier *balanced* or *max*, with explicit approval in the popup),
+- complete URLs (Hybrid Analysis or urlscan.io, tier *max*, with explicit approval in the popup),
 - domains from the message (URLhaus when configured),
 - IP addresses from Received headers (AbuseIPDB/VirusTotal, only when configured).
 
@@ -73,9 +67,9 @@ show a notice telling you to switch to *balanced*/*max*. Transmitted links can c
 identifiers (e.g. newsletter tracking IDs, campaign or recipient parameters in the URL); they are
 transmitted only with consent and a triggered scan.
 
-The message body, the subject line, sender and recipient addresses and your API keys are **never**
-transmitted. There is no telemetry, no analytics and no server operated by the developer; the
-developer has no access to your data. Settings, consent flags and API keys are stored locally in
+The message body, subject and sender and recipient addresses are processed locally. Your API key is
+sent to the selected provider to authenticate its requests. There is no developer telemetry or
+analytics. Settings, consent flags and API keys are stored locally in
 Thunderbird (`browser.storage.local`, unencrypted); scan results are stored in a local IndexedDB
 database that you can empty at any time with *"Clear cache"*. Full details:
 [Privacy Policy](https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html).
@@ -97,15 +91,12 @@ erlauben.**
   ansehen — Kopfzeilen (Absender, Empfänger, Betreff, Received), Text- und HTML-Teil, Links und
   Anhänge — und bewertet sie lokal: abweichende Absender-Domains, Erstkontakt mit einem Absender,
   Dringlichkeits- und Zahlungswortwahl, riskante Anhangstypen, verdächtige Links.
-- **Opt-in-Scannen in zwei Stufen.** Es wird nichts gesendet, bevor Sie im Optionsdialog die
-  globale Checkbox „Externe Analyse erlauben“ aktiviert haben. Zusätzlich braucht jeder Absender
-  ein Opt-in: Der Banner oberhalb der Nachricht bietet „Nur diese Nachricht scannen“ für einen
-  einmaligen Scan und „Absender dauerhaft scannen“, wenn dieser Absender künftig automatisch
-  geprüft werden soll.
-- **Datenschutz-Stufen.** Sie entscheiden, wie viel Ihren Rechner verlassen darf: *strict* — nur
-  SHA-256-Hashes von Anhängen, manueller Upload und manueller URL-Scan im Popup sind deaktiviert;
-  *balanced* — zusätzlich die vollständige Datei unbekannter Anhänge (automatischer Scan und manueller
-  Upload); *max* — zusätzlich URLs aus der Nachricht (automatischer Scan und manueller URL-Scan).
+- **Externe Prüfung mit Einwilligung.** Der Dienst benötigt die globale Einwilligung und seine
+  Hostfreigabe. Der Scanmodus erfasst alle angezeigten Nachrichten, freigegebene Absender oder
+  Prüfungen auf Anforderung. Über den Banner lässt sich eine Nachricht oder ein Absender freigeben.
+- **Datenschutzstufen.** *Strikt* erlaubt Reputationsabfragen und den Abruf bereits vorhandener
+  Berichte. Ab *Ausgewogen* ist ein Datei-Upload mit Einzelfreigabe möglich. *Maximal* erlaubt
+  zusätzlich vollständige URLs mit Einzelfreigabe.
 - **Externe Analyse unter Ihrer Kontrolle.** Mit eigenen API-Schlüsseln kann Thundy AV
   [Hybrid Analysis](https://www.hybrid-analysis.com/) (Datei-, Hash- und URL-Analyse in der Falcon
   Sandbox), VirusTotal (Hash- und IP-Prüfungen), urlscan.io (Link- und Phishing-Analyse), URLhaus
@@ -113,10 +104,9 @@ erlauben.**
   Received-Headern) abfragen. Der Host-Zugriff auf diese Anbieter ist optional und wird erst
   angefragt, wenn Sie einen Schlüssel für den jeweiligen Anbieter speichern.
 - **Time-of-Click-Schutz.** Links in der Nachricht können im Moment des Klickens geprüft werden.
-- **Manuelle Kontrolle.** Whitelist und Blacklist für Domains und Absender, ein Schalter „Immer
-  manuell scannen", der jeden automatischen Upload verhindert, ein Eintrag im Link-Kontextmenü für
-  einen manuellen Link-Scan, ein Popup mit den Kopfzeilendaten der Nachricht und eine
-  Schaltfläche „Cache leeren“ für die lokale Analysedatenbank.
+- **Manuelle Kontrolle.** Es gibt Freigabe- und Sperrlisten für Domains und Absender, einen
+  Scanmodus auf Anforderung und das Popup für die Einzelfreigabe. „Cache leeren“ entfernt den
+  lokalen Analysecache.
 
 ### Was wann übertragen wird
 
@@ -125,10 +115,8 @@ ausgelöst haben. Abhängig von der Datenschutz-Stufe können an die oben genann
 werden:
 
 - SHA-256-Hashes von Anhängen (Hybrid Analysis, VirusTotal — alle Stufen),
-- der vollständige Anhang unbekannter Dateien (Hybrid Analysis, nur Stufe *balanced*/*max*; über den
-  automatischen Scan oder den manuellen Upload im Popup),
-- URLs aus der Nachricht (Hybrid Analysis in Stufe *max* — automatischer Scan oder manueller URL-Scan;
-  urlscan.io sofern konfiguriert, in allen Stufen),
+- vollständige Anhänge (Hybrid Analysis, ab *Ausgewogen*, mit Einzelfreigabe im Popup),
+- vollständige URLs (Hybrid Analysis oder urlscan.io, nur *Maximal*, mit Einzelfreigabe im Popup),
 - Domains aus der Nachricht (URLhaus sofern konfiguriert),
 - IP-Adressen aus Received-Headern (AbuseIPDB/VirusTotal, nur wenn konfiguriert).
 
@@ -137,9 +125,9 @@ zeigen einen Hinweis, auf *balanced*/*max* umzustellen. Übermittelte Links kön
 Kennungen enthalten (z. B. Newsletter-Tracking-IDs, Kampagnen- oder Empfänger-Parameter in der URL);
 sie werden nur mit Zustimmung und ausgelöstem Scan übermittelt.
 
-Nachrichtentext, Betreffzeile, Absender- und Empfängeradressen sowie Ihre API-Schlüssel werden
-**nie** übertragen. Es gibt keine Telemetrie, kein Analytics und keinen Server des Entwicklers; der
-Entwickler hat keinen Zugriff auf Ihre Daten. Einstellungen, Zustimmungen und API-Schlüssel liegen
+Nachrichtentext, Betreff und Empfänger- und Absenderadressen werden lokal verarbeitet.
+API-Schlüssel authentifizieren Anfragen beim ausgewählten Dienst. Der Entwickler erhält keine
+Telemetrie oder Analysedaten. Einstellungen, Zustimmungen und API-Schlüssel liegen
 lokal in Thunderbird (`browser.storage.local`, unverschlüsselt); Scan-Ergebnisse liegen in einer
 lokalen IndexedDB-Datenbank, die Sie jederzeit über „Cache leeren“ entleeren können. Vollständige
 Angaben: [Datenschutzerklärung](https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html).

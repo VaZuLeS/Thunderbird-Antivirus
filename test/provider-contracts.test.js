@@ -26,12 +26,12 @@ test('provider tests distinguish refusal, accepted 404, exhausted quota, malform
 });
 test('regular requests require consent and tier at send time; test mode cannot send arbitrary message data',async()=>{
  const f=fixture();
- await assert.rejects(f.c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/',{method:'POST',body:'{}'}),/EXTERNAL_ANALYSIS_DISABLED/);
+ await assert.rejects(f.c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/',{method:'POST',body:'{}',authorizeTransfer:()=>{}}),/EXTERNAL_ANALYSIS_DISABLED/);
  f.settings.externalAnalysisConsent=true;
- await assert.rejects(f.c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/',{method:'POST',body:'{}'}),/TIER_BLOCKS_REQUEST/);
+ await assert.rejects(f.c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/',{method:'POST',body:'{}',authorizeTransfer:()=>{}}),/TIER_BLOCKS_REQUEST/);
  await assert.rejects(f.c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/',{method:'POST',body:'private URL',keyTest:true}),/KEY_TEST_INVALID/);
  await assert.rejects(f.c.gateway.fetchWithTimeout('https://evil.example/',{keyTest:true}),/PROVIDER_UNKNOWN/);
- f.settings.privacyTier='max';await f.c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/',{method:'POST',body:'{}'});assert.equal(f.calls.length,1);
+ f.settings.privacyTier='max';await f.c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/',{method:'POST',body:'{}',authorizeTransfer:()=>{}});assert.equal(f.calls.length,1);
 });
 test('queued requests recheck revoked consent and normalized fields omit arbitrary provider payload',async()=>{
  const f=fixture();f.settings.externalAnalysisConsent=true;
@@ -40,6 +40,38 @@ test('queued requests recheck revoked consent and normalized fields omit arbitra
  const data={data:{attributes:{last_analysis_stats:{malicious:2,suspicious:1,undetected:7}}},key:'do-not-export',password:'do-not-export'};
  const normalized=f.c.registry.metadata('virustotal',data,200);
  assert.equal(normalized.maliciousCount,2);assert.equal(normalized.totalCount,10);assert.ok(!JSON.stringify(normalized).includes('do-not-export'));
+});
+
+test('paused providers keep credentials and block scans, key tests and queued requests', async () => {
+ const f = fixture();
+ const fileUrl = 'https://www.virustotal.com/api/v3/files/abc';
+ const ipUrl = 'https://www.virustotal.com/api/v3/ip_addresses/1.1.1.1';
+ f.settings.externalAnalysisConsent = true;
+ f.settings.disabledProviders = ['virustotal'];
+ f.c.gateway.setApikey('virustotal', 'saved-test-key');
+ await assert.rejects(f.c.gateway.fetchWithTimeout(fileUrl), /PROVIDER_DISABLED/);
+ assert.equal((await f.c.registry.test('virustotal', 'saved-test-key')).status, 'disabled');
+ assert.equal(f.calls.length, 0);
+ await f.c.gateway.fetchWithTimeout(ipUrl, {headers: {'x-apikey': 'saved-ip-key'}});
+ assert.equal(f.calls[0].options.headers['x-apikey'], 'saved-ip-key');
+ assert.equal((await f.c.registry.test('urlhaus', 'other-test-key')).status, 'valid');
+
+ f.settings.disabledProviders = [];
+ f.settings.ipReputationEnabled = false;
+ await assert.rejects(f.c.gateway.fetchWithTimeout(ipUrl), /PROVIDER_DISABLED/);
+ assert.equal((await f.c.registry.test('virustotal', 'saved-test-key', null, true)).status, 'disabled');
+ assert.equal((await f.c.registry.test('abuseipdb', 'other-test-key')).status, 'disabled');
+ await f.c.gateway.fetchWithTimeout(fileUrl);
+ assert.equal(f.calls.at(-1).options.headers['x-apikey'], 'saved-test-key');
+ assert.equal((await f.c.registry.test('virustotal', 'saved-test-key')).status, 'valid');
+ assert.equal(f.calls.length, 4);
+
+ let checks = 0;
+ f.c.gateway.beforeRequest = () => {
+   if (++checks === 2) f.settings.disabledProviders = ['virustotal'];
+ };
+ await assert.rejects(f.c.gateway.fetchWithTimeout(fileUrl), /PROVIDER_DISABLED/);
+ assert.equal(f.calls.length, 4);
 });
 
 test('response sanitization excludes authentication fields and echoed keys before storage or rendering',()=>{
@@ -75,14 +107,32 @@ test('resource validation rejects foreign report bodies before any verdict is em
 test('urlscan submission errors have identical typed meanings in the shared transport model',async()=>{
  for(const [body,expected] of [[{message:'DNS Error - Could not resolve domain'},'domain_unresolvable'],[{code:'validationerror',message:'CANARY_PRIVATE'},'invalid_request'],[{message:'Blocked CANARY_PRIVATE'},'submission_rejected'],[{errors:{some:'invalid'}},'submission_rejected']]){
   const f=fixture();f.settings.externalAnalysisConsent=true;f.settings.privacyTier='max';f.setResponse(400,body);const events=[];
-  await f.c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/',{method:'POST',analysisContext:{event:e=>events.push(e)}});
+  await f.c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/',{method:'POST',authorizeTransfer:()=>{},analysisContext:{event:e=>events.push(e)}});
   const event=events.at(-1);assert.equal(event.errorCode,expected);assert.equal(event.state,'failed');assert.equal(event.verdict,'unknown');assert.ok(!JSON.stringify(event).includes('CANARY_PRIVATE'));
  }
 });
 
 const scanAddress='https://urlscan.io/api/v1/scan/';
-const scanOptions={method:'POST',body:JSON.stringify({url:'https://synthetic.invalid/path?private=CANARY_RESOURCE',visibility:'unlisted'})};
+const scanOptions={method:'POST',authorizeTransfer:()=>{},body:JSON.stringify({url:'https://synthetic.invalid/path?private=CANARY_RESOURCE',visibility:'unlisted'})};
 function quotaFixture(){const f=fixture();f.settings.externalAnalysisConsent=true;f.settings.privacyTier='max';return f;}
+
+test('whole-object submissions require an approval at the point of transmission', async () => {
+ const f = quotaFixture();
+ for (const url of [scanAddress,'https://hybrid-analysis.com/api/v2/quick-scan/file',
+     'https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis']) {
+  await assert.rejects(f.c.gateway.fetchWithTimeout(url,{method:'POST'}),/TRANSFER_APPROVAL_REQUIRED/);
+ }
+ assert.equal(f.calls.length,0);
+ let checked = 0;
+ await f.c.gateway.fetchWithTimeout(scanAddress,{...scanOptions,authorizeTransfer:(address,options)=>{
+  checked++;
+  assert.equal(address,scanAddress);
+  assert.equal(options.body,scanOptions.body);
+  assert.equal(options.authorizeTransfer,undefined);
+ }});
+ assert.equal(checked,1);
+ assert.equal(f.calls.length,1);
+});
 
 test('urlscan submission cooldown leaves result retrieval, search and other services available',async()=>{
  const f=quotaFixture();f.setResponse(429,{},false,{'X-Rate-Limit-Scope':'user','X-Rate-Limit-Window':'day','X-Rate-Limit-Reset-After':'7200'});

@@ -35,6 +35,7 @@ function escapeHTML(str) {
 }
 
 let apikey_hybridanalysis;
+let hybridAnalysisEnabled = true;
 
 // Global consent for external analysis. Declared outside the startup IIFE so it
 // is always defined, kept in sync while the popup is open.
@@ -63,6 +64,7 @@ if (typeof apiGateway !== 'undefined') apiGateway.beforeRequest = async () => {
 
 
 (async () => {
+    if (typeof ThundyI18n !== 'undefined' && ThundyI18n.ready) await ThundyI18n.ready;
 let result = await browser.storage.local.get('apikey');
 apikey_hybridanalysis = result.apikey;
 
@@ -84,13 +86,19 @@ if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages
 
 // Ohne Zustimmung zu externer Analyse wird nichts übertragen - das muss im
 // Popup sichtbar sein, bevor der Nutzer Uploads auslöst.
-const settings = await browser.storage.local.get(['externalAnalysisConsent']);
+const settings = await browser.storage.local.get(['externalAnalysisConsent','disabledProviders']);
+hybridAnalysisEnabled = !(Array.isArray(settings?.disabledProviders) && settings.disabledProviders.includes('hybridanalysis'));
 externalAnalysisConsent = settings && settings.externalAnalysisConsent === true;
 try {
     browser.storage.onChanged.addListener((changes, area) => {
         if (area === 'local' && changes.apikey) {
             apikey_hybridanalysis = changes.apikey.newValue;
             cancelHybridReportWork(); hybrid_report_cache.clear();
+        }
+        if (area === 'local' && changes.disabledProviders) {
+            const paused = changes.disabledProviders.newValue;
+            hybridAnalysisEnabled = !(Array.isArray(paused) && paused.includes('hybridanalysis'));
+            if (!hybridAnalysisEnabled) cancelHybridReportWork();
         }
         if (area === 'local' && changes.externalAnalysisConsent) {
             externalAnalysisConsent = changes.externalAnalysisConsent.newValue === true;
@@ -313,7 +321,7 @@ try {
                             // FA-3: a finished protocol was already persisted; show it
                             // without a new provider request (the data is local).
                             fetchTasks.push(buildStoredAttachmentReportTask(att, message));
-                        } else if (!record?.scanJobMeta && externalAnalysisConsent && apikey_hybridanalysis) {
+                        } else if (!record?.scanJobMeta && externalAnalysisConsent && hybridAnalysisEnabled && apikey_hybridanalysis) {
                             fetchTasks.push((frag) =>
                                 get_hybrid_report_by_sha256({
                                     hybrid_sha: hash256,
@@ -334,7 +342,7 @@ try {
                 }
 
                 if (hasLinks) {
-                    if (!record?.scanJobMeta && externalAnalysisConsent && apikey_hybridanalysis) {
+                    if (!record?.scanJobMeta && externalAnalysisConsent && hybridAnalysisEnabled && apikey_hybridanalysis) {
                         processRecordLinks(record.links, message.headerMessageId, liveContainer, fetchTasks);
                     } else {
                         for (const linkObj of record.links) {
@@ -972,6 +980,7 @@ function hasExternalAnalysisConsent() {
 const HYBRID_QUICK_SCAN_ID = /^[A-Za-z0-9_-]{1,128}$/;
 
 async function fetch_hybrid_report(hybrid_sha, resource = null, quickScanId = null) {
+    if (!hybridAnalysisEnabled) throw new Error(uiText('analysisReason_provider_disabled', 'Provider disabled'));
     const rawId = typeof quickScanId === 'string' ? quickScanId : '';
     const qsId = HYBRID_QUICK_SCAN_ID.test(rawId) && !['MANUAL_CHECK', 'PENDING_UPLOAD', 'N/A'].includes(rawId) ? rawId : null;
     const cacheKey = qsId ? JSON.stringify([hybrid_sha, qsId]) : hybrid_sha;
@@ -1045,6 +1054,10 @@ function reportControl(root, id) {
 function reportActionAvailable(button, root) {
     return !hybridReportDisposed && !button.disabled && (root === document || root.isConnected !== false);
 }
+const transferText = key => uiText(key,key);
+function confirmPopupTransfer(request) {
+    return ThundyAnalysis.confirmTransfer(request,transferText);
+}
 
 function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, controlId = hybrid_sha, kind = 'attachment' }, controlsRoot = document) {
     let rescanBtn = reportControl(controlsRoot, `btn-rescan-${controlId}`);
@@ -1061,13 +1074,11 @@ function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, he
             if (!statusEl) return;
             btn.disabled = true;
             btn.setAttribute('aria-busy', 'true');
-            btn.textContent = uiText("ui_041", "Sende Rescan...");
-            statusEl.textContent = kind === 'link' ? uiText('ui_058','URL is being submitted...') : uiText("ui_042", "Datei wird für Rescan hochgeladen...");
+            statusEl.textContent = '';
 
-            browser.runtime.sendMessage(kind === 'link' ? {
-                action: 'scanUrl', messageId, url: attachmentName, headerMessageId
+            confirmPopupTransfer(kind === 'link' ? {
+                messageId, url: attachmentName, headerMessageId
             } : {
-                action: "uploadAttachment",
                 messageId: messageId,
                 partName: partName,
                 attachmentName: attachmentName,
@@ -1075,7 +1086,11 @@ function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, he
                 headerMessageId: headerMessageId
             }).then(res => {
                 if (hybridReportDisposed) return;
-                if (res && res.status === 'success') {
+                if (res?.status === 'cancelled') {
+                    statusEl.textContent = '';
+                    btn.disabled = false;
+                    btn.removeAttribute('aria-busy');
+                } else if (res && res.status === 'success') {
                     statusEl.textContent = uiText("ui_043", "Rescan erfolgreich initiiert. Lade Seite neu...");
                     btn.removeAttribute('aria-busy');
                     btn.className = "btn-success mt-2";
@@ -1085,7 +1100,7 @@ function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, he
                         window.location.reload();
                     }, 2000);
                 } else {
-                    statusEl.textContent = uiText("ui_045", "Fehler beim Rescan: ") + (res ? res.message : uiText("ui_046", "Unbekannter Fehler"));
+                    statusEl.textContent = ThundyAnalysis.transferError(res,transferText);
                     btn.disabled = res?.uploadSent === true;
                     btn.removeAttribute('aria-busy');
                     btn.textContent = res?.uploadSent ? uiText('uploadSentLabel','Upload sent') : uiText("ui_047", "Erneut versuchen");
@@ -1379,16 +1394,18 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId, urlscan = null) {
     let statusEl = document.getElementById(`upload-status-${urlId}`);
     btn.disabled = true;
     btn.setAttribute('aria-busy', 'true');
-    btn.innerText = uiText("ui_057", "Sende URL...");
-    statusEl.innerText = uiText("ui_058", "URL wird an Hybrid Analysis übertragen...");
+    statusEl.textContent = '';
 
-    browser.runtime.sendMessage({
-        action: "scanUrl",
+    confirmPopupTransfer({
         messageId: popupMessageId,
         url: url,
         headerMessageId: headerMessageId
     }).then(response => {
-        if (response && response.status === 'success') {
+        if (response?.status === 'cancelled') {
+            statusEl.textContent = '';
+            btn.disabled = false;
+            btn.removeAttribute('aria-busy');
+        } else if (response && response.status === 'success') {
             statusEl.innerText = uiText("ui_059", "Scan erfolgreich beauftragt! Lade Analyseergebnisse...");
             btn.removeAttribute('aria-busy');
             btn.className = "btn-success mt-2";
@@ -1408,8 +1425,8 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId, urlscan = null) {
                 });
             }, 3000);
         } else {
-            statusEl.innerText = uiText("ui_060", "Fehler beim Upload: ") + (response ? response.message : uiText("ui_046", "Unbekannter Fehler"));
-            btn.disabled = false;
+            statusEl.innerText = ThundyAnalysis.transferError(response,transferText);
+            btn.disabled = response?.uploadSent === true;
             btn.removeAttribute('aria-busy');
             btn.innerText = uiText("ui_047", "Erneut versuchen");
         }
@@ -1505,18 +1522,20 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
         let statusEl = document.getElementById(statusId);
         btn.disabled = true;
         btn.setAttribute('aria-busy', 'true');
-        btn.innerText = uiText("ui_065", "Lade hoch...");
-        if (statusEl) statusEl.textContent = uiText("ui_066", "Datei wird an Hybrid Analysis übertragen...");
+        if (statusEl) statusEl.textContent = '';
 
-        browser.runtime.sendMessage({
-            action: "uploadAttachment",
+        confirmPopupTransfer({
             messageId: messageId,
             partName: partName,
             attachmentName: attachmentName,
             hash: hash,
             headerMessageId: headerMessageId
         }).then(response => {
-            if (response && response.status === 'success') {
+            if (response?.status === 'cancelled') {
+                if (statusEl) statusEl.textContent = '';
+                btn.disabled = false;
+                btn.removeAttribute('aria-busy');
+            } else if (response && response.status === 'success') {
                 if (statusEl) statusEl.innerText = uiText("ui_067", "Upload erfolgreich! Lade Analyseergebnisse...");
                 btn.removeAttribute('aria-busy');
                 btn.className = "btn-success mt-2";
@@ -1538,7 +1557,7 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
                     });
                 }, 3000);
             } else {
-                if (statusEl) statusEl.innerText = uiText("ui_060", "Fehler beim Upload: ") + (response ? response.message : uiText("ui_046", "Unbekannter Fehler"));
+                if (statusEl) statusEl.innerText = ThundyAnalysis.transferError(response,transferText);
                 btn.disabled = response?.uploadSent === true;
                 btn.removeAttribute('aria-busy');
                 btn.innerText = response?.uploadSent ? uiText('uploadSentLabel','Upload sent') : uiText("ui_047", "Erneut versuchen");

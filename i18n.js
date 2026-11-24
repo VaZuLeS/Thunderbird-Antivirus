@@ -1,6 +1,136 @@
 // Bundled English fallback: no remote translation loading.
 const ThundyI18n = (() => {
+    const languages = Object.freeze({"bg":"Български","cs":"Čeština","da":"Dansk","de":"Deutsch","el":"Ελληνικά","en":"English","es":"Español","et":"Eesti","fi":"Suomi","fr":"Français","ga":"Gaeilge","hr":"Hrvatski","hu":"Magyar","it":"Italiano","lt":"Lietuvių","lv":"Latviešu","mt":"Malti","nl":"Nederlands","pl":"Polski","pt":"Português","ro":"Română","sk":"Slovenčina","sl":"Slovenščina","sv":"Svenska"});
     const fallback = {
+  "protectionSeverity_low": {
+    "message": "Low risk"
+  },
+  "protectionSeverity_unknown": {
+    "message": "Risk unknown"
+  },
+  "protectionSeverity_caution": {
+    "message": "Caution"
+  },
+  "protectionSeverity_high": {
+    "message": "High risk"
+  },
+  "protectionSeverity_critical": {
+    "message": "Critical risk"
+  },
+  "linkScanSummary": {
+    "message": "URL scan results"
+  },
+  "linkScansPending": {
+    "message": "URL scans are still running."
+  },
+  "linkNoScanResults": {
+    "message": "No URL scan results are available."
+  },
+  "protectionCategoryUnavailable": {
+    "message": "The provider gave no threat category."
+  },
+  "linkWaitForResults": {
+    "message": "Wait for pending URL scans"
+  },
+  "linkAutoOpenBelow": {
+    "message": "Open directly below this score"
+  },
+  "linkOpeningOptionsHelp": {
+    "message": "Leave the score empty to always show the link dialog."
+  },
+  "linkAuditRetentionTitle": {
+    "message": "Link audit retention"
+  },
+  "linkAuditLimit": {
+    "message": "Maximum entries (empty = unlimited)"
+  },
+  "linkAuditDays": {
+    "message": "Days to keep (empty = unlimited)"
+  },
+  "protectionManagedColors": {
+    "message": "Severity colors are set by your organization."
+  },
+  "linkOpenedAutomatically": {
+    "message": "Opened automatically"
+  },
+  "providerSwitchHelp": {
+    "message": "Switch providers on or off and save your settings. Saved keys and findings are kept when you pause a provider."
+  },
+  "providerKeyLink": {
+    "message": "Get an API key"
+  },
+  "providerDocsLink": {
+    "message": "API documentation"
+  },
+  "providerApiKeyLabel": {
+    "message": "API key"
+  },
+  "providerUse": {
+    "message": "Use this provider"
+  },
+  "providerVirusUse": {
+    "message": "Use VirusTotal for file checks"
+  },
+  "providerHybridStrength": {
+    "message": "Finds existing reports for known file hashes. With authorized uploads, Falcon Sandbox can analyze what a file does when it runs."
+  },
+  "providerHybridSetup": {
+    "message": "Create an account, then open Profile → API Key to create a key."
+  },
+  "providerUrlhausStrength": {
+    "message": "Checks link hosts against reported sources of malware."
+  },
+  "providerUrlhausSetup": {
+    "message": "Sign in to abuse.ch and get an Auth-Key from your account."
+  },
+  "providerUrlscanStrength": {
+    "message": "Examines full URLs and redirects for signs of phishing. Thundy uses it at the Maximum privacy tier."
+  },
+  "providerUrlscanSetup": {
+    "message": "Create an account and choose Settings & API → New API key."
+  },
+  "providerVirusTotalStrength": {
+    "message": "Looks up a file’s SHA-256 hash and shows findings from multiple scanning engines."
+  },
+  "providerVirusTotalSetup": {
+    "message": "Sign in to VirusTotal and copy the key from your profile’s API Key page."
+  },
+  "providerIpTitle": {
+    "message": "IP reputation"
+  },
+  "providerIpUse": {
+    "message": "Check IP reputation"
+  },
+  "providerIpChoose": {
+    "message": "IP reputation provider"
+  },
+  "providerIpKeyNotice": {
+    "message": "Enter a key from the selected provider. Pausing IP checks keeps your provider selection and key."
+  },
+  "providerIpGuide": {
+    "message": "Choose and set up an IP reputation provider"
+  },
+  "providerVirusIpStrength": {
+    "message": "Checks public IPs against VirusTotal’s detection engines and community ratings."
+  },
+  "providerAbuseStrength": {
+    "message": "Uses community reports to identify public IPs associated with spam, scanning or other abuse."
+  },
+  "providerAbuseSetup": {
+    "message": "Create an AbuseIPDB account and generate or copy a key from the API tab in the dashboard."
+  },
+  "providerIpVirusKey": {
+    "message": "VirusTotal API key for IP reputation"
+  },
+  "providerIpAbuseKey": {
+    "message": "AbuseIPDB API key"
+  },
+  "providerTestDisabled": {
+    "message": "Enable the provider and save before testing the key."
+  },
+  "analysisReason_provider_disabled": {
+    "message": "This provider is paused in settings."
+  },
   "extensionName": {
     "message": "Thundy AV – Email Scanner for Thunderbird",
     "description": "Name of the add-on as shown in the add-on manager and on the store listing."
@@ -770,7 +900,7 @@ const ThundyI18n = (() => {
     "message": "Prevents automatic external scans. Explicit manual actions still require consent and the appropriate privacy tier."
   },
   "ui_162": {
-    "message": "Scan email links when opening an authorized message"
+    "message": "Refresh pending link reports automatically"
   },
   "ui_163": {
     "message": "Link checks require consent, a scan authorization and the appropriate privacy tier."
@@ -779,7 +909,7 @@ const ThundyI18n = (() => {
     "message": "Check links before opening them"
   },
   "ui_165": {
-    "message": "Pauses navigation to show the result. Unchecked links and errors are clearly identified. Full URL analysis requires the Maximum tier."
+    "message": "Pauses navigation to show the result. Unchecked links and errors are clearly identified. Full URL analysis requires the Maximum tier. Full links and attachments require individual confirmation."
   },
   "ui_166": {
     "message": "Remember to save your settings."
@@ -845,7 +975,7 @@ const ThundyI18n = (() => {
     "message": "Only list recipient mail servers you administer or explicitly trust. Unconfigured header reports remain unverified."
   },
   "consentHelp": {
-    "message": "Without consent, nothing is sent externally. After consent, only explicitly authorized messages or senders are scanned. Hashes, domains and public IPs may be sent in Strict; Balanced also permits unknown file uploads; Maximum also permits complete URL uploads. Turn this option off to stop new transfers and cancel pending requests. Previously transmitted data cannot be recalled."
+    "message": "Without consent, nothing is sent externally. After consent, only explicitly authorized messages or senders are scanned. Hashes, domains and public IPs may be sent in Strict; Balanced also permits unknown file uploads; Maximum also permits complete URL uploads. Turn this option off to stop new transfers and cancel pending requests. Previously transmitted data cannot be recalled. Full links and attachments require individual confirmation."
   },
   "visualImpersonation": {
     "message": "Visual detection: the page impersonates $BRANDS$ (suspected phishing).",
@@ -1178,7 +1308,7 @@ const ThundyI18n = (() => {
     "message": "Wizard language"
   },
   "wizardLanguageNote": {
-    "message": "The add-on follows the Thunderbird language. This selection changes only this wizard."
+    "message": "This selection applies only to the wizard. The add-on language can be changed in Settings."
   },
   "wizardWelcome": {
     "message": "Welcome"
@@ -2334,7 +2464,7 @@ const ThundyI18n = (() => {
     "message": "Manual only"
   },
   "scanModeHelp": {
-    "message": "All opened messages removes individual sender approval. Configured services may receive hashes and, at Maximum with automatic link analysis, full URLs. Consent and provider permissions are still required. Unopened messages are not scanned."
+    "message": "Automatic checks send only hashes, domains and public IP addresses. Full links and attachments require individual confirmation. Unopened messages stay local."
   },
   "assessmentCompletion": {
     "message": "Processing status"
@@ -3373,12 +3503,185 @@ const ThundyI18n = (() => {
   },
   "reportingOldestPending": {
     "message": "Oldest pending report"
+  },
+  "addonLanguage": {
+    "message": "Add-on language"
+  },
+  "addonLanguageSystem": {
+    "message": "Follow Thunderbird language"
+  },
+  "addonLanguageSaved": {
+    "message": "Language saved. Reopen Thundy views to use it there."
+  },
+  "addonLanguageFailed": {
+    "message": "The language could not be saved."
+  },
+  "profilesOpenSource": {
+    "message": "Open source"
+  },
+  "transferReview": {
+    "message": "Review external submission"
+  },
+  "transferSend": {
+    "message": "Send to provider"
+  },
+  "transferVisibility": {
+    "message": "Visibility: Unlisted. Anyone with the report link can open it."
+  },
+  "transferAccepted": {
+    "message": "The provider accepted the submission. The report may still be pending."
+  },
+  "transferFailed": {
+    "message": "The external submission could not be completed."
+  },
+  "transferUsePopup": {
+    "message": "Open the Thundy popup to review and approve a specific link or attachment."
+  },
+  "providerGrantAccess": {
+    "message": "Grant access to this provider"
+  },
+  "sourceSessionOnly": {
+    "message": "The source archive is full. The current source view is available for this session only."
+  },
+  "analysisReason_transfer_approval": {
+    "message": "Full links and attachments require individual confirmation."
+  },
+  "analysisCompactDetails": {
+    "message": "Inspection details"
+  },
+  "riskScoreFormula": {
+    "message": "The local score adds points for the rules below and caps the sum at 100. Provider results are assessed separately."
+  },
+  "riskScoreNoPoints": {
+    "message": "No local rules added points."
+  },
+  "riskScoreTotal": {
+    "message": "Local calculation"
+  },
+  "riskLinkBrandRule": {
+    "message": "At least one link domain resembles a known brand. This adds points once per assessment."
+  },
+  "reportingConsentDetections": {
+    "message": "Reports can include malware names, categories, vendor signatures and brands identified in phishing reports."
+  },
+  "detectionKind_family": {
+    "message": "Malware family"
+  },
+  "detectionKind_category": {
+    "message": "Category"
+  },
+  "detectionKind_brand": {
+    "message": "Impersonated brand"
+  },
+  "detectionKind_signature": {
+    "message": "Vendor detection"
+  },
+  "detectionCategory_fraudulent_shop": {
+    "message": "Fraudulent shop"
+  },
+  "detectionCategory_phishing_shop": {
+    "message": "Phishing shop"
+  },
+  "detectionCategory_malware": {
+    "message": "Malware"
+  },
+  "detectionCategory_virus": {
+    "message": "Virus"
+  },
+  "detectionCategory_trojan": {
+    "message": "Trojan"
+  },
+  "detectionCategory_ransomware": {
+    "message": "Ransomware"
+  },
+  "detectionCategory_worm": {
+    "message": "Worm"
+  },
+  "detectionCategory_spyware": {
+    "message": "Spyware"
+  },
+  "detectionCategory_adware": {
+    "message": "Adware"
+  },
+  "detectionCategory_backdoor": {
+    "message": "Backdoor"
+  },
+  "detectionCategory_downloader": {
+    "message": "Downloader"
+  },
+  "detectionCategory_dropper": {
+    "message": "Dropper"
+  },
+  "detectionCategory_infostealer": {
+    "message": "Infostealer"
+  },
+  "detectionCategory_rootkit": {
+    "message": "Rootkit"
+  },
+  "detectionCategory_phishing": {
+    "message": "Phishing"
+  },
+  "detectionCategory_scam": {
+    "message": "Scam"
+  },
+  "analysisDetectionGrouping": {
+    "message": "Group detections"
   }
 };
+    // End generated catalog data.
+    const preferenceKey = 'thundyLocale';
+    const listeners = new Set();
+    const catalogs = new Map([['en', fallback]]);
+    let preference = 'system';
+    let selectedCatalog = null;
+    let revision = 0;
+
+    function nativeLocale() {
+        try { return browser.i18n.getUILanguage() || 'en'; } catch (_) { return 'en'; }
+    }
+    function language() {
+        const code = nativeLocale().toLowerCase().split(/[-_]/)[0];
+        return selectedCatalog ? preference : Object.hasOwn(languages, code) ? code : 'en';
+    }
+    async function loadCatalog(code) {
+        if (!Object.hasOwn(languages, code)) throw new Error('LOCALE_INVALID');
+        if (catalogs.has(code)) return catalogs.get(code);
+        const response = await fetch(browser.runtime.getURL(`_locales/${code}/messages.json`));
+        if (!response.ok) throw new Error('LOCALE_UNAVAILABLE');
+        const catalog = await response.json();
+        catalogs.set(code, catalog);
+        return catalog;
+    }
+    async function applyPreference(value) {
+        const next = Object.hasOwn(languages, value) ? value : 'system';
+        const request = ++revision;
+        const catalog = next === 'system' ? null : await loadCatalog(next);
+        if (request !== revision || preference === next) return;
+        preference = next;
+        selectedCatalog = catalog;
+        for (const listener of listeners) listener();
+    }
+    async function start() {
+        if (typeof browser === 'undefined' || !browser.storage?.local?.get) return;
+        let pending;
+        browser.storage.onChanged?.addListener?.((changes, area) => {
+            if (area === 'local' && changes[preferenceKey]) pending = applyPreference(changes[preferenceKey].newValue).catch(() => {});
+        });
+        const request = revision;
+        try {
+            const stored = await browser.storage.local.get(preferenceKey);
+            if (request === revision && stored?.[preferenceKey]) await applyPreference(stored[preferenceKey]);
+            await pending;
+        } catch (_) {}
+    }
+    const ready = start();
+
     function get(key, params = []) {
         const values = Array.isArray(params) ? params.map(String) : [String(params)];
-        try { const text = browser.i18n.getMessage(key, values); if (text) return text; } catch (e) {}
-        const item = fallback[key];
+        if (!selectedCatalog) {
+            try { const text = browser.i18n.getMessage(key, values); if (text) return text; } catch (_) {}
+        }
+        const item = selectedCatalog?.[key] || fallback[key];
         if (!item) return key;
         return item.message.replace(/\$([A-Z0-9_]+)\$/g, (all, name) => {
             const placeholder = item.placeholders && item.placeholders[name.toLowerCase()];
@@ -3387,19 +3690,51 @@ const ThundyI18n = (() => {
         });
     }
     function initialize(root = document) {
-        let language = 'en';
-        try { language = browser.i18n.getUILanguage() || 'en'; } catch (e) {}
-        language = language.toLowerCase().split('-')[0];
-        if (!['en', 'de', 'fr', 'es', 'it', 'pl'].includes(language)) language = 'en';
-        if (root.documentElement) root.documentElement.lang = language;
+        if (root.documentElement) root.documentElement.lang = language();
         for (const el of root.querySelectorAll('[data-i18n]')) el.textContent = get(el.dataset.i18n);
         for (const attr of ['title', 'placeholder', 'aria-label']) {
             for (const el of root.querySelectorAll('[data-i18n-' + attr + ']')) el.setAttribute(attr, get(el.getAttribute('data-i18n-' + attr)));
         }
     }
-    if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', () => initialize());
+    function addLanguageOptions(select) {
+        for (const [code, label] of Object.entries(languages)) {
+            const option = select.ownerDocument.createElement('option');
+            option.value = code;
+            option.lang = code;
+            option.textContent = label;
+            select.append(option);
+        }
+    }
+    async function setPreference(value) {
+        if (value !== 'system') await loadCatalog(value);
+        await browser.storage.local.set({[preferenceKey]: value});
+        await applyPreference(value);
+    }
+    if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', async () => {
+        await ready;
+        initialize();
+        const picker = document.getElementById('addonLanguage');
+        if (!picker) return;
+        const status = document.getElementById('addonLanguageStatus');
+        addLanguageOptions(picker);
+        picker.value = preference;
+        picker.disabled = false;
+        picker.addEventListener('change', async () => {
+            picker.disabled = true;
+            try {
+                await setPreference(picker.value);
+                status.textContent = get('addonLanguageSaved');
+            } catch (_) {
+                picker.value = preference;
+                status.textContent = get('addonLanguageFailed');
+            } finally {
+                picker.disabled = false;
+                picker.focus();
+            }
+        });
+    });
     function locale() {
-        try { return browser.i18n.getUILanguage() || 'en'; } catch (e) { return 'en'; }
+        return selectedCatalog ? (preference === 'pt' ? 'pt-PT' : preference) : nativeLocale();
     }
     function number(value) {
         return typeof value === 'number' ? new Intl.NumberFormat(locale()).format(value) : value;
@@ -3408,5 +3743,6 @@ const ThundyI18n = (() => {
         const parsed = new Date(value);
         return Number.isFinite(parsed.getTime()) ? new Intl.DateTimeFormat(locale(), { dateStyle: 'medium', timeStyle: 'short' }).format(parsed) : value;
     }
-    return { get, initialize, number, date };
+    return { get, initialize, number, date, language, addLanguageOptions, loadCatalog, ready,
+        onChange: listener => listeners.add(listener) };
 })();

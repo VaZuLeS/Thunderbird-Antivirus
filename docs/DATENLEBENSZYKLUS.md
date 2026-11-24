@@ -1,13 +1,15 @@
 # Datenlebenszyklus, Migration und Wiederherstellung
 
-Stand: Kandidat 1.24.3, 2. November 2026. Keine automatische Enterpriseübertragung. Technischer Befund, keine Zusage einer unveränderlichen Archivierung.
+Das Inventar beschreibt den aktuellen Entwicklungsstand. Die älteren, unten benannten Migrationstests gelten für die jeweils geprüften Versionen.
 
 | Daten | Speicher / Grenze | Bereinigung / Erhalt |
 | --- | --- | --- |
 | Einstellungen, Einwilligung, Absender-/Authserverlisten, Darstellung | browser.storage.local | explizite Änderungen; Upgrade/Neustart erteilen keine Einwilligung |
 | Providerkeys | browser.storage.local, nicht zusätzlich verschlüsselt | bei Nutzeränderung; Betriebssystem-/Profilzugriff schützen |
 | Nachrichten-/Analyseergebnisse und gespeicherte fertige Berichte | IndexedDB `thunderbird_av`, Version 3, Store hybridanalysis | beim Datenbanköffnen: 30 Tage, max. 1.000 Nachrichten; neue Berichte nur für passende Hash-/Submissionidentität |
-| Linkentscheidungen und Entscheidungssnapshots | browser.storage.local `linkAuditLog`, separate Profilkennung | Audit-Lese-/Schreibzugriff: 30 Tage, 2.000 Datensätze, 2 MiB; explizite bestätigte Löschung separat vom Cache |
+| Quellenansichten | pro Nachricht bis zu 64 Momentaufnahmen oder 1 MiB im Quellenarchiv | bei erreichter Grenze bleiben neue Quellenansichten in der laufenden Sitzung; die bisherige Historie bleibt erhalten |
+| Linkentscheidungen und Entscheidungssnapshots | `browser.storage.local` im Standardbetrieb. Bei eigener Aufbewahrung IndexedDB `thundy-link-audit` mit separater Profilkennung | Standard 30 Tage, 2.000 Datensätze und 2 MiB. Eigene Frist und Höchstzahl sind getrennt einstellbar oder unbegrenzt. Explizite Löschung separat vom Cache. |
+| Aktivierte Firmenmeldungen | lokale Sendewarteschlange und optionaler HTTPS-Empfänger der IT | bis zu 100 Meldungen für höchstens 24 Stunden in Thunderbird; Widerruf löscht die Warteschlange. Der [Python-Empfänger](python-receiver.md#betrieb-und-meldungsinhalt) hat eigene SQLite- und SMTP-Fristen. |
 | Reputationscaches und Interaktionssessions | Arbeitsspeicher, ExpiringMap | TTL/Größenlimits; Prozessende löscht nur Memoryzustand, nicht die gespeicherte offene Entscheidung |
 | JSON/CSV-Export | vom Nutzer gewählte Downloadablage | keine automatische Extensionlöschung; SHA-256 ist Prüfsumme, keine Signatur |
 | Profilbackup | explizite Sicherungsablage | enthält ggf. Keys/Nachrichten; geschützt aufbewahren und nach eigener Frist löschen |
@@ -20,7 +22,7 @@ Die Wiederaufnahme der fertigen Berichte ändert das bestehende IndexedDB-Schema
 
 Ein vor einem Prozessverlust gespeichertes PENDING bleibt offen. Ein Crash zwischen nativer Öffnungsannahme und erfolgreicher Auditbestätigung lässt sich nicht sicher rückwirkend auflösen. Der Code wiederholt keine Öffnung, nur weil ein Abschluss fehlt. Ein Quoten-/Commitfehler bleibt sichtbar. Bereits bestätigte Daten sind in den realen Linux-Profiltests erhalten geblieben; daraus folgt keine Garantie bei Strom-/Datenträgerausfall.
 
-Zeitgrenzen werden beim jeweiligen Zugriff angewandt. Bei zurückgestellter Systemzeit kann ein in der Zukunft liegender Datensatz länger innerhalb der Altersgrenze erscheinen. Es gibt keine neue automatische Uhrkorrektur oder verschärfte Löschung. Eine regelmäßige Bereinigung wäre eine bewusste Produktentscheidung mit eigener Lösch-/Concurrencyabnahme; sie wird nicht als unbemerkte Migration eingeführt.
+Die Zeitgrenzen lokaler Analyse- und Auditdaten werden beim jeweiligen Zugriff angewandt. Bei zurückgestellter Systemzeit kann ein in der Zukunft liegender Datensatz länger innerhalb der Altersgrenze erscheinen.
 
 ## Unterstützter geprüfter Rückweg
 

@@ -263,6 +263,7 @@ test('checkHybridAnalysisResult falls back to GET /quick-scan/{id} on 404 overvi
     const requestedUrls = [];
     const context = vm.createContext({
         mayTransmitExternally: () => true,
+        providerEnabled: () => true,
         apikey_hybridanalysis: 'key',
         getHybridAnalysisOptions: () => ({}),
         requireHostPermission: async () => {},
@@ -422,6 +423,7 @@ test('manual upload and URL scan handlers preserve existing virustotal_stats and
     const reportCalls = [];
     state.context.get_hybrid_report_by_sha256 = opts => { reportCalls.push(opts); };
     state.context.browser.runtime.sendMessage = async () => ({ status: 'success', data: { sha256: '3'.repeat(64), id: 'qs-3' } });
+    state.context.confirmPopupTransfer = request => state.context.browser.runtime.sendMessage(request);
     try {
         const container = state.dom.window.document.getElementById('hybrid_analysis_api_content');
         const vtStats = { malicious: 2, suspicious: 1, harmless: 40 };

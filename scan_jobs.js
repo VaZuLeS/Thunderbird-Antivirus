@@ -56,7 +56,7 @@ function createScanCoordinator(env) {
                     await env.begin(job);assert(job);job.state='running';await env.changed(job,snapshot(job));
                     await env.run(job,assert,async()=>{if(active(job))await env.changed(job,snapshot(job));});assert(job);
                     job.state=job.errors||Object.values(job.providers).some(p=>p.state==='failed')||job.coverage?.incomplete&&Object.values(job.providers).some(p=>p.checks?.some(c=>!c.reason))?'incomplete':job.pending?'pending':job.total?'completed':'blocked';
-                }catch(error){if(jobs.get(input.id)===job&&job.generation===generation){job.state=job.controller.signal.aborted?'incomplete':'failed';job.reason=job.reason||(job.controller.signal.aborted?'cancelled':error.code==='SOURCE_CAPACITY'||error.message==='SOURCE_CAPACITY'?'source_capacity':'scan_failed');}}
+                }catch(error){if(jobs.get(input.id)===job&&job.generation===generation){job.state=job.controller.signal.aborted?'incomplete':'failed';job.reason=job.reason||(job.controller.signal.aborted?'cancelled':error.code==='SCAN_STORAGE_FAILED'?'storage_failed':'scan_failed');}}
                 finally {env.clearTimeout(timer);job.finishedAt=env.now();if(jobs.get(input.id)===job&&job.generation===generation)await env.changed(job,snapshot(job)).catch(()=>{});await env.release?.(job);}
             })();
             return snapshot(job);
@@ -67,28 +67,98 @@ function createScanCoordinator(env) {
 }
 
 const ThundyScans=(()=>{
-    const keys=['scanMode','alwaysManual','autoScanLinks','externalAnalysisConsent','privacyTier','scanningEnabledSenders','ipReputationProvider','ipReputationApiKey',...Object.values(ThundyProviders.registry).map(p=>p.key)];
+    const keys=['scanMode','alwaysManual','autoScanLinks','externalAnalysisConsent','privacyTier','scanningEnabledSenders','disabledProviders','ipReputationEnabled','ipReputationProvider','ipReputationApiKey',...Object.values(ThundyProviders.registry).map(p=>p.key)];
     const hash=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(value)))),b=>b.toString(16).padStart(2,'0')).join('');
     function mode(settings){return ['allDisplayed','approvedSenders','manual'].includes(settings.scanMode)?settings.scanMode:settings.alwaysManual===true?'manual':'approvedSenders';}
     function commonReason(settings,message,manual){if(settings.externalAnalysisConsent!==true)return 'disabled';if(!manual&&mode(settings)==='manual')return 'manual';if(!manual&&mode(settings)==='approvedSenders'&&!(settings.scanningEnabledSenders||[]).includes(extractEmailAddress(message.author||'').toLowerCase()))return 'sender';return null;}
-    async function plan(settings,message,attachments,urls,manual=false,full={}){
+    async function plan(settings,message,attachments,urls,manual=false,full={},record={}){
         const providers={};const gate=commonReason(settings,message,manual);
         for(const [id,config] of Object.entries(ThundyProviders.registry)){
             const ip=settings.ipReputationProvider===id&&!!settings.ipReputationApiKey&&!!config.capabilities.ip;
             const configured=!!settings[config.key]&&(id!=='abuseipdb'||ip)||ip;
-            const permission=configured?await hasHostPermissionFor(config.origin):false;
+            const enabledWithKey = (id !== 'abuseipdb' && !!settings[config.key] && ThundyProviders.enabled(settings,id)) ||
+                (ip && ThundyProviders.enabled(settings,id,'ip'));
+            const permission=enabledWithKey ? await hasHostPermissionFor(config.origin) : false;
             const checks=[];
-            const add=(kind,eligible,tier='strict')=>{const order={strict:0,balanced:1,max:2};checks.push({kind,reason:!configured?'unconfigured':gate||!permission&&'permission'||!eligible&&'no_resources'||(order[settings.privacyTier]??0)<order[tier]&&'policy'||kind==='url'&&!manual&&!settings.autoScanLinks&&'links_disabled'||null});};
-            for(const [kind,supported] of Object.entries(config.scanKinds||{}))if(supported)add(kind,kind==='hash'?!!settings[config.key]&&attachments.length>0:kind==='ip'?ip&&extractPublicIPs(full.headers?.received||[]).length>0:urls.length>0,kind==='url'?'max':'strict');
+            const add=(kind,eligible,tier='strict',otherwise='no_resources')=>{const order={strict:0,balanced:1,max:2};checks.push({kind,reason:!ThundyProviders.enabled(settings,id,kind)?'provider_disabled':!configured?'unconfigured':gate||!permission&&'permission'||(order[settings.privacyTier]??0)<order[tier]&&'policy'||kind==='url'&&!manual&&!settings.autoScanLinks&&'links_disabled'||!eligible&&otherwise||null});};
+            for(const [kind,supported] of Object.entries(config.scanKinds||{})) {
+                if (!supported) continue;
+                if (kind === 'url') {
+                    const hasReport = record?.links?.some(link => urls.includes(link.url) &&
+                        (id === 'urlscan' ? !!link.urlscan?.uuid : !!(link.hybrid_sha256 || link.hybrid_quick_scan_id || link.hybrid_submission_id || link.hybrid_job_id)));
+                    add(kind, hasReport, 'max', urls.length ? 'transfer_approval' : 'no_resources');
+                } else {
+                    add(kind, kind==='hash'?!!settings[config.key]&&attachments.length>0:kind==='ip'?ip&&extractPublicIPs(full.headers?.received||[]).length>0:urls.length>0);
+                }
+            }
             if(config.capabilities.ip&&ip&&!checks.some(c=>c.kind==='ip'))add('ip',extractPublicIPs(full.headers?.received||[]).length>0);
             providers[id]={configured,checks,state:'not_started'};
         }
         return providers;
     }
     function bound(job,ctx){return {diagnosticRun:job.prepared.diagnosticRun,signal:job.controller.signal,guard:()=>coordinator.assert(job),event:event=>{if(coordinator.active(job)){if(event.phase==='finish'&&event.state==='failed'&&job.providers[event.provider]){job.providers[event.provider].state='failed';job.providers[event.provider].error=(event.httpStatus===429||event.errorCode==='rate_limited')?'rate_limited':'provider_error';}if(typeof ThundyApiDiagnostics!=='undefined'&&['finish','assessment','cache'].includes(event.phase))ThundyApiDiagnostics.event(job.prepared.diagnosticRun,event.phase==='cache'?'cache':'assessment',event);ctx?.event?.(event);job.prepared.context.schedule();}},cached:(...args)=>{if(coordinator.active(job))ctx?.cached?.(...args);}};}
-    async function record(job,edit,terminal=false){if(!terminal)coordinator.assert(job);await updateStore(await getSharedDB(),'hybridanalysis',job.prepared.key,old=>{if(!terminal)coordinator.assert(job);else if(!coordinator.current(job)||job.prepared.context.disposed)throw Error('SCAN_CANCELLED');const value=edit(old||{messageHeader:job.prepared.key});value.updatedAt=Date.now();return value;},{preserveReports:true,reportScope:occurrenceMetadataKey(getAnalysisRuntimeId(),job.messageId)}).then(()=>{if(typeof ThundyApiDiagnostics!=='undefined')ThundyApiDiagnostics.event(job.prepared.diagnosticRun,'persistence',{state:'complete'});},error=>{if(typeof ThundyApiDiagnostics!=='undefined')ThundyApiDiagnostics.event(job.prepared.diagnosticRun,'persistence',{state:'failed',reason:'storage_failed'});throw error;});if(!terminal)coordinator.assert(job);}
-    async function attachment(job,item,patch){await record(job,old=>{const values=[...(old.attachments||[])];let index=values.findIndex(a=>a.partName===item.partName);const digest=job.prepared.hashes[item.partName];let previous=index<0?{}:values[index];if(previous.hybrid_sha256!==digest)previous={};if(patch.assessment){patch={...patch,assessment:(previous.assessmentScanId===job.id||job.options.refresh||previous.state==='UPLOADED'&&patch.hybrid_submission_id===undefined)?ThundyProviderResults.merge(previous.assessment,patch.assessment):patch.assessment,assessmentScanId:job.id};}const value={...previous,partName:item.partName,attachment_name:item.name,hybrid_sha256:digest,created:previous.created||new Date().toISOString(),...patch};if(index<0)values.push(value);else values[index]=value;return {...old,attachments:values};});job.revision=crypto.randomUUID();scheduleRisk(job);}
-    async function link(job,url,patch){await record(job,old=>{const values=[...(old.links||[])];const index=values.findIndex(l=>l.url===url);const previous=index<0?{}:values[index];if(patch.urlscan)patch={...patch,urlscan:ThundyProviderResults.urlscanRecord(patch.urlscan,previous.urlscan,Date.now())};if(patch.assessment){patch={...patch,assessment:(previous.assessmentScanId===job.id||job.options.refresh||previous.state==='UPLOADED'&&patch.hybrid_submission_id===undefined)?ThundyProviderResults.merge(previous.assessment,patch.assessment):patch.assessment,assessmentScanId:job.id};patch.hybrid_verdict={status:({malicious:'MALICIOUS',suspicious:'SUSPICIOUS',none:'CLEAN',unknown:'UNKNOWN'})[patch.assessment.verdict],observedAt:Date.now()};}const value={...previous,url,created:index<0?new Date().toISOString():values[index].created,...patch};if(index<0)values.push(value);else values[index]=value;return {...old,links:values};});job.revision=crypto.randomUUID();scheduleRisk(job);}
+    async function record(job, edit, terminal = false) {
+        if (!terminal) coordinator.assert(job);
+        const {key, context, diagnosticRun} = job.prepared;
+        try {
+            await updateStore(await getSharedDB(), 'hybridanalysis', key, old => {
+                if (!terminal) coordinator.assert(job);
+                else if (!coordinator.current(job) || context.disposed) throw Error('SCAN_CANCELLED');
+                const value = edit(old || {messageHeader:key});
+                value.updatedAt = Date.now();
+                return value;
+            }, {preserveReports:true, reportScope:occurrenceMetadataKey(getAnalysisRuntimeId(),job.messageId)});
+        } catch (error) {
+            if (!terminal) coordinator.assert(job);
+            if (typeof ThundyApiDiagnostics !== 'undefined') ThundyApiDiagnostics.event(diagnosticRun,'persistence',{state:'failed',reason:'storage_failed'});
+            throw Object.assign(Error('Scan storage failed',{cause:error}), {code:'SCAN_STORAGE_FAILED'});
+        }
+        if (typeof ThundyApiDiagnostics !== 'undefined') ThundyApiDiagnostics.event(diagnosticRun,'persistence',{state:'complete'});
+        if (!terminal) coordinator.assert(job);
+    }
+    const hybridReference = item => JSON.stringify([item?.hybrid_quick_scan_id,item?.hybrid_submission_id,item?.hybrid_job_id]);
+    function mergeAssessment(job, previous, patch) {
+        if (!patch.assessment) return patch;
+        const sameScan = previous.assessmentScanId === job.id || job.options.refresh ||
+            (previous.state === 'UPLOADED' && patch.hybrid_submission_id === undefined);
+        const assessment = sameScan ? ThundyProviderResults.merge(previous.assessment,patch.assessment) : patch.assessment;
+        return {...patch,assessment,assessmentScanId:job.id};
+    }
+    async function attachment(job, item, patch, expected) {
+        await record(job, old => {
+            const values = [...(old.attachments || [])];
+            const index = values.findIndex(saved => saved.partName === item.partName);
+            const digest = job.prepared.hashes[item.partName];
+            const previous = values[index]?.hybrid_sha256 === digest ? values[index] : {};
+            if (expected !== undefined && hybridReference(previous) !== expected) return old;
+            const value = {...previous,partName:item.partName,attachment_name:item.name,hybrid_sha256:digest,
+                created:previous.created || new Date().toISOString(),...mergeAssessment(job,previous,patch)};
+            if (index < 0) values.push(value); else values[index] = value;
+            return {...old,attachments:values};
+        });
+        job.revision = crypto.randomUUID();
+        scheduleRisk(job);
+    }
+    async function link(job, url, patch, expected) {
+        await record(job, old => {
+            const values = [...(old.links || [])];
+            const index = values.findIndex(saved => saved.url === url);
+            const previous = values[index] || {};
+            if (expected && (hybridReference(previous) !== hybridReference(expected) || previous.hybrid_sha256 !== expected.hybrid_sha256)) return old;
+            if (patch.urlscan && previous.urlscan?.uuid !== patch.urlscan.uuid) return old;
+            const changes = mergeAssessment(job,previous,patch);
+            if (changes.urlscan) changes.urlscan = ThundyProviderResults.urlscanRecord(changes.urlscan,previous.urlscan,Date.now());
+            if (changes.assessment) {
+                const statuses = {malicious:'MALICIOUS',suspicious:'SUSPICIOUS',none:'CLEAN',unknown:'UNKNOWN'};
+                changes.hybrid_verdict = {status:statuses[changes.assessment.verdict],observedAt:Date.now()};
+            }
+            const value = {...previous,url,created:index < 0 ? new Date().toISOString() : previous.created,...changes};
+            if (index < 0) values.push(value); else values[index] = value;
+            return {...old,links:values};
+        });
+        job.revision = crypto.randomUUID();
+        scheduleRisk(job);
+    }
     function pending(job,resource,value){job.pendingResources ||= new Set();if(value)job.pendingResources.add(resource);else job.pendingResources.delete(resource);job.pending=job.pendingResources.size>0;}
     async function updateRisk(job){
         coordinator.assert(job);const p=job.prepared,text=extractTextFromParts(p.full.parts||p.full),assessment=typeof beginLocalAssessment==='function'?beginLocalAssessment(p.message.id):null;
@@ -132,36 +202,27 @@ const ThundyScans=(()=>{
             if(ThundyProviders.registry.virustotal)add('virustotal','hash',async()=>{const ctx=bound(job,p.context.forAttachment(item.partName,item.name,digest));const stats=await checkVirusTotal(digest,s.virustotalApikey,ctx);coordinator.assert(job);if(!stats)throw Error('no_result');await attachment(job,item,{virustotal_stats:stats});});
             if(ThundyProviders.registry.hybridanalysis)add('hybridanalysis','hash',async()=>{
                 const ctx=bound(job,p.context.forAttachment(item.partName,item.name,digest));const stored=p.record?.attachments?.find(a=>a.partName===item.partName&&a.hybrid_sha256===digest);
-                const save=patch=>attachment(job,item,patch);
+                const save=patch=>attachment(job,item,patch,hybridReference(stored));
                 if((job.options.refresh||stored?.state==='UPLOADED')&&stored){const ref='ha:attachment:'+item.partName;pending(job,ref,true);pending(job,ref,await hybridReport(job,stored,ctx,save));return;}
-                const file=await browser.messages.getAttachmentFile(p.message.id,item.partName);
-                const result=await check_hybrid_analysis_for_attachment(digest,item,file.slice(),null,file.type,ctx);coordinator.assert(job);
+                const result=await check_hybrid_analysis_for_attachment(digest,item,null,null,null,ctx);coordinator.assert(job);
                 const h=result.hybrid_data;
-                await save({hybrid_quick_scan_id:h.quick_scan_id||null,hybrid_submission_id:h.submission_id,hybrid_job_id:h.job_id,state:h.state,report:result.report||null,...(result.report?{assessment:ThundyProviderResults.evaluate('hybridanalysis',result.report)}:{}),report_fetched_at:result.report?new Date().toISOString():null});
-                if(h.state==='UPLOADED'||h.state==='KNOWN'&&ThundyProviderResults.evaluate('hybridanalysis',result.report).completion!=='complete'){const ref='ha:attachment:'+item.partName;pending(job,ref,true);pending(job,ref,await hybridReport(job,{hybrid_sha256:digest,hybrid_quick_scan_id:h.quick_scan_id||null,hybrid_submission_id:h.submission_id,hybrid_job_id:h.job_id,report:result.report},ctx,save,true));}
+                const accepted={hybrid_sha256:digest,hybrid_quick_scan_id:h.quick_scan_id||null,hybrid_submission_id:h.submission_id,hybrid_job_id:h.job_id,report:result.report||null};
+                await save({...accepted,state:h.state,...(result.report?{assessment:ThundyProviderResults.evaluate('hybridanalysis',result.report)}:{}),report_fetched_at:result.report?new Date().toISOString():null});
+                if(h.state==='UPLOADED'||h.state==='KNOWN'&&ThundyProviderResults.evaluate('hybridanalysis',result.report).completion!=='complete'){const ref='ha:attachment:'+item.partName;pending(job,ref,true);pending(job,ref,await hybridReport(job,accepted,ctx,patch=>attachment(job,item,patch,hybridReference(accepted)),true));}
             });
         }
         for(const url of p.urls){
             if(ThundyProviders.registry.hybridanalysis)add('hybridanalysis','url',async()=>{
-                const ctx=bound(job,await p.context.forLinks([url]));const previous=p.record?.links?.find(l=>l.url===url);const save=patch=>link(job,url,patch);
-                if((job.options.refresh||previous?.state==='UPLOADED')&&previous){const ref='ha:url:'+url;pending(job,ref,true);pending(job,ref,await hybridReport(job,previous,ctx,save));return;}
-                const body=new URLSearchParams({scan_type:'all',url});const response=await apiGateway.fetchWithTimeout('https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis',{...getHybridAnalysisOptions('POST',body,true),analysisContext:ctx});coordinator.assert(job);
-                if(![200,201].includes(response.status))throw Object.assign(Error('provider_error'),{code:response.status===429?'rate_limited':response.status===401||response.status===403?'invalid_key':'provider_error'});
-                const data=await response.json(),value={state:'UPLOADED',hybrid_quick_scan_id:typeof data.id==='string'?data.id:null,hybrid_sha256:data.sha256,hybrid_submission_id:data.submission_id||data.id,hybrid_job_id:data.job_id||data.id,report:quickScanReport(data)};if(value.report)value.assessment=ThundyProviderResults.evaluate('hybridanalysis',value.report,'url');
-                await save(value);const ref='ha:url:'+url;pending(job,ref,true);pending(job,ref,await hybridReport(job,value,ctx,save,true));
+                const ctx=bound(job,await p.context.forLinks([url]));const previous=p.record?.links?.find(l=>l.url===url);const save=patch=>link(job,url,patch,previous);
+                if((job.options.refresh||previous?.state==='UPLOADED')&&(previous?.hybrid_sha256||previous?.hybrid_quick_scan_id||previous?.hybrid_submission_id||previous?.hybrid_job_id)){const ref='ha:url:'+url;pending(job,ref,true);pending(job,ref,await hybridReport(job,previous,ctx,save));}
             });
             if(ThundyProviders.registry.urlscan)add('urlscan','url',async()=>{
                 const ctx=bound(job,await p.context.forLinks([url]));const previous=p.record?.links?.find(l=>l.url===url)?.urlscan;
-                let result,submittedUuid;const ref='urlscan:'+url;
+                let result;const ref='urlscan:'+url;
                 if(previous?.uuid&&(previous.terminal===true||previous.errorCode==='result_gone')&&(job.options.refresh||!job.options.manual)){ctx.event({provider:'urlscan',scope:'report',phase:'cache',state:'failed',verdict:previous.assessment?.verdict||'unknown',...ThundyProviderResults.project(previous.assessment),errorCode:'result_gone',errorDetails:msg('urlscanResultGone')});throw Object.assign(Error('result_gone'),{code:'result_gone'});}
                 if(previous?.uuid&&(job.options.refresh||ThundyProviderResults.urlscanPending(previous))){if(previous.assessment?.assessmentVersion===1)ctx.event({...ThundyProviderResults.stored('urlscan',previous),provider:'urlscan',scope:'report',phase:'cache',observedAt:previous.observedAt||null});pending(job,ref,true);result={...await pollUrlscanIoResult(previous.uuid,s.urlscanApikey,ctx,{requestedUrl:url}),uuid:previous.uuid};}
-                else{
-                    if(job.options.refresh)return;
-                    ctx.submitted=async uuid=>{coordinator.assert(job);submittedUuid=uuid;pending(job,ref,true);await link(job,url,{urlscan:{status:'SUBMITTED',uuid,observedAt:Date.now()}});};
-                    result=await checkUrlscanIo(url,s.urlscanApikey,ctx);
-                }
+                else return;
                 coordinator.assert(job);if(!result)throw Error('no_result');
-                if(submittedUuid&&!result.uuid)result={...result,uuid:submittedUuid};
                 await link(job,url,{urlscan:{...result,observedAt:Date.now()}});
                 pending(job,ref,ThundyProviderResults.urlscanPending(result));
                 if(result.status==='ERROR')throw Object.assign(Error(result.errorCode||'provider_error'),{code:result.errorCode||'provider_error'});
@@ -226,7 +287,7 @@ const ThundyScans=(()=>{
             check();
             coverage.incomplete=coverage.inventoryIncomplete||coverage.attachments.readFailed>0||coverage.attachments.sizeLimited>0||coverage.attachments.omitted>0||coverage.urls.omitted>0;
             const record=await getFromStore(await getSharedDB(),'hybridanalysis',key,{reportScope:occurrenceMetadataKey(getAnalysisRuntimeId(),message.id)});check();
-            const providers=await plan(settings,message,attachments,urls,options.manual,full);check();
+            const providers=await plan(settings,message,attachments,urls,options.manual,full,record);check();
             if(typeof ThundyApiDiagnostics!=='undefined')for(const [provider,plan] of Object.entries(providers))for(const item of plan.checks)ThundyApiDiagnostics.event(diagnosticRun,'precondition',{provider,state:item.reason?'blocked':'complete',reason:item.reason});
             const fingerprint=await hash({assessmentVersion:2,messageId:message.id,full,hashes,coverage,settings:Object.fromEntries(Object.entries(settings).sort(([a],[b])=>a.localeCompare(b))),providers});
             check();
@@ -238,8 +299,34 @@ const ThundyScans=(()=>{
             }catch(error){if(typeof ThundyApiDiagnostics!=='undefined'){const cancelled=error?.code==='SCAN_CANCELLED'||error?.message==='SCAN_CANCELLED';ThundyApiDiagnostics.event(diagnosticRun,cancelled?'cancelled':'precondition',{state:'failed',reason:cancelled?'cancelled':error?.message==='SCAN_PREPARATION_TIMEOUT'?'timeout':'preparation_failed'});ThundyApiDiagnostics.endRun(diagnosticRun,'failed');}throw error;}
         },
         async begin(job){const p=job.prepared;if(!Object.values(p.providers).some(v=>v.checks.some(c=>!c.reason)))return;
+            let sessionOnly = p.context.sourceSessionOnly === true;
+            try {
+                await record(job, old => {
+                    const snapshots = old.analysisSourceSnapshots || {};
+                    if (typeof snapshots !== 'object' || Array.isArray(snapshots)) throw Error('Invalid source archive');
+                    if (sessionOnly || Object.keys(snapshots).length >= 64) {
+                        sessionOnly = true;
+                        return old;
+                    }
+                    if (!p.context.model.data.rows.length) return old;
+                    const id = crypto.randomUUID();
+                    if (Object.hasOwn(snapshots,id)) throw Error('Source snapshot identifier collision');
+                    const accumulated = {...snapshots,[id]:{savedAt:Date.now(),snapshot:JSON.parse(JSON.stringify(p.context.model.data))}};
+                    if (new TextEncoder().encode(JSON.stringify(accumulated)).length > 1024*1024) {
+                        sessionOnly = true;
+                        return old;
+                    }
+                    return {...old,analysisSourceSnapshots:accumulated};
+                });
+            } catch (error) {
+                coordinator.assert(job);
+                throw Object.assign(Error('Source storage failed', {cause:error}), {code:'SCAN_STORAGE_FAILED'});
+            }
+            p.context.sourceSessionOnly = sessionOnly;
             await p.context.flush();
-            if(p.context.model.data.rows.length)await record(job,old=>{const snapshots={...old.analysisSourceSnapshots};if(Object.keys(snapshots).length>=64)throw Error('SOURCE_CAPACITY');snapshots[crypto.randomUUID()]={savedAt:Date.now(),snapshot:JSON.parse(JSON.stringify(p.context.model.data))};if(new TextEncoder().encode(JSON.stringify(snapshots)).length>1024*1024)throw Error('SOURCE_CAPACITY');return {...old,analysisSourceSnapshots:snapshots};});
+            if (p.context.persistenceFailed && !p.context.sourceSessionOnly) {
+                throw Object.assign(Error('Source storage failed'), {code:'SCAN_STORAGE_FAILED'});
+            }
             p.context.model.data.rows=[];p.context.scanRunId=job.id;
         },
         async run(job,assert,changed){
@@ -247,7 +334,7 @@ const ThundyScans=(()=>{
             if(job.options.manual&&!job.options.refresh){vtCache.clear();urlhausCache.clear();ipReputationCache.clear();}
             await indexedDB_save_links_to_db(p.message,p.urls);assert(job);
             const work=await tasks(job);job.total=work.length;await changed();let index=0;
-            await Promise.all(Array.from({length:Math.min(4,work.length)},async()=>{while(index<work.length){assert(job);const task=work[index++];await lane(task.provider,async()=>{assert(job);const state=job.providers[task.provider];if(state.state!=='failed')state.state='running';await changed();try{await task.run();assert(job);if(state.state!=='failed')state.state='checked';}catch(error){assert(job);job.errors++;state.state='failed';state.error=state.error==='rate_limited'?'rate_limited':['rate_limited','invalid_key','no_result','result_gone'].includes(error.code||error.message)?error.code||error.message:'provider_error';}finally{if(coordinator.active(job)){job.completed++;await changed();}}});}}));
+            await Promise.all(Array.from({length:Math.min(4,work.length)},async()=>{while(index<work.length){assert(job);const task=work[index++];await lane(task.provider,async()=>{assert(job);const state=job.providers[task.provider];if(state.state!=='failed')state.state='running';await changed();try{await task.run();assert(job);if(state.state!=='failed')state.state='checked';}catch(error){assert(job);job.errors++;if(error.code==='SCAN_STORAGE_FAILED')job.reason='storage_failed';state.state='failed';state.error=state.error==='rate_limited'?'rate_limited':['rate_limited','invalid_key','no_result','result_gone'].includes(error.code||error.message)?error.code||error.message:'provider_error';}finally{if(coordinator.active(job)){job.completed++;await changed();}}});}}));
             assert(job);
             if(job.domains.length||job.ips.length)await record(job,old=>
                 updateOccurrenceMetadata(old,getAnalysisRuntimeId(),p.message.id,{threatIntel:{urlhausDomains:job.domains,maliciousIps:job.ips,observedAt:Date.now()}}))

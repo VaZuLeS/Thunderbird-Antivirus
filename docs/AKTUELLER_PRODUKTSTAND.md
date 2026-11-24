@@ -2,7 +2,7 @@
 
 **Version 1.26.2 ist auf GitHub veröffentlicht.** Die XPI-SHA-256 lautet `abe2a8d2f766ab7ab88ccb64f6cf5d7223dea68181fec22fff0d23fb549cc30c`. Die vier Release-Dateien wurden nach dem Download geprüft. [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.2) · [Veröffentlichungsnachweis](VEROEFFENTLICHUNG_1_26_2.md) · [Abnahme](live_test_1_26_2.md)
 
-Firmen können Thundys Link- und Anhangschutz zentral einstellen und kontrollierte Öffnungs- und Speicherversuche optional per HTTPS melden. Die Nachrichtenansicht und das Linkprotokoll erklären Anbieterbefunde und Richtliniensperren. Der separate Python-Empfänger übernimmt die Zustellung an ein konfigurierbares Postfach. [Releaseumfang](releases/1.26.2.md) · [Python-Empfänger einrichten](https://github.com/VaZuLeS/Thunderbird-Antivirus/blob/v1.26.2/examples/python-receiver/README.md)
+Firmen können Thundys Link- und Anhangschutz zentral einstellen und kontrollierte Öffnungs- und Speicherversuche optional per HTTPS melden. Die Nachrichtenansicht und das Linkprotokoll erklären Anbieterbefunde und Richtliniensperren. Der separate Python-Empfänger übernimmt die Zustellung an ein konfigurierbares Postfach. [Releaseumfang](releases/1.26.2.md) · [Python-Empfänger einrichten](python-receiver.md) · [Documentation in English](guide-en.md)
 
 ## Funktionen und nachgewiesene Grenzen
 

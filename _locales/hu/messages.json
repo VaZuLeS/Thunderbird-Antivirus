@@ -1,0 +1,3590 @@
+{
+  "protectionSeverity_low": { "message": "Alacsony kockázat" },
+  "protectionSeverity_unknown": { "message": "Ismeretlen kockázat" },
+  "protectionSeverity_caution": { "message": "Fokozott kockázat" },
+  "protectionSeverity_high": { "message": "Magas kockázat" },
+  "protectionSeverity_critical": { "message": "Kritikus kockázat" },
+  "linkScanSummary": { "message": "URL-vizsgálatok eredményei" },
+  "linkScansPending": { "message": "Az URL-vizsgálatok még futnak." },
+  "linkNoScanResults": { "message": "Nincsenek URL-vizsgálati eredmények." },
+  "protectionCategoryUnavailable": { "message": "A szolgáltató nem adott meg fenyegetési kategóriát." },
+  "linkWaitForResults": { "message": "Várakozás a folyamatban lévő URL-vizsgálatokra" },
+  "linkAutoOpenBelow": { "message": "Közvetlen megnyitás ez alatt a pontszám alatt" },
+  "linkOpeningOptionsHelp": { "message": "Hagyd üresen a pontszámot a hivatkozási párbeszédablak állandó megjelenítéséhez." },
+  "linkAuditRetentionTitle": { "message": "Hivatkozásnapló megőrzése" },
+  "linkAuditLimit": { "message": "Bejegyzések maximális száma (üres = korlátlan)" },
+  "linkAuditDays": { "message": "Megőrzés napokban (üres = korlátlan)" },
+  "protectionManagedColors": { "message": "A szervezet állítja be a kockázati szintek színeit." },
+  "linkOpenedAutomatically": { "message": "Automatikusan megnyitva" },
+  "providerSwitchHelp": {
+    "message": "Kapcsolja be vagy ki a szolgáltatásokat egyénileg, majd mentse a beállításokat. A szolgáltatás szüneteltetésekor a mentett kulcsok és eredmények megmaradnak."
+  },
+  "providerKeyLink": {
+    "message": "Kap egy API kulcsot"
+  },
+  "providerDocsLink": {
+    "message": "API dokumentáció"
+  },
+  "providerApiKeyLabel": {
+    "message": "API-kulcs"
+  },
+  "providerUse": {
+    "message": "A szolgáltatás használata"
+  },
+  "providerVirusUse": {
+    "message": "Használja a VirusTotal fájlellenőrzéshez"
+  },
+  "providerHybridStrength": {
+    "message": "A rendelkezésre álló jelentések között ismert fájlkivonatokra keres. Engedélyezett feltöltésnél a Falcon Sandbox futás közben elemezheti a fájl viselkedését."
+  },
+  "providerHybridSetup": {
+    "message": "Hozzon ki egy fiókot, majd nyissa meg a Profile → API Kulcsot, hogy egy kulcsot hozzon."
+  },
+  "providerUrlhausStrength": {
+    "message": "A link hostek ellenőrizze a malware forrásai."
+  },
+  "providerUrlhausSetup": {
+    "message": "Jelentkezzen be a abuse.ch és kap egy Auth-Key a fiókjától."
+  },
+  "providerUrlscanStrength": {
+    "message": "A URLs teljes körű vizsgáját és a phishing jeleihez való átirányítását. a Thundy a maximális adatvédelmi szinten használja."
+  },
+  "providerUrlscanSetup": {
+    "message": "Hozzon be egy fiókot, és válassza a Beállítások és API → Új API kulcsot."
+  },
+  "providerVirusTotalStrength": {
+    "message": "A fájl SHA-256 hashét nézd ki, és több szkennelési motorból származó eredményeket mutat."
+  },
+  "providerVirusTotalSetup": {
+    "message": "Jelentkezzen be a VirusTotal-be, és másolja a kulcsot a profil API kulcsoldalon."
+  },
+  "providerIpTitle": {
+    "message": "IP-címek hírneve"
+  },
+  "providerIpUse": {
+    "message": "IP hírnevének megvizsgálása"
+  },
+  "providerIpChoose": {
+    "message": "IP hírnevű szolgáltató"
+  },
+  "providerIpKeyNotice": {
+    "message": "Adja meg a kiválasztott szolgáltató kulcsát. Az IP-ellenőrzés szüneteltetésekor a szolgáltató kiválasztása és a kulcs megmarad."
+  },
+  "providerIpGuide": {
+    "message": "Válasszon és hozzon be egy IP hírnevű szolgáltatót"
+  },
+  "providerVirusIpStrength": {
+    "message": "A köz IP-k ellen ellenőrizze a VirusTotal érzékelőmotorjait és a Közösség rangsorát."
+  },
+  "providerAbuseStrength": {
+    "message": "A közönség jelentéseit a spam, a szkennelés vagy más visszaélésekkel összefüggő köz IP-k felismerésére használja."
+  },
+  "providerAbuseSetup": {
+    "message": "Hozzon ki egy AbuseIPDB fiókot, és generáljon vagy másolja a kulcsot a API lapból a táblázatban."
+  },
+  "providerIpVirusKey": {
+    "message": "VirusTotal API kulcs a IP hírnevét"
+  },
+  "providerIpAbuseKey": {
+    "message": "AbuseIPDB API kulcs"
+  },
+  "providerTestDisabled": {
+    "message": "Kapcsolja be a szolgáltatást, és mentse a beállításokat a kulcs tesztelése előtt."
+  },
+  "analysisReason_provider_disabled": {
+    "message": "Ez a szolgáltató a beállításokban szünteti meg."
+  },
+  "extensionName": {
+    "message": "Thundy AV – E-mail-ellenőrző a Thunderbirdhöz"
+  },
+  "extensionDescription": {
+    "message": "Opcionális, opt-in szkennelő az e-mail-kimutatások és linkek. Semmi sem hagyja el a számítógépet a kifejezett hozzájárulás nélkül."
+  },
+  "actionTitle": {
+    "message": "Thundy AV – a jelen üzenet státuszának szkennelése"
+  },
+  "bannerScanOnce": {
+    "message": "Ez az üzenet egy alkalommal"
+  },
+  "bannerScanSender": {
+    "message": "Mindig nyomtatja ezt az üzenetet"
+  },
+  "bannerTitleOptIn": {
+    "message": "Thundy AV : A valós idejű szkennelés nem aktiválható az üzenethez."
+  },
+  "bannerNoteOptIn": {
+    "message": "A szkennelés adatokat külső elemzési szolgáltatásokra továbbít, de csak akkor, ha a hozzáadási beállításokban aktiválja, és csak akkor, amikor hozzájárul."
+  },
+  "bannerScanRunning": {
+    "message": "A szkennelés…"
+  },
+  "bannerScanDone": {
+    "message": "A kérések befejeződtek - lásd az elemzés forrásai"
+  },
+  "bannerScanFailed": {
+    "message": "Nem sikeres a szkennelés"
+  },
+  "bannerPermissionDenied": {
+    "message": "Elutasították a megkövetelt házigazdai jogosultságot"
+  },
+  "bannerConsentMissing": {
+    "message": "Új külső kérések kikapcsolódnak. a már tárolt jelentések még mindig jelenhetők meg."
+  },
+  "bannerThreatTitle": {
+    "message": "Thundy AV figyelmeztetés"
+  },
+  "bannerThreatScore": {
+    "message": "Risk pontszám: $SCORE$ 100",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerSenderOptIn": {
+    "message": "Ez a küldő most automatikusan szkennel."
+  },
+  "notificationScanStarted": {
+    "message": "Kezdődik a szkennelés: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "A szkennelés sikeresen benyújtották. Job ID: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanError": {
+    "message": "Scan hiba: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Thundy AV szkennelő"
+  },
+  "notificationTitleError": {
+    "message": "Thundy AV szkennelő hiba"
+  },
+  "bannerAuthPass": {
+    "message": "Hiteles szerver jelentések SPF / DKIM/ DMARC átadott"
+  },
+  "bannerOpenOptions": {
+    "message": "Nyitott lehetőségek"
+  },
+  "menuScanLink": {
+    "message": "Szűrés Thundy AV"
+  },
+  "menuScanMessageLinks": {
+    "message": "Az üzenet minden linkét szkennelve"
+  },
+  "notificationNoLinks": {
+    "message": "Nincs link a hírben."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "Az elemzési szolgáltatás tárhelyszabályának megengedése nem jelenik meg. Kérjük, adja meg a hozzáadott lehetőségekben."
+  },
+  "errorHostPermissionMissing": {
+    "message": "Az elemzési szolgáltatás tárhelyszabály hiánya. kérjük, adja meg a hozzáadott lehetőségekben."
+  },
+  "errorTierUploadBlocked": {
+    "message": "A hozzáférések letöltése a „Sztript” adatvédelmi szinten kikapcsolódik.A hozzáférési lehetőségekben a „Balanced” vagy a „Maximum” szintre váltja át."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "A URLs benyújtása csak a „Maximum” adatvédelmi szinten megengedett."
+  },
+  "notificationInjectionFailed": {
+    "message": "A jelző nem szerepelhet a üzenetnézetben. kérjük, jelentse meg ezt a Thunderbird verziójával."
+  },
+  "bannerTierBlocked": {
+    "message": "Ez a lépés nem megengedett a jelenlegi adatvédelmi szinten. lásd a hozzáadási lehetőségeket."
+  },
+  "ui_001": {
+    "message": "A figyelmeztetés:"
+  },
+  "ui_002": {
+    "message": "Nincs Hybrid Analysis API kulcs beállított. Használhatja a helyes ellenőrizések vagy beállíthatja a szolgáltatót a beállításokban."
+  },
+  "ui_003": {
+    "message": "Nyitott beállítások"
+  },
+  "ui_004": {
+    "message": "Válasszon egy e-mailt, hogy ellenőrizze."
+  },
+  "ui_005": {
+    "message": "A terhelés elemzésének eredménye…"
+  },
+  "ui_006": {
+    "message": "Külső elemzés kikapcsolva: nem küldnek hasheket, fájlokat vagy linkeket az elemzési szolgáltatásokhoz."
+  },
+  "ui_007": {
+    "message": "Nincs tárolt csatornák vagy link-scan eredmények érhetők el erre az üzenetre."
+  },
+  "ui_008": {
+    "message": "Nincs elemzési eredmény a e-mailben."
+  },
+  "ui_009": {
+    "message": "Váratlan hiba a feltöltés során az elemzés eredményeinek feltöltésével."
+  },
+  "ui_010": {
+    "message": "A státusz:"
+  },
+  "ui_011": {
+    "message": "Az elemzés továbbra is folyamatban van. kérjük, próbálja meg újra."
+  },
+  "ui_012": {
+    "message": "SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_013": {
+    "message": "A fenyegetés pontszámai:"
+  },
+  "ui_014": {
+    "message": "A bírósági ítélet:"
+  },
+  "ui_015": {
+    "message": "Malware családok:"
+  },
+  "ui_016": {
+    "message": "Multiscan eredmény: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_017": {
+    "message": "Tovább információkat:"
+  },
+  "ui_018": {
+    "message": "Kezdőoldal > $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_019": {
+    "message": "Címke: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_020": {
+    "message": "VirusTotal eredmények:"
+  },
+  "ui_021": {
+    "message": "Káros: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_022": {
+    "message": "Megtalált: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_023": {
+    "message": "Gyanúsított: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_024": {
+    "message": "Károsodás: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_025": {
+    "message": "Szekrény: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_026": {
+    "message": "Állapot: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_027": {
+    "message": "Antivirus eredmények:"
+  },
+  "ui_028": {
+    "message": "$P1$ – ítélet: $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_029": {
+    "message": "Nincs scanner eredmények."
+  },
+  "ui_030": {
+    "message": "SHA-256 hash: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_031": {
+    "message": "Legutóbbi fájl neve: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_032": {
+    "message": "Méret: $P1$ bájt",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_033": {
+    "message": "Szín: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_034": {
+    "message": "Újra szkennel"
+  },
+  "ui_035": {
+    "message": "Helyes és letölthető (helyi)"
+  },
+  "ui_036": {
+    "message": "Megvizsgálott elem: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_037": {
+    "message": "Helyi eredmény: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_038": {
+    "message": "SHA-256 : $P1$ – külső elemzés kikapcsolva.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_039": {
+    "message": "Nem külső felfedezés, mert a külső elemzés meghibásodott."
+  },
+  "ui_040": {
+    "message": "külső elemzés-hiányos"
+  },
+  "ui_041": {
+    "message": "A szkennelés…"
+  },
+  "ui_042": {
+    "message": "Új fájl feltöltéséhez egy új szkenneléshez…"
+  },
+  "ui_043": {
+    "message": "A felvételi eredmények. - A felvételt…"
+  },
+  "ui_044": {
+    "message": "sikeres"
+  },
+  "ui_045": {
+    "message": "A szkennelés nem sikeres:"
+  },
+  "ui_046": {
+    "message": "Ismeretlen hiba"
+  },
+  "ui_047": {
+    "message": "Próbáld meg újra"
+  },
+  "ui_048": {
+    "message": "Kommunikációs hiba:"
+  },
+  "ui_049": {
+    "message": "A szanitizálást…"
+  },
+  "ui_050": {
+    "message": "A HTML-t helyileg szanitizáljuk…"
+  },
+  "ui_051": {
+    "message": "A letöltés megkezdődött."
+  },
+  "ui_052": {
+    "message": "Sanitizált"
+  },
+  "ui_053": {
+    "message": "A letöltés nem sikeres:"
+  },
+  "ui_054": {
+    "message": "API hiba: $P1$ az elemhez $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_055": {
+    "message": "(A API kulcs lehet nem megfelelő vagy hiánya.)"
+  },
+  "ui_056": {
+    "message": "Hálózati hiba: $P1$ az elemhez $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_057": {
+    "message": "A URL felvételi…"
+  },
+  "ui_058": {
+    "message": "URL küldés Hybrid Analysis…"
+  },
+  "ui_059": {
+    "message": "A felvételi eredmények. - A felvételek eredményei…"
+  },
+  "ui_060": {
+    "message": "A felvétel nem sikeres:"
+  },
+  "ui_061": {
+    "message": "URL: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_062": {
+    "message": "Ez a URL találták az e-mailben. a magánélet megvédése, ez volt a"
+  },
+  "ui_063": {
+    "message": "Nem automatikusan feltölthető"
+  },
+  "ui_064": {
+    "message": "Kattintson a URL-re"
+  },
+  "ui_065": {
+    "message": "Felvett…"
+  },
+  "ui_066": {
+    "message": "Küldje el a fájlt a Hybrid Analysis…"
+  },
+  "ui_067": {
+    "message": "A felvételi eredmények befejeződtek…"
+  },
+  "ui_068": {
+    "message": "A fájl jelenleg (felvétel)"
+  },
+  "ui_069": {
+    "message": "Szállító: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_070": {
+    "message": "Nincs külső jelentés a fájlhoz.Az Ön magánéletének megőrzése céljából"
+  },
+  "ui_071": {
+    "message": "Az automatikus felvételek kikapcsolódnak; a magánélet szinten még mindig a kézi szkennelésre van alkalmazva."
+  },
+  "ui_072": {
+    "message": "A linkvédelem automatikus szkennelés mellett is rendelkezésre áll."
+  },
+  "ui_073": {
+    "message": "Megtakarítás…"
+  },
+  "ui_074": {
+    "message": "A beállítások mentettek."
+  },
+  "ui_075": {
+    "message": "Mentés"
+  },
+  "ui_076": {
+    "message": "Az adatátvitelhez való hozzáférés nem adható meg. semmit nem küldünk."
+  },
+  "ui_077": {
+    "message": "A házigazda nem kapta meg a következőket:"
+  },
+  "ui_078": {
+    "message": ". A szolgáltatók számára a tesztelés nem áll rendelkezésre a megengedettség nélkül."
+  },
+  "ui_079": {
+    "message": "Nem tudtak megmenteni a beállításokat."
+  },
+  "ui_080": {
+    "message": "Ez eltávolítja az elemzés valamennyi lokálisan tárolt eredményét."
+  },
+  "ui_081": {
+    "message": "tisztítás…"
+  },
+  "ui_082": {
+    "message": "A cache tisztán tart."
+  },
+  "ui_083": {
+    "message": "Az adatbázis még nincs, vagy már üres."
+  },
+  "ui_084": {
+    "message": "Nem tudtam megtisztítani a cache-t."
+  },
+  "ui_085": {
+    "message": "Tiszta cache"
+  },
+  "ui_086": {
+    "message": "API kulcs elveszett."
+  },
+  "ui_087": {
+    "message": "SPF ellenőrizni nem sikertelenség (lehetséges spoofing)."
+  },
+  "ui_088": {
+    "message": "A DKIM aláírás nem hatályos (lehetséges szivárgás)."
+  },
+  "ui_089": {
+    "message": "DMARC ellenőrizni nem sikertelenség (lehetséges spoofing)."
+  },
+  "ui_090": {
+    "message": "A URLhaus a domén ( $P1$) listáját károsnak tartja.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_091": {
+    "message": "A doménok megosztása ($P1$a küldőszobától eltérő ($P2$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_092": {
+    "message": "Lehetséges üzleti e-mail kompromisszum: az első lépés a küldővel és a sürgősségi kulcsszavak találtak ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_093": {
+    "message": "A sürgősségi kulcsszavak találhatók ( $P1$). Tekintse meg a kérést alaposan.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_094": {
+    "message": "Ez az első kommunikáció az üzenetküldővel."
+  },
+  "ui_095": {
+    "message": "A küldő tartomány ( $P1$) a $P2$ márka néven ismerős.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_096": {
+    "message": "A link-domain ( $P1$) a $P2$ márka ismeretéhez képest.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_097": {
+    "message": "A szöveges ponton lévő linkek egyike sem a küldő tartományhoz ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_098": {
+    "message": "Tiszta"
+  },
+  "ui_099": {
+    "message": "A URL szkennelés nem sikeres:"
+  },
+  "ui_100": {
+    "message": "Nem tudta elindítani a urlscan.io szkennelés:"
+  },
+  "ui_101": {
+    "message": "A urlscan.io nem ad vissza a szkennelési ID-t."
+  },
+  "ui_102": {
+    "message": "A urlscan.io károsnak nevezte a URL-t."
+  },
+  "ui_103": {
+    "message": "Vizuális felismerés: az oldal személyre szabja"
+  },
+  "ui_104": {
+    "message": "(A feltételezett phishing"
+  },
+  "ui_105": {
+    "message": "Nem tudta visszavonni a urlscan.io eredményeket:"
+  },
+  "ui_106": {
+    "message": "Thundy AV – E-mail szkennelő"
+  },
+  "ui_107": {
+    "message": "Hybrid Analysis minden előadása megnézve"
+  },
+  "ui_108": {
+    "message": "Az Hybrid Analysis minden benyújtását megnézze (új lapot nyit)"
+  },
+  "ui_109": {
+    "message": "A téma:"
+  },
+  "ui_110": {
+    "message": "A következőről:"
+  },
+  "ui_111": {
+    "message": "Az ID üzenet:"
+  },
+  "ui_112": {
+    "message": "Thundy AV beállítások"
+  },
+  "ui_113": {
+    "message": "A Hybrid Analysis egy malware elemzési szolgáltatás. fájlokat küldhet statikus és dinamikus elemzéshez."
+  },
+  "ui_114": {
+    "message": "A Hybrid Analysis a CrowdStrike Falcon Sandbox-t használja a nem ismerett fenyegetések felmérésére."
+  },
+  "ui_115": {
+    "message": "A szolgáltató fiókja és szolgáltatási feltételeket a külső elemzésre alkalmazzák.A helyes ellenőrök nem igényelnek fiókot."
+  },
+  "ui_116": {
+    "message": "Thundy AV beállítások"
+  },
+  "ui_117": {
+    "message": "Mi az a Hybrid Analysis?"
+  },
+  "ui_118": {
+    "message": "Külső fájlelemzéshez kapjon egy API kulcsot a"
+  },
+  "ui_119": {
+    "message": "A beiratkozás után menjen a profiljába, és keresse meg a API KEY szakaszát."
+  },
+  "ui_120": {
+    "message": "A API kulcsot itt tartsa. a helyes ellenőrök működnek anélkül."
+  },
+  "ui_121": {
+    "message": "API kulcsszavak"
+  },
+  "ui_122": {
+    "message": "hybrid-analysis.com"
+  },
+  "ui_123": {
+    "message": "hybrid-analysis.com (új lapot nyit)"
+  },
+  "ui_124": {
+    "message": "Külső elemzés engedélyezése (adatküldés külső szolgáltatóknak)"
+  },
+  "ui_125": {
+    "message": "e hozzájárulás nélkül,"
+  },
+  "ui_126": {
+    "message": "hashes, fájlok, linkek vagy IP címek küldnek külső szolgáltatások. a beleegyezés után, a felhatalmazott szkennelők küldhetik a mellékelt és link adatokat a Hybrid Analysis, VirusTotal, urlscan.io, URLhaus vagy AbuseIPDBA magánélet szinttől függően. kikapcsolja ezt az opciót a hozzájárulás visszavonásához. részletek:"
+  },
+  "ui_127": {
+    "message": "Nem"
+  },
+  "ui_128": {
+    "message": "Adatvédelmi politika"
+  },
+  "ui_129": {
+    "message": "Adatvédelmi irányelv (új lapot nyit)"
+  },
+  "ui_130": {
+    "message": "Hybrid Analysis API kulcs (opcionális):"
+  },
+  "ui_131": {
+    "message": "Az abcdef123456…"
+  },
+  "ui_132": {
+    "message": "URLhaus API kulcs (opcionális tartomány hírnevét):"
+  },
+  "ui_133": {
+    "message": "A API kulcsot kaphatja meg"
+  },
+  "ui_134": {
+    "message": "."
+  },
+  "ui_135": {
+    "message": "urlhaus.abuse.ch"
+  },
+  "ui_136": {
+    "message": "urlhaus.abuse.ch (új lapot nyit)"
+  },
+  "ui_137": {
+    "message": "urlscan.io API kulcs (opcionális URL elemzés):"
+  },
+  "ui_138": {
+    "message": "A API kulcsot kaphatja meg"
+  },
+  "ui_139": {
+    "message": "urlscan.io"
+  },
+  "ui_140": {
+    "message": "urlscan.io (új lapot nyit)"
+  },
+  "ui_141": {
+    "message": "VirusTotal API kulcs (opcionális fájl hírnevét):"
+  },
+  "ui_142": {
+    "message": "virustotal.com"
+  },
+  "ui_143": {
+    "message": "virustotal.com (új lapot nyit)"
+  },
+  "ui_144": {
+    "message": "Privát szinten:"
+  },
+  "ui_145": {
+    "message": "Szigorú (például: csak hashek és tartományok, nem feltöltött)"
+  },
+  "ui_146": {
+    "message": "kiegyensúlyozott (felvétel ismeretlen fájlokat, nincs teljes URLs)"
+  },
+  "ui_147": {
+    "message": "maximális elemzés (felvétel ismeretlen fájlokat és teljes URLs)"
+  },
+  "ui_148": {
+    "message": "Az elemző szolgáltatóknak küldött adatokat korlátozza. csak akkor alkalmazható, ha külső elemzés van aktiválva."
+  },
+  "ui_149": {
+    "message": "IP hírnevét (ellenőrizze a címzett címeket):"
+  },
+  "ui_150": {
+    "message": "fogyatékosság"
+  },
+  "ui_151": {
+    "message": "VirusTotal (VirusTotal API kulcsra van igényel)"
+  },
+  "ui_152": {
+    "message": "AbuseIPDB (AbuseIPDB API kulcsra van igényel)"
+  },
+  "ui_153": {
+    "message": "IP hírnevét API kulcs:"
+  },
+  "ui_154": {
+    "message": "Küldjön közzé a IP címeket az e-mail címek kaptak a kiválasztott szolgáltató. Kívánja a külső elemzés hozzájárulását és a szkennelési jogosultságot."
+  },
+  "ui_155": {
+    "message": "Engedélyezési listák (comma-különböző tartományok vagy e-mail címek):"
+  },
+  "ui_156": {
+    "message": "example.com, test@ example.com"
+  },
+  "ui_157": {
+    "message": "A megbízható küldő bejegyzései elnyomják a helyes küldő figyelmeztetőket. Nem engedik a külső szkenneléseket."
+  },
+  "ui_158": {
+    "message": "Blokklista (comma-különböző tartományok vagy e-mail címek):"
+  },
+  "ui_159": {
+    "message": "Adja meg a blokkolt tartományokat vagy e-mail címeket."
+  },
+  "ui_160": {
+    "message": "Mindig kézi szkennelés (nem automatikus feltöltések)"
+  },
+  "ui_161": {
+    "message": "Az automatikus külső szkennelés megakadályozása.A magyarázatos kézi cselekvések még mindig hozzájárulást és a megfelelő adatvédelmi szintre törekszenek."
+  },
+  "ui_162": {
+    "message": "A várakozó hivatkozásjelentések automatikus lekérése"
+  },
+  "ui_163": {
+    "message": "A link-ellenőrzések hozzájárulást, a szkennelési jogosultságot és a megfelelő adatvédelmi szintre törekszenek."
+  },
+  "ui_164": {
+    "message": "Tekintse meg a linkeket, mielőtt kinyitja őket"
+  },
+  "ui_165": {
+    "message": "A navigáció megszakad, hogy az eredményt megmutassa.A nem ellenőrizett linkek és hibák egyértelműen felismerhetők.A teljes URL elemzésnek a maximális szintre kell lennie. A teljes hivatkozások és mellékletek egyedi megerősítést igényelnek."
+  },
+  "ui_166": {
+    "message": "Ne feledje, hogy mentse beállításait."
+  },
+  "ui_167": {
+    "message": "Adatkezelés"
+  },
+  "ui_168": {
+    "message": "Nyilvánvaló, helyileg tárolt eredmények és hírnevű cache."
+  },
+  "linkChecking": {
+    "message": "A linket ellenőrizni…"
+  },
+  "linkWarning": {
+    "message": "A linket gyanúsnak vagy károsnak nevezték."
+  },
+  "linkUnknown": {
+    "message": "Ez a link nem ellenőrizhető. nyitás lehet kockázatos."
+  },
+  "linkNoDetection": {
+    "message": "Nincs fenyegetés észlelt a szolgáltató. Ez nem garancia a bizalom."
+  },
+  "linkProceed": {
+    "message": "Nyitott link mindenesetre"
+  },
+  "linkCancel": {
+    "message": "Mégse"
+  },
+  "localMode": {
+    "message": "A helyes ellenőrök a API kulcsok nélkül működnek. külső szkennelésekhez hozzájárulást és üzenetet vagy küldő felhatalmazást kell igényelnie."
+  },
+  "statusNormal": {
+    "message": "(Nincs a felderítés)"
+  },
+  "statusSuspicious": {
+    "message": "(A gyanúsított"
+  },
+  "statusCritical": {
+    "message": "(A kritikus"
+  },
+  "noSubject": {
+    "message": "(Nincs a témában)"
+  },
+  "noSender": {
+    "message": "(az ismeretlen küldő"
+  },
+  "noId": {
+    "message": "(Nincs az ID)"
+  },
+  "unknownAttachment": {
+    "message": "ismeretlen"
+  },
+  "statusDangerous": {
+    "message": "( A veszélyes"
+  },
+  "sizeLimit": {
+    "message": "A tároló meghaladja a 25 MiB-es helyes méreti korlátot, és nem olvasható vagy nem töltött fel."
+  },
+  "trustedAuthLabel": {
+    "message": "megbízható igazolási szerverek (comma-külön)"
+  },
+  "trustedAuthHelp": {
+    "message": "Csak a címzett levelezési szerverek listáját adja meg vagy explicitly megbízza. A nem rögzített címkén lévő jelentések továbbra is nem titkosítottak."
+  },
+  "consentHelp": {
+    "message": "Hozzájárulás nélkül semmilyen adatot nem küldünk külső szolgáltatásnak. Hozzájárulás után csak a kifejezetten engedélyezett üzeneteket vagy feladókat ellenőrizzük. Szigorú szinten kivonatok, tartománynevek és nyilvános IP-címek küldhetők. Kiegyensúlyozott szinten ismeretlen fájlok feltöltése, a legmagasabb szinten pedig teljes URL-ek továbbítása is engedélyezett. Kapcsolja ki ezt a beállítást az új adatküldés leállításához és a függőben lévő kérések törléséhez. A már elküldött adatok nem vonhatók vissza. A teljes hivatkozások és mellékletek egyedi megerősítést igényelnek."
+  },
+  "visualImpersonation": {
+    "message": "Vizuális felismerés: az oldal a $BRANDS$ (megelőzhető phishing) személyre szabását jelenti.",
+    "placeholders": {
+      "brands": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedEmail": {
+    "message": "A küldő e-mail ( $P1$) a blokklistán szerepel.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedDomain": {
+    "message": "A weboldal megosztása ($P1$A blogban a blog ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedEmail": {
+    "message": "A küldő e-mail ( $P1$) a megengedett listán szerepel.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedDomain": {
+    "message": "A weboldal megosztása ($P1$A megengedett listán ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanVisibility": {
+    "message": "A urlscan.io benyújtások nem listázott, nem magán. A teljes URL magában foglalhatja a személyi adatokat vagy a hozzáférési tokeneket. Csak a URLs-t küldheti meg, amely megengedett."
+  },
+  "notificationScanCount": {
+    "message": "Szűrés: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "gatewayRequestTimeout": {
+    "message": "A szolgáltató kérelmét törölték vagy időben elhalasztották."
+  },
+  "gatewayInvalidJson": {
+    "message": "A szolgáltató visszaküldte az olvashatatlan válaszot."
+  },
+  "gatewayNetworkError": {
+    "message": "A szolgáltatót nem lehetett elérni."
+  },
+  "noMessageFound": {
+    "message": "Nem találták meg a megadott üzenetet."
+  },
+  "providerNoDetection": {
+    "message": "Nem észleltek fenyegetést"
+  },
+  "providerMalicious": {
+    "message": "Rosszindulatú"
+  },
+  "providerSuspicious": {
+    "message": "Gyanús"
+  },
+  "providerPending": {
+    "message": "A felfüggesztett elemzés"
+  },
+  "privacyLocalData": {
+    "message": "A Thundy AV megolvassa a megadott üzenetet, a küldőjét, a témát, a címeket, a szöveget és a mellékhelyeket a helyes ellenőrizések elvégzéséhez. A helyes ellenőrök a API kulcsok nélkül működnek. Nincs telemetriája és nincs fejlesztő elemzési szerver."
+  },
+  "privacyProviders": {
+    "message": "A külső felhatalmazott kérések a következő szolgáltatókhoz kerülnek: Hybrid Analysis A fájl hashes és felvételek, VirusTotal A hashes vagy IP a hírnevét, URLhaus A doménokért, urlscan.io A teljes URLs és AbuseIPDB A szolgáltató rendelkezései és adatvédelmi irányelvei alkalmazandók; a szolgáltató megoszthatja a benyújtott adatokat."
+  },
+  "privacyRetention": {
+    "message": "beállítások, beleegyezés, küldő jogosultságok és API A kulcsok a tiédben tárolódnak Thunderbird A profil API A kulcsok nem titkosítva vannak. A lokális szkennelési rekordok tárgyait, küldő címét, teljes linkeket és mellékhatások metadatait is magukban foglalhatják. A cache 30 napig 1000 üzenet-nyilvántartást tárol és a databázis indításánál tisztítják. A memória hírnevének eredményei 15 perc után megszűnnek."
+  },
+  "privacyControl": {
+    "message": "Kizárja a külső elemzést, hogy megakadályozza az új kérések és törli a várható kérések. már továbbított adatokat nem lehet visszaemlékezni. Használja a Tiszta cache törölni tárolt elemzési eredmények és hírnevű cache. Az egyéni küldő jogosultságok törölhető a beállításokban."
+  },
+  "privacyDetailed": {
+    "message": "Részletes adatvédelmi politika (angol / magyar)"
+  },
+  "senderAuthorizationsLabel": {
+    "message": "Hatáskörrel rendelkező küldők (egy e-mail cím egy vonalra)"
+  },
+  "senderAuthorizationsHelp": {
+    "message": "Ezek a küldőket automatikusan szkennelhetik, amikor a külső elemzés aktiválódik. eltávolítsa az címet, hogy megszüntesse a jövőbeni üzenetek automatikus szkennelését. Ez a lista nem haladja meg a magánélet szintre vagy a kézi üzemmódot."
+  },
+  "invalidSenderAddress": {
+    "message": "Írja be a pontos e-mail címeket, egy vonalonként."
+  },
+  "popupSubtitle": {
+    "message": "Üzenetbiztonsági átvilágítás"
+  },
+  "popupDetails": {
+    "message": "Műszaki üzenet részletek"
+  },
+  "popupLocalAssessment": {
+    "message": "Helyi kockázatértékelés"
+  },
+  "popupLocalExplanation": {
+    "message": "Ez a pontszám nem vírusellenes ítélet vagy a garancia a bizalom."
+  },
+  "linkDialogTitle": {
+    "message": "Megvizsgálja a nyitás előtt"
+  },
+  "linkDestination": {
+    "message": "Céloldal WEB"
+  },
+  "linkUrlDetails": {
+    "message": "Jelentkezzen a teljes link címre"
+  },
+  "linkOpenBrowser": {
+    "message": "Megnyitás böngészőben"
+  },
+  "linkOpening": {
+    "message": "Nyitva…"
+  },
+  "linkOpenFailed": {
+    "message": "A hivatkozást nem sikerült megnyitni. Próbálkozzon újra, vagy ellenőrizze az alapértelmezett böngésző beállításait."
+  },
+  "linkCheckLimited": {
+    "message": "Csak a rendelkezésre álló szkennelési eredmények jelenhetők meg. A hibás ellenőrizések nem jelentenek, hogy a linkek biztonságosak."
+  },
+  "auditTitle": {
+    "message": "Link döntés log"
+  },
+  "auditOpen": {
+    "message": "Lásd a link log"
+  },
+  "auditScope": {
+    "message": "Logs HTTP (S) kattintások megszakított linkvédelem. OPENED jelenti Thunderbird fogadta a nyitó kérelem jelentése nélkül hiba. Ez nem igazolja, hogy az operációs rendszer indított egy böngésző vagy hogy a weboldal meglátogatott."
+  },
+  "auditPrivacy": {
+    "message": "Helyi tárolás legfeljebb 30 napig, 2000 rekord vagy 2 MiB (a legrégebbi bejegyzéseit eltávolítják). A teljes URLs lehet, hogy magában foglalja a személyi adatokat vagy a hozzáférési tokeneket. Semmi sem tölthető fel automatikusan. A helyes naplót lehet megváltoztatni vagy törölni a profilfelvételi felhasználók; ez nem tamper-proof központi könyvvizsgálati útvonal. A helyek pontszám használja a kattintott link és üzenet kontextus, nem egy szolgáltató pontszám. Az értékesítés okai lehetnek a küldő vagy a tartomány részleteit."
+  },
+  "auditSearch": {
+    "message": "URL, domén vagy esettanúsító"
+  },
+  "auditOutcome": {
+    "message": "határozat"
+  },
+  "auditAll": {
+    "message": "Minden"
+  },
+  "auditOpened": {
+    "message": "Nyitó kérés"
+  },
+  "auditAborted": {
+    "message": "Abortusz"
+  },
+  "auditOpenError": {
+    "message": "Megnyílt a nyitás"
+  },
+  "auditPending": {
+    "message": "Nincs befejezett döntés"
+  },
+  "auditMinScore": {
+    "message": "minimális döntéshozatal"
+  },
+  "auditFrom": {
+    "message": "A"
+  },
+  "auditTo": {
+    "message": "A"
+  },
+  "auditRefresh": {
+    "message": "Frissítés"
+  },
+  "auditJson": {
+    "message": "Exportálás JSON formátumba"
+  },
+  "auditCsv": {
+    "message": "Kivitel CSV"
+  },
+  "auditClear": {
+    "message": "Helyi log törlés"
+  },
+  "auditExportHelp": {
+    "message": "Az Export minden szűrött sor, nem csak a jelenlegi oldal. JSON egy SHA-256 ellenőrizési számot; nem bizonyítja az autentikát. CSV semlegesíti a lapformulákat. Export tartalmaznak teljes URLs : csak megosztani a jogosult ellenőrökkel."
+  },
+  "auditTime": {
+    "message": "Click / döntés időtartama"
+  },
+  "auditLocalScore": {
+    "message": "Helyi pontszám (link és üzenet)"
+  },
+  "auditVerdict": {
+    "message": "szolgáltató eredménye"
+  },
+  "auditAddress": {
+    "message": "URL és részletek"
+  },
+  "auditPrevious": {
+    "message": "Előző"
+  },
+  "auditNext": {
+    "message": "Tovább"
+  },
+  "auditClearConfirm": {
+    "message": "Távolítsa el a lokális link napló bejegyzéseit? kivitelezése előzetesen bizonyítékokat igényel. A szkennelési eredmények és beállítások megmaradnak."
+  },
+  "auditFailure": {
+    "message": "A helyes link napló nem olvasható vagy menthető."
+  },
+  "auditUnavailable": {
+    "message": "Nem rendelkezésre áll"
+  },
+  "auditScoreAtDecision": {
+    "message": "A döntés eredménye"
+  },
+  "auditRecords": {
+    "message": "Rekordok"
+  },
+  "auditDetails": {
+    "message": "URL és bizonyítékok"
+  },
+  "auditEventId": {
+    "message": "Esemény ID"
+  },
+  "auditCancelReason": {
+    "message": "A törlés okai"
+  },
+  "auditFinalResult": {
+    "message": "Legutóbbi teszt eredmény"
+  },
+  "auditProfile": {
+    "message": "Helyi profil ID"
+  },
+  "auditExported": {
+    "message": "A kivitel megmentett."
+  },
+  "auditRiskyOpened": {
+    "message": "Nagy kockázatú nyitás igényelése"
+  },
+  "auditExportFailed": {
+    "message": "A kivitel nem volt eredményes, vagy törölték."
+  },
+  "profilesTitle": {
+    "message": "Opcionális vállalati profilok"
+  },
+  "profilesIntro": {
+    "message": "Válasszon közönséges rendszereket önállóan vagy hagyja ki az integrációkat. Ezek a profilok felkészítik a beállításokat; nem lépnek be egy vállalat szolgáltatáshoz vagy aktiválják a központi naplózásot."
+  },
+  "profilesOpen": {
+    "message": "Vállalati profilok kiválasztása"
+  },
+  "profilesBundle": {
+    "message": "Ajánlott kombináció"
+  },
+  "profilesLocal": {
+    "message": "Helyi előkészületek"
+  },
+  "profilesCustom": {
+    "message": "Személyre szabott kiválasztás"
+  },
+  "profilesHosting": {
+    "message": "Tárhely"
+  },
+  "profilesSso": {
+    "message": "Egyedülálló jelzés (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Device menedzsment"
+  },
+  "profilesSiem": {
+    "message": "Biztonsági felügyelet (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "jegyek rendszer"
+  },
+  "profilesRequirements": {
+    "message": "Konfigurációra van szó"
+  },
+  "profilesRequirementsHelp": {
+    "message": "A későbbi beállítások során a végpontok és a fiók beállításait biztosítja. az alább felsorolt nevek meghatározzák a kívánt beállításokat és a titkos hivatkozások; itt nem adnak be igazolást."
+  },
+  "profilesPreview": {
+    "message": "Konfigurációs terv"
+  },
+  "profilesPrivacy": {
+    "message": "A tervezet nem tartalmaznak API kulcsokat, tokeneket, kattintott URLs vagy üzenetadatokat. A központi adatokat csak a domén szerkesztésével tervezik."
+  },
+  "profilesSave": {
+    "message": "Helyi kiválasztás"
+  },
+  "profilesExport": {
+    "message": "Export Konfigurációs Terv"
+  },
+  "profilesReset": {
+    "message": "Újra kiválasztás"
+  },
+  "profilesNone": {
+    "message": "fogyatékkal élők / nem kiválasztott"
+  },
+  "profilesSelfHosted": {
+    "message": "Önálló / Önállós / Önálsó"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Nincs külső integrációs beállítás erre a kiválasztásra."
+  },
+  "profilesSaved": {
+    "message": "A kiválasztás mentett helyileg. a hálózatok letiltva maradnak."
+  },
+  "profilesExported": {
+    "message": "A beállítás tervezetét kivették. semmit nem aktivált."
+  },
+  "profilesFailed": {
+    "message": "A kiválasztást nem lehetett feltölteni, menteni vagy kivitelezni, vagy a műveletet törölték."
+  },
+  "wizardTitle": {
+    "message": "A Thundy AV beállítása"
+  },
+  "wizardLanguage": {
+    "message": "A varázsló nyelve"
+  },
+  "wizardLanguageNote": {
+    "message": "A választás csak a varázslóra vonatkozik. A kiegészítő nyelve a beállításokban módosítható."
+  },
+  "wizardWelcome": {
+    "message": "Üdvözlettel"
+  },
+  "wizardProtection": {
+    "message": "Link védekezés"
+  },
+  "wizardExternal": {
+    "message": "Opcionális elemzés"
+  },
+  "wizardIntro": {
+    "message": "Kezdje a helyes ellenőrizésekkel.Egy e-mail ellenőrizése esetén használja a Thundy AV banert vagy a szkennelési akciót.Később eldönteni tudod, hogy az elemzési szolgáltatókat be kell-e állítani."
+  },
+  "wizardLocalNotice": {
+    "message": "A külső elemzéshez való hozzájárulás nélkül az adatokat nem küldjük az elemző szolgáltatóknak.Ez a varázsló soha nem adja meg ezt a hozzájárulást."
+  },
+  "wizardPrivacy": {
+    "message": "Adatvédelmi információ"
+  },
+  "wizardLinkChoice": {
+    "message": "Figyelmeztetés a linkek megkezdése előtt és a döntések rögzítése lokálisan"
+  },
+  "wizardLinkExplanation": {
+    "message": "A link párbeszédben a cél és a rendelkezésre álló kockázatértékelés jelenik meg. A böngészőhez való link kézzel nyitva tartása; nem bizonyítja a weboldal látogatását."
+  },
+  "wizardAuditNotice": {
+    "message": "A helyes link log magában foglalhatja a teljes URLs és az értékesítés okai. Ez tartja akár 30 napig, 2000 bejegyzést vagy 2 MiB. A profil felhasználók olvashatják, megváltoztatják vagy törölhetik; ez nem védett vállalati könyvvizsgálat."
+  },
+  "wizardExternalExplanation": {
+    "message": "Külső szolgáltatók opcionálisak és igényelhetik a API kulcsokat. Az adatvédelmi szinten, hashek, tartományok, köz IP-k, fájlok vagy teljes URLs továbbíthatók."
+  },
+  "wizardNextAction": {
+    "message": "Mit szeretnél a következőben csinálni?"
+  },
+  "wizardKeepLocal": {
+    "message": "Véget ért a lokális ellenőrök"
+  },
+  "wizardKeepExisting": {
+    "message": "Meglévő külső beállítások megtartása"
+  },
+  "wizardExistingExternal": {
+    "message": "Külső elemzés már aktiválva van a profilban. a varázsló nem változtatja meg a beleegyezést. használja a beállításokat, hogy kikapcsolja vagy átvizsgálja a megengedettségeket."
+  },
+  "wizardConfigure": {
+    "message": "Külső elemzés beállítása a beállításokban"
+  },
+  "wizardNoConsent": {
+    "message": "A beállítások csak a beállításokat nyitják meg. Semmi sem tölthető fel, és nincs megengedése, amit a varázsló kér."
+  },
+  "wizardBack": {
+    "message": "Vissza"
+  },
+  "wizardNext": {
+    "message": "Tovább"
+  },
+  "wizardFinish": {
+    "message": "Megmentés Setup"
+  },
+  "wizardFinishConfigure": {
+    "message": "Megtakarítás és nyitás beállítások"
+  },
+  "wizardSkip": {
+    "message": "Nem most"
+  },
+  "wizardDone": {
+    "message": "Megtakarítás mentett"
+  },
+  "wizardDoneText": {
+    "message": "A link-védelem választás mentett helyileg. Nincs API kulcs, külső hozzájárulás vagy küldő jóváhagyása megváltozott."
+  },
+  "wizardSettings": {
+    "message": "Nyitott beállítások"
+  },
+  "wizardProfilesNotice": {
+    "message": "A vállalati profilok opcionális beállítási tervezetek. kiválasztása nem aktiválja a vállalati összeköttetést."
+  },
+  "wizardDeferred": {
+    "message": "A beállítás késleltetett"
+  },
+  "wizardDeferredText": {
+    "message": "A beállítások nem változtak. Újra nyissa meg a varázslót a beállításokból, amikor készen áll."
+  },
+  "wizardSettingsOpened": {
+    "message": "A beállítások nyitva állnak. beállítsa a szolgáltatókat, és mentse meg hozzájárulását ott."
+  },
+  "wizardSettingsFailed": {
+    "message": "A beállítások nem nyílik meg. A beállítás mentett; használja a Nyitott beállításokat visszavonásához."
+  },
+  "wizardSaveFailed": {
+    "message": "A beállítás nem menthető meg. A választások itt maradnak; kérjük, visszavonja."
+  },
+  "wizardLoadFailed": {
+    "message": "A beállítások nem tölthetők le. Semmi sem mentett meg. Újra töltse le ezt az oldalt a visszavonásra."
+  },
+  "wizardLanguageFailed": {
+    "message": "A nyelvet nem lehet feltölteni. a megelőző nyelvet továbbra is kiválasztották."
+  },
+  "wizardReopen": {
+    "message": "Nyitott beállítás varázsló"
+  },
+  "settingsAppearance": {
+    "message": "Megjelenés"
+  },
+  "settingsPrivacy": {
+    "message": "Adatvédelem"
+  },
+  "settingsScanning": {
+    "message": "Védelem"
+  },
+  "settingsProviders": {
+    "message": "Elemzőszolgáltatások"
+  },
+  "settingsSenders": {
+    "message": "Feladókra vonatkozó szabályok"
+  },
+  "settingsData": {
+    "message": "Adatok és eszközök"
+  },
+  "settingsWorkspace": {
+    "message": "A munkaterületed"
+  },
+  "settingsEyebrow": {
+    "message": "Készítsd el a tiéd"
+  },
+  "settingsSubtitle": {
+    "message": "Szabja testre a Thundy AV megjelenését és levelezése védelmét."
+  },
+  "settingsLocalBadge": {
+    "message": "Helyi elszámolás default"
+  },
+  "settingsLocalNote": {
+    "message": "Az Ön preferenciái. tárolva ezen a készülékön."
+  },
+  "settingsSkip": {
+    "message": "Skip a beállításokhoz"
+  },
+  "settingsProviderGuide": {
+    "message": "A szolgáltatók és a API kulcsok"
+  },
+  "settingsWizardHelp": {
+    "message": "A vezérelt beállításokat bármikor ellenőrizze."
+  },
+  "themeIntro": {
+    "message": "A Thundy AV úgy érzi, mint a saját. A jelenet változások azonnal mentették át a bővítést."
+  },
+  "themeMode": {
+    "message": "Megjelenés"
+  },
+  "themeSystem": {
+    "message": "A Thunderbird témájának követése"
+  },
+  "themeLight": {
+    "message": "Világos"
+  },
+  "themeDark": {
+    "message": "Sötét"
+  },
+  "themeAccent": {
+    "message": "Fokozott szín"
+  },
+  "themeOcean": {
+    "message": "óceán"
+  },
+  "themeViolet": {
+    "message": "Ibolya"
+  },
+  "themeForest": {
+    "message": "erdők"
+  },
+  "themeAmber": {
+    "message": "Borostyán"
+  },
+  "themeReady": {
+    "message": "A jelenet automatikusan menthető.A más beállítások a mentés gombot használják."
+  },
+  "themeSaving": {
+    "message": "Megtakarítás a látszat…"
+  },
+  "themeSaved": {
+    "message": "A jelenet megmentett."
+  },
+  "themeLoadError": {
+    "message": "A jelenet nem tölthető le. Próbálja meg újraindítani a beállításokat."
+  },
+  "themeSaveError": {
+    "message": "A jelenet nem menthető meg. Válassza ki a választás újra visszavonulni."
+  },
+  "themeRetry": {
+    "message": "Visszaállítási mentési jelenség"
+  },
+  "themeDensity": {
+    "message": "Információs sűrűség"
+  },
+  "themeComfortable": {
+    "message": "kényelmes"
+  },
+  "themeCompact": {
+    "message": "Kompakt"
+  },
+  "themeDensityHelp": {
+    "message": "A beállítások és a helyes adminisztrációs szerszámok helyesbítését."
+  },
+  "profilesChanges": {
+    "message": "Változások a megtakarított kiválasztással összehasonlítva"
+  },
+  "profilesDiscard": {
+    "message": "Eltávolítsa el a nem mentett változásokat"
+  },
+  "profilesLoadRetry": {
+    "message": "Reload mentett kiválasztás"
+  },
+  "profilesNotLoaded": {
+    "message": "Megtakarított kiválasztás nem töltött"
+  },
+  "profilesUnsaved": {
+    "message": "Nem megadott változások · inaktív tervezet"
+  },
+  "profilesUnchanged": {
+    "message": "Megtakarított kiválasztás · inaktív tervezet"
+  },
+  "profilesSaving": {
+    "message": "A helyiségek kiválasztása…"
+  },
+  "settingsUnsaved": {
+    "message": "Elégtelen változások"
+  },
+  "providerUnknown": {
+    "message": "Az eredmény ismeretlen"
+  },
+  "auditVerdictAtDecision": {
+    "message": "A döntés eredménye"
+  },
+  "ui_169": {
+    "message": "Elemzési jegyzőkönyv: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "Munkahelyi ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "Szállítási név: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Jegyzőkönyv: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": "Az elemzés továbbra is fut (IN_PROGRESS). Az eredmény automatikusan visszavonul minden $P1$ másodpercben (megkapja $P2$); a befejezett elemzési jegyzőkönyv itt jelenik meg új kérés nélkül, miután tárolódik.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "A befejezett döntés nem rögzíthető. újrakezdés vagy a feldolgozás veszteségét követő, ez továbbra is vár; ne mondja el, hogy a linket nyitott vagy törölték."
+  },
+  "auditCancelUser": {
+    "message": "A felhasználó által törölt"
+  },
+  "auditCancelEscape": {
+    "message": "Elzárkózott a meneküléssel"
+  },
+  "auditCancelDestination": {
+    "message": "Megváltozott a cél"
+  },
+  "auditCancelContext": {
+    "message": "A kontextus zárva"
+  },
+  "auditCancelUnknown": {
+    "message": "A törlés okát nem ismerjük"
+  },
+  "reportNotSaved": {
+    "message": "A jelentés láthatós, de nem menthető meg helyileg. újraindítani a visszavonuláshoz."
+  },
+  "checkOrigin_live": {
+    "message": "A jelenlegi szolgáltató eredménye"
+  },
+  "checkOrigin_stored": {
+    "message": "tárolt eredmény"
+  },
+  "checkOrigin_none": {
+    "message": "Nincs szolgáltató megfigyelése"
+  },
+  "checkOutcome_success": {
+    "message": "A kérés sikeres"
+  },
+  "checkOutcome_failed": {
+    "message": "A kérelem nem sikeres"
+  },
+  "checkOutcome_disabled": {
+    "message": "Külső elemzés fogyatékkal"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Elmaradt a házigazda"
+  },
+  "checkOutcome_missing_key": {
+    "message": "A kulcsfontosságú szolgáltató eltűnt"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Nincs szolgáltató hivatkozása"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Nincs új kérés"
+  },
+  "checkOutcome_no_result": {
+    "message": "Nincs új eredmény"
+  },
+  "checkAttempted": {
+    "message": "ellenőrizze a megpróbáltatást"
+  },
+  "checkObserved": {
+    "message": "Az eredmény megfigyelhető"
+  },
+  "auditReasonsAtDecision": {
+    "message": "A döntés okai"
+  },
+  "auditReasonsLatest": {
+    "message": "Legfrissebb rendelkezésre álló okok"
+  },
+  "auditReasonsMissing": {
+    "message": "Nem rögzítettük az időben"
+  },
+  "coverageSummary": {
+    "message": "Felszabadulás – észlelték: $1• jogosultak a: $2• feldolgozott $3A sikertelen: $4A kikapcsolódás: $5A felvett elemek nem értékelték."
+  },
+  "supportTitle": {
+    "message": "Helyi támogatási jelentés"
+  },
+  "supportHelp": {
+    "message": "A minimális diagnostikus jelentést előzetesen meg kell adni, majd helyileg menteni. semmit nem küldünk. a csekket nem igazolják forrását."
+  },
+  "supportPreview": {
+    "message": "Előzetes jelentés"
+  },
+  "supportConfiguration": {
+    "message": "Tartalmazza a szűk beállításokat (nem kulcsok vagy küldő listák)"
+  },
+  "supportSave": {
+    "message": "A jelentés megőrzése helyileg"
+  },
+  "coverageAttachments": {
+    "message": "hozzáállás"
+  },
+  "coverageDomains": {
+    "message": "Egyedi doménok"
+  },
+  "coverageBatch": {
+    "message": "Baloldal Batch"
+  },
+  "coverageLimits": {
+    "message": "Határ: 100 kötet, 25 MiB kötet, 100 egyedi tartomány, 20 csomó link. feldolgozott nem jelenti külsőleg szkennelt vagy biztos."
+  },
+  "localProfileTitle": {
+    "message": "Helyi profilok"
+  },
+  "localProfileHelp": {
+    "message": "Export mentett kiállítás vagy a helyes védő beállítások külön. Előzetes megnézés és megerősítés import. A kulcsok, beleegyezés, a megengedett küldő és a könyvvizsgálati történelem kizárt."
+  },
+  "localProfileExport": {
+    "message": "Export kiállítás"
+  },
+  "localProfileFile": {
+    "message": "Válasszon egy profilfájlt ( JSON, legfeljebb 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "profil JSON (vagy itt beállítva)"
+  },
+  "localProfilePreview": {
+    "message": "Előrejelzés változások"
+  },
+  "localProfileApply": {
+    "message": "A megadott változások alkalmazása"
+  },
+  "localProfileDiscard": {
+    "message": "A behozatal megsértése"
+  },
+  "localProfileInvalid": {
+    "message": "Határtalan profil, nem támogatott verzió vagy tilos mezők."
+  },
+  "localProfileChanged": {
+    "message": "A jelenet megváltozott az előzetes megnézés óta. előzetes újra alkalmazás előtt."
+  },
+  "localProfileFailed": {
+    "message": "A profil nem menthető meg. A jelenlegi beállítások és a visszavonás megvizsgálása."
+  },
+  "localProfileApplied": {
+    "message": "A jelenet profil alkalmazott. a védekezés és a beleegyezés változhatatlan."
+  },
+  "analysisTitle": {
+    "message": "Forrás elemzés"
+  },
+  "analysisMixed": {
+    "message": "Helyi + külső ellenőrök"
+  },
+  "analysisExternal": {
+    "message": "Külső megfigyelések rendelkezésre állnak"
+  },
+  "analysisLocal": {
+    "message": "Helyi · nincs külső eredmények rögzítve"
+  },
+  "analysisLocalChecked": {
+    "message": "A hivatalos/helyes üzenet-hírszerződés befejeződött."
+  },
+  "analysisLocalPending": {
+    "message": "A helyes felmérés még nem rögzített."
+  },
+  "analysisUnknown": {
+    "message": "ismeretlen"
+  },
+  "analysisTimeUnknown": {
+    "message": "Idő nem rögzített"
+  },
+  "analysisObserved": {
+    "message": "Utolsó felhasználható válasz"
+  },
+  "analysisFindingObserved": {
+    "message": "Megtalálása feljegyzett"
+  },
+  "analysisAttempted": {
+    "message": "Utolsó kérelem megpróbáltatás"
+  },
+  "analysisPartial": {
+    "message": "Néhány kérés nem sikeres; a rendelkezésre álló találatok nem fedik le minden elemet."
+  },
+  "analysisOtherServices": {
+    "message": "Egyéb szolgáltatások / nem ellenőrizték"
+  },
+  "analysisLimit": {
+    "message": "A helyes pontszám nem vírusellenes ítélet. kérések és letöltések nem végleges elemzések. tárolt eredmények megtartják az ősi koruk; a hiánya rekordok nem bizonyítják, hogy nem volt előző kérés."
+  },
+  "analysisScope_hash": {
+    "message": "Hasz Hasz Hírlevél"
+  },
+  "analysisScope_file": {
+    "message": "Fájl benyújtása"
+  },
+  "analysisScope_url": {
+    "message": "URL elemzés"
+  },
+  "analysisScope_domain": {
+    "message": "Domain hírnevét"
+  },
+  "analysisScope_ip": {
+    "message": "IP közönség hírnevét"
+  },
+  "analysisScope_report": {
+    "message": "elemzési jelentés"
+  },
+  "analysisState_running": {
+    "message": "Megkeresett · Nincs még befejezett eredmény"
+  },
+  "analysisState_checked": {
+    "message": "Elérkezett eredmény"
+  },
+  "analysisState_received": {
+    "message": "Válasz kapta · ítélet nem áll rendelkezésre"
+  },
+  "analysisState_submitted": {
+    "message": "Elfogadott benyújtás · elemzés nem erősített teljes"
+  },
+  "analysisState_not_found": {
+    "message": "Nincs rekord a szolgáltatók számára"
+  },
+  "analysisState_failed": {
+    "message": "A kérelem nem volt sikeres, új ítélet nem volt"
+  },
+  "analysisState_incomplete": {
+    "message": "Nem teljesített elemzés nem szerepel"
+  },
+  "analysisSource_remote": {
+    "message": "Külső szolgáltatás Kapcsolat"
+  },
+  "analysisSource_cache": {
+    "message": "Memory cache · Nincs új szolgáltató kérése"
+  },
+  "analysisSource_stored": {
+    "message": "Külső megfigyelés tárolása"
+  },
+  "analysisSource_attempt": {
+    "message": "Kérelem megpróbáltatás · válasz nem megerősített"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Elfogadhatatlan ítélet"
+  },
+  "analysisVerdict_none": {
+    "message": "Elérhető eredmények: nincs kimutatás (nincs garancia a bizalomra)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "A rendelkezésre álló eredmények gyanús mutatókat tartalmaznak"
+  },
+  "analysisVerdict_malicious": {
+    "message": "A rendelkezésre álló eredmények egy fenyegetés felismerését is magukban foglalják"
+  },
+  "analysisReason_unconfigured": {
+    "message": "jelenleg nem állították össze"
+  },
+  "analysisReason_disabled": {
+    "message": "Új külső kérelmek fogyatékkal élnek"
+  },
+  "analysisReason_permission": {
+    "message": "Új kérelmek esetén hiánya a házigazda-engedély"
+  },
+  "analysisReason_authorization": {
+    "message": "Nincs automatikus jogosultság erre az üzenetre / kézi módra"
+  },
+  "analysisReason_policy": {
+    "message": "Nem megengedett a jelenlegi adatvédelmi szinten"
+  },
+  "analysisReason_on_action": {
+    "message": "Csak egy explicit link akció után fut"
+  },
+  "analysisReason_unrecorded": {
+    "message": "Nincs feliratkozott ellenőrizés erre az üzenetre"
+  },
+  "analysisUnavailable": {
+    "message": "elemzési források jelenleg nem rendelkezésre állnak"
+  },
+  "analysisModeUnknown": {
+    "message": "Az elemzés állapota még nem rögzített"
+  },
+  "analysisModeRunning": {
+    "message": "Külső kérelem futtatás · eredmény várható"
+  },
+  "analysisModeSubmitted": {
+    "message": "Külsőleg benyújtott · elemzés még nem fejeződött be"
+  },
+  "analysisModeIncomplete": {
+    "message": "Külső ellenőrizés nem teljes · befejezés nem erősített"
+  },
+  "analysisModePartial": {
+    "message": "Külső eredmények elérhetők · Néhány kérés nem teljesült"
+  },
+  "analysisModeFailed": {
+    "message": "Külső kérelem nem sikeres · nincs használható eredmény rögzítve"
+  },
+  "analysisModeResults": {
+    "message": "Külső válaszok rendelkezésre állnak · lásd az alább megadott ellenőrizések"
+  },
+  "analysisResourceMessage": {
+    "message": "Üzenet kontextus / közlekedési hírnev"
+  },
+  "analysisResourceAttachment": {
+    "message": "hozzáállás"
+  },
+  "analysisResourceLink": {
+    "message": "Hivatkozás"
+  },
+  "analysisResourceUnknown": {
+    "message": "Előző Összefogás · forrás nem rögzített"
+  },
+  "analysisTruncated": {
+    "message": "Néhány erőforrás-részletet elhanyagoltak, mert a helyes megjelölési korlát elérte."
+  },
+  "analysisResources": {
+    "message": "A közleményben szerepelnek a források"
+  },
+  "analysisResourceLocal": {
+    "message": "A üzenettel tárolt tárolás · nem bizonyítja a vírusellenes szkennelést"
+  },
+  "analysisResourceTarget": {
+    "message": "A távoli tartalmak feltöltése nem bizonyítja a külső elemzést"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Nincs külső ellenőrizés rögzítve erre az erőforrásra"
+  },
+  "analysisContextChanged": {
+    "message": "A levelezési kontextus megváltozott. A popup beállítása előtt zárja le és nyissa meg újra."
+  },
+  "analysisLocalIncomplete": {
+    "message": "A helyes elemzés nem teljes: bizonyos üzenet tartalma nem áll rendelkezésre."
+  },
+  "analysisLocalUnavailable": {
+    "message": "Helyi elemzés nem áll rendelkezésre: az üzenet nem olvasható."
+  },
+  "analysisHistoryTitle": {
+    "message": "Tárgy: tárolása nem erősített"
+  },
+  "analysisHistoryWarning": {
+    "message": "Ezek a történelmi rekordok tartozhatnak egy másik üzenethez, amely ugyanaz a Message-ID. Nem erősítik meg a üzenet ellenőrizését."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Új forrás megfigyelések nem menthetők meg. A meglévő történelem megmaradt."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "A jelentés naprakésszé tétele nem menthető meg. Korábbi jegyzőkönyvek megmaradtak."
+  },
+  "sourceExportOpen": {
+    "message": "Előzetes elemzés forrás jelentés"
+  },
+  "sourceExportTitle": {
+    "message": "forrás elemzés"
+  },
+  "sourceExportIntro": {
+    "message": "Hozzon be egy helyes képet a rögzített ellenőrizésekről. Ez nem fut egy új elemzést. A jelenlegi megfigyelések és a tárolt történelem a nem erősített társulással külön tartják."
+  },
+  "sourceExportPrivacy": {
+    "message": "Tartalmazza a szolgáltatások, állapota, ítélet és pontos megfigyelési időt. Kizárja URLs, fájlnevek, hashek, IP-k, kulcsok, üzenet szövege és a belföldi személyazonosító. Az erőforrás számok csak ezen a jelentésen belüli. Ez nem egy teljes történelem vagy egy igazolt rekord. Semmi sem küldik automatikusan. Megvizsgálja megosztás előtt."
+  },
+  "sourceExportCancel": {
+    "message": "Elképesztő előzetes"
+  },
+  "sourceExportContentLabel": {
+    "message": "Jelentés előzetes ( JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "A jelentés kontextusa már nem áll rendelkezésre. Újra nyissa meg a jelentést az üzenet szerszámlapja popup-ból."
+  },
+  "sourceExportChanged": {
+    "message": "A rögzített állapota megváltozott. Hozzon új előzetes megnézést, mielőtt megtakarít."
+  },
+  "sourceExportReady": {
+    "message": "A megtakarítás vagy megosztás előtt ellenőrizze az előzetes megvizsgálást."
+  },
+  "sourceExportRequested": {
+    "message": "Megtartani kérésre. ellenőrizze a befejezés a Thunderbird letöltések."
+  },
+  "sourceExportFailed": {
+    "message": "A jelentés nem mentett meg. Hozzon új előzetes megvizsgálást, hogy újra megpróbáljon."
+  },
+  "analysisHistoryPages": {
+    "message": "Történelmi oldalak"
+  },
+  "analysisHistoryEntries": {
+    "message": "bejárat"
+  },
+  "analysisHistoryFlagged": {
+    "message": "gyanús vagy káros történelmi találatok · társulás nem erősített"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Az első történelmi figyelmeztetés"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Most mutatja meg a legerősebb jelenlegi találatokat"
+  },
+  "reportDisplayFailed": {
+    "message": "A tárolt jelentés nem jelenik meg. Egyéb eredmények továbbra is elérhetők."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Néhány jelentés részlete nem támogatott formátumban van, és nem jelenhet meg."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Néhány tárolt elemzési adat nem olvasható; egyéb eredmények továbbra is rendelkezésre állnak."
+  },
+  "analysisModeResponses": {
+    "message": "Válaszok kaptak · Nincs értékesített ítélet"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Válaszok nem kaptak meg egy becsült ítéletet · Néhány kérelem nem volt"
+  },
+  "analysisCurrentAvailability": {
+    "message": "Új kérésekért"
+  },
+  "reasonMaliciousIp": {
+    "message": "Káros kiszolgáló IP címet észleltek ( $IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "Külső fenyegetés mutatók ( URLhaus és IP hírnevét)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus – Ismeretes malware tartományok kimutatták: $DOMAINS$",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "IP Reputáció ( $PROVIDER$) – gyanús szerver IP: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "urlscan.io eredmények:"
+  },
+  "urlscanStatus": {
+    "message": "Állapot: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridReportLink": {
+    "message": "Nyitott teljes jelentés a Hybrid Analysis-ről"
+  },
+  "hybridProviderMessage": {
+    "message": "Szállítási üzenet: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "A Hybrid Analysis árhatár vagy kvóta elérte. kérjük, próbálja meg újra későbbi."
+  },
+  "reasonArchivedMaliciousAttachment": {
+    "message": "A történelmi találmányok ($OBSERVED$). $PROVIDER$ „Kategóriás hozzáállás”$NAME$„Mint a káros.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonArchivedSuspiciousAttachment": {
+    "message": "A történelmi találmányok ($OBSERVED$). $PROVIDER$ „Kategóriás hozzáállás”$NAME$„Mint a gyanús.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonMaliciousAttachment": {
+    "message": "A \" $NAME$\" kötőanyagot a $PROVIDER$ károsnak osztályozta.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "A \" $NAME$\" tárolókat a $PROVIDER$ gyanúsnak osztályozta.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanReportLink": {
+    "message": "Nyitott teljes jelentés a urlscan.io-ről"
+  },
+  "hybridLinkVerdictStatus": {
+    "message": "Hybrid Analysis: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonMaliciousLinkVerdict": {
+    "message": "A link \" $URL$ \" a $PROVIDER$ által károsnak osztályozott.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousLinkVerdict": {
+    "message": "A link \" $URL$ \" a $PROVIDER$ gyanúsnak tekinthető.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanErrorDetails": {
+    "message": "Címke: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "A urlscan.io árhatár vagy kvóta elérte. kérjük, próbálja meg újra későbbi."
+  },
+  "urlscanInvalidKey": {
+    "message": "Hatálytalan vagy nem jogosult urlscan.io API kulcs."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Az eredmény nem volt kész a kérdőív ablakon belüli. az elismert szkennelés újból ellenőrizhető új benyújtás nélkül."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "A Domain nem oldható meg a urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Az elem még nem szerepel a Hybrid Analysis-ben (a korai elemzés nem talált)."
+  },
+  "virustotalNotFound": {
+    "message": "Az elem még nem szerepel a VirusTotal adatbázisban."
+  },
+  "virustotalRateLimited": {
+    "message": "A VirusTotal árhatár vagy kvóta elérte. kérjük, próbálja meg újra későbbi."
+  },
+  "virustotalInvalidKey": {
+    "message": "Hatálytalan vagy nem jogosult VirusTotal API kulcs."
+  },
+  "abuseipdbRateLimited": {
+    "message": "A AbuseIPDB árhatár vagy kvóta elérte. kérjük, próbálja meg újra későbbi."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Hatálytalan vagy nem jogosult AbuseIPDB API kulcs."
+  },
+  "urlhausRateLimited": {
+    "message": "A URLhaus árhatár vagy kvóta elérte. kérjük, próbálja meg újra későbbi."
+  },
+  "urlhausInvalidKey": {
+    "message": "Hatálytalan vagy nem jogosult URLhaus API kulcs."
+  },
+  "testApiKeyButton": {
+    "message": "Kapcsolat tesztelése"
+  },
+  "testApiKeyTesting": {
+    "message": "A testkapcsolat…"
+  },
+  "testApiKeyValid": {
+    "message": "A kérés megegyezésre kerül. Ez nem igazolja a felvételi jogokat vagy a fennmaradó kvótát."
+  },
+  "testApiKeyInvalid": {
+    "message": "A csatolás nem működik: A API kulcs nem működik."
+  },
+  "testApiKeyRateLimited": {
+    "message": "A korlátozás vagy a kvóta elérte. kérjük, próbálja meg újra későbbi."
+  },
+  "testApiKeyError": {
+    "message": "A testkapcsolat nem sikeres."
+  },
+  "testApiKeyEmpty": {
+    "message": "Kérjük, adja meg a API kulcsot elsőként."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "A szolgáltatásnyújtóhoz való hozzáférés megtagadása."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Kérjük, válasszon ki a IP hírnevét szolgáltató elsősorban."
+  },
+  "rateLimitWithWait": {
+    "message": "A korlátozás vagy a kvóta elérte. kérjük, próbálja meg újra a $SECONDS$ másodpercben.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "A korlátozás elérése"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "API kulcs"
+  },
+  "auditErrorCode": {
+    "message": "Hiba kód"
+  },
+  "auditErrorDetails": {
+    "message": "Hiba részletek"
+  },
+  "auditRetryAfter": {
+    "message": "Várj időt"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ másodperc",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "securityTitle": {
+    "message": "Közigazgatás és linkvédelem"
+  },
+  "securityScope": {
+    "message": "Helyi a Thunderbird profil. Nem akadályozza meg a profil változásokat, kikapcsolja a hozzáadást vagy másolatokat máshol."
+  },
+  "securityAdminPassword": {
+    "message": "adminisztrátor jelszó (12+ karakter; hagyja szabadon tartani)"
+  },
+  "securityApprovalPassword": {
+    "message": "Külön link jóváhagyási jelszó (12+ karakter; hagyja szabadon tartani)"
+  },
+  "securityThreshold": {
+    "message": "A kockázati pontszámra való jóváhagyás igényelése (0–100, beleértve)"
+  },
+  "securityEnablePolicy": {
+    "message": "Megerősített linkvédelem"
+  },
+  "securityUnknownApproval": {
+    "message": "A nem teljes körű ellenőrök számára is jóvá kell hagynia"
+  },
+  "securityUnlock": {
+    "message": "A beállítások feloldása"
+  },
+  "securitySave": {
+    "message": "Megmentés a védőállomás"
+  },
+  "securityLock": {
+    "message": "Most zárunk"
+  },
+  "securityDisable": {
+    "message": "Eltávolítsa a beállítások jelszavát"
+  },
+  "securityRecovery": {
+    "message": "helyreállítási kód"
+  },
+  "securityRecover": {
+    "message": "admin jelszó visszaállítása kód használata"
+  },
+  "securityStopTransfers": {
+    "message": "A külső átruházások megszüntetése"
+  },
+  "securityLocked": {
+    "message": "A beállítások zárolva vannak. A feloldáshoz adja meg a rendszergazdai jelszót."
+  },
+  "securityUnlocked": {
+    "message": "A beállítások zárva vannak; zárva 5 perc után, aktivitás nélkül."
+  },
+  "securityOptional": {
+    "message": "A jelszóvédelem opcionális és jelenleg kikapcsolva. jóváhagyás jelszó nélkül a védett linkek blokkolva maradnak."
+  },
+  "securityError": {
+    "message": "A művelet megtagadása. ellenőrizze a jelszavát, a beiratkozást és a beiratkozásot."
+  },
+  "securityWait": {
+    "message": "Túl sok a megpróbáltatás. várjon, mielőtt visszavonulna."
+  },
+  "securityLength": {
+    "message": "Használjon 12 karaktert és külön jelszót."
+  },
+  "securityRecoverySave": {
+    "message": "Ez az egyidejű helyreállítási kód elkülönítve mentése. nem jelenik meg újra:"
+  },
+  "securitySaved": {
+    "message": "A védőállomások mentettek."
+  },
+  "securityDisableConfirm": {
+    "message": "A beállítások jelszavát törli? a linkvédelem továbbra is beállítva van."
+  },
+  "securityStopped": {
+    "message": "A külső átruházások megszűntek."
+  },
+  "securityApprovalTitle": {
+    "message": "A potenciálisan veszélyes tartalmak megszerzése"
+  },
+  "securityConfirmDanger": {
+    "message": "Mindenesetre szeretném, hogy ez a potenciálisan veszélyes tartalmat nyitjam meg."
+  },
+  "securityApproveOnce": {
+    "message": "Egy alkalommal nyitva és jóváhagyva"
+  },
+  "securityExpired": {
+    "message": "A jóváhagyás lejár, vagy a kontextus megváltozott. újraindul az üzenetből."
+  },
+  "securityOpened": {
+    "message": "A Thunderbird elismerte a nyitó kérelmet."
+  },
+  "securityApprovalFailed": {
+    "message": "A megnyitás megtagadva. Ellenőrizze a jelszót, vagy ha a jóváhagyás lejárt, indítsa újra az üzenetből."
+  },
+  "providerTestDisclosure": {
+    "message": "Ez küldi a API kulcs és rögzített tesztadatok a kiválasztott szolgáltatónak, üzenet tartalmak nélkül. A sikeres olvasási teszt nem ellenőrizheti a felvételek vagy a rendelkezésre álló kvóták."
+  },
+  "analysisSimple": {
+    "message": "átvilágítás"
+  },
+  "analysisExpert": {
+    "message": "technikai részletek"
+  },
+  "analysisSimpleNone": {
+    "message": "Nem észleltek gyanús jeleket"
+  },
+  "analysisSimpleCaution": {
+    "message": "gyanúsítás"
+  },
+  "analysisSimpleDanger": {
+    "message": "Káros találatok"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Hiányos ellenőrzés"
+  },
+  "analysisScoreExplanation": {
+    "message": "A kockázati pontszám szabályokon alapul, és nem jelent valószínűséget vagy biztonsági garanciát."
+  },
+  "analysisSimpleBasis": {
+    "message": "A találatokkal rendelkező szolgáltatások / nem rendelkezésre álló"
+  },
+  "analysisProviderSetup": {
+    "message": "A szolgáltató hozzáférése és az adatnyilvánítás"
+  },
+  "analysisProviderConfigured": {
+    "message": "A kulcs beállítása; tárolás nem indítja el a szkennelést."
+  },
+  "analysisProviderNoKey": {
+    "message": "Nincs beállított kulcs"
+  },
+  "analysisDataHash": {
+    "message": "Nyomtató nyomtatás ( SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Teljes hozzáállás"
+  },
+  "analysisDataUrl": {
+    "message": "Teljes URL; bizalmas tokeneket is tartalmaznak"
+  },
+  "analysisDataDomain": {
+    "message": "Link Domain"
+  },
+  "analysisDataIp": {
+    "message": "IP közönség üzenet címkéktől"
+  },
+  "analysisDataReport": {
+    "message": "Jelentés a személyazonosság"
+  },
+  "analysisApprovalRequired": {
+    "message": "Egyéb jóváhagyás igényel; törölni vagy kérni egy adminisztrátor."
+  },
+  "analysisContinueWarning": {
+    "message": "A következő lépés előtt ellenőrizze az okokat, és törölheti."
+  },
+  "analysisConflict": {
+    "message": "A szolgáltatók nem értettek meg; a találatokra a legfontosabb."
+  },
+  "analysisExportSensitive": {
+    "message": "Export előtti átdolgozás: a műszaki részletek az üzenetforrások megismerését jelezhetik."
+  },
+  "scanActions": {
+    "message": "Külső ellenőrök"
+  },
+  "scanStart": {
+    "message": "Ellenőrzés most"
+  },
+  "scanRepeat": {
+    "message": "Újraellenőrzés"
+  },
+  "scanRefresh": {
+    "message": "Eredmények frissítése"
+  },
+  "scanRunning": {
+    "message": "Külső kontroll a haladásban"
+  },
+  "scanProgress": {
+    "message": "Teljes források"
+  },
+  "scanMigrationNotice": {
+    "message": "Válasszon egy automatikus szkennelési módot a beállításokban. addig a múltbeli küldő és kézi szabályozások alkalmazandók."
+  },
+  "scanState_idle": {
+    "message": "A szűrés munkája nem működik ezen a tekintetben."
+  },
+  "scanState_queued": {
+    "message": "Kezdőoldal > Megkezdődtek a várakozások"
+  },
+  "scanState_running": {
+    "message": "Külső kontroll a haladásban"
+  },
+  "scanState_completed": {
+    "message": "Végrehajtott ellenőrizés"
+  },
+  "scanState_pending": {
+    "message": "A szolgáltató továbbra is feldolgozik; új eredmények"
+  },
+  "scanState_incomplete": {
+    "message": "Nem teljes, néhány eredmény nem érhető el"
+  },
+  "scanState_failed": {
+    "message": "Megpróbáld újra, próbáld újra"
+  },
+  "scanState_blocked": {
+    "message": "Nincs külső ellenőrizés indult; lásd az alább felsorolt követelményeket"
+  },
+  "analysisReason_manual": {
+    "message": "Manuális mód"
+  },
+  "analysisReason_sender": {
+    "message": "Nem jóváhagyott küldő"
+  },
+  "analysisReason_links_disabled": {
+    "message": "automatikus link elemzés"
+  },
+  "analysisReason_no_resources": {
+    "message": "Nem megfelelő források"
+  },
+  "analysisReason_quota": {
+    "message": "A kvóta elérte; várjon a visszavonulás előtt"
+  },
+  "analysisReason_running": {
+    "message": "A szolgáltató feldolgozza"
+  },
+  "analysisReason_provider_error": {
+    "message": "A szolgáltató kérése nem volt"
+  },
+  "scanModeLabel": {
+    "message": "automatikus külső szkennelés"
+  },
+  "scanModeKeep": {
+    "message": "Tartsa meg az előző beállításokat (válasszon egy módot)"
+  },
+  "scanModeAll": {
+    "message": "Minden megnyitott üzenet"
+  },
+  "scanModeSenders": {
+    "message": "Csak jóváhagyott feladók"
+  },
+  "scanModeManual": {
+    "message": "Csak kézzel"
+  },
+  "scanModeHelp": {
+    "message": "Az automatikus ellenőrzés csak kivonatokat, tartományokat és nyilvános IP-címeket küld. A teljes hivatkozásokat és mellékleteket egyenként kell jóváhagyni. A meg nem nyitott üzenetek helyben maradnak."
+  },
+  "assessmentCompletion": {
+    "message": "feldolgozási státusz"
+  },
+  "assessmentCompletion_pending": {
+    "message": "A szolgáltató továbbra is feldolgozik"
+  },
+  "assessmentCompletion_complete": {
+    "message": "A visszavonás teljes"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "Nincs rendelkezésre álló végső elemzés"
+  },
+  "assessmentCompletion_failed": {
+    "message": "A technikai feldolgozás nem volt sikeres"
+  },
+  "assessmentConflict": {
+    "message": "Különböző részleges felmérések; a legerősebb találat határozza meg a cselekvést."
+  },
+  "assessmentSignals": {
+    "message": "Értékelési alap"
+  },
+  "assessmentJob": {
+    "message": "szolgáltató munka ID"
+  },
+  "assessmentSignal_verdict": {
+    "message": "A szolgáltató ítéletét"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Scanner találat"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Az első fenyegetés"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Az első multiscan eredmény"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Az első fenyegetés"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Szállító belga jelzés"
+  },
+  "assessmentSignal_overall": {
+    "message": "urlscan átfogó felmérés"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "urlscan motorok"
+  },
+  "assessmentSignal_engines": {
+    "message": "Egyéb motorok találata"
+  },
+  "assessmentSignal_brand": {
+    "message": "A jelzés jelzése; nem határozza meg a kockázatot önmagában"
+  },
+  "assessmentSignal_report": {
+    "message": "jelentés állami"
+  },
+  "assessmentOriginal": {
+    "message": "Az első ítéletet a szolgáltató"
+  },
+  "hybridExpertTitle": {
+    "message": "API v2 jelentés részletek"
+  },
+  "hybridExpertScope": {
+    "message": "Csak a tényleges mezők jelennek meg. A Gyors szkennelés nem bizonyítja a teljes homokdoboz futtatását. Az elveszett adat nem negatív találat. A URLs elhanyagolja az igazolást, a lekérdezés vonalak és a töredékek; a megrendelési vonalak és az alapvető jelentések nem jelennek meg; Az ilyen részletek kinyitása nem küld kérést."
+  },
+  "hybridExpertMissing": {
+    "message": "Nem szerepel a jelentésben"
+  },
+  "hybridExpertYes": {
+    "message": "Igen"
+  },
+  "hybridExpertNo": {
+    "message": "Nem"
+  },
+  "hybridExpert_identity": {
+    "message": "Fájl és forrás identitás"
+  },
+  "hybridExpert_assessment": {
+    "message": "Az elsődleges értékesítés és feldolgozás"
+  },
+  "hybridExpert_scanners": {
+    "message": "Scanner eredmények"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Egyéni vírusellenes felismerés"
+  },
+  "hybridExpert_reports": {
+    "message": "Sandbox jelentések"
+  },
+  "hybridExpert_counts": {
+    "message": "Összes jelentés"
+  },
+  "hybridExpert_signatures": {
+    "message": "viselkedési aláírás"
+  },
+  "hybridExpert_mitre": {
+    "message": "Máté Atta és CK"
+  },
+  "hybridExpert_network": {
+    "message": "Hálózati mutatók"
+  },
+  "hybridExpert_processes": {
+    "message": "folyamatok"
+  },
+  "hybridExpert_extracted": {
+    "message": "Kivonult fájlok"
+  },
+  "hybridExpert_certificates": {
+    "message": "tanúsítás"
+  },
+  "hybridExpertEmpty": {
+    "message": "Üres listaként szállított; nincs jelentés"
+  },
+  "securityPasswordHelp": {
+    "message": "Választható védő a profil. Használjon külön jelszavakat, hogy a minimum tizenkét karaktert az adminisztráció és a link jóváhagyása. Hagyja az új jelszavak mező üres, hogy meglévő jelszavokat. Mentse az egyidejű helyreállítási kód külön."
+  },
+  "securityAdminConfirm": {
+    "message": "Új adminisztrátor jelszó"
+  },
+  "securityApprovalConfirm": {
+    "message": "Új link jóváhagyási jelszó"
+  },
+  "securityRecoveryPassword": {
+    "message": "Új admin jelszó a helyreállításhoz"
+  },
+  "securityApprovalConfigured": {
+    "message": "A link jóváhagyási jelszó beállítása; helyettesíthető, de soha nem jelenik meg."
+  },
+  "securityApprovalMissing": {
+    "message": "A link jóváhagyási jelszó nem áll rendelkezésre. a jelszó jóváhagyását igénylő linkek blokkolva maradnak."
+  },
+  "securityConfirmMismatch": {
+    "message": "Az új jelszavak és azok megerősítései nem egyeznek meg."
+  },
+  "securityUnlockPassword": {
+    "message": "Aktuális adminisztrátor jelszó"
+  },
+  "displaySettingsTitle": {
+    "message": "elemzés mutató"
+  },
+  "displaySettingsHelp": {
+    "message": "A jelenet preferenciák nem változtatják meg a szkennelést, a külső átutalást, a pontszámot vagy a linkvédelmet. Az eredmények olvasása során továbbra is át tudod váltani a átvilágítás és a szakértői megnézés között."
+  },
+  "displayDefaultView": {
+    "message": "A megadott üzenet és a popup nézet"
+  },
+  "displayHybridDetails": {
+    "message": "Megmutatja a hibrid API jelentésének egyéb szakaszát"
+  },
+  "displaySave": {
+    "message": "Megmentse a megadott preferenciákat"
+  },
+  "displaySaved": {
+    "message": "A preferenciák megtakarítását megőrizzük."
+  },
+  "urlscanDnsError": {
+    "message": "A szolgáltató nem tudta megoldani a célterületet."
+  },
+  "urlscanInvalidRequest": {
+    "message": "A szolgáltató elutasítja a nem megfelelő benyújtási paramétereket."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "A szolgáltató elutasítja a benyújtást; a válasz nem állapítja meg a DNS hibát."
+  },
+  "analysisQuotaReset": {
+    "message": "A kvóta újraindítása"
+  },
+  "analysisRetryAt": {
+    "message": "Korai visszavonulás"
+  },
+  "analysisLocalBackoff": {
+    "message": "A megpróbáltatás helyileg indult; nem küldték el új szolgáltató kérését."
+  },
+  "scanState_deferred": {
+    "message": "Elemzés eltávolított: minden háttér slotok foglalják el. Visszaállás után egy másik elemzés befejeződik."
+  },
+  "scanCoverage": {
+    "message": "Néhány forrás nem ellenőrizhető."
+  },
+  "scanCoverageAttachments": {
+    "message": "Készített tároló"
+  },
+  "scanCoverageLinks": {
+    "message": "Válogatott linkek"
+  },
+  "scanCoverage_read_failed": {
+    "message": "Egy hozzáadott nem lehetett olvasni vagy hashed."
+  },
+  "scanCoverage_size_limit": {
+    "message": "A fájl meghaladja a 25 MiB-s szkennelési korlátot."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "A szkennelési erőforrás határa elérte a célt."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "A felvételi készlet nem teljes."
+  },
+  "scanFailure_source_capacity": {
+    "message": "A forrás története tele van. Ez a kontroll nem indult; meglévő rekordokat megtartottak."
+  },
+  "scanFailure_cancelled": {
+    "message": "A tesztet törölték, nincs befejezett eredmény."
+  },
+  "scanFailure_timeout": {
+    "message": "A tesztet meg kell halasztani, az eredmények nem teljesek."
+  },
+  "scanFailure_scan_failed": {
+    "message": "A felmérés nem volt véget érő, a meglévő rekordokat megőrizte."
+  },
+  "localProtectionProfileExport": {
+    "message": "Exportvédelem beállítások"
+  },
+  "localProfileYes": {
+    "message": "Igen"
+  },
+  "localProfileNo": {
+    "message": "Nem"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "A régebbi védőprofilok nem tudják bővíteni az automatikus szkennelési területen, vagy a URL benyújtáson válthatnak."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "A meglévő forrás-történet nem olvasható és változhatatlanul megmaradt."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "A tárolási konfliktus megakadályozta a forrástörténet meghosszabbítását."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "Az üzenet forráskódja elérte a bejárati korlátot."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "Az üzenet forráskódja elérte tárolási korlátját."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "A helyes tárolási lehetőségekhez való hozzáférés nem volt megfelelő."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "A rendelkezésre álló találatok • dokumentáció nem teljes"
+  },
+  "apiDebugTitle": {
+    "message": "API lemez mód"
+  },
+  "apiDebugHelp": {
+    "message": "Új API megpróbálja lokálisan felismerni a hibákat. Lehetővé teszik, újrahasznosítja a hibát, majd előzetes megnézése vagy kivonása a jelentés. Az admin-le zárolása akkor van igényelve, amikor egy admin jelszó be van állítva. Kulcsok, privát URLs, üzenet tartalma és nyers testek elhanyagolva; referenciakódok névtelenül. Legfeljebb 100 bejegyzést / 1 MiB-t tartanak a memóriában egy órán át, és elveszítik a újraindítás során. A letiltás törli a jelentést. Nincs extra szolgáltatási kérés."
+  },
+  "apiDebugEnable": {
+    "message": "API diagnozis"
+  },
+  "apiDebugSave": {
+    "message": "Megtakarítás Debug Setup"
+  },
+  "apiDebugPreview": {
+    "message": "Előzetes Debug jelentés"
+  },
+  "apiDebugExport": {
+    "message": "Export Debug jelentés"
+  },
+  "apiDebugClear": {
+    "message": "Tiszta debug jelentés"
+  },
+  "apiDebugSaved": {
+    "message": "A szivárgás megmentése. előző diagnozisok tisztázott."
+  },
+  "apiDebugCleared": {
+    "message": "A Debug jelentése megvilágosodott."
+  },
+  "apiDebugFailed": {
+    "message": "A Debug művelet nem működik. kikapcsolja az adminisztrációt, és próbálja meg újra."
+  },
+  "apiDebugFailureHint": {
+    "message": "Részletes hiba-beszámolókhoz a API hulladék módot a beállításokban, a check-et újrahasznosítja és a hulladék jelentést kivonja."
+  },
+  "urlscanResultGone": {
+    "message": "Ez az eredmény törölték urlscan.io. A naprakésszé válás nem helyreállíthatja; egy új benyújtás egyértelmű szkennelést igényel."
+  },
+  "apiDebugOpen": {
+    "message": "Nyitott API diagnoza"
+  },
+  "diagTitle": {
+    "message": "API Diagnosztika"
+  },
+  "diagHelp": {
+    "message": "A lokális memóriában lévő szűrővizsgálatok. kulcsok, privát URLs és nyers tartalmak rejtve maradnak. a HTTP sikere nem egy befejezett biztonsági ítélet. Csak a aktiválás után rögzített lépések állnak rendelkezésre."
+  },
+  "diagOff": {
+    "message": "A Debug mód kikapcsolva van. beállításainkban is aktiválható."
+  },
+  "diagEmpty": {
+    "message": "Nem összeegyeztethető rekordok."
+  },
+  "diagPause": {
+    "message": "Párhuzamos látvány"
+  },
+  "diagResume": {
+    "message": "Összefogás nézet"
+  },
+  "diagPaused": {
+    "message": "A felvétel megszakadt, a felvétel továbbra is aktívan zajlik."
+  },
+  "diagActive": {
+    "message": "Aktív felvétel; másodpercenként egy alkalommal megújítva."
+  },
+  "diagProvider": {
+    "message": "szolgáltató"
+  },
+  "diagState": {
+    "message": "Állam"
+  },
+  "diagPurpose": {
+    "message": "Műveleti típusa"
+  },
+  "diagFrom": {
+    "message": "A"
+  },
+  "diagTo": {
+    "message": "A"
+  },
+  "diagAll": {
+    "message": "Minden"
+  },
+  "diagRuns": {
+    "message": "- áramlás ellenőrizése"
+  },
+  "diagDetails": {
+    "message": "Válogatott áramlási részletek"
+  },
+  "diagDropped": {
+    "message": "Eltűnt rekordok vagy lépések"
+  },
+  "diagNoHttp": {
+    "message": "Nincs HTTP hívás rögzített erre az áramlásra."
+  },
+  "diagNotCaptured": {
+    "message": "nem fogták"
+  },
+  "diagTimeline": {
+    "message": "Időpont"
+  },
+  "diagRequest": {
+    "message": "Filterelt kérelem"
+  },
+  "diagResponse": {
+    "message": "Szűrő és szűrő válasz"
+  },
+  "diagReset": {
+    "message": "Feltöltés szűrők"
+  },
+  "diagTruncated": {
+    "message": "Ez az áramlás a rögzítési korlátok miatt megrongálódott."
+  },
+  "diag_phase_precondition": {
+    "message": "előfeltételek"
+  },
+  "diag_phase_queue": {
+    "message": "Védő"
+  },
+  "diag_phase_attempt": {
+    "message": "Megpróbáltatás küldése"
+  },
+  "diag_phase_response": {
+    "message": "HTTP válasz / szállítási befejezése"
+  },
+  "diag_phase_parse": {
+    "message": "JSON feldolgozás"
+  },
+  "diag_phase_assessment": {
+    "message": "Értékelés"
+  },
+  "diag_phase_persistence": {
+    "message": "kitartás"
+  },
+  "diag_phase_cache": {
+    "message": "Cache meghódítás"
+  },
+  "diag_phase_wait": {
+    "message": "Várakozás"
+  },
+  "diag_phase_cancelled": {
+    "message": "törlés"
+  },
+  "diag_phase_expired": {
+    "message": "A felvétel befejeződött, megerősített befejezés nélkül"
+  },
+  "diag_purpose_automatic": {
+    "message": "automatikus ellenőrizés"
+  },
+  "diag_purpose_manual": {
+    "message": "Kézi ellenőrizés"
+  },
+  "diag_purpose_link": {
+    "message": "Link ellenőrizze"
+  },
+  "diag_purpose_key_test": {
+    "message": "Kulcsszavak teszt"
+  },
+  "diag_purpose_report": {
+    "message": "Jelentés kérés"
+  },
+  "diag_purpose_analysis": {
+    "message": "elemzés"
+  },
+  "diag_state_running": {
+    "message": "futás"
+  },
+  "diag_state_complete": {
+    "message": "A művelet befejeződött"
+  },
+  "diag_state_pending": {
+    "message": "Hétköznap"
+  },
+  "diag_state_blocked": {
+    "message": "Nem indult / blokkolt"
+  },
+  "diag_state_incomplete": {
+    "message": "Teljesen nem"
+  },
+  "diag_state_failed": {
+    "message": "Hiba"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Véget nem erősített"
+  },
+  "localScoreMessage": {
+    "message": "Helyi üzenet pontszám"
+  },
+  "localScoreLink": {
+    "message": "Helyi pontszám erre a linkre a hírben"
+  },
+  "localScoreNoIndicators": {
+    "message": "A figyelmeztető jelek nem találtak."
+  },
+  "localScoreIndicators": {
+    "message": "A lokális figyelmeztető mutatók találtak. A nyitás előtt ellenőrizze az okokat."
+  },
+  "uploadSentLabel": {
+    "message": "Feladása küldött"
+  },
+  "uploadSentUnassigned": {
+    "message": "A felvétel elküldött, de az eredmény nem lehetett odaítélni a mellékelt. Közel és nyissa meg újra a popup, mielőtt újra benyújtani."
+  },
+  "hybridReportTitle": {
+    "message": "Hybrid Analysis jelentés"
+  },
+  "hybridReportIntro": {
+    "message": "Olvasó-csak megnézve a megkapott eredményeket. A jelentés kinyitása nem küldi a szolgáltató kérését."
+  },
+  "hybridReportOpen": {
+    "message": "Az elemzés jelentése"
+  },
+  "hybridReportUnavailable": {
+    "message": "Jelentés nem érhető el. Újraindítsa a jelenlegi üzenetből."
+  },
+  "hybridReportTechnical": {
+    "message": "Szállító és összeköttetés részletei"
+  },
+  "hybridReportExplanation": {
+    "message": "E becslésről"
+  },
+  "hybridReportSummary": {
+    "message": "Értékelés és származás"
+  },
+  "hybridReportSnapshot": {
+    "message": "Tárolt jelentés snapshot; nem egy új szkennelés"
+  },
+  "hybridReportScope": {
+    "message": "A szolgáltató eredményei és a helyes pontszámok elválasztva vannak. a elveszett mezők nem negatív eredmények. csak a rendelkezésre álló, korlátozott adatokat jelentik."
+  },
+  "hybridReportCopy": {
+    "message": "másolat"
+  },
+  "hybridReportCopied": {
+    "message": "A szöveget másolja."
+  },
+  "hybridReportCopyFailed": {
+    "message": "Nem lehet másolni. Válassza ki és másolja a szöveget kézi."
+  },
+  "hybridReportAvailableOnly": {
+    "message": "Rák a rendelkezésre álló adatokban"
+  },
+  "hybridReportNoMatches": {
+    "message": "Nincs összhang mező a rendelkezésre álló adatokban."
+  },
+  "hybridReportAvailability": {
+    "message": "Elérhetőség és korlátozások"
+  },
+  "hybridReportRun": {
+    "message": "Analízis futás"
+  },
+  "hybridReportSearch": {
+    "message": "A rendelkezésre álló mezők keresése"
+  },
+  "hybridReportReady": {
+    "message": "A jelentés feltöltött. új szkennelés nem indult."
+  },
+  "hybridReportResource_name": {
+    "message": "Hálózat neve"
+  },
+  "hybridReportResource_url": {
+    "message": "Célzáró URL"
+  },
+  "hybridReportResource_sha256": {
+    "message": "forrás SHA-256"
+  },
+  "hybridField_type": {
+    "message": "Fájl típusa"
+  },
+  "hybridField_type_short": {
+    "message": "Rövid fájl típusa"
+  },
+  "hybridField_size": {
+    "message": "Nagy a bajtokban"
+  },
+  "hybridField_last_file_name": {
+    "message": "Legutóbbi fájl neve"
+  },
+  "hybridField_submit_name": {
+    "message": "Aláírás neve"
+  },
+  "hybridField_url_analysis": {
+    "message": "URL elemzés"
+  },
+  "hybridField_target_url": {
+    "message": "Célszállító URL (lehet, hogy le van zárva)"
+  },
+  "hybridField_id": {
+    "message": "Válasz ID (azaz nem megadott típust)"
+  },
+  "hybridField_job_id": {
+    "message": "Sandbox munka ID"
+  },
+  "hybridField_submission_id": {
+    "message": "Bevezetés ID"
+  },
+  "hybridField_state": {
+    "message": "szolgáltató állami"
+  },
+  "hybridField_finished": {
+    "message": "befejeződött"
+  },
+  "hybridField_verdict": {
+    "message": "A szolgáltató ítéletét"
+  },
+  "hybridField_threat_score": {
+    "message": "Hybrid Analysis fenyegetés eredménye"
+  },
+  "hybridField_threat_level": {
+    "message": "A fenyegetés szintek"
+  },
+  "hybridField_multiscan_result": {
+    "message": "Multiscan eredmény (szállító értéke)"
+  },
+  "hybridField_av_detect": {
+    "message": "AV felderítés értéke (szállító értéke)"
+  },
+  "hybridField_whitelisted": {
+    "message": "Fehér bejárat szolgáltató"
+  },
+  "hybridField_vx_family": {
+    "message": "Malware család szolgáltató"
+  },
+  "hybridField_classification_tags": {
+    "message": "Klasifikációs tags"
+  },
+  "hybridField_tags": {
+    "message": "Címkék"
+  },
+  "hybridField_analysis_start_time": {
+    "message": "Elemzés kezdeti idő"
+  },
+  "hybridField_environment_id": {
+    "message": "Környezetvédelmi ID"
+  },
+  "hybridField_environment_description": {
+    "message": "Sandbox Környezet"
+  },
+  "hybridField_error_type": {
+    "message": "A szolgáltató hibája"
+  },
+  "hybridField_error_origin": {
+    "message": "A szolgáltató hiba eredete"
+  },
+  "hybridField_name": {
+    "message": "nevét"
+  },
+  "hybridField_status": {
+    "message": "Álláspont"
+  },
+  "hybridField_progress": {
+    "message": "A szolgáltatás (provider value)"
+  },
+  "hybridField_positives": {
+    "message": "Pozitív felismerések"
+  },
+  "hybridField_total": {
+    "message": "teljes ellenőr"
+  },
+  "hybridField_percent": {
+    "message": "A szolgáltatás értékének százaléka (provider value)"
+  },
+  "hybridField_scan_time": {
+    "message": "Szűrés időtartama (szállító egysége)"
+  },
+  "hybridField_scan_date": {
+    "message": "Scan dátum"
+  },
+  "hybridField_product": {
+    "message": "Termék scanner"
+  },
+  "hybridField_version": {
+    "message": "Scanner verzió"
+  },
+  "hybridField_update": {
+    "message": "Scaner aktuális"
+  },
+  "hybridField_total_network_connections": {
+    "message": "hálózati összeköttetések"
+  },
+  "hybridField_total_processes": {
+    "message": "folyamatok"
+  },
+  "hybridField_total_signatures": {
+    "message": "aláírás"
+  },
+  "hybridField_category": {
+    "message": "Kategória"
+  },
+  "hybridField_attck_id": {
+    "message": "MITRE ATT&CK Technológiai ID"
+  },
+  "hybridField_tactic": {
+    "message": "MITRE ATT & CK taktika"
+  },
+  "hybridField_technique": {
+    "message": "MITRE ATT&CK technikai"
+  },
+  "hybridField_description": {
+    "message": "leírás"
+  },
+  "hybridField_domains": {
+    "message": "Megfigyelhető domén"
+  },
+  "hybridField_hosts": {
+    "message": "Megfigyelhető Vendég"
+  },
+  "hybridField_compromised_hosts": {
+    "message": "A szállító (szállító igénye)"
+  },
+  "hybridField_domain": {
+    "message": "Domain terület"
+  },
+  "hybridField_host": {
+    "message": "Vendég"
+  },
+  "hybridField_ip": {
+    "message": "IP cím"
+  },
+  "hybridField_port": {
+    "message": "kikötő"
+  },
+  "hybridField_protocol": {
+    "message": "jegyzőkönyv"
+  },
+  "hybridField_country": {
+    "message": "ország"
+  },
+  "hybridField_asn": {
+    "message": "autonóm rendszerszám"
+  },
+  "hybridField_uid": {
+    "message": "folyamat UID"
+  },
+  "hybridField_process_id": {
+    "message": "A folyamat ID (PID)"
+  },
+  "hybridField_parent_uid": {
+    "message": "Szülői folyamat UID"
+  },
+  "hybridField_file_path": {
+    "message": "File útvonal"
+  },
+  "hybridField_subject": {
+    "message": "Tanúsítási téma"
+  },
+  "hybridField_issuer": {
+    "message": "Tanúsítvánnyal rendelkező"
+  },
+  "hybridField_valid_from": {
+    "message": "Valódi a"
+  },
+  "hybridField_valid_until": {
+    "message": "Valós, amíg"
+  },
+  "hybridField_serial_number": {
+    "message": "Serív számok"
+  },
+  "hybridField_sha256": {
+    "message": "SHA-256"
+  },
+  "hybridField_sha1": {
+    "message": "SHA-1"
+  },
+  "hybridField_md5": {
+    "message": "MD5"
+  },
+  "hybridField_sha512": {
+    "message": "SHA-512"
+  },
+  "hybridField_imphash": {
+    "message": "Haszképek"
+  },
+  "hybridReportResource_quickScanId": {
+    "message": "Gyorsítás - Scan ID"
+  },
+  "analysisLocalOnly": {
+    "message": "Csak a helyiségben ellenőrizhető"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "szolgáltatások eredményekkel"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Szolgálat várható"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Hibafelvétel szolgáltatások"
+  },
+  "hybridReportSection": {
+    "message": "rész"
+  },
+  "hybridReportAllSections": {
+    "message": "Minden rész"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "Teljes feldolgozás"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "Feldolgozás pending"
+  },
+  "hybridReportProcessing_failed": {
+    "message": "Elmulasztott a feldolgozás"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "Az ismeretlen helyzetű adatkezelés"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Jelentés visszavonult"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Snapshot készítés"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Megtartott Hybrid Analysis találja ezt az erőforrás"
+  },
+  "hybridReportSaved": {
+    "message": "Megtakarított Hybrid Analysis jelentés"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Az UTC"
+  },
+  "hybridReportWhy": {
+    "message": "Miért ez az értékesítés?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Egyéb értékesítési jelek"
+  },
+  "hybridReportCompare": {
+    "message": "Összehasonlítás analízis"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Részletek az adatokkal"
+  },
+  "hybridReportAssessment": {
+    "message": "Thundy értékesítés a Hybrid Analysis-től"
+  },
+  "hybridReportProvenance": {
+    "message": "Forrás és időzítés"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Megtalálható · befejezés nem erősített"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Nyílt hibrid jelentés"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Megmutatja a részleteket"
+  },
+  "attachmentProtectionTitle": {
+    "message": "A társulás védekezés"
+  },
+  "attachmentProtectionScope": {
+    "message": "Ez a szabályt akkor kell alkalmazni, ha a Thundy. A Thunderbird saját csatornázási megrendelései továbbra is rendelkezésre állnak."
+  },
+  "attachmentPolicyMode": {
+    "message": "Ha a küszöb elérte a"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Hybrid Analysis pontszám határa"
+  },
+  "attachmentUnknownSetting": {
+    "message": "A megerősített pontszám nélkül"
+  },
+  "attachmentModeOff": {
+    "message": "kikapcsolva"
+  },
+  "attachmentModeWarn": {
+    "message": "figyelmeztetés"
+  },
+  "attachmentModeApproval": {
+    "message": "jóváhagyás igényel"
+  },
+  "attachmentModeBlock": {
+    "message": "Blokk"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Mentés a Thundyval"
+  },
+  "attachmentConfirmSave": {
+    "message": "Megmentés hozzáállás"
+  },
+  "attachmentCancelSave": {
+    "message": "Mégse"
+  },
+  "attachmentThresholdReached": {
+    "message": "A hibrid pontszám elérte a beállított küszöböt."
+  },
+  "attachmentMalicious": {
+    "message": "A Hybrid Analysis ezt a fájlt károsnak osztályozta."
+  },
+  "attachmentUnknown": {
+    "message": "Nincs megerősített pontszám erre a csatornára."
+  },
+  "attachmentBlocked": {
+    "message": "A Thundy-vel való mentés blokkolva van."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Adja meg a jóváhagyási jelszót, hogy mentse ezt a fájlt."
+  },
+  "attachmentFailed": {
+    "message": "Nem tudta elkezdeni megtakarítani a csatornát."
+  },
+  "attachmentReadFailed": {
+    "message": "A Thundy nem tudta elolvasni ezt a bejegyzést."
+  },
+  "attachmentContextChanged": {
+    "message": "Változtatták az üzenetet vagy a csatornát. Válassza ki újra a csatort."
+  },
+  "attachmentRefresh": {
+    "message": "Ismét ellenőrizze a mentett találmányokat"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "A megmentett találmány változhatatlan."
+  },
+  "attachmentDecisionChanged": {
+    "message": "Az eredmény vagy a politika megváltozott. - A megújított döntés átdolgozása."
+  },
+  "attachmentSaveRequested": {
+    "message": "Megkezdődött a mentési kérelem."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Megmentés törölt"
+  },
+  "auditDecisionScore": {
+    "message": "döntés pontszám"
+  },
+  "linkHandoffPending": {
+    "message": "A böngésző handoff kérésre. Thunderbird még nem erősített meg."
+  },
+  "linkPreflightTimeout": {
+    "message": "A kontroll nem lehetett befejezni. zárja be ezt a párbeszédet, és válassza ki a linket újra."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Történelmi Hybrid Analysis találat"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Aktuális Hybrid Analysis találat"
+  },
+  "auditShare": {
+    "message": "Export-szerkesztett könyvvizsgálat"
+  },
+  "auditFullNotice": {
+    "message": "A teljes könyvvizsgálat magában foglalja a URLs és a részleteket. megosztja csak a jogosult címzettekkel."
+  },
+  "auditFullSave": {
+    "message": "Teljes körű kivitelvizsgálat"
+  },
+  "managedByCompany": {
+    "message": "A szervezet által irányított"
+  },
+  "managedLocal": {
+    "message": "Forrás: ez a Thunderbird profil"
+  },
+  "managedRevision": {
+    "message": "Politikai verzió"
+  },
+  "managedThreshold": {
+    "message": "Határ"
+  },
+  "managedPolicyInvalid": {
+    "message": "A cégpolitika nem működik.Közöljük a csapatot!"
+  },
+  "managedLinkBlocked": {
+    "message": "A szervezet blokkolta ezt a linket."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Megnyitás a Thundyval"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Nyílt hozzáférés"
+  },
+  "attachmentOpenScope": {
+    "message": "A Thundy ellenőrzi ezt a bejegyzést, mielőtt átadja a Thunderbird-nek."
+  },
+  "attachmentOpenRequested": {
+    "message": "A Thunderbird elismerte a felirat nyitására irányuló kérelmet."
+  },
+  "attachmentOpenFailed": {
+    "message": "A csatornát nem lehetett nyitni."
+  },
+  "reportingTitle": {
+    "message": "A cégbiztonsági jelentései"
+  },
+  "reportingOff": {
+    "message": "Az automatikus jelentés befejeződött."
+  },
+  "reportingNeedsConsent": {
+    "message": "A jelentéshez hozzájárulást és egy token küldését kell igényelni."
+  },
+  "reportingNeedsPermission": {
+    "message": "A jelentéstételi megengedést nem kapjuk.A jelentéstételt újra megengedjük, hogy helyreállítsuk."
+  },
+  "reportingReady": {
+    "message": "A szervezet automatikus jelentésekkel rendelkezik."
+  },
+  "reportingQueued": {
+    "message": "A jelenlegi jelentések:"
+  },
+  "reportingMalicious": {
+    "message": "Káros találatok"
+  },
+  "reportingSuspicious": {
+    "message": "Káros találatok és határtörvények"
+  },
+  "reportingConsent": {
+    "message": "Egyetértek, hogy az Esemény ID, idő, cselekvés, találat, döntés és a politika verzióját a fent említett cégcímre küldem."
+  },
+  "reportingConsentIndicators": {
+    "message": "Elfogadom, hogy az Esemény ID, idő, cselekvés, találat, döntés, politika verzió és link a tárhelyszám vagy a SHA-256-könyv a fent megadott cégcímhez."
+  },
+  "reportingToken": {
+    "message": "Tovább a token a csapatodból"
+  },
+  "reportingActivate": {
+    "message": "Jelentkezés vagy token cseréje"
+  },
+  "reportingRevoke": {
+    "message": "A hozzájárulás visszavonása és a nyitott jelentések"
+  },
+  "reportingSetupFailed": {
+    "message": "A jelentéstételi beállításokat nem lehetett alkalmazni."
+  },
+  "reportingAuthentication": {
+    "message": "A szerver elutasítja a token küldését."
+  },
+  "reportingRejected": {
+    "message": "A szerver elutasítja a jelentést."
+  },
+  "reportingStorage": {
+    "message": "A Thundy nem tudta elolvasni vagy írni a jelentési csíkot."
+  },
+  "reportingFull": {
+    "message": "A lap tele van, a jelentések elveszíthetők."
+  },
+  "reportingExpired": {
+    "message": "A beszámoló a szállítás előtt lejár."
+  },
+  "reportingPrivacy": {
+    "message": "külön beleegyezéssel, Thundy Küldjön részleteket a linkek nyitására vagy a társaság beállított címéhez tartozó hozzáférések nyitására vagy mentésére irányuló képességes megpróbáltatásokról. A jelentések tartalmaznak az esettanúsítót, az időt, a cselekvést, a találást, a döntés és a politikát, valamint egy opcionális tárhelyszámot vagy a hozzáférést SHA-256. Thundy A tartályok a jelentések lokálisan legfeljebb 24 órán át. visszavonhatja a hozzájárulást, és törölheti a tartály a beállításokban."
+  },
+  "reportingConsentDetails": {
+    "message": "Azt is beleegyezem, hogy a döntés indokolását, a rendelkezésre álló pontszámokat, a mellékelt címet, a szolgáltató ítéletét és a rendelkezésre álló jelentés-referenciákat küldöm."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Részletes jelentések lehetnek a fájlnevét és a linkeket a beszállító jelentéseit."
+  },
+  "analysisRunningHeading": {
+    "message": "Ellenőrzés folyamatban"
+  },
+  "analysisLocalNoFinding": {
+    "message": "A helyi ellenőrzés nem talált fenyegetésre utaló jelet"
+  },
+  "analysisLinksGroup": {
+    "message": "baloldal"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "hozzáállás"
+  },
+  "protectionOpenAllowed": {
+    "message": "A megnyitás engedélyezett"
+  },
+  "protectionSaveAllowed": {
+    "message": "A mentés engedélyezett"
+  },
+  "protectionWarn": {
+    "message": "Figyelmeztetés"
+  },
+  "protectionApproval": {
+    "message": "Jóváhagyás szükséges"
+  },
+  "protectionRequestApproval": {
+    "message": "jóváhagyás kérése"
+  },
+  "protectionBlocked": {
+    "message": "Letiltva"
+  },
+  "protectionMalicious": {
+    "message": "Egy szolgáltató rosszindulatú találatot jelentett."
+  },
+  "protectionThreshold": {
+    "message": "A védelmi küszöbérték elérve"
+  },
+  "protectionManagedThreshold": {
+    "message": "A vállalati küszöbérték elérve"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "A megfelelő beállítások ezt a lépést teszik lehetõvé."
+  },
+  "linkContextChanged": {
+    "message": "A link vagy üzenet a csekket során megváltozott."
+  },
+  "auditPolicyBlocked": {
+    "message": "Házirend alapján letiltva"
+  },
+  "reportingLastReceipt": {
+    "message": "A szerver által megerősített legutóbbi fogadtatás"
+  },
+  "reportingOldestPending": {
+    "message": "Legrégebbi várható jelentés"
+  },
+  "addonLanguage": {
+    "message": "A kiegészítő nyelve"
+  },
+  "addonLanguageSystem": {
+    "message": "A Thunderbird nyelvének használata"
+  },
+  "addonLanguageSaved": {
+    "message": "A nyelv mentve. A használatához nyissa meg újra a Thundy nézeteit."
+  },
+  "addonLanguageFailed": {
+    "message": "Nem sikerült menteni a nyelvet."
+  },
+  "profilesOpenSource": {
+    "message": "Nyílt forráskód"
+  },
+  "transferReview": {
+    "message": "Külső beküldés áttekintése"
+  },
+  "transferSend": {
+    "message": "Küldés a szolgáltatónak"
+  },
+  "transferVisibility": {
+    "message": "Láthatóság: nem listázott. A jelentést bárki megnyithatja, aki ismeri a hivatkozását."
+  },
+  "transferAccepted": {
+    "message": "A szolgáltató elfogadta a beküldést. A jelentés még készülhet."
+  },
+  "transferFailed": {
+    "message": "A külső beküldést nem sikerült befejezni."
+  },
+  "transferUsePopup": {
+    "message": "Nyissa meg a Thundy paneljét egy adott hivatkozás vagy melléklet áttekintéséhez és jóváhagyásához."
+  },
+  "providerGrantAccess": {
+    "message": "Hozzáférés engedélyezése ehhez a szolgáltatóhoz"
+  },
+  "sourceSessionOnly": {
+    "message": "A forrásarchívum megtelt. Az aktuális forrásnézet csak ebben a munkamenetben érhető el."
+  },
+  "analysisReason_transfer_approval": {
+    "message": "A teljes hivatkozások és mellékletek egyedi megerősítést igényelnek."
+  },
+  "analysisCompactDetails": {
+    "message": "Ellenőrzési részletek"
+  },
+  "riskScoreFormula": {
+    "message": "A helyi pontszám összeadja a pontokat, legfeljebb 100-ig. A szolgáltatói találatok külön értékelést kapnak."
+  },
+  "riskScoreNoPoints": {
+    "message": "Egyetlen helyi szabály sem adott pontot."
+  },
+  "riskScoreTotal": {
+    "message": "Helyi számítás"
+  },
+  "riskLinkBrandRule": {
+    "message": "Legalább egy domain ismert márkára hasonlít. A pontokat egyszer számítjuk."
+  },
+  "reportingConsentDetections": {
+    "message": "A jelentések neveket, kategóriákat, szignatúrákat és utánzott márkákat tartalmazhatnak."
+  },
+  "detectionKind_family": {
+    "message": "Kártevőcsalád"
+  },
+  "detectionKind_category": {
+    "message": "Kategória"
+  },
+  "detectionKind_brand": {
+    "message": "Utánzott márka"
+  },
+  "detectionKind_signature": {
+    "message": "Gyártói szignatúra"
+  },
+  "detectionCategory_fraudulent_shop": {
+    "message": "Csaló webáruház"
+  },
+  "detectionCategory_phishing_shop": {
+    "message": "Adathalász webáruház"
+  },
+  "analysisDetectionGrouping": {
+    "message": "Találatok csoportosítása"
+  },
+  "detectionCategory_malware": {
+    "message": "Kártevő"
+  },
+  "detectionCategory_virus": {
+    "message": "Vírus"
+  },
+  "detectionCategory_trojan": {
+    "message": "Trójai"
+  },
+  "detectionCategory_ransomware": {
+    "message": "Zsarolóvírus"
+  },
+  "detectionCategory_worm": {
+    "message": "Féreg"
+  },
+  "detectionCategory_spyware": {
+    "message": "Kémprogram"
+  },
+  "detectionCategory_adware": {
+    "message": "Reklámprogram"
+  },
+  "detectionCategory_backdoor": {
+    "message": "Hátsó ajtó"
+  },
+  "detectionCategory_downloader": {
+    "message": "Letöltő"
+  },
+  "detectionCategory_dropper": {
+    "message": "Dropper"
+  },
+  "detectionCategory_infostealer": {
+    "message": "Adatlopó"
+  },
+  "detectionCategory_rootkit": {
+    "message": "Rootkit"
+  },
+  "detectionCategory_phishing": {
+    "message": "Adathalászat"
+  },
+  "detectionCategory_scam": {
+    "message": "Csalás"
+  }
+}

@@ -4,7 +4,7 @@ Thundy AV provides local message-risk heuristics, HTML attachment disarming and 
 
 **Version 1.26.2:** [GitHub release status and download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.2), unsigned distribution. [Release scope and remaining prerequisites](docs/VEROEFFENTLICHUNG_1_26_2.md). An XPI checksum is not a store signature. ATN listing/signing is a separate maintainer step.
 
-[Python receiver for security reports](examples/python-receiver/README.md)
+[Documentation and contents](docs/guide-en.md) · [Deutsch](docs/guide-de.md) · [Managed Thunderbird setup](docs/enterprise-policy.en.md) · [Python receiver setup](docs/python-receiver.en.md)
 
 ## Install and use
 
@@ -12,19 +12,20 @@ Download the published XPI from GitHub, verify its accompanying `SHA256SUMS.txt`
 
 The manifest requires Thunderbird 140.0 or later. The published acceptance covers Thunderbird 140.12.0 and 153.7.0 on Linux, including upgrade and profile recovery. [Release verification](docs/VEROEFFENTLICHUNG_1_26_2.md)
 
-- Local checks work without API keys. Supported UI languages: English, German, French, Spanish, Italian and Polish.
-- External provider access additionally requires global consent, the relevant optional host/data permissions and the appropriate privacy tier. Automatic message scans need sender authorization; one-off scans do not permanently authorize a sender.
+- Local checks work without API keys. The published 1.26.2 package includes six languages. The development tree includes 24 EU language catalogs.
+- External analysis requires global consent, a configured and enabled provider, the relevant optional permissions and a suitable privacy tier. The scan mode controls which opened messages are checked. In the development tree, full links and files also require individual approval. [Privacy and transfer matrix](docs/privacy_policy.md#english)
 - `OPENED` means Thunderbird accepted an opening request. It proves neither browser startup nor a website visit. `PENDING` remains an incomplete decision after a process loss.
 - The local audit stores complete URLs and decision snapshots. It is bounded and separately deletable; profile users can modify it. It is not an authenticated central audit.
 - Enterprise profile selection creates disabled configuration drafts. Local Node tools are separate from the extension; no enterprise service, SSO or cloud integration is activated by choosing a profile.
 
-Read the [data-flow matrix and privacy policy](docs/privacy_policy.md), [data lifecycle](docs/DATENLEBENSZYKLUS.md), [current status](docs/AKTUELLER_PRODUKTSTAND.md) and [German quickstart](docs/quickstart.md).
+Read the [documentation overview](docs/guide-en.md) for installation, day-to-day use, company reporting and troubleshooting.
 
-## Three separate runtimes
+## Project components
 
 | Runtime | Entry and storage | Distribution |
 | --- | --- | --- |
 | Thunderbird extension | `manifest.json`, background scripts, `popup.html`, `options.html`; IndexedDB and `browser.storage.local` | `npm run package` → `build/*.zip` (XPI-compatible archive) |
+| Python receiver | `examples/python-receiver/receiver.py`; durable SQLite intake and SMTP delivery | Separate ZIP in GitHub release assets, with TOML, setup and testing instructions |
 | Optional local enterprise tools | `enterprise/*.cjs`, explicit CLI input, local journals | Repository tooling, excluded from XPI |
 | Web demo | `src/App.tsx`, simulated messages and decisions, browser localStorage | `npm run dev` / `npm run check:web`; **not** a Thunderbird connection and excluded from XPI |
 
@@ -32,7 +33,7 @@ The web demo is visibly labelled. It never issues a real link-opening request. N
 
 ## Develop and verify
 
-Node `^20.19.0 || >=22.12.0` is required by Vite; CI uses Node 22. Install without peer-dependency overrides:
+Use Node.js 24 or later for the repository toolchain and Python 3 for the package tools. Install the locked dependencies:
 
 ```sh
 npm ci

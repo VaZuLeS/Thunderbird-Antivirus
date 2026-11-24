@@ -1,0 +1,3590 @@
+{
+  "protectionSeverity_low": { "message": "Riosca íseal" },
+  "protectionSeverity_unknown": { "message": "Riosca anaithnid" },
+  "protectionSeverity_caution": { "message": "Riosca méadaithe" },
+  "protectionSeverity_high": { "message": "Riosca ard" },
+  "protectionSeverity_critical": { "message": "Riosca criticiúil" },
+  "linkScanSummary": { "message": "Torthaí na scananna URL" },
+  "linkScansPending": { "message": "Tá scanadh URL fós ar siúl." },
+  "linkNoScanResults": { "message": "Níl torthaí scanadh URL ar fáil." },
+  "protectionCategoryUnavailable": { "message": "Níor luaigh an soláthraí catagóir bagartha." },
+  "linkWaitForResults": { "message": "Fan le scananna URL atá ar siúl" },
+  "linkAutoOpenBelow": { "message": "Oscail go díreach faoi bhun an scóir seo" },
+  "linkOpeningOptionsHelp": { "message": "Fág an scór folamh chun an dialóg naisc a thaispeáint i gcónaí." },
+  "linkAuditRetentionTitle": { "message": "Tréimhse choinneála loga na nasc" },
+  "linkAuditLimit": { "message": "Uasmhéid iontrálacha (folamh = gan teorainn)" },
+  "linkAuditDays": { "message": "Laethanta coinneála (folamh = gan teorainn)" },
+  "protectionManagedColors": { "message": "Socraíonn d’eagraíocht dathanna na leibhéal riosca." },
+  "linkOpenedAutomatically": { "message": "Osclaíodh go huathoibríoch" },
+  "providerSwitchHelp": {
+    "message": "Cas seirbhísí air nó as ina n-aonar agus sábháil na socruithe. Coinnítear na heochracha agus na torthaí sábháilte nuair a chuirtear seirbhís ar sos."
+  },
+  "providerKeyLink": {
+    "message": "Faigh API key"
+  },
+  "providerDocsLink": {
+    "message": "Doiciméadú API"
+  },
+  "providerApiKeyLabel": {
+    "message": "Eochair API"
+  },
+  "providerUse": {
+    "message": "Úsáid an tseirbhís seo"
+  },
+  "providerVirusUse": {
+    "message": "Úsáid VirusTotal le haghaidh seiceálacha comhad"
+  },
+  "providerHybridStrength": {
+    "message": "Aimsíonn sé tuairiscí atá ann cheana bunaithe ar luachanna hais aitheanta. Má cheadaítear uaslódáil, is féidir le Falcon Sandbox iompar an chomhaid a anailísiú agus é á rith."
+  },
+  "providerHybridSetup": {
+    "message": "Cruthaigh cuntas, oscailt ansin Próifíl → API Eochair a chruthú eochair."
+  },
+  "providerUrlhausStrength": {
+    "message": "Seiceálacha ina hóstach nasc i gcoinne foinsí a tuairiscíodh de malware."
+  },
+  "providerUrlhausSetup": {
+    "message": "Cláraigh le mí-úsáid.ch agus a fháil Auth-Key ó do chuntas."
+  },
+  "providerUrlscanStrength": {
+    "message": "Scrúdaíonn iomlán URLs agus atreoraíonn le haghaidh comharthaí phishing. Thundy úsáideann sé ag an sraith príobháideachta Uasta."
+  },
+  "providerUrlscanSetup": {
+    "message": "Cruthaigh cuntas agus roghnaigh Socruithe & API → Nua API key."
+  },
+  "providerVirusTotalStrength": {
+    "message": "Breathnaíonn suas comhad ar SHA-256 hash agus léiríonn torthaí ó innill scanadh il."
+  },
+  "providerVirusTotalSetup": {
+    "message": "Sínigh isteach VirusTotal agus cóip an eochair ó do phróifíl API Leathanach eochrach."
+  },
+  "providerIpTitle": {
+    "message": "Clú seoltaí IP"
+  },
+  "providerIpUse": {
+    "message": "Seiceáil an chlú IP"
+  },
+  "providerIpChoose": {
+    "message": "IP soláthróir cáil"
+  },
+  "providerIpKeyNotice": {
+    "message": "Cuir isteach eochair ón soláthraí roghnaithe. Coinnítear an soláthraí roghnaithe agus an eochair nuair a chuirtear seiceálacha IP ar sos."
+  },
+  "providerIpGuide": {
+    "message": "Roghnaigh agus bun soláthraí IP cháil"
+  },
+  "providerVirusIpStrength": {
+    "message": "Seiceálann IPs poiblí i gcoinne VirusTotal’s innill a bhrath agus rátálacha pobail."
+  },
+  "providerAbuseStrength": {
+    "message": "Úsáideann tuarascálacha pobail a aithint IPs poiblí a bhaineann le spam, scanadh nó mí-úsáid eile."
+  },
+  "providerAbuseSetup": {
+    "message": "Cruthaigh AbuseIPDB cuntas a ghiniúint nó eochair ó na API cluaisín sa Painéal na nIonstraimí."
+  },
+  "providerIpVirusKey": {
+    "message": "VirusTotal API eochair do IP clú"
+  },
+  "providerIpAbuseKey": {
+    "message": "Eochair API AbuseIPDB"
+  },
+  "providerTestDisabled": {
+    "message": "Cas an tseirbhís air agus sábháil na socruithe sula dtástálann tú an eochair."
+  },
+  "analysisReason_provider_disabled": {
+    "message": "Cuireadh an soláthraí seo ar shos i socruithe."
+  },
+  "extensionName": {
+    "message": "Thundy AV – Scanóir ríomhphoist le haghaidh Thunderbird"
+  },
+  "extensionDescription": {
+    "message": "Roghnach, opt-i scanóir le haghaidh ceangaltán r-phost agus naisc. Ní fhágann aon ní do ríomhaire gan toiliú sainráite."
+  },
+  "actionTitle": {
+    "message": "Thundy AV – Stádas scanadh don teachtaireacht seo"
+  },
+  "bannerScanOnce": {
+    "message": "Scan an teachtaireacht seo uair amháin"
+  },
+  "bannerScanSender": {
+    "message": "Scan an seoltóir seo i gcónaí"
+  },
+  "bannerTitleOptIn": {
+    "message": "Thundy AV : Ní bheidh scanadh fíor- ama cumasaithe don teachtaireacht seo."
+  },
+  "bannerNoteOptIn": {
+    "message": "Scanadh tharchuireann sonraí le seirbhísí anailíse seachtracha, ach amháin má tá ar chumas tú é sna socruithe breiseán agus ach amháin tar éis a thabhairt duit do thoiliú. Féach ar an roghanna add-on."
+  },
+  "bannerScanRunning": {
+    "message": "Á Scanadh…"
+  },
+  "bannerScanDone": {
+    "message": "Iarratais críochnaithe — féach foinsí anailíse"
+  },
+  "bannerScanFailed": {
+    "message": "Theip ar scanadh"
+  },
+  "bannerPermissionDenied": {
+    "message": "Diúltaíodh cead óstríomhaire riachtanach"
+  },
+  "bannerConsentMissing": {
+    "message": "Díchumasaíodh iarratais sheachtracha nua. Is féidir tuairiscí a stóráil roimhe seo a thaispeáint fós."
+  },
+  "bannerThreatTitle": {
+    "message": "Thundy AV rabhadh:"
+  },
+  "bannerThreatScore": {
+    "message": "Scór an riosca: $SCORE$ de 100",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerSenderOptIn": {
+    "message": "Tá an seoltóir seo scanta go huathoibríoch anois."
+  },
+  "notificationScanStarted": {
+    "message": "Tosaíodh an scanadh le haghaidh: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "D' éirigh leis an scanadh. Job ID: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanError": {
+    "message": "Earráid scanta: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Thundy AV Scanóir"
+  },
+  "notificationTitleError": {
+    "message": "Thundy AV Earráid scanóra"
+  },
+  "bannerAuthPass": {
+    "message": "Tuarascálacha freastalaí Iontaofa SPF / DKIM / DMARC rith"
+  },
+  "bannerOpenOptions": {
+    "message": "Oscail Roghanna"
+  },
+  "menuScanLink": {
+    "message": "Scan an nasc le Thundy AV"
+  },
+  "menuScanMessageLinks": {
+    "message": "Scan gach nasc den teachtaireacht seo"
+  },
+  "notificationNoLinks": {
+    "message": "Níor aimsíodh aon nasc sa teachtaireacht seo."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "Tá cead ó óstríomhaire na seirbhíse anailíse ar iarraidh. Tabhair sna roghanna breiseán, le do thoil."
+  },
+  "errorHostPermissionMissing": {
+    "message": "Tá cead óstríomhaire don tseirbhís anailíse ar iarraidh. Tabhair sna roghanna breiseán, le do thoil."
+  },
+  "errorTierUploadBlocked": {
+    "message": "Tá na ceangaltáin á n- uasluchtú faoi mhíchumas i sraith \"Start\". Athraigh go \"Balanced\" nó \"Maximum\" sna roghanna breiseán."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "Á Chur URLs a cheadaítear ach amháin sa sraith \"Maximum\" príobháideachas. Athraigh an sraith i na roghanna add-on."
+  },
+  "notificationInjectionFailed": {
+    "message": "Níorbh fhéidir an banner a chur isteach san amharc teachtaireachta. Seol é seo in iúl le do thoil Thunderbird leagan."
+  },
+  "bannerTierBlocked": {
+    "message": "Ní cheadaíonn an sraith reatha príobháideachta an gníomh seo. Féach ar na roghanna breiseán."
+  },
+  "ui_001": {
+    "message": "Rabhadh:"
+  },
+  "ui_002": {
+    "message": "Gan Hybrid Analysis API cumraithe eochair. Is féidir leat seiceálacha logánta a úsáid nó soláthraí a chumrú i socruithe."
+  },
+  "ui_003": {
+    "message": "Oscail socruithe"
+  },
+  "ui_004": {
+    "message": "Roghnaigh ríomhphost chun é a iniúchadh."
+  },
+  "ui_005": {
+    "message": "Torthaí anailíse á luchtú…"
+  },
+  "ui_006": {
+    "message": "Tá anailís seachtrach faoi mhíchumas: níl aon hastes, comhaid nó naisc a sheoladh chuig seirbhísí anailíse."
+  },
+  "ui_007": {
+    "message": "Níl aon iatán stóráilte ná torthaí scanta ar fáil don teachtaireacht seo."
+  },
+  "ui_008": {
+    "message": "Níl aon torthaí anailíse ar fáil don ríomhphost seo."
+  },
+  "ui_009": {
+    "message": "Earráid gan súil leis agus torthaí na hanailíse á luchtú."
+  },
+  "ui_010": {
+    "message": "Stádas:"
+  },
+  "ui_011": {
+    "message": "Tá an anailís ar siúl fós. Bain triail eile as amach anseo."
+  },
+  "ui_012": {
+    "message": "SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_013": {
+    "message": "Scór na bagartha:"
+  },
+  "ui_014": {
+    "message": "Fíorasc:"
+  },
+  "ui_015": {
+    "message": "Fine Mongóil:"
+  },
+  "ui_016": {
+    "message": "Ilscan toradh: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_017": {
+    "message": "Eolas breise:"
+  },
+  "ui_018": {
+    "message": "Anailís tosaithe: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_019": {
+    "message": "Clibeanna: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_020": {
+    "message": "VirusTotal torthaí:"
+  },
+  "ui_021": {
+    "message": "Mailíseach: $P1$$P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_022": {
+    "message": "Baint Amach: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_023": {
+    "message": "Amhrasach: $P1$$P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_024": {
+    "message": "Gan Ghnímh: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_025": {
+    "message": "Scanóir: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_026": {
+    "message": "Stádas: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_027": {
+    "message": "Torthaí antivirus:"
+  },
+  "ui_028": {
+    "message": "AV: $P1$ – fíorasc: $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_029": {
+    "message": "Níl aon torthaí scanta ar fáil."
+  },
+  "ui_030": {
+    "message": "SHA-256 haiseáil: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_031": {
+    "message": "Ainm comhaid ar a laghad: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_032": {
+    "message": "Méid: $P1$ beart",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_033": {
+    "message": "Cineál: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_034": {
+    "message": "Scan arís"
+  },
+  "ui_035": {
+    "message": "Sanitize agus íoslódáil (áitiúil)"
+  },
+  "ui_036": {
+    "message": "Mír sheicte: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_037": {
+    "message": "Toradh logánta: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_038": {
+    "message": "SHA-256 : $P1$ – Tá anailís seachtrach faoi mhíchumas.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_039": {
+    "message": "Gan chuardach seachtrach toisc go bhfuil anailís sheachtrach díchumasaithe."
+  },
+  "ui_040": {
+    "message": "Díchumasaithe- anailis sheachtrach"
+  },
+  "ui_041": {
+    "message": "Scan á sheoladh…"
+  },
+  "ui_042": {
+    "message": "Comhad á uasluchtú le haghaidh scanadh nua…"
+  },
+  "ui_043": {
+    "message": "Iompórtáil na torthaí seo. Reload results…"
+  },
+  "ui_044": {
+    "message": "D' éirigh leis"
+  },
+  "ui_045": {
+    "message": "Theip ar scanadh:"
+  },
+  "ui_046": {
+    "message": "Earráid anaithnid"
+  },
+  "ui_047": {
+    "message": "Bain triail eile as"
+  },
+  "ui_048": {
+    "message": "Earráid chumarsáide:"
+  },
+  "ui_049": {
+    "message": "Á Thúsú…"
+  },
+  "ui_050": {
+    "message": "HTML á ghiniúint go logánta…"
+  },
+  "ui_051": {
+    "message": "Tosaíodh an t- íosluchtú."
+  },
+  "ui_052": {
+    "message": "SanitizedName"
+  },
+  "ui_053": {
+    "message": "Theip ar íosluchtú:"
+  },
+  "ui_054": {
+    "message": "API earráid: $P1$ le haghaidh míre $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_055": {
+    "message": "(An API seans go bhfuil an eochair neamhbhailí nó ar iarraidh.)"
+  },
+  "ui_056": {
+    "message": "Earráid líonra: $P1$ le haghaidh míre $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_057": {
+    "message": "Á Chur URL…"
+  },
+  "ui_058": {
+    "message": "URL á sheoladh chuig Hybrid Analysis…"
+  },
+  "ui_059": {
+    "message": "Scanadh seolta. Torthaí á luchtú…"
+  },
+  "ui_060": {
+    "message": "Theip ar uasluchtú:"
+  },
+  "ui_061": {
+    "message": "URL: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_062": {
+    "message": "Fuarthas go raibh sé seo URL sa ríomhphost. Chun do phríobháideacht a chosaint, bhí sé"
+  },
+  "ui_063": {
+    "message": "Gan uasluchtú go huathoibríoch"
+  },
+  "ui_064": {
+    "message": "Scan URL anois"
+  },
+  "ui_065": {
+    "message": "Á uasluchtú…"
+  },
+  "ui_066": {
+    "message": "Comhad á sheoladh go Hybrid Analysis…"
+  },
+  "ui_067": {
+    "message": "Uasluchtú críochnaithe. Torthaí á luchtú…"
+  },
+  "ui_068": {
+    "message": "Comhad scanta anois (uasluchtú)"
+  },
+  "ui_069": {
+    "message": "Iatán: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_070": {
+    "message": "Níl aon tuairisc sheachtrach ar fáil don chomhad seo. Chun do phríobháideacht a chosaint, bhí"
+  },
+  "ui_071": {
+    "message": "Tá uasluchtuithe uathoibríocha faoi mhíchumas; baineann an sraith príobháideachais le scanadh láimhe fós."
+  },
+  "ui_072": {
+    "message": "Tá cosaint Link ar fáil in éineacht le scanadh uathoibríoch."
+  },
+  "ui_073": {
+    "message": "Á Shábháil…"
+  },
+  "ui_074": {
+    "message": "Sábháladh na socruithe."
+  },
+  "ui_075": {
+    "message": "Sábháil"
+  },
+  "ui_076": {
+    "message": "Níor tugadh cead sonraí a tharchur. Ní sheolfar aon rud."
+  },
+  "ui_077": {
+    "message": "Níor deonaíodh cead óstríomhaire do:"
+  },
+  "ui_078": {
+    "message": ". Tá Seiceálacha do na soláthraithe ar fáil gan cead."
+  },
+  "ui_079": {
+    "message": "Níorbh fhéidir na socruithe a shábháil."
+  },
+  "ui_080": {
+    "message": "Glan an taisce? Baineann sé seo gach toradh anailíse a stóráiltear go logánta."
+  },
+  "ui_081": {
+    "message": "Á bhánú…"
+  },
+  "ui_082": {
+    "message": "Taisce glanta."
+  },
+  "ui_083": {
+    "message": "Níl aon bhunachar sonraí ann fós, nó tá sé folamh cheana."
+  },
+  "ui_084": {
+    "message": "Níorbh fhéidir an taisce a ghlanadh."
+  },
+  "ui_085": {
+    "message": "Glan an taisce"
+  },
+  "ui_086": {
+    "message": "API key ar iarraidh."
+  },
+  "ui_087": {
+    "message": "SPF deimhnigh (spoofing féideartha)."
+  },
+  "ui_088": {
+    "message": "DKIM is unable (bpoofing féideartha)."
+  },
+  "ui_089": {
+    "message": "DMARC deimhnigh (spoofing féideartha)."
+  },
+  "ui_090": {
+    "message": "URLhaus liostaí fearainn ($P1$) mar mailíseach.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_091": {
+    "message": "Freagra-Chuig an bhfearann ($P1$) difriúil ó fhearainn seoltóra ($P2$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_092": {
+    "message": "Comhréiteach r-phost gnó féideartha: An chéad teagmháil leis an seoltóir agus eochairfhocail práinneach le fáil ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_093": {
+    "message": "Aimsíodh lorgfhocail iontaofachta ($P1$). Seiceáil go cúramach an iarraidh seo.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_094": {
+    "message": "Is é seo an chéad chumarsáid leis an seoltóir."
+  },
+  "ui_095": {
+    "message": "fearann an tseoltóra (m)$P1$) cosúil leis an mbranda aitheanta $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_096": {
+    "message": "Fearann naisc ($P1$) cosúil leis an mbranda aitheanta $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_097": {
+    "message": "Níl aon cheann de na naisc i bpointe téacs ar an bhfearann seoltóir ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_098": {
+    "message": "CLEAN"
+  },
+  "ui_099": {
+    "message": "URL Theip ar scanadh:"
+  },
+  "ui_100": {
+    "message": "Níorbh fhéidir scanadh urlscan.io a thosú:"
+  },
+  "ui_101": {
+    "message": "Ní raibh urlscan.io ais ID scan."
+  },
+  "ui_102": {
+    "message": "urlscan.io aithníodh an URL mar mailíseach."
+  },
+  "ui_103": {
+    "message": "Braitheadh amhairc: impersonates an leathanach"
+  },
+  "ui_104": {
+    "message": "Rialachán (CE) Uimh."
+  },
+  "ui_105": {
+    "message": "Níorbh fhéidir torthaí urlscan.io a fháil:%s"
+  },
+  "ui_106": {
+    "message": "Thundy AV – Scanóir Ríomhphoist"
+  },
+  "ui_107": {
+    "message": "Féach ar gach aighneacht Hybrid Analysis"
+  },
+  "ui_108": {
+    "message": "Féach ar gach aighneacht Hybrid Analysis (oscailt cluaisín nua)"
+  },
+  "ui_109": {
+    "message": "Ábhar:"
+  },
+  "ui_110": {
+    "message": "Ó:"
+  },
+  "ui_111": {
+    "message": "Aitheantas na Teachtaireachta:"
+  },
+  "ui_112": {
+    "message": "Thundy AV Socruithe"
+  },
+  "ui_113": {
+    "message": "Is Hybrid Analysis seirbhís anailíse malware. Is féidir leat comhaid a chur isteach le haghaidh anailís statach agus dinimiciúil."
+  },
+  "ui_114": {
+    "message": "Hybrid Analysis úsáideann CrowdStrike Falcon Sandbox chun bagairtí anaithnide a imscrúdú."
+  },
+  "ui_115": {
+    "message": "Baineann cuntais agus téarmaí seirbhíse le hanailís sheachtrach. Ní éilíonn seiceálacha áitiúla cuntas."
+  },
+  "ui_116": {
+    "message": "Thundy AV Socruithe"
+  },
+  "ui_117": {
+    "message": "Cad é Hybrid Analysis?"
+  },
+  "ui_118": {
+    "message": "Le haghaidh anailíse seachtracha comhad, faigh anailís API eochair ó"
+  },
+  "ui_119": {
+    "message": "Tar éis duit síniú isteach, téigh go dtí do phróifíl agus faigh an API Roinn na hÉileamh."
+  },
+  "ui_120": {
+    "message": "Greamaigh an eochair API anseo."
+  },
+  "ui_121": {
+    "message": "API socrú eochrach"
+  },
+  "ui_122": {
+    "message": "hybrid-analysis.com"
+  },
+  "ui_123": {
+    "message": "hybrid-analysis.com (osclaítear cluaisín nua)"
+  },
+  "ui_124": {
+    "message": "Ceadaigh anailís sheachtrach (seol sonraí chuig soláthraithe tríú páirtí)"
+  },
+  "ui_125": {
+    "message": "Gan an toiliú sin,"
+  },
+  "ui_126": {
+    "message": "haisteoirí, comhaid, naisc nó IP seoltaí a sheoladh chuig seirbhísí seachtracha. Tar éis toiliú, Is féidir scans údaraithe sheoladh iatán agus sonraí nasc chuig Hybrid Analysis, VirusTotal, urlscan.io, URLhaus nó AbuseIPDB, ag brath ar an sraith príobháideachta . Múch an rogha seo toiliú a tharraingt siar . Sonraí :"
+  },
+  "ui_127": {
+    "message": "gan"
+  },
+  "ui_128": {
+    "message": "Beartas príobháideachais"
+  },
+  "ui_129": {
+    "message": "Polasaí príobháideachais (oscail cluaisín nua)"
+  },
+  "ui_130": {
+    "message": "Eochair API Hybrid Analysis (roghnach):"
+  },
+  "ui_131": {
+    "message": "m.sh. abcdef123456…"
+  },
+  "ui_132": {
+    "message": "URLhaus API eochair (chlú roghnach fearainn):"
+  },
+  "ui_133": {
+    "message": "Féadfaidh tú API eochair i"
+  },
+  "ui_134": {
+    "message": "."
+  },
+  "ui_135": {
+    "message": "urlhaus.abuse.ch"
+  },
+  "ui_136": {
+    "message": "urlhaus.abuse.ch (osclaítear cluaisín nua)"
+  },
+  "ui_137": {
+    "message": "urlscan.io API key (roghnach URL anailís):"
+  },
+  "ui_138": {
+    "message": "Féadfaidh tú API eochair i"
+  },
+  "ui_139": {
+    "message": "urlscan.io"
+  },
+  "ui_140": {
+    "message": "urlscan.io (osclaítear cluaisín nua)"
+  },
+  "ui_141": {
+    "message": "VirusTotal API key (ciall roghnach comhaid):"
+  },
+  "ui_142": {
+    "message": "virustotal.com"
+  },
+  "ui_143": {
+    "message": "virustotal.com (osclaítear cluaisín nua)"
+  },
+  "ui_144": {
+    "message": "Barra Príobháideachas:"
+  },
+  "ui_145": {
+    "message": "Stric (réamhshocrú: hastes agus fearainn amháin, gan uasluchtú)"
+  },
+  "ui_146": {
+    "message": "Cothromaithe (comhaid luchtaithe anaithnid, gan URLs iomlán)"
+  },
+  "ui_147": {
+    "message": "Anailís uasta (comhaid anaithnid a luchtú agus URLs iomlán)"
+  },
+  "ui_148": {
+    "message": "Cuir teorainn leis na sonraí a sheoltar chuig soláthraithe anailíse."
+  },
+  "ui_149": {
+    "message": "IP cháil (féach ceanntásca Faighte):"
+  },
+  "ui_150": {
+    "message": "Díchumasaithe"
+  },
+  "ui_151": {
+    "message": "VirusTotal (Éilíonn ar VirusTotal API key)"
+  },
+  "ui_152": {
+    "message": "AbuseIPDB (Éilíonn ar AbuseIPDB API key)"
+  },
+  "ui_153": {
+    "message": "IP clú API eochair:"
+  },
+  "ui_154": {
+    "message": "Seol seoltaí IP poiblí ó ceanntásca an r-phoist Faighte chuig an soláthraí roghnaithe. Éilíonn toiliú anailíse seachtracha agus údarú scanadh."
+  },
+  "ui_155": {
+    "message": "Ceadaigh duit (fearainn agus seoltaí ríomhphoist ar leith):"
+  },
+  "ui_156": {
+    "message": "m.sh. example.com, test@example.com"
+  },
+  "ui_157": {
+    "message": "Déanann iontrálacha iontaofa seoltóra faoi ghlas rabhaidh seoltaí logánta. Ní údaraíonn siad scanta seachtracha."
+  },
+  "ui_158": {
+    "message": "Blocklist (fearainn nó seoltaí ríomhphoist a thosaíonn ar leith):"
+  },
+  "ui_159": {
+    "message": "Iontráil fearainn bhlocáilte nó seoltaí ríomhphoist."
+  },
+  "ui_160": {
+    "message": "Scan de láimh i gcónaí (gan uasluchtú uathoibríoch)"
+  },
+  "ui_161": {
+    "message": "Cosc scans uathoibríoch seachtrach. Gníomhartha lámhleabhar explicit gá fós toiliú agus an sraith príobháideachta cuí."
+  },
+  "ui_162": {
+    "message": "Faigh tuairiscí naisc ar feitheamh go huathoibríoch"
+  },
+  "ui_163": {
+    "message": "Seiceálacha nasc teastáil toiliú, údarú scanadh agus an sraith príobháideachta cuí."
+  },
+  "ui_164": {
+    "message": "Seiceáil naisc roimh oscailt na nasc"
+  },
+  "ui_165": {
+    "message": "Sosanna nascleanúint a thaispeáint ar an toradh. naisc Unchecked agus earráidí a shainaithint go soiléir. Iomlán URL Éilíonn anailís ar an sraith uasta. Tá deimhniú ar leith de dhíth le haghaidh naisc iomlána agus ceangaltán."
+  },
+  "ui_166": {
+    "message": "Ná sábháil do chuid socruithe."
+  },
+  "ui_167": {
+    "message": "Bainistíocht sonraí"
+  },
+  "ui_168": {
+    "message": "Glan torthaí a stóráiltear go logánta agus taisce cháiliúla."
+  },
+  "linkChecking": {
+    "message": "Nasc á sheiceáil…"
+  },
+  "linkWarning": {
+    "message": "Tuairiscíodh an nasc seo mar amhrasach nó mailíseach."
+  },
+  "linkUnknown": {
+    "message": "Níorbh fhéidir an nasc seo a sheiceáil. B' fhéidir go bhfuil seans réasúnta ann é a oscailt."
+  },
+  "linkNoDetection": {
+    "message": "Níl aon bhagairt ar an soláthraí. Ní ráthaíocht sábháilteachta é seo."
+  },
+  "linkProceed": {
+    "message": "Oscail an nasc mar sin féin"
+  },
+  "linkCancel": {
+    "message": "Cealaigh"
+  },
+  "localMode": {
+    "message": "Obair seiceálacha áitiúla gan API eochracha. Ní mór do thoiliú agus teachtaireacht nó údarú seoltóra a bheith le scanadh seachtracha."
+  },
+  "statusNormal": {
+    "message": "(Gan bhrath)"
+  },
+  "statusSuspicious": {
+    "message": "(Suarthach)"
+  },
+  "statusCritical": {
+    "message": "(Criticiúil)"
+  },
+  "noSubject": {
+    "message": "Ábair"
+  },
+  "noSender": {
+    "message": "(Seoltóra anaithnid)"
+  },
+  "noId": {
+    "message": "(Gan Aitheantas)"
+  },
+  "unknownAttachment": {
+    "message": "Anaithnid"
+  },
+  "statusDangerous": {
+    "message": "(Dainséarach)"
+  },
+  "sizeLimit": {
+    "message": "Is mó an t-iatán ná an teorainn 25 MiB de mhéid áitiúil agus níor léigh nó níor uasluchtaíodh é."
+  },
+  "trustedAuthLabel": {
+    "message": "Freastalaithe fíordheimhnithe iontaofa (scartha)"
+  },
+  "trustedAuthHelp": {
+    "message": "Níl ach freastalaí ríomhphoist liosta agat a riarann nó a chuireann muinín ar fáil. Níl tuarascálacha header cumraithe fós."
+  },
+  "consentHelp": {
+    "message": "Gan do thoiliú ní sheoltar aon sonraí chuig seirbhísí seachtracha. Tar éis toiliú a thabhairt, ní sheiceáiltear ach teachtaireachtaí nó seoltóirí a ceadaíodh go sainráite. Ar an leibhéal docht is féidir luachanna hais, fearainn agus seoltaí IP poiblí a sheoladh. Ceadaíonn an leibhéal cothromaithe comhaid anaithnide a uaslódáil freisin, agus ceadaíonn an t-uasleibhéal URLanna iomlána a sheoladh chomh maith. Múch an rogha chun aistrithe nua a stopadh agus iarratais ar feitheamh a chur ar ceal. Ní féidir sonraí a seoladh cheana a aisghairm. Tá deimhniú ar leith de dhíth le haghaidh naisc iomlána agus ceangaltán."
+  },
+  "visualImpersonation": {
+    "message": "Braitheadh amhairc: impersonates an leathanach $BRANDS$ Rialachán (CE) Uimh.",
+    "placeholders": {
+      "brands": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedEmail": {
+    "message": "Ríomhphost seoltóra ( $P1$) Is ar an blocklist.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedDomain": {
+    "message": "fearann an tseoltóra (m)$P1$) ar an blocklist ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedEmail": {
+    "message": "Ríomhphost seoltóra ( $P1$) Is ar an cead liosta.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedDomain": {
+    "message": "fearann an tseoltóra (m)$P1$) ar an cead liosta ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanVisibility": {
+    "message": "urlscan.io Níl na haighneachtaí ar fáil, ní go príobháideach. Críochnaithe URL Is féidir go bhfuil sonraí pearsanta nó comharthaí rochtana. Seol ach URLs tá tú i dteideal a roinnt."
+  },
+  "notificationScanCount": {
+    "message": "Scanta seolta: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "gatewayRequestTimeout": {
+    "message": "Cealaíodh an t-iarratas soláthraí nó cuireadh moill leis."
+  },
+  "gatewayInvalidJson": {
+    "message": "D' sheol an soláthraí freagra gan léamh."
+  },
+  "gatewayNetworkError": {
+    "message": "Níorbh fhéidir an soláthraí a bhaint amach."
+  },
+  "noMessageFound": {
+    "message": "Níor aimsíodh aon teachtaireacht infheicthe."
+  },
+  "providerNoDetection": {
+    "message": "Níor braitheadh aon bhagairt"
+  },
+  "providerMalicious": {
+    "message": "Mailíseach"
+  },
+  "providerSuspicious": {
+    "message": "Amhrasach"
+  },
+  "providerPending": {
+    "message": "Anailís ar feitheamh"
+  },
+  "privacyLocalData": {
+    "message": "Thundy AV léann an teachtaireacht taispeáint, a seoltóir, ábhar, ceanntásca, téacs agus ceangaltáin a dhéanann seiceáil logánta. Oibríonn seiceálacha áitiúla gan eochracha API. Níl aon teiliméadrachta agus gan aon fhreastalaí anailíse forbróirí."
+  },
+  "privacyProviders": {
+    "message": "Téann iarratais sheachtracha údaraithe go díreach chuig soláthraithe cumraithe: Hybrid Analysis le haghaidh hashes agus uasluchtuithe comhad, VirusTotal le haghaidh hashes comhad nó IP clú, URLhaus i gcás fearann, urlscan.io le haghaidh críochnaithe URLs agus AbuseIPDB Is féidir le Hashs comhaid aitheanta a shainaithint. Tá feidhm ag téarmaí soláthraí agus polasaithe príobháideachais; féadfaidh an soláthraí sonraí a chuirtear isteach a roinnt."
+  },
+  "privacyRetention": {
+    "message": "Socruithe, toiliú, údaruithe seoltóra agus API eochracha a stóráil i do Thunderbird próifíl. API Níl eochracha criptithe ann. Is féidir ábhair, seoltaí seoltóra, naisc iomlána agus meiteashonraí ceangail a bheith sna taifid scanta logánta. Coinníonn an taisce suas le 1,000 taifead teachtaireachta ar feadh 30 lá agus glantar iad ag am tosaithe an bhunachair sonraí. Rachaidh torthaí cháiliúla in éag tar éis 15 nóiméad."
+  },
+  "privacyControl": {
+    "message": "Múch anailís sheachtrach chun iarratais nua a stopadh agus iarratais a chur ar ceal. Ní féidir sonraí tarchuir cheana féin a aisghairm. Bain úsáid as an taisce Glan chun torthaí anailíse stóráilte agus taisce cháile a scriosadh. Is féidir údaruithe seoltóra aonair a bhaint i socruithe."
+  },
+  "privacyDetailed": {
+    "message": "Polasaí mionsonraithe príobháideachais (Béarla/Gearmáinis)"
+  },
+  "senderAuthorizationsLabel": {
+    "message": "Seoltóirí údaraithe (seoladh ríomhphoist amháin in aghaidh an líne)"
+  },
+  "senderAuthorizationsHelp": {
+    "message": "Is féidir na seoltóirí seo a scanadh go huathoibríoch nuair atá anailís sheachtrach cumasaithe. Bain seoladh chun scanta uathoibríocha a stopadh le haghaidh teachtaireachtaí amach anseo. Ní sheachnaíonn an liosta seo an sraith príobháideachta nó mód láimhe."
+  },
+  "invalidSenderAddress": {
+    "message": "Cuir isteach seoltaí ríomhphoist amháin, seoladh amháin in aghaidh na líne."
+  },
+  "popupSubtitle": {
+    "message": "Forléargas ar shlándáil na teachtaireachta"
+  },
+  "popupDetails": {
+    "message": "Mionsonraí teachtaireachta teicniúla"
+  },
+  "popupLocalAssessment": {
+    "message": "Measúnú riosca áitiúil"
+  },
+  "popupLocalExplanation": {
+    "message": "Táscairí áitiúla amháin. Ní fíorasc frithvíris nó ráthaíocht sábháilteachta é an scór seo."
+  },
+  "linkDialogTitle": {
+    "message": "Seiceáil roimh oscailt"
+  },
+  "linkDestination": {
+    "message": "Suíomh Gréasáin sprice"
+  },
+  "linkUrlDetails": {
+    "message": "Taispeáin seoladh an naisc iomlán"
+  },
+  "linkOpenBrowser": {
+    "message": "Oscail sa bhrabhsálaí"
+  },
+  "linkOpening": {
+    "message": "Á Oscailt…"
+  },
+  "linkOpenFailed": {
+    "message": "Níorbh fhéidir an nasc a oscailt. Bain triail eile as nó seiceáil socruithe do bhrabhsálaí réamhshocraithe."
+  },
+  "linkCheckLimited": {
+    "message": "Ní féidir ach na torthaí scanta atá ar fáil a thaispeáint. Ní chiallaíonn seiceálacha ar iarraidh go bhfuil nasc sábháilte."
+  },
+  "auditTitle": {
+    "message": "Logchomhad cinnidh ar nasc"
+  },
+  "auditOpen": {
+    "message": "Comment"
+  },
+  "auditScope": {
+    "message": "Logchomhaid HTTP(S) cad a tharlaíonn nuair a dhéantar iad a thascradh trí chosaint nasc. Thunderbird ghlac sé leis an iarratas tosaigh gan earráid a thuairisciú. Ní dheimhníonn sé seo gur thosaigh an córas oibriúcháin brabhsálaí nó gur tugadh cuairt ar an suíomh gréasáin."
+  },
+  "auditPrivacy": {
+    "message": "Stóráilte go háitiúil ar feadh suas le 30 lá, 2,000 taifead nó 2 MiB (cuirtear iontrálacha is óige as). Iomlán URLs Seans go bhfuil sonraí pearsanta ann nó comharthaí rochtana. Ní uasluchtófar aon rud go huathoibríoch. Is féidir leis na húsáideoirí próifíle an logáil logánta a athrú nó a scriosadh; ní rian iniúchóireachta é gan bacadh air. Úsáideann an scór logánta an nasc ceartaithe agus comhthéacs na teachtaireachta, ní scór soláthraí. Is féidir mionsonraí seoltóra nó fearainn a áireamh ar chúiseanna measúnaithe."
+  },
+  "auditSearch": {
+    "message": "URL, ID fearainn nó imeacht"
+  },
+  "auditOutcome": {
+    "message": "Cinneadh"
+  },
+  "auditAll": {
+    "message": "Uile"
+  },
+  "auditOpened": {
+    "message": "Á oscailt"
+  },
+  "auditAborted": {
+    "message": "Tobscortha"
+  },
+  "auditOpenError": {
+    "message": "Theip ar oscailt"
+  },
+  "auditPending": {
+    "message": "Gan chinneadh comhlánaithe"
+  },
+  "auditMinScore": {
+    "message": "Scór íosta cinntí"
+  },
+  "auditFrom": {
+    "message": "Foirm"
+  },
+  "auditTo": {
+    "message": "Chuig"
+  },
+  "auditRefresh": {
+    "message": "Athnuaigh"
+  },
+  "auditJson": {
+    "message": "Easpórtáil JSON"
+  },
+  "auditCsv": {
+    "message": "Easpórtáil CSV"
+  },
+  "auditClear": {
+    "message": "Scrios logchomhad logánta"
+  },
+  "auditExportHelp": {
+    "message": "Onnmhairí san áireamh gach ró scagtha, ní hamháin an leathanach reatha. JSON ina bhfuil SHA-256 Seiceáil an tástálacha; ní chruthaíonn sé fíordheimhniú. CSV neodrú foirmlí scarbhileoga. Onnmhairí ina bhfuil iomlán URLs: roinnt ach amháin le léirmheastóirí údaraithe."
+  },
+  "auditTime": {
+    "message": "Cliceáil / cinneadh am"
+  },
+  "auditLocalScore": {
+    "message": "Scór logánta (nasc agus teachtaireacht)"
+  },
+  "auditVerdict": {
+    "message": "Toradh an tsoláthróra"
+  },
+  "auditAddress": {
+    "message": "URL agus sonraí"
+  },
+  "auditPrevious": {
+    "message": "Siar"
+  },
+  "auditNext": {
+    "message": "Ar aghaidh"
+  },
+  "auditClearConfirm": {
+    "message": "Scrios gach iontráil logánta ó logchomhad an naisc? Easpórtáil fianaise de dhíth ar dtús. Coimeádtar torthaí agus socruithe scan."
+  },
+  "auditFailure": {
+    "message": "Níorbh fhéidir logchomhad an naisc logánta a léamh nó a shábháil."
+  },
+  "auditUnavailable": {
+    "message": "Níl ar Fáil"
+  },
+  "auditScoreAtDecision": {
+    "message": "Scór ag cinneadh"
+  },
+  "auditRecords": {
+    "message": "Taifid"
+  },
+  "auditDetails": {
+    "message": "Taispeáin URL agus fianaise"
+  },
+  "auditEventId": {
+    "message": "CA Teagmhais"
+  },
+  "auditCancelReason": {
+    "message": "Cúis cealaithe"
+  },
+  "auditFinalResult": {
+    "message": "Toradh is déanaí seiceáil"
+  },
+  "auditProfile": {
+    "message": "Aitheantas Próifíle Logánta"
+  },
+  "auditExported": {
+    "message": "Easpórtáil go%s."
+  },
+  "auditRiskyOpened": {
+    "message": "Iarraidh i mbaol ard a oscailt"
+  },
+  "auditExportFailed": {
+    "message": "Theip ar easpórtáil nó cealaíodh é."
+  },
+  "profilesTitle": {
+    "message": "Próifílí incháilithe d'fhiontair"
+  },
+  "profilesIntro": {
+    "message": "Roghnaigh comhchórais go neamhspleách nó fág comhtháthú faoi mhíchumas. Ullmhaíonn na próifílí seo cumraíocht; ní cheanglaíonn siad le seirbhís chuideachta ná ní gníomhaíonn siad logáil lárnach."
+  },
+  "profilesOpen": {
+    "message": "Roghnaigh próifílí fiontraíochta"
+  },
+  "profilesBundle": {
+    "message": "Meascán molta"
+  },
+  "profilesLocal": {
+    "message": "Ullmhú logánta"
+  },
+  "profilesCustom": {
+    "message": "Roghnú saincheaptha"
+  },
+  "profilesHosting": {
+    "message": "Óstáil"
+  },
+  "profilesSso": {
+    "message": "Síniú aonair (SO)"
+  },
+  "profilesDevices": {
+    "message": "Bainistiú feistí"
+  },
+  "profilesSiem": {
+    "message": "Faireachán slándála (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Ticéad an chórais"
+  },
+  "profilesRequirements": {
+    "message": "Cumraíocht riachtanach"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Socruithe Endpoint agus cuntas ar fáil le linn thus níos déanaí. A aithint faoi bhun na n-ainmneacha socruithe is gá agus tagairtí rúnda; iontráil aon dintiúir anseo."
+  },
+  "profilesPreview": {
+    "message": "Dréacht cumraíochta"
+  },
+  "profilesPrivacy": {
+    "message": "Tá na ceangail fós díchumasaithe. Níl aon eochair API, airíochtaí, cliceáil URLs nó sonraí teachtaireachta sa dréacht. Tá na sonraí lárnacha i gceist le díghníomhachtú fearainn amháin."
+  },
+  "profilesSave": {
+    "message": "Sábháil an roghnúchán go logánta"
+  },
+  "profilesExport": {
+    "message": "Easpórtáil dréacht cumraíochta"
+  },
+  "profilesReset": {
+    "message": "Athshocraigh an roghnúchán"
+  },
+  "profilesNone": {
+    "message": "Díchumasaithe / gan roghnú"
+  },
+  "profilesSelfHosted": {
+    "message": "Féin-óstáil / on-áitreabh"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Níl aon socruithe comhtháthú seachtrach de dhíth don roghnúchán."
+  },
+  "profilesSaved": {
+    "message": "Sábháladh an roghnúchán go logánta. Tá na ceangail díchumasaithe fós."
+  },
+  "profilesExported": {
+    "message": "Easpórtáil dréacht cumraíochta. Ní raibh faic ar bith gníomhach."
+  },
+  "profilesFailed": {
+    "message": "Níorbh fhéidir an roghnúchán a luchtú, a shábháil nó a easpórtáil, nó cuireadh an oibríocht ar ceal."
+  },
+  "wizardTitle": {
+    "message": "Socraigh Thundy AV"
+  },
+  "wizardLanguage": {
+    "message": "Teanga an treoraí"
+  },
+  "wizardLanguageNote": {
+    "message": "Baineann an rogha seo leis an treoraí amháin. Is féidir teanga an bhreiseáin a athrú sna socruithe."
+  },
+  "wizardWelcome": {
+    "message": "Fáilte"
+  },
+  "wizardProtection": {
+    "message": "Cosaint naisc"
+  },
+  "wizardExternal": {
+    "message": "Anailís roghnach"
+  },
+  "wizardIntro": {
+    "message": "Tosaigh le seiceálacha logánta. Chun ríomhphost a iniúchadh, úsáid é Thundy AV meirge nó gníomh scanta. Is féidir leat cinneadh a dhéanamh níos déanaí cé acu soláthraithe anailíse a chumrú."
+  },
+  "wizardLocalNotice": {
+    "message": "Gan toiliú le hanailís sheachtrach, níl aon sonraí a sheoladh chuig soláthraithe anailíse. Tugann an draoi seo riamh go bhfuil toiliú."
+  },
+  "wizardPrivacy": {
+    "message": "Faisnéis phríobháideacht"
+  },
+  "wizardLinkChoice": {
+    "message": "Tabhair rabhadh dom roimh oscailt naisc agus cinntí taifead go háitiúil"
+  },
+  "wizardLinkExplanation": {
+    "message": "Taispeánann dialóg an naisc an ceann scríbe agus an measúnú riosca atá ar fáil."
+  },
+  "wizardAuditNotice": {
+    "message": "Is féidir leis an logáil isteach nasc áitiúil san áireamh iomlán URLs agus cúiseanna measúnaithe. Coinníonn sé suas le 30 lá, 2,000 iontráil nó 2 MiB. Is féidir le húsáideoirí próifíl léamh, athrú nó é a scriosadh; nach bhfuil sé ina iniúchadh corparáideach faoi chosaint."
+  },
+  "wizardExternalExplanation": {
+    "message": "Tá soláthraithe seachtracha roghnach agus d'fhéadfadh sé go n-éileodh siad API eochracha. Ag brath ar do shraith príobháideachta, hashes, fearainn, IPs poiblí, comhaid nó iomlán URLs Is féidir iad a tharchur. Cumraigh soláthraithe agus toiliú deontais i suímh."
+  },
+  "wizardNextAction": {
+    "message": "Cad ba mhaith leat a dhéanamh amach romhainn?"
+  },
+  "wizardKeepLocal": {
+    "message": "Críochnaigh le seiceálacha logánta"
+  },
+  "wizardKeepExisting": {
+    "message": "Coimeád na socruithe seachtracha atá ann"
+  },
+  "wizardExistingExternal": {
+    "message": "Tá anailís sheachtrach cumasaithe sa phróifíl seo cheana. Ní athraíonn an treoraí an toiliú sin. Úsáid socruithe chun é a dhíchumasú nó athbhreithniú a cheadú."
+  },
+  "wizardConfigure": {
+    "message": "Cumraigh anailís sheachtrach i socruitheName"
+  },
+  "wizardNoConsent": {
+    "message": "Ag roghnú na socruithe seo amháin. Ní uasluchtófar aon rud agus ní iarrann an treoraí seo cead ar bith."
+  },
+  "wizardBack": {
+    "message": "Siar"
+  },
+  "wizardNext": {
+    "message": "Ar aghaidh"
+  },
+  "wizardFinish": {
+    "message": "Sábháil an socrú"
+  },
+  "wizardFinishConfigure": {
+    "message": "Sábháil agus oscail socruithe"
+  },
+  "wizardSkip": {
+    "message": "Gan aimsiú"
+  },
+  "wizardDone": {
+    "message": "Sábháladh an socrú"
+  },
+  "wizardDoneText": {
+    "message": "Sábháladh do rogha nasc-chosaint go logánta. No API Athraíodh eochair, toiliú seachtrach nó formheas seoltóra. Is féidir leat an treoraí a athoscailt ó shocruithe."
+  },
+  "wizardSettings": {
+    "message": "Oscail socruithe"
+  },
+  "wizardProfilesNotice": {
+    "message": "Tá próifílí Fiontar dréachtaí cumraíochta roghnach. Ní Roghnú iad a ghníomhachtú nasc corparáideach."
+  },
+  "wizardDeferred": {
+    "message": "Socrú curtha siar"
+  },
+  "wizardDeferredText": {
+    "message": "Athraíodh aon socruithe. Athoscail an treoraí ó shocruithe nuair atá tú réidh."
+  },
+  "wizardSettingsOpened": {
+    "message": "Socruithe oscail. Cumraigh soláthraithe agus sábháil do thoiliú ann."
+  },
+  "wizardSettingsFailed": {
+    "message": "Níorbh fhéidir na socruithe a oscailt. Sábháladh do shocrú; úsáid socruithe oscailte chun triail a bhaint as."
+  },
+  "wizardSaveFailed": {
+    "message": "Níorbh fhéidir an socrú a shábháil. Fanann do chuid roghanna anseo; bain triail eile as."
+  },
+  "wizardLoadFailed": {
+    "message": "Níorbh fhéidir na socruithe a luchtú. Níor sábháladh aon rud. Athluchtaigh an leathanach seo chun triail a bhaint as."
+  },
+  "wizardLanguageFailed": {
+    "message": "Níorbh fhéidir an teanga a luchtú. Tá an teanga roimhe seo roghnaithe."
+  },
+  "wizardReopen": {
+    "message": "Oscail Treoraí Cumraíochta"
+  },
+  "settingsAppearance": {
+    "message": "Cuma"
+  },
+  "settingsPrivacy": {
+    "message": "Príobháideachas"
+  },
+  "settingsScanning": {
+    "message": "Cosaint"
+  },
+  "settingsProviders": {
+    "message": "Soláthraithe anailíse"
+  },
+  "settingsSenders": {
+    "message": "Rialacha seoltóirí"
+  },
+  "settingsData": {
+    "message": "Sonraí agus uirlisí"
+  },
+  "settingsWorkspace": {
+    "message": "DO OIBRÍOCHTA"
+  },
+  "settingsEyebrow": {
+    "message": "MÁISTE IARRATAIS"
+  },
+  "settingsSubtitle": {
+    "message": "Saincheap cuma Thundy AV agus cosaint do ríomhphoist."
+  },
+  "settingsLocalBadge": {
+    "message": "Logánta mar réamhshocrú"
+  },
+  "settingsLocalNote": {
+    "message": "Do chuid sainroghanna. Stóráil ar an ngléas seo."
+  },
+  "settingsSkip": {
+    "message": "Ná bac leis na socruithe"
+  },
+  "settingsProviderGuide": {
+    "message": "Maidir le soláthraithe agus eochracha API"
+  },
+  "settingsWizardHelp": {
+    "message": "Téigh ar ais ar an thus treoraithe ag am ar bith."
+  },
+  "themeIntro": {
+    "message": "Déanamh Thundy AV gur mhaith leat. Cuma na hathruithe a shábháil láithreach ar fud an add-ar."
+  },
+  "themeMode": {
+    "message": "Cuma"
+  },
+  "themeSystem": {
+    "message": "Úsáid téama Thunderbird"
+  },
+  "themeLight": {
+    "message": "Geal"
+  },
+  "themeDark": {
+    "message": "Dorcha"
+  },
+  "themeAccent": {
+    "message": "Dath _Cúlra:"
+  },
+  "themeOcean": {
+    "message": "Aigéan"
+  },
+  "themeViolet": {
+    "message": "Corcra"
+  },
+  "themeForest": {
+    "message": "Foraois"
+  },
+  "themeAmber": {
+    "message": "Amberstar name"
+  },
+  "themeReady": {
+    "message": "Sábhálann an chuma go huathoibríoch. Úsáideann socruithe eile an cnaipe Sábháil."
+  },
+  "themeSaving": {
+    "message": "Cuma á shábháil…"
+  },
+  "themeSaved": {
+    "message": "Cuma sábháilte."
+  },
+  "themeLoadError": {
+    "message": "Níorbh fhéidir cuma a luchtú. Bain triail as na socruithe a athoscailt."
+  },
+  "themeSaveError": {
+    "message": "Níorbh fhéidir an chuma a shábháil. Roghnaigh do rogha arís le triail a bhaint."
+  },
+  "themeRetry": {
+    "message": "Atriail an chuma a shábháil"
+  },
+  "themeDensity": {
+    "message": "Dlús na faisnéise"
+  },
+  "themeComfortable": {
+    "message": "Inchompordach"
+  },
+  "themeCompact": {
+    "message": "Dlúth"
+  },
+  "themeDensityHelp": {
+    "message": "Coigeartaigh spásáil i suímh agus uirlisí áitiúla admin."
+  },
+  "profilesChanges": {
+    "message": "Athruithe i gcomparáid leis an roghnúchán sábháilte"
+  },
+  "profilesDiscard": {
+    "message": "Ná sábháil na hathruithe gan sábháil"
+  },
+  "profilesLoadRetry": {
+    "message": "Athluchtaigh an roghnúchán sábháilte"
+  },
+  "profilesNotLoaded": {
+    "message": "Roghnú sábháilte gan luchtú"
+  },
+  "profilesUnsaved": {
+    "message": "Athruithe gan sábháil · dréacht neamhghníomhach"
+  },
+  "profilesUnchanged": {
+    "message": "Roghnú cosanta · dréacht neamhghníomhach"
+  },
+  "profilesSaving": {
+    "message": "An bhfuil fonn ort an roghnúchán logánta a shábháil…"
+  },
+  "settingsUnsaved": {
+    "message": "Athruithe gan sábháil"
+  },
+  "providerUnknown": {
+    "message": "Toradh anaithnid"
+  },
+  "auditVerdictAtDecision": {
+    "message": "Toradh ag cinneadh"
+  },
+  "ui_169": {
+    "message": "Prótacal anailíse: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "Aitheantas an Jab: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "Aitheantas Seolta: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Prótacal faighte: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": "Tá an anailís ag rith fós (IN_ PROGRESS). Athsheiceáladh an toradh go huathoibríoch gach $P1$ soicindí (attempt) $P2$); is cosúil go bhfuil an prótacal anailíse críochnaithe anseo gan iarraidh nua a luaithe a stóráiltear é.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "Níl aon chinneadh críochnaithe a thaifeadadh. Tar éis a atosú nó a phróiseáil caillteanas, leanfaidh sé seo ar feitheamh; ná ifer go raibh an nasc oscailte nó curtha ar ceal."
+  },
+  "auditCancelUser": {
+    "message": "Cealaithe ag an úsáideoir"
+  },
+  "auditCancelEscape": {
+    "message": "Dúnta le hÉalú"
+  },
+  "auditCancelDestination": {
+    "message": "Athraíodh an sprioc"
+  },
+  "auditCancelContext": {
+    "message": "Dúnadh comhthéacs na teachtaireachta"
+  },
+  "auditCancelUnknown": {
+    "message": "Cúis anaithnid cealaithe"
+  },
+  "reportNotSaved": {
+    "message": "Tá an tuairisc le feiceáil, ach níorbh fhéidir í a shábháil go logánta. Athoscail í chun iarracht a dhéanamh."
+  },
+  "checkOrigin_live": {
+    "message": "Toradh reatha an tsoláthraí"
+  },
+  "checkOrigin_stored": {
+    "message": "Toradh stórála"
+  },
+  "checkOrigin_none": {
+    "message": "Gan breathnóireacht ar an soláthraí"
+  },
+  "checkOutcome_success": {
+    "message": "D' éirigh leis an iarratas"
+  },
+  "checkOutcome_failed": {
+    "message": "Theip ar iarratas"
+  },
+  "checkOutcome_disabled": {
+    "message": "Díchumasaíodh anailís sheachtrachName"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Níl cead agat scríobh ar% 1"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Eochair soláthraí ar iarraidh"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Gan tagairt don soláthraí"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Gan iarratas nua"
+  },
+  "checkOutcome_no_result": {
+    "message": "Níl aon toradh nua inúsáidte"
+  },
+  "checkAttempted": {
+    "message": "Ticeáil é seo más mian leat"
+  },
+  "checkObserved": {
+    "message": "Toradh breathnaithe"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Cúiseanna le cinneadh"
+  },
+  "auditReasonsLatest": {
+    "message": "Cúiseanna is déanaí atá ar fáil"
+  },
+  "auditReasonsMissing": {
+    "message": "Gan taifeadadh ag an am"
+  },
+  "coverageSummary": {
+    "message": "Clúdach — aimsithe: $1, incháilithe: $2, próiseáilte: $3, teipthe: $4, scipeáilte: $5. Ní dhearnadh measúnú ar na míreanna scipeáilte."
+  },
+  "supportTitle": {
+    "message": "Tuairisc tacaíochta logánta"
+  },
+  "supportHelp": {
+    "message": "Réamhamharc ar thuarascáil diagnóiseach íosta, sábháil é go logánta ansin. Ní féidir aon rud a sheoladh."
+  },
+  "supportPreview": {
+    "message": "Réamhamharc"
+  },
+  "supportConfiguration": {
+    "message": "Cuir socruithe garbha isteach (gan eochracha ná liostaí seoltóra)"
+  },
+  "supportSave": {
+    "message": "Sábháil an tuairisc go logánta"
+  },
+  "coverageAttachments": {
+    "message": "Iatáin"
+  },
+  "coverageDomains": {
+    "message": "Fearainn uathúla"
+  },
+  "coverageBatch": {
+    "message": "Baiscnaisc"
+  },
+  "coverageLimits": {
+    "message": "Teorainneacha an pas: 100 balls, 25 MiB in aghaidh an astúcháin, 100 fearainn uathúil, 20 naisc bhaisc."
+  },
+  "localProfileTitle": {
+    "message": "Próifílí logánta"
+  },
+  "localProfileHelp": {
+    "message": "Easpórtáil cuma shábháil nó socruithe cosanta áitiúla ar leithligh. Réamhamharc agus a dheimhniú allmhairí. Eochracha, toiliú, ceadanna, seoltóirí iontaofa agus stair iniúchóireachta eisiata."
+  },
+  "localProfileExport": {
+    "message": "Easpórtáil cuma"
+  },
+  "localProfileFile": {
+    "message": "Roghnaigh comhad próifíle (JSON, suas le 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Próifíl JSON (nó greamaigh anseo)"
+  },
+  "localProfilePreview": {
+    "message": "Ordú"
+  },
+  "localProfileApply": {
+    "message": "Cuir na hathruithe ar taispeáint i bhfeidhm"
+  },
+  "localProfileDiscard": {
+    "message": "Ná sábháil iompórtáil"
+  },
+  "localProfileInvalid": {
+    "message": "Próifíl neamhbhailí, leagan gan tacaíocht, nó réimsí toirmiscthe. Níor cuireadh faic ar bith i bhfeidhm."
+  },
+  "localProfileChanged": {
+    "message": "Athraíodh an cuma ó bhí réamhamharc ann. Réamhamharc arís sula gcuirfear i bhfeidhm é."
+  },
+  "localProfileFailed": {
+    "message": "Níorbh fhéidir an phróifíl a shábháil. Athbhreithniú ar na socruithe reatha agus triail a bhaint as."
+  },
+  "localProfileApplied": {
+    "message": "Cuireadh próifíl i bhfeidhm ar an gcuma. Cosaint agus toiliú gan athrú."
+  },
+  "analysisTitle": {
+    "message": "Foinsí anailíse"
+  },
+  "analysisMixed": {
+    "message": "seiceálacha áitiúla + seachtracha"
+  },
+  "analysisExternal": {
+    "message": "Tá tuairimí seachtracha ar fáil"
+  },
+  "analysisLocal": {
+    "message": "Áitiúil · gan torthaí seachtracha a thaifeadadh"
+  },
+  "analysisLocalChecked": {
+    "message": "Tá an teachtaireacht logánta/ nasc curtha i gcrích."
+  },
+  "analysisLocalPending": {
+    "message": "Níl measúnú áitiúil taifeadta go fóill."
+  },
+  "analysisUnknown": {
+    "message": "Anaithnid"
+  },
+  "analysisTimeUnknown": {
+    "message": "Am gan taifeadadh"
+  },
+  "analysisObserved": {
+    "message": "Freagra inúsáidte is déanaí"
+  },
+  "analysisFindingObserved": {
+    "message": "Lorg taifeadta"
+  },
+  "analysisAttempted": {
+    "message": "An iarracht is déanaí"
+  },
+  "analysisPartial": {
+    "message": "Theip ar roinnt iarratas; ní chlúdaíonn torthaí atá ar fáil gach mír."
+  },
+  "analysisOtherServices": {
+    "message": "Seirbhísí eile / nach bhfuil seiceáil"
+  },
+  "analysisLimit": {
+    "message": "Ní fíorasc antivirus é scór logánta. Ní anailísí críochnaithe iad iarratais agus uasluchtuithe. Coinnigh na torthaí stóráilte a mbunaois; ní chruthaíonn taifid ar iarraidh nach raibh aon iarratas roimhe seo."
+  },
+  "analysisScope_hash": {
+    "message": "Údar Tionscail:"
+  },
+  "analysisScope_file": {
+    "message": "Comhadlann chomhaid"
+  },
+  "analysisScope_url": {
+    "message": "Anailís URL"
+  },
+  "analysisScope_domain": {
+    "message": "Fíor- chlú ar an bhfearann"
+  },
+  "analysisScope_ip": {
+    "message": "chlú poiblí IP"
+  },
+  "analysisScope_report": {
+    "message": "Tuarascáil anailíse"
+  },
+  "analysisState_running": {
+    "message": "Iarrtha · gan toradh críochnaithe fós"
+  },
+  "analysisState_checked": {
+    "message": "Toradh faighte"
+  },
+  "analysisState_received": {
+    "message": "Fuair an freagra · fíorasc ar fáil"
+  },
+  "analysisState_submitted": {
+    "message": "Glacadh le aighneacht · Ní fhíorú an anailís críochnaithe"
+  },
+  "analysisState_not_found": {
+    "message": "Níor aimsíodh aon taifead soláthraí"
+  },
+  "analysisState_failed": {
+    "message": "Theip ar iarratas · gan fhíorasc nua"
+  },
+  "analysisState_incomplete": {
+    "message": "Níor taifeadadh anailís chríochnaithe"
+  },
+  "analysisSource_remote": {
+    "message": "Teagmháil idir an tseirbhís sheachtrach"
+  },
+  "analysisSource_cache": {
+    "message": "Taisce chuimhne · gan iarratas ón soláthraí nua"
+  },
+  "analysisSource_stored": {
+    "message": "Breathnóireacht sheachtrach Stóráilte"
+  },
+  "analysisSource_attempt": {
+    "message": "Iarratas · gan freagra deimhnithe"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Níl Verdict ar fáil"
+  },
+  "analysisVerdict_none": {
+    "message": "Torthaí ar fáil: gan bhrath (gan ráthaíocht sábháilteachta)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "Áirítear ar na torthaí atá ar fáil táscairí amhrasacha"
+  },
+  "analysisVerdict_malicious": {
+    "message": "Rialachán (AE) Uimh."
+  },
+  "analysisReason_unconfigured": {
+    "message": "Níl sé cumraithe faoi láthair"
+  },
+  "analysisReason_disabled": {
+    "message": "Díchumasaíodh iarratais nua sheachtracha"
+  },
+  "analysisReason_permission": {
+    "message": "Cead óstríomhaire ar iarraidh ar iarratais nua"
+  },
+  "analysisReason_authorization": {
+    "message": "Níl aon údarú uathoibríoch don mhód teachtaireachtaí / lámhleabhar seo"
+  },
+  "analysisReason_policy": {
+    "message": "Ní cheadaíonn an sraith reatha príobháideachais"
+  },
+  "analysisReason_on_action": {
+    "message": "Rith go díreach tar éis nasc gníomh follasach"
+  },
+  "analysisReason_unrecorded": {
+    "message": "_Lorg teachtaireachtaí nua i ngach fillteán"
+  },
+  "analysisUnavailable": {
+    "message": "Foinsí anailíse ar fáil faoi láthair"
+  },
+  "analysisModeUnknown": {
+    "message": "Stádas anailíse gan taifeadadh fós"
+  },
+  "analysisModeRunning": {
+    "message": "Ag rith iarratas seachtrach · toradh ar feitheamh"
+  },
+  "analysisModeSubmitted": {
+    "message": "Curtha isteach go seachtrach · Níl anailís críochnaithe fós"
+  },
+  "analysisModeIncomplete": {
+    "message": "Seiceáil sheachtrach neamhiomlán · críochnaithe nár daingníodh"
+  },
+  "analysisModePartial": {
+    "message": "Torthaí seachtracha ar fáil · Theip ar roinnt iarratas"
+  },
+  "analysisModeFailed": {
+    "message": "Theip ar iarratas seachtrach · gan toradh inúsáidte taifeadta"
+  },
+  "analysisModeResults": {
+    "message": "Freagraí seachtracha ar fáil · féach thíos na seiceálacha"
+  },
+  "analysisResourceMessage": {
+    "message": "gcomhthéacs na teachtaireachta / iompar cháil"
+  },
+  "analysisResourceAttachment": {
+    "message": "IatánReplyForward"
+  },
+  "analysisResourceLink": {
+    "message": "Nasc"
+  },
+  "analysisResourceUnknown": {
+    "message": "Achoimre níos luaithe · Níl an acmhainn taifeadta"
+  },
+  "analysisTruncated": {
+    "message": "Fágadh roinnt sonraí acmhainne ar lár de bharr gur sroicheadh an teorainn logánta taispeána."
+  },
+  "analysisResources": {
+    "message": "Acmhainní sa teachtaireacht seo"
+  },
+  "analysisResourceLocal": {
+    "message": "Iatán stóráilte leis an teachtaireacht · gan cruthúnas ar scanadh antivirus"
+  },
+  "analysisResourceTarget": {
+    "message": "Nasctha ceann scríbe · Ní luchtú ábhar iargúlta cruthúnas ar anailís sheachtrach"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Níl aon seiceáil sheachtrach taifeadta ar an acmhainn seo"
+  },
+  "analysisContextChanged": {
+    "message": "Athraíodh comhthéacs na teachtaireachta. Dún agus oscail an phreabfhuinneog roimh sheoladh arís."
+  },
+  "analysisLocalIncomplete": {
+    "message": "Tá anailís áitiúil neamhiomlán: níl roinnt ábhar teachtaireachta ar fáil."
+  },
+  "analysisLocalUnavailable": {
+    "message": "Níl anailís logánta ar fáil: níorbh fhéidir an teachtaireacht a léamh."
+  },
+  "analysisHistoryTitle": {
+    "message": "Stair Stóráilte · comhlachas neamh-daingnithe"
+  },
+  "analysisHistoryWarning": {
+    "message": "Is féidir na taifid stairiúla bhaineann le teachtaireacht eile leis an Message-ID céanna. Ní dhéanann siad a dhaingniú seiceáil an teachtaireacht seo."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Níorbh fhéidir tuairimí nua ón fhoinse a shábháil. Coinníodh an stair atá ann cheana."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "Níorbh fhéidir nuashonrú na tuairisce a shábháil. Coinníodh prótacail níos luaithe."
+  },
+  "sourceExportOpen": {
+    "message": "Réamhamharc ar thuarascáil fhoinse anailíse"
+  },
+  "sourceExportTitle": {
+    "message": "Tuarascáil fhoinsea anailíse"
+  },
+  "sourceExportIntro": {
+    "message": "Cruthaigh seat logánta ar na seiceálacha taifeadta. Ní ritheann sé seo anailís nua. Coinnítear tuairimí reatha agus an stair stóráilte le comhlachas gan deimhniú ar leith."
+  },
+  "sourceExportPrivacy": {
+    "message": "Cuir seirbhísí, stáit, fíoraisc agus amanna beachta breathnóireachta san áireamh. URLs, ainmneacha comhaid, hashs, IPs, eochracha, téacs teachtaireacht agus aitheantóirí inmheánacha. Ní chuirtear uimhreacha acmhainní i bhfeidhm ach amháin sa tuairisc seo. Ní stair iomlán ná taifead fíordheimhnithe é seo. Ní sheoltar aon rud go huathoibríoch."
+  },
+  "sourceExportCancel": {
+    "message": "Ná Coinnigh an réamhamharc"
+  },
+  "sourceExportContentLabel": {
+    "message": "Réamhamharc tuarascála ( JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "Níl an comhthéacs teachtaireacht ar fáil a thuilleadh. Athoscail an tuairisc óna phreabfhuinneog."
+  },
+  "sourceExportChanged": {
+    "message": "Athraíodh an staid taifeadta. Cruthaigh réamhamharc nua roimh shábháil."
+  },
+  "sourceExportReady": {
+    "message": "Athbhreithniú a dhéanamh ar an réamhamharc roimh shábháil nó a roinnt."
+  },
+  "sourceExportRequested": {
+    "message": "Sábháil an t- iarratas. Seiceáil comhlánú i íosluchtú Thunderbird."
+  },
+  "sourceExportFailed": {
+    "message": "Níor sábháladh an tuairisc. Cruthaigh réamhamharc nua chun iarracht a dhéanamh arís."
+  },
+  "analysisHistoryPages": {
+    "message": "Leathanaigh staire"
+  },
+  "analysisHistoryEntries": {
+    "message": "Iontrálacha"
+  },
+  "analysisHistoryFlagged": {
+    "message": "A aimsiú stairiúil Suspicious nó mailíseach · cumann neamhdheimhnigh"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Taispeáin an chéad rabhadh stairiúil"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Taispeáin an t- aimsiú is láidre reatha"
+  },
+  "reportDisplayFailed": {
+    "message": "Níorbh fhéidir tuairisc stórála a thaispeáint. Tá torthaí eile ar fáil fós."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Tá formáid gan tacaíocht ag roinnt mionsonraí tuarascála agus níorbh fhéidir iad a thaispeáint."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Níorbh fhéidir roinnt sonraí anailíse a léamh. Tá torthaí eile ar fáil fós."
+  },
+  "analysisModeResponses": {
+    "message": "Freagraí a fuarthas · gan aon fhíorasc inmheasúnaithe ar fáil"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Freagraí a fuarthas gan fhíorasc inmheasúnaithe · Theip ar roinnt iarratas"
+  },
+  "analysisCurrentAvailability": {
+    "message": "I gcás iarratas nua"
+  },
+  "reasonMaliciousIp": {
+    "message": "Freastalaí mailíseach IP Braitheadh seoladh ($IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "Táscairí i mBaol Seachtrach (URLhaus & IP Reputation)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus – Réimsí malware Aitheanta braitheadh: $DOMAINS$",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "IP Athchur ($PROVIDER$) – IPs freastalaí Suspicious: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "urlscan.io Torthaí:"
+  },
+  "urlscanStatus": {
+    "message": "Stádas: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridReportLink": {
+    "message": "Tuairisc iomlán oscailte ar Hybrid Analysis"
+  },
+  "hybridProviderMessage": {
+    "message": "Teachtaireacht Freastalaí: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "An Hybrid Analysis Sroicheadh an teorainn ráta nó an cuóta. Bain triail eile as amach anseo."
+  },
+  "reasonArchivedMaliciousAttachment": {
+    "message": "Cinneadh stairiúil ($OBSERVED$). $PROVIDER$ Iatán aicmithe “$NAME$”mar mailíseach.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonArchivedSuspiciousAttachment": {
+    "message": "Cinneadh stairiúil ($OBSERVED$). $PROVIDER$ Iatán aicmithe “$NAME$”mar amhrasach.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonMaliciousAttachment": {
+    "message": "Iatán \" $NAME$ \"a bhí aicmithe mar mailíseach ag $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "Iatán \" $NAME$ \"a bhí aicmithe mar amhrasach ag $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanReportLink": {
+    "message": "Tuairisc iomlán oscailte ar urlscan.io"
+  },
+  "hybridLinkVerdictStatus": {
+    "message": "Hybrid Analysis: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonMaliciousLinkVerdict": {
+    "message": "Nasc \" $URL$ \"a bhí aicmithe mar mailíseach ag $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousLinkVerdict": {
+    "message": "Nasc \" $URL$ \"a bhí aicmithe mar amhrasach ag $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanErrorDetails": {
+    "message": "Fáth: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "An urlscan.io Sroicheadh an teorainn ráta nó an cuóta. Bain triail eile as amach anseo."
+  },
+  "urlscanInvalidKey": {
+    "message": "Neamhbhailí nó neamhúdaraithe urlscan.io API key."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Níorbh fhéidir an toradh a réiteach laistigh d' fhuinneog na vótála. Is féidir an scanadh glactha a sheiceáil arís gan aighneacht nua a chur isteach."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Níorbh fhéidir Fearann a réiteach ag urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Níl an eilimint taifeadta fós Hybrid Analysis (Ní bhfuarthas anailís roimhe seo)."
+  },
+  "virustotalNotFound": {
+    "message": "Níl an eilimint taifeadta fós VirusTotal bunachar sonraí."
+  },
+  "virustotalRateLimited": {
+    "message": "An VirusTotal Sroicheadh an teorainn ráta nó an cuóta. Bain triail eile as amach anseo."
+  },
+  "virustotalInvalidKey": {
+    "message": "Neamhbhailí nó neamhúdaraithe VirusTotal API key."
+  },
+  "abuseipdbRateLimited": {
+    "message": "An AbuseIPDB Sroicheadh an teorainn ráta nó an cuóta. Bain triail eile as amach anseo."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Neamhbhailí nó neamhúdaraithe AbuseIPDB API key."
+  },
+  "urlhausRateLimited": {
+    "message": "An URLhaus Sroicheadh an teorainn ráta nó an cuóta. Bain triail eile as amach anseo."
+  },
+  "urlhausInvalidKey": {
+    "message": "Neamhbhailí nó neamhúdaraithe URLhaus API key."
+  },
+  "testApiKeyButton": {
+    "message": "Tástáil an nasc"
+  },
+  "testApiKeyTesting": {
+    "message": "Ceangal á thástáil…"
+  },
+  "testApiKeyValid": {
+    "message": "Glacadh leis an iarratas. Ní dheimhníonn sé seo cearta uasluchtaithe nó cuóta atá fágtha."
+  },
+  "testApiKeyInvalid": {
+    "message": "Theip ar cheangal: Eochair neamhbhailí API."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Sroicheadh an teorainn ráta nó an cuóta. Bain triail eile as ar ball."
+  },
+  "testApiKeyError": {
+    "message": "Theip ar thástáil an cheangail."
+  },
+  "testApiKeyEmpty": {
+    "message": "Iontráil eochair API ar dtús."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "Diúltaíodh cead chun ceangal le hósta seirbhíse."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Roghnaigh soláthraí cháile IP ar dtús."
+  },
+  "rateLimitWithWait": {
+    "message": "Sroicheadh an teorainn ráta nó an cuóta. Bain triail eile as sna soicindí $SECONDS$.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Sroicheadh an teorainn rátaí"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Neamhbhailí API key"
+  },
+  "auditErrorCode": {
+    "message": "Cód earráide"
+  },
+  "auditErrorDetails": {
+    "message": "Mionsonraí an earráide"
+  },
+  "auditRetryAfter": {
+    "message": "Fan an tréimhse"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ soicind",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "securityTitle": {
+    "message": "Riarachán agus cosaint naisc"
+  },
+  "securityScope": {
+    "message": "Loganta leis seo Thunderbird próifíl. Ní chuireann sé cosc ar athruithe próifíl, disabling na naisc add-on nó a oscailt chóipeáil in áiteanna eile."
+  },
+  "securityAdminPassword": {
+    "message": "Focal faire an riarthóra (12+ carachtair; fág bán le coinneáil)"
+  },
+  "securityApprovalPassword": {
+    "message": "Focal faire ceadaithe ar leith don nasc (12+ carachtair; fág bán le coinneáil)"
+  },
+  "securityThreshold": {
+    "message": "Cead ag teastáil ar scór riosca (0–100, cuimsitheach)"
+  },
+  "securityEnablePolicy": {
+    "message": "Cumasaigh cosaint an naisc i bhfeidhm"
+  },
+  "securityUnknownApproval": {
+    "message": "Ní mór ceadú le haghaidh seiceálacha neamhiomlána a dhéanamh freisin"
+  },
+  "securityUnlock": {
+    "message": "Díghlasáil socruithe"
+  },
+  "securitySave": {
+    "message": "Sábháil na socruithe cosanta"
+  },
+  "securityLock": {
+    "message": "Glasáil anois"
+  },
+  "securityDisable": {
+    "message": "Bain focal faire na socruithe"
+  },
+  "securityRecovery": {
+    "message": "Cód aisghabhála"
+  },
+  "securityRecover": {
+    "message": "Athshocraigh focal faire an riarthóra le cód"
+  },
+  "securityStopTransfers": {
+    "message": "Stad aistrithe seachtracha"
+  },
+  "securityLocked": {
+    "message": "Tá na socruithe faoi ghlas. Cuir isteach pasfhocal an riarthóra chun iad a dhíghlasáil."
+  },
+  "securityUnlocked": {
+    "message": "Socruithe gan dhíghlasáil; glas tar éis cúig nóiméad gan ghníomhaíocht."
+  },
+  "securityOptional": {
+    "message": "Tá cosaint focal faire roghnach agus múchta faoi láthair. Gan focal faire faofa, fanann naisc chosanta bac ar."
+  },
+  "securityError": {
+    "message": "Theip ar an oibríocht. Seiceáil d' fhocal faire, seisiún, agus ionchur."
+  },
+  "securityWait": {
+    "message": "An iomarca iarrachtaí. Fan roimh triail arís."
+  },
+  "securityLength": {
+    "message": "Bain úsáid as ar a laghad dhá charachtar agus focal faire ar leith."
+  },
+  "securityRecoverySave": {
+    "message": "Sábháil an cód a ghnóthú aon-uaire ar leithligh. Ní bheidh sé a thaispeáint arís:"
+  },
+  "securitySaved": {
+    "message": "Sábháladh na socruithe cosanta."
+  },
+  "securityDisableConfirm": {
+    "message": "Bain focal faire na socruithe? Tá cosaint an naisc cumraithe fós."
+  },
+  "securityStopped": {
+    "message": "Aistrithe seachtracha stop."
+  },
+  "securityApprovalTitle": {
+    "message": "Faigh ábhar a d’fhéadfadh a bheith contúirteach"
+  },
+  "securityConfirmDanger": {
+    "message": "Ba mhaith liom a oscailt ábhar seo fhéadfadh a bheith contúirteach ar aon nós."
+  },
+  "securityApproveOnce": {
+    "message": "Thart agus oscailte uair amháin"
+  },
+  "securityExpired": {
+    "message": "Ceadú imithe in éag nó athraíodh comhthéacs. Tosaigh ón teachtaireacht arís."
+  },
+  "securityOpened": {
+    "message": "Ghlac Thunderbird leis an iarratas tosaigh."
+  },
+  "securityApprovalFailed": {
+    "message": "Diúltaíodh don oscailt. Seiceáil an pasfhocal nó, má tá an ceadú imithe in éag, cuir tús leis arís ón teachtaireacht."
+  },
+  "providerTestDisclosure": {
+    "message": "Seo é do chuid eochair API agus sonraí seasta tástála chuig an soláthraí roghnaithe, gan ábhar teachtaireachta. Ní fhíoraíonn tástáil léite rathúil uasluchtú nó cuóta atá ar fáil. Lean ar aghaidh?"
+  },
+  "analysisSimple": {
+    "message": "Foramharc"
+  },
+  "analysisExpert": {
+    "message": "Rialachán (CE) Uimh."
+  },
+  "analysisSimpleNone": {
+    "message": "Níor braitheadh comharthaí amhrasacha"
+  },
+  "analysisSimpleCaution": {
+    "message": "Sunshine"
+  },
+  "analysisSimpleDanger": {
+    "message": "Toradh mailíseach"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Seiceáil neamhiomlán"
+  },
+  "analysisScoreExplanation": {
+    "message": "Tá an scór riosca bunaithe ar rialacha. Ní dóchúlacht ná ráthaíocht sábháilteachta é."
+  },
+  "analysisSimpleBasis": {
+    "message": "Seirbhísí le torthaí / nach bhfuil ar fáil"
+  },
+  "analysisProviderSetup": {
+    "message": "Rochtain ar sholáthraithe agus nochtadh sonraí"
+  },
+  "analysisProviderConfigured": {
+    "message": "Cumraíodh an eochair; ní stórálann sé scanadh."
+  },
+  "analysisProviderNoKey": {
+    "message": "Níl aon eochair cumraithe"
+  },
+  "analysisDataHash": {
+    "message": "Méarlorg an chomhaid (SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Cuir iatán i gcrích"
+  },
+  "analysisDataUrl": {
+    "message": "Críochnaithe URL; féadfaidh comharthaí rúnda a bheith ann"
+  },
+  "analysisDataDomain": {
+    "message": "Fearann naisc"
+  },
+  "analysisDataIp": {
+    "message": "Poiblí IP Laghdaigh gach snáithe teachtaireachtaí"
+  },
+  "analysisDataReport": {
+    "message": "Aitheantóir Tuairisce"
+  },
+  "analysisApprovalRequired": {
+    "message": "Is gá formheas breise a fháil; cealú nó iarraidh ar riarthóir."
+  },
+  "analysisContinueWarning": {
+    "message": "Athbhreithniú a dhéanamh ar na cúiseanna roimh leanúint ar aghaidh. Is féidir leat a chealú."
+  },
+  "analysisConflict": {
+    "message": "Easaontas soláthraithe; maidir le torthaí a ghlacadh tosaíocht."
+  },
+  "analysisExportSensitive": {
+    "message": "Athbhreithniú roimh onnmhairiú: Is féidir sonraí teicniúla acmhainní teachtaireacht a aithint."
+  },
+  "scanActions": {
+    "message": "Seiceálacha seachtracha"
+  },
+  "scanStart": {
+    "message": "Seiceáil anois"
+  },
+  "scanRepeat": {
+    "message": "Seiceáil arís"
+  },
+  "scanRefresh": {
+    "message": "Athnuaigh na torthaí"
+  },
+  "scanRunning": {
+    "message": "Seiceáil sheachtrach ar siúl"
+  },
+  "scanProgress": {
+    "message": "Acmhainní críochnaithe"
+  },
+  "scanMigrationNotice": {
+    "message": "Roghnaigh mód scanta uathoibríoch i suímh. Go dtí sin, cuirfear rialacha an tseoltóra agus na lámhleabhair roimhe seo i bhfeidhm."
+  },
+  "scanState_idle": {
+    "message": "Níl aon jab scanta gníomhach san amharc seo."
+  },
+  "scanState_queued": {
+    "message": "Glacadh leis an tseiceáil. Tá sí ag fanacht le tosú."
+  },
+  "scanState_running": {
+    "message": "Seiceáil sheachtrach ar siúl"
+  },
+  "scanState_completed": {
+    "message": "Seiceáil críochnaithe"
+  },
+  "scanState_pending": {
+    "message": "Tá soláthraí ag próiseáil fós; torthaí a athnuachan"
+  },
+  "scanState_incomplete": {
+    "message": "Seiceáil neamhiomlán; tá roinnt torthaí ar iarraidh"
+  },
+  "scanState_failed": {
+    "message": "Seiceáil an teipthe; bain triail eile as"
+  },
+  "scanState_blocked": {
+    "message": "Níor cuireadh aon seiceáil sheachtrach ar bun; féach ar na ceanglais thíos"
+  },
+  "analysisReason_manual": {
+    "message": "Mód láimhe"
+  },
+  "analysisReason_sender": {
+    "message": "Níor ceadaíodh an seoltóir"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Nasc uathoibríoch anailís as"
+  },
+  "analysisReason_no_resources": {
+    "message": "Gan acmhainní comhoiriúnacha"
+  },
+  "analysisReason_quota": {
+    "message": "Sroicheadh an cuóta; fan sula ndéanfar iarracht eile"
+  },
+  "analysisReason_running": {
+    "message": "Is é an soláthraí a phróiseáil"
+  },
+  "analysisReason_provider_error": {
+    "message": "Theip ar iarratas soláthraí"
+  },
+  "scanModeLabel": {
+    "message": "Scanta seachtracha go huathoibríoch"
+  },
+  "scanModeKeep": {
+    "message": "Coimeád an socrú roimhe seo (roghnaigh mód)"
+  },
+  "scanModeAll": {
+    "message": "Gach teachtaireacht a osclaíodh"
+  },
+  "scanModeSenders": {
+    "message": "Seoltóirí ceadaithe amháin"
+  },
+  "scanModeManual": {
+    "message": "De láimh amháin"
+  },
+  "scanModeHelp": {
+    "message": "Ní sheolann seiceálacha uathoibríocha ach luachanna hais, fearainn agus seoltaí IP poiblí. Deimhnigh na naisc iomlána agus na ceangaltáin ar leithligh. Fanann teachtaireachtaí nár osclaíodh go háitiúil."
+  },
+  "assessmentCompletion": {
+    "message": "Stádas á Próiseáil"
+  },
+  "assessmentCompletion_pending": {
+    "message": "Tá an soláthraí ag próiseáil fós"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Comhlánú le haisghabháil na tuairisceName"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "Níl aon mheasúnú dochloíte ar fáil"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Theip ar phróiseáil theicniúil"
+  },
+  "assessmentConflict": {
+    "message": "Measúnachtaí éagsúla páirteach; gcinnfidh an toradh is láidre an gníomh."
+  },
+  "assessmentSignals": {
+    "message": "Bonn measúnaithe"
+  },
+  "assessmentJob": {
+    "message": "CA Jabanna soláthraithe"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Cad é an t-achoimre"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Torthaí Scanóir"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Bun- scór bagartha"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Toradh bunúsach ilscan"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Bunleibhéal bagartha"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Léirithe whitelist an t- soláthraí"
+  },
+  "assessmentSignal_overall": {
+    "message": "erascan measúnú foriomlán"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Measúnú innill urlscan"
+  },
+  "assessmentSignal_engines": {
+    "message": "Torthaí eile innill"
+  },
+  "assessmentSignal_brand": {
+    "message": "léiriú branda; ní chinneann an riosca a chuireann sé féin"
+  },
+  "assessmentSignal_report": {
+    "message": "Staid na tuairisce"
+  },
+  "assessmentOriginal": {
+    "message": "An chéad fhíorasc soláthraí"
+  },
+  "hybridExpertTitle": {
+    "message": "API v2 sonraí tuairiscithe"
+  },
+  "hybridExpertScope": {
+    "message": "Ní thaispeánfar ach réimsí a fuarthas iarbhír. Ní chruthaíonn Scanra Quick forghníomhú bosca gainimh iomlán. Ní aimsiú diúltach é sonraí ar iarraidh. Ní fhágann URLs dintiúir, teaghráin iarratais agus blúirí; ní thaispeánfar línte ordaithe ná tuarascálacha amha."
+  },
+  "hybridExpertMissing": {
+    "message": "Ní sholáthraítear an tuairisc seo"
+  },
+  "hybridExpertYes": {
+    "message": "Tá"
+  },
+  "hybridExpertNo": {
+    "message": "Gan"
+  },
+  "hybridExpert_identity": {
+    "message": "Aitheantas Comhad/ Acmhainn"
+  },
+  "hybridExpert_assessment": {
+    "message": "Measúnú bunaidh agus próiseáil"
+  },
+  "hybridExpert_scanners": {
+    "message": "Torthaí an scanóra"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Bhrathanna aonair antivirus"
+  },
+  "hybridExpert_reports": {
+    "message": "Tuairiscí tagartha ón mbosca gainimh"
+  },
+  "hybridExpert_counts": {
+    "message": "Iomlána tuairiscithe"
+  },
+  "hybridExpert_signatures": {
+    "message": "Sínithe gníomhacha"
+  },
+  "hybridExpert_mitre": {
+    "message": "MITRE AT&CK"
+  },
+  "hybridExpert_network": {
+    "message": "Táscairí gréasáin"
+  },
+  "hybridExpert_processes": {
+    "message": "Próisis"
+  },
+  "hybridExpert_extracted": {
+    "message": "Comhaid bainte amach"
+  },
+  "hybridExpert_certificates": {
+    "message": "Teastais"
+  },
+  "hybridExpertEmpty": {
+    "message": "Shupplicate mar liosta folamh; níor tuairiscíodh aon iontrálacha"
+  },
+  "securityPasswordHelp": {
+    "message": "Cosaint roghnach ar an bpróifíl seo. Bain úsáid as focail fhaire éagsúla de dhá cheann déag ar a laghad le haghaidh riarachán agus nasc ceadaithe."
+  },
+  "securityAdminConfirm": {
+    "message": "Dearbhaigh focal faire nua an riarthóra"
+  },
+  "securityApprovalConfirm": {
+    "message": "Dearbhaigh focal faire nua ceadaithe ag an nasc"
+  },
+  "securityRecoveryPassword": {
+    "message": "Focal faire nua an riarthóra le haisghabháil"
+  },
+  "securityApprovalConfigured": {
+    "message": "Cumraíodh focal faire ceadaithe do nasc; is féidir é a chur in ionad ach ní thaispeánfar é riamh."
+  },
+  "securityApprovalMissing": {
+    "message": "Níl aon fhocal faire ceadaithe ar an nasc cumraithe. Tá cosc ar naisc a bhfuil ceadú focal faire de dhíth orthu."
+  },
+  "securityConfirmMismatch": {
+    "message": "Ní ionann na focail faire nua agus na deimhnithe atá acu."
+  },
+  "securityUnlockPassword": {
+    "message": "Focal faire an riarthóra reatha"
+  },
+  "displaySettingsTitle": {
+    "message": "Taispeáint anailíse"
+  },
+  "displaySettingsHelp": {
+    "message": "Ní athraíonn roghanna Taispeáin scanta, aistrithe seachtracha, scóir nó cosaint nasc. Is féidir leat athrú idir foramharc agus sainamharc agus torthaí á léamh."
+  },
+  "displayDefaultView": {
+    "message": "Amharc réamhshocraithe le haghaidh teachtaireachtaí agus aníos"
+  },
+  "displayHybridDetails": {
+    "message": "Taispeáin an Hibrid breise API roinn den tuairisc"
+  },
+  "displaySave": {
+    "message": "Sábháil sainroghanna taispeána"
+  },
+  "displaySaved": {
+    "message": "Sábháladh roghanna taispeána."
+  },
+  "urlscanDnsError": {
+    "message": "Níorbh fhéidir leis an soláthraí an sprioc- fhearainn a réiteach."
+  },
+  "urlscanInvalidRequest": {
+    "message": "Dhiúltaigh an soláthraí paraiméadair curtha isteach neamhbhailí."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "Dhiúltaigh an soláthraí an aighneacht; nach bhfuil an freagra a bhunú teip DNS."
+  },
+  "analysisQuotaReset": {
+    "message": "Athshocrú cuóta tuairiscithe"
+  },
+  "analysisRetryAt": {
+    "message": "An chuid is mó den ghníomhaíocht"
+  },
+  "analysisLocalBackoff": {
+    "message": "Cuireadh an iarracht seo siar go háitiúil; níor seoladh aon iarratas soláthraí nua."
+  },
+  "scanState_deferred": {
+    "message": "Anailís siar: gach sliotán cúlra atá á n-áitiú. Atriail tar éis bailchríocha anailís eile."
+  },
+  "scanCoverage": {
+    "message": "Níor cuireadh tic le roinnt acmhainní."
+  },
+  "scanCoverageAttachments": {
+    "message": "Iatáin ullmhaithe"
+  },
+  "scanCoverageLinks": {
+    "message": "Naisc Roghnaithe"
+  },
+  "scanCoverage_read_failed": {
+    "message": "Níorbh fhéidir iatán a léamh nó haiseáilte."
+  },
+  "scanCoverage_size_limit": {
+    "message": "Tá iatán níos mó ná an teorainn scanadh 25 MiB."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "Sroicheadh an acmhainn scanta."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "Is é an fardal iatán neamhiomlán."
+  },
+  "scanFailure_source_capacity": {
+    "message": "Tá stair na foinse lán. Níor tosaíodh an seiceáil seo; coinníodh taifid atá ann cheana."
+  },
+  "scanFailure_cancelled": {
+    "message": "Cealaíodh an seiceáil. Níl aon toradh comhlánaithe intuigthe."
+  },
+  "scanFailure_timeout": {
+    "message": "Seiceáil thar am. Fanann na torthaí neamhiomlán."
+  },
+  "scanFailure_scan_failed": {
+    "message": "Níorbh fhéidir an seiceáil a chríochnú. Coinníodh taifid atá ann."
+  },
+  "localProtectionProfileExport": {
+    "message": "Easpórtáil socruithe cosanta"
+  },
+  "localProfileYes": {
+    "message": "Tá"
+  },
+  "localProfileNo": {
+    "message": "Gan"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Ní féidir le próifílí cosanta níos sine an scóip scanta uathoibríoch a leathnú nó dul ar aghaidh URL aighneacht. Léiríonn an réamhamharc an toradh éifeachtach."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "Ní féidir an stair foinse atá ann faoi láthair a léamh agus bhí leasaithe gan athrú."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "A coimhlint stórála cosc ar an stair fhoinse ó á shíneadh."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "Shroich an chartlann fhoinse don teachtaireacht seo a teorainn iontrála."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "Shroich an chartlann fhoinse don teachtaireacht seo a teorainn stórála."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "Theip ar rochtain ar stóráil logánta."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Torthaí ar fáil • doiciméadú neamhiomlán"
+  },
+  "apiDebugTitle": {
+    "message": "API mód dífhabhtaithe"
+  },
+  "apiDebugHelp": {
+    "message": "Gabháil nua API Déanann sé seo iarracht go logánta teipeanna a dhiagnóiseadh. Cumasaigh, atáirgeadh an teip, ansin réamhamharc nó easpórtáil an tuairisc. Tá an scaoilfeadh glasáil riaracháin ag teastáil nuair a leagtar focal faire admin. Keys, Private URLs, ábhar teachtaireacht agus comhlachtaí amh fágtha ar lár; IDs tagartha atá pseudonymized. Suas go dtí 100 iontrálacha / 1 MiB gcoimeádtar i gcuimhne ar feadh uair an chloig agus caillte ar atosú. discovers Disabling an tuarascáil. Níl aon iarratas seirbhíse breise a rinneadh."
+  },
+  "apiDebugEnable": {
+    "message": "Cumasaigh diagnóisic API"
+  },
+  "apiDebugSave": {
+    "message": "Sábháil socrú dífhabhtaithe"
+  },
+  "apiDebugPreview": {
+    "message": "Réamhamharc ar thuairisc dífhabhtaithe"
+  },
+  "apiDebugExport": {
+    "message": "Easpórtáil tuairisc dhífhabhtaithe"
+  },
+  "apiDebugClear": {
+    "message": "Glan tuairisc dhífhabhtaithe"
+  },
+  "apiDebugSaved": {
+    "message": "Sábháladh an socrú dífhabhtaithe. D' glanadh diagnóisic roimhe seo."
+  },
+  "apiDebugCleared": {
+    "message": "Tuairisc dhífhabhtaithe glanta."
+  },
+  "apiDebugFailed": {
+    "message": "Theip ar an oibríocht dífhabhtaithe. Díghlasáil riarachán agus bain triail eile as."
+  },
+  "apiDebugFailureHint": {
+    "message": "I gcás tuarascála mionsonraithe ar mhainneachtain, cumasaigh API modh dífhabhtaithe i suímh, atáirgeadh ar an seiceáil agus a onnmhairiú an tuarascáil dífhabhtaithe."
+  },
+  "urlscanResultGone": {
+    "message": "Scriosadh an toradh seo le urlscan.io. Ní féidir a nuashonrú ar ais é; Éilíonn aighneacht nua scanadh follasach."
+  },
+  "apiDebugOpen": {
+    "message": "Oscail API diagnóiseach"
+  },
+  "diagTitle": {
+    "message": "API diagnóiseach"
+  },
+  "diagHelp": {
+    "message": "Seiceálacha scagtha i gcuimhne áitiúil. Eochracha, URLs príobháideach agus ábhar amh fós i bhfolach. Ní HTTP rath fíorasc sábháilteachta críochnaithe. Níl ach na céimeanna a taifeadadh tar éis gníomhachtú ar fáil."
+  },
+  "diagOff": {
+    "message": "Tá an mód dífhabhtaithe múchta. Cumasaigh é i socruithe."
+  },
+  "diagEmpty": {
+    "message": "Níl aon taifead comhoiriúnacha ann."
+  },
+  "diagPause": {
+    "message": "Cuir an tAmharc ar shos"
+  },
+  "diagResume": {
+    "message": "Lean an t- amharc"
+  },
+  "diagPaused": {
+    "message": "Amharc ar shos; tá an taifeadadh gníomhach fós."
+  },
+  "diagActive": {
+    "message": "Taifeadadh gníomhach; refreshing uair amháin in aghaidh an dara."
+  },
+  "diagProvider": {
+    "message": "Soláthraí"
+  },
+  "diagState": {
+    "message": "Greamaigh"
+  },
+  "diagPurpose": {
+    "message": "Cineál Oibríochta"
+  },
+  "diagFrom": {
+    "message": "Foirm"
+  },
+  "diagTo": {
+    "message": "Chuig"
+  },
+  "diagAll": {
+    "message": "Uile"
+  },
+  "diagRuns": {
+    "message": "Seiceáil sreabha"
+  },
+  "diagDetails": {
+    "message": "Mionsonraí an tsreabhta roghnaithe"
+  },
+  "diagDropped": {
+    "message": "Taifid nó céimeanna ar Lár"
+  },
+  "diagNoHttp": {
+    "message": "Uimh HTTP glaoch taifeadta le haghaidh an sreabhadh."
+  },
+  "diagNotCaptured": {
+    "message": "Gan ghabháil"
+  },
+  "diagTimeline": {
+    "message": "Amlíne"
+  },
+  "diagRequest": {
+    "message": "Iarratas scagtha"
+  },
+  "diagResponse": {
+    "message": "Iompar agus freagra scagtha"
+  },
+  "diagReset": {
+    "message": "Athshocraigh scagairí"
+  },
+  "diagTruncated": {
+    "message": "Bhí teasctha an sreabhadh seo mar gheall ar na teorainneacha a thaifeadadh."
+  },
+  "diag_phase_precondition": {
+    "message": "Réamhriachtanais"
+  },
+  "diag_phase_queue": {
+    "message": "Ciú"
+  },
+  "diag_phase_attempt": {
+    "message": "Seol iarracht"
+  },
+  "diag_phase_response": {
+    "message": "HTTP fhreagairt / chomhlánú iompair"
+  },
+  "diag_phase_parse": {
+    "message": "Próiseáil JSON"
+  },
+  "diag_phase_assessment": {
+    "message": "Measúnú"
+  },
+  "diag_phase_persistence": {
+    "message": "Seasmhacht"
+  },
+  "diag_phase_cache": {
+    "message": "Bhuail an taisce"
+  },
+  "diag_phase_wait": {
+    "message": "Ag Fanacht"
+  },
+  "diag_phase_cancelled": {
+    "message": "Cealaithe"
+  },
+  "diag_phase_expired": {
+    "message": "Chuaigh an taifeadadh in éag gan chríochnú deimhnithe"
+  },
+  "diag_purpose_automatic": {
+    "message": "Seiceáil go huathoibríoch"
+  },
+  "diag_purpose_manual": {
+    "message": "Seiceáil de láimh"
+  },
+  "diag_purpose_link": {
+    "message": "Seiceáil an nasc"
+  },
+  "diag_purpose_key_test": {
+    "message": "Tástáil eochrach"
+  },
+  "diag_purpose_report": {
+    "message": "Iarratas tuairisce"
+  },
+  "diag_purpose_analysis": {
+    "message": "Anailís"
+  },
+  "diag_state_running": {
+    "message": "Ag Rith"
+  },
+  "diag_state_complete": {
+    "message": "Críochnaíodh an oibríochtName"
+  },
+  "diag_state_pending": {
+    "message": "Ar Feitheamh"
+  },
+  "diag_state_blocked": {
+    "message": "Gan Tosú / Blocáil"
+  },
+  "diag_state_incomplete": {
+    "message": "Neamhiomlán"
+  },
+  "diag_state_failed": {
+    "message": "Teipthe"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Críoch Gan Dearbhú"
+  },
+  "localScoreMessage": {
+    "message": "Scór na teachtaireachta logánta"
+  },
+  "localScoreLink": {
+    "message": "Scór logánta an nasc seo sa teachtaireacht"
+  },
+  "localScoreNoIndicators": {
+    "message": "Níor aimsíodh aon tháscairí rabhaidh logánta."
+  },
+  "localScoreIndicators": {
+    "message": "Aimsíodh táscairí rabhaidh áitiúla. Athbhreithniú ar na cúiseanna roimh oscailt."
+  },
+  "uploadSentLabel": {
+    "message": "Seol an t- uasluchtú"
+  },
+  "uploadSentUnassigned": {
+    "message": "Seoladh an t- uasluchtú, ach níorbh fhéidir an toradh a chur leis an iatán seo. Dún an phreabfhuinneog agus é a athoscailt roimh sheoladh arís."
+  },
+  "hybridReportTitle": {
+    "message": "Hybrid Analysis tuairisc"
+  },
+  "hybridReportIntro": {
+    "message": "Amharc inléite amháin ar na torthaí a fuarthas."
+  },
+  "hybridReportOpen": {
+    "message": "Féach ar an tuairisc anailíse"
+  },
+  "hybridReportUnavailable": {
+    "message": "Níl an tuairisc ar fáil. Oscail arís í ón teachtaireacht reatha."
+  },
+  "hybridReportTechnical": {
+    "message": "Soláthróir agus sonraí ceangail"
+  },
+  "hybridReportExplanation": {
+    "message": "Maidir leis an measúnú seo"
+  },
+  "hybridReportSummary": {
+    "message": "Measúnú agus bunáitíocht"
+  },
+  "hybridReportSnapshot": {
+    "message": "Grianghraf tuairisce stórála; nach scanadh nua"
+  },
+  "hybridReportScope": {
+    "message": "Tá torthaí na soláthraithe agus an scór logánta ar leithligh. Níl aon toradh diúltach ar na réimsí ar iarraidh. Níl le fáil ach sonraí faoi cheangal."
+  },
+  "hybridReportCopy": {
+    "message": "Cóipeáil"
+  },
+  "hybridReportCopied": {
+    "message": "Cóipeáladh mar théacs."
+  },
+  "hybridReportCopyFailed": {
+    "message": "Níorbh fhéidir cóip a dhéanamh den téacs. Roghnaigh agus cóipeáil an téacs de láimh."
+  },
+  "hybridReportAvailableOnly": {
+    "message": "Rónna sna sonraí atá ar fáil"
+  },
+  "hybridReportNoMatches": {
+    "message": "Níl aon réimsí comhoiriúnacha sna sonraí ar fáil."
+  },
+  "hybridReportAvailability": {
+    "message": "Infhaighteacht agus teorainneacha"
+  },
+  "hybridReportRun": {
+    "message": "Rith anailíse"
+  },
+  "hybridReportSearch": {
+    "message": "Cuardaigh na réimsí atá ar fáil"
+  },
+  "hybridReportReady": {
+    "message": "Luchtaíodh an tuairisc. Níor cuireadh tús le scanadh nua."
+  },
+  "hybridReportResource_name": {
+    "message": "Ainm an Iatáin"
+  },
+  "hybridReportResource_url": {
+    "message": "Sprioc chúplála URL"
+  },
+  "hybridReportResource_sha256": {
+    "message": "Acmhainn SHA-256"
+  },
+  "hybridField_type": {
+    "message": "Cineál an chomhaid"
+  },
+  "hybridField_type_short": {
+    "message": "Cineál gearr comhaid"
+  },
+  "hybridField_size": {
+    "message": "Méid na mbeart"
+  },
+  "hybridField_last_file_name": {
+    "message": "Ainm comhaid ar iarraidh"
+  },
+  "hybridField_submit_name": {
+    "message": "Ainm curtha isteach"
+  },
+  "hybridField_url_analysis": {
+    "message": "Anailís URL"
+  },
+  "hybridField_target_url": {
+    "message": "Sprioc soláthraí URL (is féidir a ghiorrú)"
+  },
+  "hybridField_id": {
+    "message": "Aitheantas an Fhreagairt (cineál gan sonrú)"
+  },
+  "hybridField_job_id": {
+    "message": "Aitheantas Jabanna Bosca Gainimh"
+  },
+  "hybridField_submission_id": {
+    "message": "Aitheantas Seolta"
+  },
+  "hybridField_state": {
+    "message": "Staid an tsoláthróra"
+  },
+  "hybridField_finished": {
+    "message": "Críochnaithe"
+  },
+  "hybridField_verdict": {
+    "message": "Cad é an t-achoimre"
+  },
+  "hybridField_threat_score": {
+    "message": "Hybrid Analysis scór na bagartha"
+  },
+  "hybridField_threat_level": {
+    "message": "Leibhéal bagartha don soláthraí"
+  },
+  "hybridField_multiscan_result": {
+    "message": "Toradh Multiscan (luach soláthair)"
+  },
+  "hybridField_av_detect": {
+    "message": "Luach braite AV (luach soláthair)"
+  },
+  "hybridField_whitelisted": {
+    "message": "Soláthraí iontráil whitelist"
+  },
+  "hybridField_vx_family": {
+    "message": "Soláthraí teaghlaigh malware"
+  },
+  "hybridField_classification_tags": {
+    "message": "Clibeanna Aicmiúcháin"
+  },
+  "hybridField_tags": {
+    "message": "Clibeanna"
+  },
+  "hybridField_analysis_start_time": {
+    "message": "Anailís"
+  },
+  "hybridField_environment_id": {
+    "message": "Aitheantas an Chomhshaoil"
+  },
+  "hybridField_environment_description": {
+    "message": "Timpeallacht bosca Gainimh"
+  },
+  "hybridField_error_type": {
+    "message": "Cineál earráide an tsoláthróra"
+  },
+  "hybridField_error_origin": {
+    "message": "Foinse earráid an tsoláthraí"
+  },
+  "hybridField_name": {
+    "message": "Ainm"
+  },
+  "hybridField_status": {
+    "message": "Stádas"
+  },
+  "hybridField_progress": {
+    "message": "Dul chun cinn (luach soláthair)"
+  },
+  "hybridField_positives": {
+    "message": "Brathanna dearfacha"
+  },
+  "hybridField_total": {
+    "message": "Seiceálacha iomlána"
+  },
+  "hybridField_percent": {
+    "message": "Céatadán (luach an tsoláthróra)"
+  },
+  "hybridField_scan_time": {
+    "message": "Fad an scanta (aonad an tsoláthraí)"
+  },
+  "hybridField_scan_date": {
+    "message": "Dáta a scanadh"
+  },
+  "hybridField_product": {
+    "message": "Scanóir"
+  },
+  "hybridField_version": {
+    "message": "Leagan Scanóir"
+  },
+  "hybridField_update": {
+    "message": "Nuashonrú Scanóir"
+  },
+  "hybridField_total_network_connections": {
+    "message": "Ceangail líonra"
+  },
+  "hybridField_total_processes": {
+    "message": "Próisis"
+  },
+  "hybridField_total_signatures": {
+    "message": "Sínithe"
+  },
+  "hybridField_category": {
+    "message": "Catagóir"
+  },
+  "hybridField_attck_id": {
+    "message": "Aitheantas Teicníochta MITRE AT&CK"
+  },
+  "hybridField_tactic": {
+    "message": "MITRE AT&CK tactic"
+  },
+  "hybridField_technique": {
+    "message": "Teicníocht ATT&CK MITRE"
+  },
+  "hybridField_description": {
+    "message": "Cur Síos"
+  },
+  "hybridField_domains": {
+    "message": "Fearann Breathnaithe"
+  },
+  "hybridField_hosts": {
+    "message": "Óstríomhaire Breathnaithe"
+  },
+  "hybridField_compromised_hosts": {
+    "message": "Óstríomhaire cumaisc (éileamh an tsoláthróra)"
+  },
+  "hybridField_domain": {
+    "message": "Fearann"
+  },
+  "hybridField_host": {
+    "message": "Óstach"
+  },
+  "hybridField_ip": {
+    "message": "IP seoladh"
+  },
+  "hybridField_port": {
+    "message": "Port"
+  },
+  "hybridField_protocol": {
+    "message": "Prótacal"
+  },
+  "hybridField_country": {
+    "message": "Tír"
+  },
+  "hybridField_asn": {
+    "message": "Uimhir an chórais gan ainm"
+  },
+  "hybridField_uid": {
+    "message": "Aitheantas an Phróisis"
+  },
+  "hybridField_process_id": {
+    "message": "Aitheantas an Phróisis (PID)"
+  },
+  "hybridField_parent_uid": {
+    "message": "Aitheantas an Phróisis"
+  },
+  "hybridField_file_path": {
+    "message": "Conair chomhaid"
+  },
+  "hybridField_subject": {
+    "message": "Ábhar an teastais"
+  },
+  "hybridField_issuer": {
+    "message": "eisitheoir deimhnithe"
+  },
+  "hybridField_valid_from": {
+    "message": "Bailí ó"
+  },
+  "hybridField_valid_until": {
+    "message": "Bailí go dtí"
+  },
+  "hybridField_serial_number": {
+    "message": "Teastas"
+  },
+  "hybridField_sha256": {
+    "message": "SHA-256"
+  },
+  "hybridField_sha1": {
+    "message": "SHA-1"
+  },
+  "hybridField_md5": {
+    "message": "MD5"
+  },
+  "hybridField_sha512": {
+    "message": "SHA-512"
+  },
+  "hybridField_imphash": {
+    "message": "Iompórtáil hash"
+  },
+  "hybridReportResource_quickScanId": {
+    "message": "Taifeadta ID Quick-Scan"
+  },
+  "analysisLocalOnly": {
+    "message": "Sheiceáil go logánta amháin"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "Seirbhísí le torthaí"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Seirbhísí ar feitheamh"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Seirbhísí le hearráidí"
+  },
+  "hybridReportSection": {
+    "message": "Roinn"
+  },
+  "hybridReportAllSections": {
+    "message": "Gach roinn"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "Á phróiseáil críochnaithe"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "Á Phróiseáil..."
+  },
+  "hybridReportProcessing_failed": {
+    "message": "Theip ar phróiseáil"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "Stádas á phróiseáil"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Fuarthas an tuairisc"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Cruthaíodh seat den scáileán"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Athcheangail Hybrid Analysis cinneadh ar an acmhainn seo"
+  },
+  "hybridReportSaved": {
+    "message": "Sábháilte Hybrid Analysis tuairisc"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Cóipeáil AUL"
+  },
+  "hybridReportWhy": {
+    "message": "Cén fáth a bhfuil an measúnú seo?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Comharthaí eile measúnaithe"
+  },
+  "hybridReportCompare": {
+    "message": "Cuir rith anailíse i gcomparáid le chéileName"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Airteagal 8"
+  },
+  "hybridReportAssessment": {
+    "message": "Thundy tuairisc ar an gcóras bainistithe cáilíochta; Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Stampata foinse agus ama"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Lorg ar fáil · thabhairt chun críche gan deimhniú"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Oscail tuairisc Hybrid"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Taispeáin mionsonraí an aimsithe"
+  },
+  "attachmentProtectionTitle": {
+    "message": "Cosaint an Iatáin"
+  },
+  "attachmentProtectionScope": {
+    "message": "Tá feidhm ag an riail seo nuair a shábháil le Thundy. Thunderbird fós ar fáil orduithe iatán féin."
+  },
+  "attachmentPolicyMode": {
+    "message": "Nuair a shroichtear an tairseach"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Hybrid Analysis tairseach na scóranna"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Iatáin gan scór deimhnithe"
+  },
+  "attachmentModeOff": {
+    "message": "Múchta"
+  },
+  "attachmentModeWarn": {
+    "message": "Tabhair Rabhadh Dom"
+  },
+  "attachmentModeApproval": {
+    "message": "Ní mór ceadú a iarraidh"
+  },
+  "attachmentModeBlock": {
+    "message": "Cuir Cosc Air"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Sábháil le Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "Sábháil Iatán"
+  },
+  "attachmentCancelSave": {
+    "message": "Cealaigh"
+  },
+  "attachmentThresholdReached": {
+    "message": "Sroicheann scór Hibrid an tairseach cumraithe."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis rangaithe an comhad seo mar mailíseach."
+  },
+  "attachmentUnknown": {
+    "message": "Níor aimsíodh aon scór."
+  },
+  "attachmentBlocked": {
+    "message": "Sábháil le Thundy bac."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Iontráil an focal faire ceadaithe chun an comhad seo a shábháil."
+  },
+  "attachmentFailed": {
+    "message": "Níorbh fhéidir an t-iatán a shábháil."
+  },
+  "attachmentReadFailed": {
+    "message": "Níorbh fhéidir Thundy an t- iatán seo a léamh."
+  },
+  "attachmentContextChanged": {
+    "message": "Athraíodh an teachtaireacht nó an t- iatán. Roghnaigh an t- iatán arís."
+  },
+  "attachmentRefresh": {
+    "message": "Seiceáil torthaí sábháilte arís"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "Níl athrú ar an toradh a sábháladh."
+  },
+  "attachmentDecisionChanged": {
+    "message": "An toradh nó polasaí athrú. Athbhreithniú ar an gcinneadh suas chun dáta."
+  },
+  "attachmentSaveRequested": {
+    "message": "Tosaíodh an t- iarratas."
+  },
+  "attachmentSaveCancelled": {
+    "message": "%s (cealaithe)"
+  },
+  "auditDecisionScore": {
+    "message": "Scór na gcinntí"
+  },
+  "linkHandoffPending": {
+    "message": "Iarradh lámhchlár an bhrabhsálaí. Níor dheimhnigh Thunderbird é fós. Is féidir leat an dialóg seo a dhúnadh."
+  },
+  "linkPreflightTimeout": {
+    "message": "Níorbh fhéidir an seiceáil a chríochnú. Dún an dialóg seo agus roghnaigh an nasc arís."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Stairiúil Hybrid Analysis aimsiú"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Reatha Hybrid Analysis aimsiú"
+  },
+  "auditShare": {
+    "message": "Easpórtáil iniúchadh athghníomhach"
+  },
+  "auditFullNotice": {
+    "message": "Tá an t-iniúchadh iomlán príobháideach URLs agus sonraí. Comhroinn é ach amháin le faighteoirí údaraithe."
+  },
+  "auditFullSave": {
+    "message": "Easpórtáil lániniúchadh"
+  },
+  "managedByCompany": {
+    "message": "Bainistigh ag do eagraíocht"
+  },
+  "managedLocal": {
+    "message": "Foinse: an phróifíl Thunderbird"
+  },
+  "managedRevision": {
+    "message": "Leagan beartais"
+  },
+  "managedThreshold": {
+    "message": "Tairseach"
+  },
+  "managedPolicyInvalid": {
+    "message": "Tá polasaí na cuideachta neamhbhailí. Déan teagmháil le do fhoireann TF."
+  },
+  "managedLinkBlocked": {
+    "message": "Chuir d'eagraíocht bac ar an nasc seo."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Oscail le Thundy"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Oscail iatán"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy seiceálacha iatán seo sula tabhairt dó Thunderbird."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird ghlac an t-iarratas a oscailt an t- iatán."
+  },
+  "attachmentOpenFailed": {
+    "message": "Níorbh fhéidir an t-iatán a oscailt."
+  },
+  "reportingTitle": {
+    "message": "Tuarascálacha slándála Cuideachta"
+  },
+  "reportingOff": {
+    "message": "Tá tuairisciú uathoibríoch as."
+  },
+  "reportingNeedsConsent": {
+    "message": "Éilíonn Tuairisciú do thoiliú agus comhartha sheoladh."
+  },
+  "reportingNeedsPermission": {
+    "message": "Tá an cead tuairisce ar iarraidh. Cumasaigh tuairisc arís chun é a athchóiriú."
+  },
+  "reportingReady": {
+    "message": "Is féidir le d'eagraíocht tuarascálacha uathoibríocha a fháil."
+  },
+  "reportingQueued": {
+    "message": "Tuarascálacha ar feitheamh:"
+  },
+  "reportingMalicious": {
+    "message": "Torthaí mailíseacha"
+  },
+  "reportingSuspicious": {
+    "message": "Torthaí mailíseacha agus sáruithe tairsí"
+  },
+  "reportingConsent": {
+    "message": "Aontaím an t-aitheantas ócáide, am, gníomh, cinneadh, cinneadh agus leagan beartais a sheoladh chuig an seoladh cuideachta thuas."
+  },
+  "reportingConsentIndicators": {
+    "message": "Aontaím leis an ID ócáid, am, gníomh, aimsiú, cinneadh, leagan polasaí, agus nasc óstainm nó ceangal SHA-256 sheoladh chuig an seoladh cuideachta a thaispeántar thuas."
+  },
+  "reportingToken": {
+    "message": "Seol chomhartha ó d'fhoireann TF"
+  },
+  "reportingActivate": {
+    "message": "Cumasaigh tuairisciú nó cuir comhartha nua in ionad an tseanchomhartha"
+  },
+  "reportingRevoke": {
+    "message": "Toiliú agus tuarascálacha soiléire ar feitheamh a tharraingt siar"
+  },
+  "reportingSetupFailed": {
+    "message": "Níorbh fhéidir na socruithe tuairiscithe a chur i bhfeidhm."
+  },
+  "reportingAuthentication": {
+    "message": "Dhiúltaigh an freastalaí an comhartha seolta."
+  },
+  "reportingRejected": {
+    "message": "Dhiúltaigh an freastalaí do thuairisc."
+  },
+  "reportingStorage": {
+    "message": "Níorbh fhéidir Thundy an scuaine tuairisceoireachta a léamh nó a scríobh."
+  },
+  "reportingFull": {
+    "message": "Is é an scuaine iomlán. Seans go bhfuil na tuairiscí a bheith caillte."
+  },
+  "reportingExpired": {
+    "message": "Chuaigh tuarascáil in éag roimh sheachadadh."
+  },
+  "reportingPrivacy": {
+    "message": "Le toiliú ar leith, seolann Thundy sonraí faoi iarrachtaí incháilithe naisc a oscailt nó ceangaltáin a oscailt nó a shábháil chuig an seoladh cumraithe de chuid na cuideachta. Bíonn aitheantas an teagmhais, an t-am, an gníomh, an toradh, an cinneadh agus leagan an pholasaí sna tuairiscí, chomh maith le hóstainm nó luach SHA-256 an cheangaltáin más roghnach é. Coinníonn Thundy tuairiscí ar feitheamh sa scuaine áitiúil ar feadh suas le 24 uair an chloig. Is féidir leat do thoiliú a tharraingt siar agus an scuaine a scriosadh sna Socruithe."
+  },
+  "reportingConsentDetails": {
+    "message": "Aontaím freisin a sheoladh ar an gcúis chinnidh, scóir atá ar fáil, ainm comhaid ceangail, fíoraisc soláthraí agus tagairtí tuarascáil atá ar fáil."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Féadfaidh an t-ainm comhaid ceangail agus na naisc chuig tuarascálacha soláthraí a bheith san áireamh i dtuarascálacha mionsonraithe."
+  },
+  "analysisRunningHeading": {
+    "message": "Seiceáil ar siúl"
+  },
+  "analysisLocalNoFinding": {
+    "message": "Níor aimsíodh comharthaí bagartha sa tseiceáil áitiúil"
+  },
+  "analysisLinksGroup": {
+    "message": "Naisc"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Iatáin"
+  },
+  "protectionOpenAllowed": {
+    "message": "Ceadaítear oscailt"
+  },
+  "protectionSaveAllowed": {
+    "message": "Ceadaítear sábháil"
+  },
+  "protectionWarn": {
+    "message": "Rabhadh"
+  },
+  "protectionApproval": {
+    "message": "Tá ceadú de dhíth"
+  },
+  "protectionRequestApproval": {
+    "message": "Iarratas ar cheadú"
+  },
+  "protectionBlocked": {
+    "message": "Coiscthe"
+  },
+  "protectionMalicious": {
+    "message": "Thuairiscigh soláthraí toradh mailíseach."
+  },
+  "protectionThreshold": {
+    "message": "Sroicheadh tairseach na cosanta"
+  },
+  "protectionManagedThreshold": {
+    "message": "Sroicheadh tairseach na cuideachta"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "Leis na socruithe infheidhme, ceadaítear an gníomh seo."
+  },
+  "linkContextChanged": {
+    "message": "Athraíodh an nasc nó an teachtaireacht le linn na seiceála."
+  },
+  "auditPolicyBlocked": {
+    "message": "Coiscthe de réir polasaí"
+  },
+  "reportingLastReceipt": {
+    "message": "An admháil is déanaí arna deimhniú ag an bhfreastalaí"
+  },
+  "reportingOldestPending": {
+    "message": "An tuairisc is sine atá ar feitheamh"
+  },
+  "addonLanguage": {
+    "message": "Teanga an bhreiseáin"
+  },
+  "addonLanguageSystem": {
+    "message": "Úsáid teanga Thunderbird"
+  },
+  "addonLanguageSaved": {
+    "message": "Sábháladh an teanga. Oscail radhairc Thundy arís chun í a úsáid."
+  },
+  "addonLanguageFailed": {
+    "message": "Níorbh fhéidir an teanga a shábháil."
+  },
+  "profilesOpenSource": {
+    "message": "Foinse oscailte"
+  },
+  "transferReview": {
+    "message": "Athbhreithnigh an seoladh seachtrach"
+  },
+  "transferSend": {
+    "message": "Seol chuig an soláthraí"
+  },
+  "transferVisibility": {
+    "message": "Infheictheacht: gan liostú. Is féidir le duine ar bith ag a bhfuil nasc na tuairisce í a oscailt."
+  },
+  "transferAccepted": {
+    "message": "Ghlac an soláthraí leis an iarratas. D’fhéadfadh an tuairisc a bheith fós ar feitheamh."
+  },
+  "transferFailed": {
+    "message": "Níorbh fhéidir seoladh chuig an soláthraí a chríochnú."
+  },
+  "transferUsePopup": {
+    "message": "Oscail painéal Thundy chun nasc nó ceangaltán ar leith a athbhreithniú agus a cheadú."
+  },
+  "providerGrantAccess": {
+    "message": "Ceadaigh rochtain don soláthraí seo"
+  },
+  "sourceSessionOnly": {
+    "message": "Tá cartlann na bhfoinsí lán. Níl radharc reatha na bhfoinsí ar fáil ach sa seisiún seo."
+  },
+  "analysisReason_transfer_approval": {
+    "message": "Tá deimhniú ar leith de dhíth le haghaidh naisc iomlána agus ceangaltán."
+  },
+  "analysisCompactDetails": {
+    "message": "Sonraí na seiceála"
+  },
+  "riskScoreFormula": {
+    "message": "Suimítear pointí áitiúla suas le 100. Meastar torthaí soláthraithe ar leithligh."
+  },
+  "riskScoreNoPoints": {
+    "message": "Níor chuir aon riail áitiúil pointí leis."
+  },
+  "riskScoreTotal": {
+    "message": "Ríomh áitiúil"
+  },
+  "riskLinkBrandRule": {
+    "message": "Tá fearann amháin ar a laghad cosúil le branda aitheanta. Comhairtear na pointí uair amháin."
+  },
+  "reportingConsentDetections": {
+    "message": "Is féidir ainmneacha, catagóirí, sínithe agus brandaí bréige a bheith sna tuairiscí."
+  },
+  "detectionKind_family": {
+    "message": "Teaghlach bogearraí mailíseacha"
+  },
+  "detectionKind_category": {
+    "message": "Catagóir"
+  },
+  "detectionKind_brand": {
+    "message": "Branda bréige"
+  },
+  "detectionKind_signature": {
+    "message": "Síniú an déantóra"
+  },
+  "detectionCategory_fraudulent_shop": {
+    "message": "Siopa calaoiseach"
+  },
+  "detectionCategory_phishing_shop": {
+    "message": "Siopa fioscaireachta"
+  },
+  "analysisDetectionGrouping": {
+    "message": "Grúpáil braiteanna"
+  },
+  "detectionCategory_malware": {
+    "message": "Bogearraí mailíseacha"
+  },
+  "detectionCategory_virus": {
+    "message": "Víreas"
+  },
+  "detectionCategory_trojan": {
+    "message": "Traíoch"
+  },
+  "detectionCategory_ransomware": {
+    "message": "Earraí fuadaigh"
+  },
+  "detectionCategory_worm": {
+    "message": "Péist"
+  },
+  "detectionCategory_spyware": {
+    "message": "Earraí spiaireachta"
+  },
+  "detectionCategory_adware": {
+    "message": "Earraí fógraíochta"
+  },
+  "detectionCategory_backdoor": {
+    "message": "Cúldoras"
+  },
+  "detectionCategory_downloader": {
+    "message": "Íoslódálaí"
+  },
+  "detectionCategory_dropper": {
+    "message": "Dropper"
+  },
+  "detectionCategory_infostealer": {
+    "message": "Gadaí sonraí"
+  },
+  "detectionCategory_rootkit": {
+    "message": "Rootkit"
+  },
+  "detectionCategory_phishing": {
+    "message": "Fioscaireacht"
+  },
+  "detectionCategory_scam": {
+    "message": "Calaois"
+  }
+}

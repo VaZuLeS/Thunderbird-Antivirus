@@ -66,7 +66,7 @@ const ThundySettings = (() => {
                 line.textContent = [t(label), Number.isFinite(at) ? ThundyI18n.date(at) : t('auditUnavailable'), id].filter(Boolean).join(' · ');
             }
             explanation.textContent = [t(info.indicators?'reportingConsentIndicators':'reportingConsent'),
-                info.details ? t('reportingConsentDetails') : ''].filter(Boolean).join(' ');
+                info.details ? t('reportingConsentDetails') : '',info.detections ? t('reportingConsentDetections') : ''].filter(Boolean).join(' ');
             enrollment.hidden = !info.endpoint || !unlocked;
             revoke.hidden = !['ready','permission','storage'].includes(info.state);
             activate.disabled = revoke.disabled = sending;
@@ -93,7 +93,7 @@ const ThundySettings = (() => {
             if (!info?.endpoint || !consent.checked) return;
             void change(async () => {
                 if (!await requestIncidentPermissions(info)) throw Error('REPORTING_SETUP_INVALID');
-                await command('enableReporting',{consent:true,details:info.details,endpoint:info.endpoint,credential:credential.value});
+                await command('enableReporting',{consent:true,details:info.details,detections:info.detections,endpoint:info.endpoint,credential:credential.value});
             });
         };
         revoke.onclick = () => change(() => command('disableReporting'));
@@ -103,6 +103,7 @@ const ThundySettings = (() => {
         return render;
     }
     async function mount(){
+        if (ThundyI18n.ready) await ThundyI18n.ready;
         const shell=document.querySelector('.settings-shell')||document.querySelector('main');
         if(!shell)return;
         const initial=await command('status');
@@ -125,8 +126,33 @@ const ThundySettings = (() => {
         const linkSource = document.createElement('p');
         form.append(linkSource);
         const attachmentControls = [];
+        const linkControls = [enabled,threshold,unknown];
+        const auditControls = [];
+        let waitForResults, autoOpenBelow, auditLimit, auditDays, auditSource, colorsSource;
         let attachmentMode, attachmentThreshold, attachmentUnknown, attachmentSource;
         if (location.pathname.endsWith('/options.html')) {
+            const waitHelp = document.createElement('p');
+            waitHelp.textContent = t('linkOpeningOptionsHelp');
+            waitForResults = field('linkWaitForResults','checkbox');
+            autoOpenBelow = field('linkAutoOpenBelow','number');
+            autoOpenBelow.min = '1';autoOpenBelow.max = '100';
+            linkControls.push(waitForResults,autoOpenBelow);
+            form.append(waitHelp);
+
+            const auditGroup = document.createElement('fieldset');
+            const auditTitle = document.createElement('legend');
+            auditTitle.textContent = t('linkAuditRetentionTitle');
+            auditLimit = field('linkAuditLimit','number');
+            auditDays = field('linkAuditDays','number');
+            for (const input of [auditLimit,auditDays]) {
+                input.min = '1';input.max = String(Number.MAX_SAFE_INTEGER);
+                auditControls.push(input);
+            }
+            auditSource = document.createElement('p');
+            auditGroup.append(auditTitle,auditLimit.parentElement,auditDays.parentElement,auditSource);
+            colorsSource = document.createElement('p');
+            colorsSource.hidden = true;
+            form.append(auditGroup,colorsSource);
             const group = document.createElement('fieldset');
             const legend = document.createElement('legend');
             legend.textContent = t('attachmentProtectionTitle');
@@ -241,7 +267,7 @@ const ThundySettings = (() => {
         const refresh=async()=>{
             try{current=await command('status');shell.hidden=hideShell&&!current.unlocked;
                 state.textContent=t(current.protected?current.unlocked?'securityUnlocked':'securityLocked':'securityOptional');
-                for(const input of [approval,adminConfirm,approvalConfirm,threshold,enabled,unknown,save,view,showDetails,displaySave,...debugControls,...attachmentControls])if(input)input.disabled=!current.unlocked;
+                for(const input of [approval,adminConfirm,approvalConfirm,save,view,showDetails,displaySave,...linkControls,...auditControls,...debugControls,...attachmentControls])if(input)input.disabled=!current.unlocked;
                 adminConfirm.parentElement.hidden=!current.unlocked;approvalConfirm.parentElement.hidden=!current.unlocked;
                 admin.autocomplete=current.unlocked?'new-password':'current-password';admin.parentElement.firstChild.textContent=t(current.unlocked?'securityAdminPassword':'securityUnlockPassword');
                 disable.hidden=!current.protected||!current.unlocked;lock.hidden=!current.protected||!current.unlocked;unlock.hidden=!current.protected||current.unlocked;recoveryGroup.hidden=!current.protected||current.unlocked;
@@ -252,7 +278,18 @@ const ThundySettings = (() => {
                         t('managedThreshold')+' '+policy.threshold,t(policy.action==='block'?'attachmentModeBlock':'attachmentModeWarn'),
                         t('attachmentUnknownSetting')+' '+t(policy.unknown==='block'?'attachmentModeBlock':'attachmentModeWarn')].join(' · ') : t('managedLocal');
                 linkSource.textContent=source(current.policy);
-                if (current.policy.managed) for (const input of [enabled,threshold,unknown]) input.disabled=true;
+                if (current.policy.managed) for (const input of linkControls) input.disabled=true;
+                if (waitForResults) {
+                    waitForResults.checked = current.policy.waitForResults === true;
+                    autoOpenBelow.value = current.policy.autoOpenBelow ?? '';
+                    const audit = current.linkAudit || {maxRecords:2000,retentionDays:30};
+                    auditLimit.value = audit.maxRecords ?? '';
+                    auditDays.value = audit.retentionDays ?? '';
+                    auditSource.textContent = t(audit.invalid ? 'managedPolicyInvalid' : audit.managed ? 'managedByCompany' : 'managedLocal');
+                    for (const input of auditControls) input.disabled = audit.managed || !current.unlocked;
+                    colorsSource.hidden = !current.severityColorsManaged;
+                    colorsSource.textContent = t(current.severityColorsInvalid ? 'managedPolicyInvalid' : 'protectionManagedColors');
+                }
                 const clickProtection = document.getElementById('timeOfClickProtection');
                 if (clickProtection && current.policy.managed) {
                     clickProtection.dataset.managed='true';clickProtection.checked=true;clickProtection.disabled=true;
@@ -268,13 +305,16 @@ const ThundySettings = (() => {
                 }
                 renderReporting(current.reporting,current.unlocked);
                 await debugRefresh();
-            }catch(_){shell.hidden=hideShell;debugHide();for(const input of [...debugControls,...attachmentControls])input.disabled=true;state.textContent=t('securityError');}
+            }catch(_){shell.hidden=hideShell;debugHide();for(const input of [...linkControls,...auditControls,...debugControls,...attachmentControls])input.disabled=true;state.textContent=t('securityError');}
         };
         const run=async fn=>{if(busy)return;busy=true;output.textContent='';try{await fn();await refresh();}catch(e){output.textContent=t(e.code==='PASSWORD_WAIT'?'securityWait':['PASSWORD_LENGTH','PASSWORDS_DISTINCT'].includes(e.code)?'securityLength':e.code==='PASSWORD_CONFIRM'?'securityConfirmMismatch':'securityError');if(e.code==='ADMIN_LOCKED')await refresh();}finally{busy=false;for(const input of [admin,adminConfirm,approval,approvalConfirm,recovery,recoveryAdmin,recoveryConfirm])input.value='';}};
         const confirm=(password,repeated)=>{if(password!==repeated)throw Object.assign(Error('PASSWORD_CONFIRM'),{code:'PASSWORD_CONFIRM'});};
         unlock.onclick=()=>run(async()=>{token=(await command('unlock',{password:admin.value})).token;connect();});
         form.onsubmit=event=>{event.preventDefault();run(async()=>{confirm(admin.value,adminConfirm.value);confirm(approval.value,approvalConfirm.value);const result=await command('configure',{adminPassword:admin.value||undefined,approvalPassword:approval.value||undefined,
-            ...(!current.policy.managed ? {policy:{enabled:enabled.checked,threshold:Number(threshold.value),unknown:unknown.checked?'approval':'warn'}} : {}),
+            ...(!current.policy.managed ? {policy:{enabled:enabled.checked,threshold:Number(threshold.value),unknown:unknown.checked?'approval':'warn',
+                ...(waitForResults ? {waitForResults:waitForResults.checked,autoOpenBelow:autoOpenBelow.value === '' ? null : autoOpenBelow.valueAsNumber} : {})}} : {}),
+            ...(auditLimit && !current.linkAudit?.managed ? {linkAudit:{maxRecords:auditLimit.value === '' ? null : auditLimit.valueAsNumber,
+                retentionDays:auditDays.value === '' ? null : auditDays.valueAsNumber}} : {}),
             ...(attachmentMode && !current.attachmentPolicy?.managed ? {attachmentPolicy:{mode:attachmentMode.value,threshold:Number(attachmentThreshold.value),unknown:attachmentUnknown.value}} : {})
         });token=null;output.textContent=result.recovery?t('securityRecoverySave')+' '+result.recovery:t('securitySaved');});};
         lock.onclick=()=>run(async()=>{await command('lock');token=null;});

@@ -1,0 +1,3590 @@
+{
+  "protectionSeverity_low": { "message": "Laag risico" },
+  "protectionSeverity_unknown": { "message": "Onbekend risico" },
+  "protectionSeverity_caution": { "message": "Verhoogd risico" },
+  "protectionSeverity_high": { "message": "Hoog risico" },
+  "protectionSeverity_critical": { "message": "Kritiek risico" },
+  "linkScanSummary": { "message": "Resultaten van URL-scans" },
+  "linkScansPending": { "message": "Er lopen nog URL-scans." },
+  "linkNoScanResults": { "message": "Er zijn geen resultaten van URL-scans beschikbaar." },
+  "protectionCategoryUnavailable": { "message": "De aanbieder gaf geen dreigingscategorie op." },
+  "linkWaitForResults": { "message": "Wacht op lopende URL-scans" },
+  "linkAutoOpenBelow": { "message": "Open direct onder deze score" },
+  "linkOpeningOptionsHelp": { "message": "Laat de score leeg om het linkvenster altijd te tonen." },
+  "linkAuditRetentionTitle": { "message": "Bewaartermijn van het linklogboek" },
+  "linkAuditLimit": { "message": "Maximumaantal items (leeg = onbeperkt)" },
+  "linkAuditDays": { "message": "Bewaardagen (leeg = onbeperkt)" },
+  "protectionManagedColors": { "message": "Je organisatie bepaalt de kleuren voor de risiconiveaus." },
+  "linkOpenedAutomatically": { "message": "Automatisch geopend" },
+  "providerSwitchHelp": {
+    "message": "Zet iedere dienst afzonderlijk aan of uit en sla je instellingen op. Bij het pauzeren blijven opgeslagen sleutels en bevindingen behouden."
+  },
+  "providerKeyLink": {
+    "message": "Krijg een API sleutel"
+  },
+  "providerDocsLink": {
+    "message": "API documentatie"
+  },
+  "providerApiKeyLabel": {
+    "message": "API-sleutel"
+  },
+  "providerUse": {
+    "message": "Deze dienst gebruiken"
+  },
+  "providerVirusUse": {
+    "message": "Gebruik VirusTotal voor bestandchecks"
+  },
+  "providerHybridStrength": {
+    "message": "Zoekt bestaande rapporten bij bekende bestandshashes. Als uploads zijn toegestaan, kan Falcon Sandbox analyseren wat een bestand doet wanneer het wordt uitgevoerd."
+  },
+  "providerHybridSetup": {
+    "message": "Creëer een rekening en opent dan Profile → API Key om een sleutel te maken."
+  },
+  "providerUrlhausStrength": {
+    "message": "Het controleren van de link-hosts tegen vermeldde bronnen van malware."
+  },
+  "providerUrlhausSetup": {
+    "message": "Meld u zich aan bij abuse.ch en ontvang een Auth-Key van uw rekening."
+  },
+  "providerUrlscanStrength": {
+    "message": "URLs onderzoekt en herleidt voor tekenen van phishing.Thundy gebruikt het op het maximale privé-niveau."
+  },
+  "providerUrlscanSetup": {
+    "message": "Maak een rekening en kies Setting & API → Nieuwe API sleutel."
+  },
+  "providerVirusTotalStrength": {
+    "message": "Zie de hash van een bestand SHA-256 en laat de uitkomsten van verschillende scanmotoren zien."
+  },
+  "providerVirusTotalSetup": {
+    "message": "Meld je aan bij VirusTotal en kopieer de sleutel van de API-keypagina van je profiel."
+  },
+  "providerIpTitle": {
+    "message": "IP-reputatie"
+  },
+  "providerIpUse": {
+    "message": "IP Reputatie bekijken"
+  },
+  "providerIpChoose": {
+    "message": "IP Reputatie provider"
+  },
+  "providerIpKeyNotice": {
+    "message": "Voer een sleutel van de gekozen aanbieder in. Bij het pauzeren van IP-controles blijven je aanbieder en sleutel behouden."
+  },
+  "providerIpGuide": {
+    "message": "Kies en installeer een IP-rekening provider"
+  },
+  "providerVirusIpStrength": {
+    "message": "Overziet publieke IP's tegen de detectiemotoren en gemeenschapsratings van VirusTotal."
+  },
+  "providerAbuseStrength": {
+    "message": "Gebruik gemeenschapsrapporten om publieke IP's te identificeren die verband houden met spam, scan of andere misbruik."
+  },
+  "providerAbuseSetup": {
+    "message": "Creëer een AbuseIPDB-account en genereren of kopiëren een sleutel van de API tab in de dashboard."
+  },
+  "providerIpVirusKey": {
+    "message": "VirusTotal API sleutel voor IP getuigenis"
+  },
+  "providerIpAbuseKey": {
+    "message": "AbuseIPDB API sleutel"
+  },
+  "providerTestDisabled": {
+    "message": "Zet de dienst aan en sla de instellingen op voordat je de sleutel test."
+  },
+  "analysisReason_provider_disabled": {
+    "message": "Deze provider is in de instellingen gestopt."
+  },
+  "extensionName": {
+    "message": "Thundy AV – E-mailscanner voor Thunderbird"
+  },
+  "extensionDescription": {
+    "message": "Optieel, opt-in scanner voor e-mail bijlagen en links. Niets verlaat uw computer zonder uw uitdrukkelijke instelling."
+  },
+  "actionTitle": {
+    "message": "Thundy AV – scannen van de status voor deze boodschap"
+  },
+  "bannerScanOnce": {
+    "message": "Scan deze boodschap een keer"
+  },
+  "bannerScanSender": {
+    "message": "Scan deze zender altijd"
+  },
+  "bannerTitleOptIn": {
+    "message": "Thundy AV : real-time scan is niet ingevuld voor deze boodschap."
+  },
+  "bannerNoteOptIn": {
+    "message": "Scannen brengt de data naar externe analysediensten, maar alleen als u deze in de add-on-instellingen hebt geactificeerd en pas na het geven van uw instelling."
+  },
+  "bannerScanRunning": {
+    "message": "Scannen…"
+  },
+  "bannerScanDone": {
+    "message": "Verzoeken voltooid - zie analyses bronnen"
+  },
+  "bannerScanFailed": {
+    "message": "Scannen mislukken"
+  },
+  "bannerPermissionDenied": {
+    "message": "De vereiste gastvergunning werd ontkend"
+  },
+  "bannerConsentMissing": {
+    "message": "Nieuwe externe aanvragen zijn niet geaccepteerd. eerder opgeslagen rapporten kunnen nog steeds worden weergegeven."
+  },
+  "bannerThreatTitle": {
+    "message": "Thundy AV waarschuwing"
+  },
+  "bannerThreatScore": {
+    "message": "Risico scoren: $SCORE$ van 100",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerSenderOptIn": {
+    "message": "Deze zender wordt nu geïntroduceerd."
+  },
+  "notificationScanStarted": {
+    "message": "Scan begon voor: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "Scan ingediend met succes. Job ID: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanError": {
+    "message": "Scan fout: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Thundy AV-scanner"
+  },
+  "notificationTitleError": {
+    "message": "Thundy AV Scanner fout"
+  },
+  "bannerAuthPass": {
+    "message": "Vertrouwde serverrapporten SPF / DKIM/ DMARC geëxecuteerd"
+  },
+  "bannerOpenOptions": {
+    "message": "Open opties"
+  },
+  "menuScanLink": {
+    "message": "Scan link met Thundy AV"
+  },
+  "menuScanMessageLinks": {
+    "message": "Scan alle links van deze boodschap"
+  },
+  "notificationNoLinks": {
+    "message": "Geen links in dit bericht."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "De gastheervergunning voor de analytische service is ontbreekt. geef het in de add-on opties."
+  },
+  "errorHostPermissionMissing": {
+    "message": "De vergunning voor de analyseservice is ontbreekt.Geef het in de add-on opties."
+  },
+  "errorTierUploadBlocked": {
+    "message": "Het uploaden van bijlagen is uitgeschakeld in de privé-lijn \"Strict\".Switch naar \"Balanced\" of \"Maximum\" in de add-on-opties."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "Het indienen van URLs is alleen toegestaan in de privé-lijn \"Maximum\"."
+  },
+  "notificationInjectionFailed": {
+    "message": "De banners kunnen niet in de boodschap-uitzicht worden opgenomen. meld dit met uw Thunderbird-versie."
+  },
+  "bannerTierBlocked": {
+    "message": "Deze actie is niet toegestaan door de actuele privé-niveau. zie de add-on-opties."
+  },
+  "ui_001": {
+    "message": "Waarschuwing :"
+  },
+  "ui_002": {
+    "message": "Geen Hybrid Analysis API sleutel is geconfigureerd. u kunt lokale checks gebruiken of een provider in instellingen instellen."
+  },
+  "ui_003": {
+    "message": "Open instellingen"
+  },
+  "ui_004": {
+    "message": "Selecteer een e-mail om het te controleren."
+  },
+  "ui_005": {
+    "message": "De lading van de analyses…"
+  },
+  "ui_006": {
+    "message": "Externe analyses zijn uitgeschakeld: geen hashes, bestanden of links worden naar de analysediensten verzonden."
+  },
+  "ui_007": {
+    "message": "Geen opgeslagen bijlagen of link scansresultaten zijn voor deze boodschap verkrijgbaar."
+  },
+  "ui_008": {
+    "message": "Er zijn geen analyses voor deze e-mail."
+  },
+  "ui_009": {
+    "message": "Onverwachte fout tijdens het laden van de analyses."
+  },
+  "ui_010": {
+    "message": "De status:"
+  },
+  "ui_011": {
+    "message": "De analyses zijn nog steeds in de loop van de tijd. proberen dan nog eens."
+  },
+  "ui_012": {
+    "message": "SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_013": {
+    "message": "Bedreigingsresultaten :"
+  },
+  "ui_014": {
+    "message": "De oordeel:"
+  },
+  "ui_015": {
+    "message": "De familie van malware:"
+  },
+  "ui_016": {
+    "message": "Multiscan: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_017": {
+    "message": "Aanvullende informatie :"
+  },
+  "ui_018": {
+    "message": "Analyses zijn gestart: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_019": {
+    "message": "Aantal: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_020": {
+    "message": "VirusTotal uitslag:"
+  },
+  "ui_021": {
+    "message": "Schadelijk: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_022": {
+    "message": "Onbekend: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_023": {
+    "message": "Verdachte: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_024": {
+    "message": "Onschadelijk: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_025": {
+    "message": "Scanner: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_026": {
+    "message": "Standaard: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_027": {
+    "message": "Antivirus uitslag:"
+  },
+  "ui_028": {
+    "message": "van: $P1$ De oordeel: $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_029": {
+    "message": "Er zijn geen scannerresultaten."
+  },
+  "ui_030": {
+    "message": "SHA-256 hash: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_031": {
+    "message": "De laatste bestandnaam: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_032": {
+    "message": "Grootte: $P1$ byten",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_033": {
+    "message": "Type: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_034": {
+    "message": "Scan weer"
+  },
+  "ui_035": {
+    "message": "Sanitiseer en download (locale)"
+  },
+  "ui_036": {
+    "message": "Gecontroleerd item: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_037": {
+    "message": "Lokale uitkomst: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_038": {
+    "message": "SHA-256 : $P1$ – externe analyses zijn uitgeschakeld.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_039": {
+    "message": "Geen externe lookup omdat externe analyses ontbreken."
+  },
+  "ui_040": {
+    "message": "Externe analytische afwezigheid"
+  },
+  "ui_041": {
+    "message": "De scan…"
+  },
+  "ui_042": {
+    "message": "Download bestanden voor een nieuwe scan…"
+  },
+  "ui_043": {
+    "message": "Scan ingediend.Reloadingresultaten…"
+  },
+  "ui_044": {
+    "message": "Succesvolle"
+  },
+  "ui_045": {
+    "message": "De scan mislukt:"
+  },
+  "ui_046": {
+    "message": "Onbekende fout"
+  },
+  "ui_047": {
+    "message": "Probeer opnieuw"
+  },
+  "ui_048": {
+    "message": "Informatiefouten op de pagina:"
+  },
+  "ui_049": {
+    "message": "Saniteren…"
+  },
+  "ui_050": {
+    "message": "Het verbeteren van HTML lokaal…"
+  },
+  "ui_051": {
+    "message": "Download is begonnen."
+  },
+  "ui_052": {
+    "message": "Sanitiseerde"
+  },
+  "ui_053": {
+    "message": "Download is niet gelukt:"
+  },
+  "ui_054": {
+    "message": "API fout: $P1$ voor item $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_055": {
+    "message": "(De API-toets kan niet-geldig of ontbreekt.)"
+  },
+  "ui_056": {
+    "message": "Netwerkfout: $P1$ voor item $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_057": {
+    "message": "URL voor de…"
+  },
+  "ui_058": {
+    "message": "URL naar Hybrid Analysis verzenden…"
+  },
+  "ui_059": {
+    "message": "Scan ingediend. Loading resultaten…"
+  },
+  "ui_060": {
+    "message": "De opname mislukt:"
+  },
+  "ui_061": {
+    "message": "URL: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_062": {
+    "message": "Dit URL is in de e-mail te vinden. om uw privé te bevechten, was het"
+  },
+  "ui_063": {
+    "message": "Niet gehaald op een automatische"
+  },
+  "ui_064": {
+    "message": "Scan URL nu"
+  },
+  "ui_065": {
+    "message": "Laden…"
+  },
+  "ui_066": {
+    "message": "Stuur een bestand naar Hybrid Analysis…"
+  },
+  "ui_067": {
+    "message": "Upload voltooid. Loading result…"
+  },
+  "ui_068": {
+    "message": "Scan bestanden nu (upload)"
+  },
+  "ui_069": {
+    "message": "Aansluitingsmateriaal: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_070": {
+    "message": "Geen externe rapportage is voor dit bestand verkrijgbaar. om uw privé te bevechten, is het"
+  },
+  "ui_071": {
+    "message": "Automatische uploaden zijn uitgeschakeld; de privé-niveau is nog steeds van kracht op handmatige scans."
+  },
+  "ui_072": {
+    "message": "Linkbescherming is ook tevens toegankelijk bij de automatische scan."
+  },
+  "ui_073": {
+    "message": "besparen…"
+  },
+  "ui_074": {
+    "message": "De instellingen worden gered."
+  },
+  "ui_075": {
+    "message": "Opslaan"
+  },
+  "ui_076": {
+    "message": "Er is geen vergunning gegeven om de data te overbrengen.Nee zal worden verzonden."
+  },
+  "ui_077": {
+    "message": "De gastvrijheid is niet toegekend voor:"
+  },
+  "ui_078": {
+    "message": "Checks voor deze leveranciers zijn niet toegankelijk zonder vergunning."
+  },
+  "ui_079": {
+    "message": "Kan geen instellingen opslaan."
+  },
+  "ui_080": {
+    "message": "Het verlicht de cache? dit verwijdert alle lokaal opgeslagen analyses."
+  },
+  "ui_081": {
+    "message": "Wissen…"
+  },
+  "ui_082": {
+    "message": "Cache is verduidelijkt."
+  },
+  "ui_083": {
+    "message": "Database is nog niet of is het al leeg."
+  },
+  "ui_084": {
+    "message": "Ik kon de cache niet verduidelijken."
+  },
+  "ui_085": {
+    "message": "Een duidelijke cache"
+  },
+  "ui_086": {
+    "message": "API sleutel ontbreekt."
+  },
+  "ui_087": {
+    "message": "SPF check failed (mogelijk spoofing)."
+  },
+  "ui_088": {
+    "message": "DKIM handtekening is niet-geval (mogelijk spoofing)."
+  },
+  "ui_089": {
+    "message": "DMARC check failed (mogelijk spoofing)."
+  },
+  "ui_090": {
+    "message": "URLhaus vernoemt domein ( $P1$) als kwaadaardig.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_091": {
+    "message": "Reply-To domein ( $P1$) verschilt van de zendende domein ( $P2$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_092": {
+    "message": "Mogelijke zakelijke e-mailcompromiss: eerste contact met deze zenders en noodtoepassingen ( $P1$)",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_093": {
+    "message": "Noodwoord ( $P1$).Kijk deze aanvraag zorgvuldig.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_094": {
+    "message": "Dit is jouw eerste contact met deze boodschapper."
+  },
+  "ui_095": {
+    "message": "Sender domein ( $P1$) is het gelijkaardige merk $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_096": {
+    "message": "Link domein ( $P1$) is het gelijkaardige merk $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_097": {
+    "message": "Geen van de links in de tekstpunten naar de zendendendomein ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_098": {
+    "message": "Kluis"
+  },
+  "ui_099": {
+    "message": "URL scan mislukt:"
+  },
+  "ui_100": {
+    "message": "urlscan.io kan niet worden gestart scannen:"
+  },
+  "ui_101": {
+    "message": "urlscan.io heeft geen scan-ID teruggekeerd."
+  },
+  "ui_102": {
+    "message": "urlscan.io identificeerde de URL als kwaadaardig."
+  },
+  "ui_103": {
+    "message": "Visuele detectie: de pagina impersonate"
+  },
+  "ui_104": {
+    "message": "(Voor de verwachte phishing)"
+  },
+  "ui_105": {
+    "message": "Kan niet herhalen urlscan.io uitslag:"
+  },
+  "ui_106": {
+    "message": "Thundy AV – E-mail scanner"
+  },
+  "ui_107": {
+    "message": "Zie alle Hybrid Analysis submissie"
+  },
+  "ui_108": {
+    "message": "Zie alle Hybrid Analysis-aandelen (opent een nieuwe tab)"
+  },
+  "ui_109": {
+    "message": "onderwerp :"
+  },
+  "ui_110": {
+    "message": "van:"
+  },
+  "ui_111": {
+    "message": "Het bericht ID:"
+  },
+  "ui_112": {
+    "message": "Thundy AV instellingen"
+  },
+  "ui_113": {
+    "message": "Hybrid Analysis is een malware-analyse service. u kunt bestanden indienen voor statische en dynamische analyses."
+  },
+  "ui_114": {
+    "message": "Hybrid Analysis gebruikt CrowdStrike Falcon Sandbox om onbekende bedreigingen te onderzoeken."
+  },
+  "ui_115": {
+    "message": "Provider-accounts en servicevoorzieningen zijn van kracht voor externe analyses.Locale checks vereisen geen rekening."
+  },
+  "ui_116": {
+    "message": "Thundy AV instellingen"
+  },
+  "ui_117": {
+    "message": "Wat is Hybrid Analysis?"
+  },
+  "ui_118": {
+    "message": "Voor externe bestandanalyse, ontvang een API-toets van"
+  },
+  "ui_119": {
+    "message": "Na het inschrijven, ga naar uw profiel en vind de API KEY sectie."
+  },
+  "ui_120": {
+    "message": "Pas de sleutel API hier. lokale checks werken zonder dat."
+  },
+  "ui_121": {
+    "message": "API sleutelinstelling"
+  },
+  "ui_122": {
+    "message": "hybrid-analysis.com"
+  },
+  "ui_123": {
+    "message": "hybrid-analysis.com (opent een nieuwe tab)"
+  },
+  "ui_124": {
+    "message": "Externe analyse toestaan (gegevens naar externe aanbieders sturen)"
+  },
+  "ui_125": {
+    "message": "Zonder deze instelling,"
+  },
+  "ui_126": {
+    "message": "hashes, bestanden, links of IP adresen worden naar externe diensten gestuurd.Na de instelling, kunnen geautoriseerde scans bijlagen en links naar de Hybrid Analysis, VirusTotal, urlscan.io, URLhaus of AbuseIPDB, afhankelijk van de privé-niveau. uitschakelen deze optie om uw instelling te intrekken:"
+  },
+  "ui_127": {
+    "message": "niet"
+  },
+  "ui_128": {
+    "message": "Privacybeleid"
+  },
+  "ui_129": {
+    "message": "Privacybeleid (opent een nieuwe tab)"
+  },
+  "ui_130": {
+    "message": "Hybrid Analysis API sleutel (optie):"
+  },
+  "ui_131": {
+    "message": "Bijgevolg abcdef123456…"
+  },
+  "ui_132": {
+    "message": "URLhaus API sleutel (optie domein reputatie):"
+  },
+  "ui_133": {
+    "message": "U kunt een API sleutel op"
+  },
+  "ui_134": {
+    "message": "."
+  },
+  "ui_135": {
+    "message": "urlhaus.abuse.ch"
+  },
+  "ui_136": {
+    "message": "urlhaus.abuse.ch (opent een nieuwe tab)"
+  },
+  "ui_137": {
+    "message": "urlscan.io API sleutel (optieel URL-analyse):"
+  },
+  "ui_138": {
+    "message": "U kunt een API sleutel op"
+  },
+  "ui_139": {
+    "message": "urlscan.io"
+  },
+  "ui_140": {
+    "message": "urlscan.io (opent een nieuwe tab)"
+  },
+  "ui_141": {
+    "message": "VirusTotal API sleutel (optie bestand reputatie):"
+  },
+  "ui_142": {
+    "message": "virustotal.com"
+  },
+  "ui_143": {
+    "message": "virustotal.com (opent een nieuwe tab)"
+  },
+  "ui_144": {
+    "message": "Privacybeleid niveau:"
+  },
+  "ui_145": {
+    "message": "Strict (default: hashes en domeinen alleen, geen uploads)"
+  },
+  "ui_146": {
+    "message": "Afgestemd (opladen van onbekende bestanden, geen volledige URLs)"
+  },
+  "ui_147": {
+    "message": "Maximaal analyses (opladen van onbekende bestanden en voltooien URLs)"
+  },
+  "ui_148": {
+    "message": "Het begrenzt de data die aan analytische providers worden verzonden. geldt alleen wanneer externe analyses zijn ingeschakeld."
+  },
+  "ui_149": {
+    "message": "IP getuigenis (checke Gevangen header):"
+  },
+  "ui_150": {
+    "message": "Behinderde"
+  },
+  "ui_151": {
+    "message": "VirusTotal (verplicht een VirusTotal API sleutel)"
+  },
+  "ui_152": {
+    "message": "AbuseIPDB (verplicht een AbuseIPDB API sleutel)"
+  },
+  "ui_153": {
+    "message": "IP reputatie API sleutel:"
+  },
+  "ui_154": {
+    "message": "Stuur openbare IP-adres van de ontvangende adres van de e-mail naar de geselecteerde provider. vereist externe analytische instantie en een scanvergunning."
+  },
+  "ui_155": {
+    "message": "Toegankelijkheden (comma-afgescheiden domeinen of e-mailadres):"
+  },
+  "ui_156": {
+    "message": "e.g. example.com, test@ example.com"
+  },
+  "ui_157": {
+    "message": "Vertrouwde zenders inloggen verhinderen lokale zenders waarschuwingen. ze toestaan niet externe scans."
+  },
+  "ui_158": {
+    "message": "Blocklist (comma-afgescheiden domeinen of e-mailadres):"
+  },
+  "ui_159": {
+    "message": "Geef blokkeerde domeinen of e-mailadres in."
+  },
+  "ui_160": {
+    "message": "Altijd handmatig scannen (geen automatische uploads)"
+  },
+  "ui_161": {
+    "message": "Voorkomen van automatische externe scans. uitdrukkelijke handmatige acties vereisen nog steeds de instelling en de geschikte privé-niveau."
+  },
+  "ui_162": {
+    "message": "Openstaande linkrapporten automatisch ophalen"
+  },
+  "ui_163": {
+    "message": "Linkchecks vereisen insteming, een scanvergunning en de geschikte privé-niveau."
+  },
+  "ui_164": {
+    "message": "Kijk naar de links voor ze open"
+  },
+  "ui_165": {
+    "message": "De navigatie wordt gestopt om het resultate te laten zien. onbevestigde links en fouten worden duidelijker geïdentificeerd. volledige URL-analyse vereist de maximale niveau. Volledige links en bijlagen vereisen afzonderlijke bevestiging."
+  },
+  "ui_166": {
+    "message": "Vergeet niet om uw instellingen te redden."
+  },
+  "ui_167": {
+    "message": "Data Management"
+  },
+  "ui_168": {
+    "message": "Klare lokaal opgeslagen uitkomsten en getuige caches."
+  },
+  "linkChecking": {
+    "message": "De link check…"
+  },
+  "linkWarning": {
+    "message": "Deze link werd vermeld als verdachte of kwaadaardige."
+  },
+  "linkUnknown": {
+    "message": "Deze link kan niet worden gecontroleerd. het openen kan risico's zijn."
+  },
+  "linkNoDetection": {
+    "message": "Geen bedreiging gedetecteerd door de provider. dit is geen zekerheid van de bevoegdheid."
+  },
+  "linkProceed": {
+    "message": "Open link toch"
+  },
+  "linkCancel": {
+    "message": "Annuleren"
+  },
+  "localMode": {
+    "message": "Lokale controles werken zonder de sleutels van API. Externe scans vereisen uw instelling en een bericht of verzendersvergunning."
+  },
+  "statusNormal": {
+    "message": "(niet te vinden in het"
+  },
+  "statusSuspicious": {
+    "message": "(Voor de verdachte)"
+  },
+  "statusCritical": {
+    "message": "(de kritische"
+  },
+  "noSubject": {
+    "message": "(niet onderwerp van"
+  },
+  "noSender": {
+    "message": "(Gekend door onbekende verzenders)"
+  },
+  "noId": {
+    "message": "(niet een ID)"
+  },
+  "unknownAttachment": {
+    "message": "Onbekend"
+  },
+  "statusDangerous": {
+    "message": "(de gevaarlijke"
+  },
+  "sizeLimit": {
+    "message": "De aanhangsmaat overschrijdt de lokale groottegrens van 25 MIB en is niet gelezen of geladen."
+  },
+  "trustedAuthLabel": {
+    "message": "Vertrouwde authenticatie servers (comma-afgescheiden)"
+  },
+  "trustedAuthHelp": {
+    "message": "Alleen de ontvangende mail servers die u beheert of uitdrukkelijk vertrouwt worden opgenomen. onconfiguurde headerrapporten worden niet geconfigureerd."
+  },
+  "consentHelp": {
+    "message": "Zonder toestemming worden geen gegevens naar externe diensten gestuurd. Na toestemming worden alleen uitdrukkelijk goedgekeurde berichten of afzenders gecontroleerd. Op het strikte niveau kunnen hashes, domeinen en openbare IP-adressen worden verzonden. Het gebalanceerde niveau staat ook uploads van onbekende bestanden toe en het maximale niveau ook verzending van volledige URL’s. Zet de optie uit om nieuwe overdrachten te stoppen en lopende aanvragen te annuleren. Reeds verzonden gegevens kunnen niet worden teruggehaald. Volledige links en bijlagen vereisen afzonderlijke bevestiging."
+  },
+  "visualImpersonation": {
+    "message": "Visuele detectie: de pagina impersonateert $BRANDS$ (verdachte phishing).",
+    "placeholders": {
+      "brands": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedEmail": {
+    "message": "De e-mail van de zender ( $P1$) staat op de bloklijst.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedDomain": {
+    "message": "De domein ($P1$(de op de bloklijst staat)$P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedEmail": {
+    "message": "De e-mail van de zender ($P1$) staat op de toelatingsliste.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedDomain": {
+    "message": "De domein ($P1$(de op de lijst staat)$P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanVisibility": {
+    "message": "urlscan.io submissie is niet-lijst, niet privé. Een volledige URL kan persoonsdaten of toegangstoeken te hebben. Zorg alleen URLs u mag delen."
+  },
+  "notificationScanCount": {
+    "message": "Gevonden scans: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "gatewayRequestTimeout": {
+    "message": "De aanvraag van de leverancier is geannuleerd of uitgesteld."
+  },
+  "gatewayInvalidJson": {
+    "message": "De leverancier gaf een onleesbare reactie terug."
+  },
+  "gatewayNetworkError": {
+    "message": "De leverancier kon niet bereikt worden."
+  },
+  "noMessageFound": {
+    "message": "Geen aangegeven bericht is ontdekt."
+  },
+  "providerNoDetection": {
+    "message": "Geen bedreiging ontdekt"
+  },
+  "providerMalicious": {
+    "message": "Kwaadaardig"
+  },
+  "providerSuspicious": {
+    "message": "Verdacht"
+  },
+  "providerPending": {
+    "message": "Analyses pendelen"
+  },
+  "privacyLocalData": {
+    "message": "Thundy AV leest de weergegeven boodschap, zijn zenders, onderwerp, heads, tekst en bijlagen om lokale controles uit te voeren. Lokale controles werken zonder de sleutels van API. Er is geen telemetry en geen developer-analyse server."
+  },
+  "privacyProviders": {
+    "message": "Gecertificeerde externe aanvragen gaan rechtstreeks naar geconfigureerde leveranciers: Hybrid Analysis voor het bestand hashes en uploads, VirusTotal voor het bestand hashes of IP de reputatie, URLhaus voor domeinen, urlscan.io voor het volledige URLs en AbuseIPDB voor openbare IP's. hashes kunnen bekend bestanden identificeren. leveranciervoorbeelden en privébeleid van kracht; ingediend informatie kan door de leverancier worden gedeeld."
+  },
+  "privacyRetention": {
+    "message": "Setting, instelling, verzendvergunningen en API sleutels worden opgeslagen in uw Thunderbird profiel. API- sleutels zijn niet daar gecodeerd. Lokale scan-records kunnen onderwerp, verzendadres, volledige links en bijlage metadata omvatten. De cache behoudt maximaal 1.000 berichten geduurd geduurd en wordt op de databasestart geëxploiteerd. In-memory reputatie-resultaten verdwijnen na 15 min."
+  },
+  "privacyControl": {
+    "message": "Uitschakelen van externe analyses om nieuwe verzoeken te stoppen en wachtbare verzoeken af te wijken. al verzonden data kunnen niet worden herhaald. Gebruik een duidelijke cache om opgeslagen analysesresultaten en reputatiecache's te wissen. Individueel verzendbevoegdheden kunnen worden geëlimineerd in instellingen."
+  },
+  "privacyDetailed": {
+    "message": "Gedetailleerde Privacybeleid (Engels / Duits)"
+  },
+  "senderAuthorizationsLabel": {
+    "message": "Gecertificeerde verzenden (een e-mailadres per lijn)"
+  },
+  "senderAuthorizationsHelp": {
+    "message": "Deze zenders kunnen worden geëxecuteerd wanneer externe analyses zijn ingeschakeld. Verwijder een adres om de automatische scans voor de komende berichten te stoppen. Deze lijst overschrijdt niet de privé-niveau of de manueel mode."
+  },
+  "invalidSenderAddress": {
+    "message": "Voer een e-mailadres in, één per lijn."
+  },
+  "popupSubtitle": {
+    "message": "Overzicht van de bewaking"
+  },
+  "popupDetails": {
+    "message": "Technische boodschap detail"
+  },
+  "popupLocalAssessment": {
+    "message": "Lokale risico-beoordeling"
+  },
+  "popupLocalExplanation": {
+    "message": "Deze scoren zijn geen antivirus-beslissing of een waarborg van de bevoegdheden."
+  },
+  "linkDialogTitle": {
+    "message": "Kijk voor het openen"
+  },
+  "linkDestination": {
+    "message": "Destinatie website"
+  },
+  "linkUrlDetails": {
+    "message": "Zie volledige linkadres"
+  },
+  "linkOpenBrowser": {
+    "message": "Openen in browser"
+  },
+  "linkOpening": {
+    "message": "Bezig met openen…"
+  },
+  "linkOpenFailed": {
+    "message": "De link kon niet worden geopend. Probeer het opnieuw of controleer de instellingen van je standaardbrowser."
+  },
+  "linkCheckLimited": {
+    "message": "Alleen beschikbare scanresultaten kunnen worden weergegeven. vervallen checks niet een link is veilige."
+  },
+  "auditTitle": {
+    "message": "Link beslissing log"
+  },
+  "auditOpen": {
+    "message": "Overzicht link log"
+  },
+  "auditScope": {
+    "message": "Logs HTTP (S) klikken worden ondernomen door linkbescherming. OPENED wil Thunderbird de openingsverzoek aanvaard zonder een fout te melden. Dit bevestigt niet dat het besturingssystem een browser heeft gestart of dat de website is bezocht."
+  },
+  "auditPrivacy": {
+    "message": "Lokale opslag geduurd tot 30 dagen, 2000 opnamen of 2 MiB (oudste opnamen worden geëlimineerd). Full URLs kan persoonsdaten of toegangstoekens. Niets wordt gehaald automatisch. De lokale log kan worden gewijzigd of gehaald door profielgebruikers; het is geen tamper-proof centraal audits trail. Het lokale scores gebruiken de geklikt link en berichtcontext, niet een provider scores. Beoordelingsredenen kunnen verzenders of domeinnafgoed."
+  },
+  "auditSearch": {
+    "message": "URL, domein of evenement ID"
+  },
+  "auditOutcome": {
+    "message": "Besluit"
+  },
+  "auditAll": {
+    "message": "Alle"
+  },
+  "auditOpened": {
+    "message": "Opening verzocht"
+  },
+  "auditAborted": {
+    "message": "Abortus"
+  },
+  "auditOpenError": {
+    "message": "Opening mislukt"
+  },
+  "auditPending": {
+    "message": "Geen voltooide beslissing"
+  },
+  "auditMinScore": {
+    "message": "Minimaal beslissingsresultaat"
+  },
+  "auditFrom": {
+    "message": "van"
+  },
+  "auditTo": {
+    "message": "Tot"
+  },
+  "auditRefresh": {
+    "message": "Verfrissing"
+  },
+  "auditJson": {
+    "message": "Uitvoer JSON"
+  },
+  "auditCsv": {
+    "message": "Uitvoer CSV"
+  },
+  "auditClear": {
+    "message": "Lokale log te verbergen"
+  },
+  "auditExportHelp": {
+    "message": "Exporten omvatten alle gefilterde lijnen, niet alleen de actuele pagina. JSON omvat een SHA-256 check-in voor verifie; het bewijst geen authenticiteit. CSV neutraaliseert spreadsheet formules. Exporten met volledige URLs : deel alleen met geautoriseerde beoordelaars."
+  },
+  "auditTime": {
+    "message": "Klik / beslissingstijd"
+  },
+  "auditLocalScore": {
+    "message": "Locale scoring (link en bericht)"
+  },
+  "auditVerdict": {
+    "message": "Provider uitslag"
+  },
+  "auditAddress": {
+    "message": "URL en de gedetailleerde"
+  },
+  "auditPrevious": {
+    "message": "Vorige"
+  },
+  "auditNext": {
+    "message": "Volgende"
+  },
+  "auditClearConfirm": {
+    "message": "Verwijder alle lokale linklog-input? exporteer de vereiste bewijzen voor het eerste. scanresultaten en instellingen worden bewaard."
+  },
+  "auditFailure": {
+    "message": "De lokale linklog kan niet gelezen of opgeslagen worden."
+  },
+  "auditUnavailable": {
+    "message": "Niet beschikbaar"
+  },
+  "auditScoreAtDecision": {
+    "message": "Score bij beslissing"
+  },
+  "auditRecords": {
+    "message": "Vermeldingen"
+  },
+  "auditDetails": {
+    "message": "URL en bewijs"
+  },
+  "auditEventId": {
+    "message": "Evenementen ID"
+  },
+  "auditCancelReason": {
+    "message": "Annulering van de oorzaak"
+  },
+  "auditFinalResult": {
+    "message": "Laatste checkresultaten"
+  },
+  "auditProfile": {
+    "message": "Locale profiel ID"
+  },
+  "auditExported": {
+    "message": "De uitvoer is gered."
+  },
+  "auditRiskyOpened": {
+    "message": "Opening verzocht bij hoog risico"
+  },
+  "auditExportFailed": {
+    "message": "De uitvoer is niet gehaald of geannuleerd."
+  },
+  "profilesTitle": {
+    "message": "Optieel bedrijfsprofielen"
+  },
+  "profilesIntro": {
+    "message": "Kies gemeenschappelijke systemen onafhankelijk of laat integraties onbeperkbaar. Deze profielen bereiden de configureering voor; ze verbinden zich niet met een bedrijfsservice of activeren de centraal logging."
+  },
+  "profilesOpen": {
+    "message": "Kies voor bedrijfsprofielen"
+  },
+  "profilesBundle": {
+    "message": "Aanbevolen combinatie"
+  },
+  "profilesLocal": {
+    "message": "Lokale voorbereiding"
+  },
+  "profilesCustom": {
+    "message": "Kadeel selectie"
+  },
+  "profilesHosting": {
+    "message": "Hosting"
+  },
+  "profilesSso": {
+    "message": "Eenvoudig sign-on (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Geregebruik Management"
+  },
+  "profilesSiem": {
+    "message": "Veiligheidsspecten (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Het biljetsystemen"
+  },
+  "profilesRequirements": {
+    "message": "Verplichte configureering"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Endpoint en rekeninginstellingen worden geleverd tijdens latere instellingen. de namen onder de onderstaand identificeert vereiste instellingen en geheime referenties; geen credentialen hier invoeren."
+  },
+  "profilesPreview": {
+    "message": "Configuratie ontwerp"
+  },
+  "profilesPrivacy": {
+    "message": "De ontwerp heeft geen API sleutels, tokens, geklikt URLs of berichtdata."
+  },
+  "profilesSave": {
+    "message": "Speel selectie lokaal"
+  },
+  "profilesExport": {
+    "message": "Ontwerp van de exporteerconfiguratie"
+  },
+  "profilesReset": {
+    "message": "Reset selectie"
+  },
+  "profilesNone": {
+    "message": "Behorst / niet geselecteerd"
+  },
+  "profilesSelfHosted": {
+    "message": "Zelf-host / on-premises"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Geen externe integratie-instellingen vereist voor deze selectie."
+  },
+  "profilesSaved": {
+    "message": "Selectie op lokaal geserveerd. verbindingen worden niet ingeschakeld."
+  },
+  "profilesExported": {
+    "message": "Configuratie ontwerp geëxporteerd.Nee is geactieverd."
+  },
+  "profilesFailed": {
+    "message": "De selectie kon niet worden geladen, opgeslagen of uitgegeven of de operatie werd geannuleerd."
+  },
+  "wizardTitle": {
+    "message": "Thundy AV instellen"
+  },
+  "wizardLanguage": {
+    "message": "Taal van de installatiewizard"
+  },
+  "wizardLanguageNote": {
+    "message": "Deze keuze geldt alleen voor de installatiewizard. Je kunt de taal van de add-on wijzigen in de instellingen."
+  },
+  "wizardWelcome": {
+    "message": "Welkom"
+  },
+  "wizardProtection": {
+    "message": "Linkbescherming"
+  },
+  "wizardExternal": {
+    "message": "Optieel analyseren"
+  },
+  "wizardIntro": {
+    "message": "Om een e-mail te controleren, gebruik de Thundy AV-banner of scan-actie. U kunt later beslissen of u de analytische providers moet instellen."
+  },
+  "wizardLocalNotice": {
+    "message": "Zonder het instemmen van externe analyses worden geen data naar analytische providers verzonden. deze wizard geeft nooit dat instemmen."
+  },
+  "wizardPrivacy": {
+    "message": "Privacybeleid informatie"
+  },
+  "wizardLinkChoice": {
+    "message": "Waarschuw voor het openen van links en het opnemen van beslissingen lokaal"
+  },
+  "wizardLinkExplanation": {
+    "message": "De link-dialoog toont de bestemmingsduur en de beschikbare risicobeoordeling. het openen van de hand de link naar uw browser; het bewijst geen website-besprekingen."
+  },
+  "wizardAuditNotice": {
+    "message": "De lokale linklog kan volledige URLs en beoordelingsredenen omvatten. het behoudt tot 30 dagen, 2000 entries of 2 MiB. Profile gebruikers kunnen het gelezen, wijzigen of wissen; het is geen bewaarde corporate audits."
+  },
+  "wizardExternalExplanation": {
+    "message": "Externe providers zijn optieel en kunnen API-toets vereisen. Afhankelijk van uw privé-niveau, hashes, domeinen, publieke IP's, bestanden of volledige URLs kunnen worden doorgegeven."
+  },
+  "wizardNextAction": {
+    "message": "Wat zou je graag volgend doen?"
+  },
+  "wizardKeepLocal": {
+    "message": "Eindelijk met lokale controles"
+  },
+  "wizardKeepExisting": {
+    "message": "Behoud de beste externe instellingen"
+  },
+  "wizardExistingExternal": {
+    "message": "Externe analyses zijn al in dit profiel ingeschakeld. de tovenaar wijzigt die instelling niet. Gebruik instellingen om het te ontgrendelen of de toelating te beoordelen."
+  },
+  "wizardConfigure": {
+    "message": "Configureren van externe analyses in instellingen"
+  },
+  "wizardNoConsent": {
+    "message": "Selecteer deze optie opent alleen de instellingen.Nee is geüpload en geen vergunning wordt verzocht door deze tovenaar."
+  },
+  "wizardBack": {
+    "message": "Terug"
+  },
+  "wizardNext": {
+    "message": "Volgende"
+  },
+  "wizardFinish": {
+    "message": "Save de setup"
+  },
+  "wizardFinishConfigure": {
+    "message": "Save en open instellingen"
+  },
+  "wizardSkip": {
+    "message": "Niet nu"
+  },
+  "wizardDone": {
+    "message": "Setup gered"
+  },
+  "wizardDoneText": {
+    "message": "Uw link-beschermingsoptie is lokaal opgeslagen. geen API sleutel, externe instantie of verzenders goedkeuring is gewijzigd. u kunt de wizard opnieuw openen van de instellingen."
+  },
+  "wizardSettings": {
+    "message": "Open instellingen"
+  },
+  "wizardProfilesNotice": {
+    "message": "Bedrijfsprofielen zijn optionele configureerontwerp. het selecteren van hen actief maakt geen corporate verbinding."
+  },
+  "wizardDeferred": {
+    "message": "Instelling uitgesteld"
+  },
+  "wizardDeferredText": {
+    "message": "Geen instellingen zijn gewijzigd. opnieuw de magie van de instellingen openen wanneer u voorbereid bent."
+  },
+  "wizardSettingsOpened": {
+    "message": "Setting open. Configureer leveranciers en bewaar uw instelling daar."
+  },
+  "wizardSettingsFailed": {
+    "message": "Setting kan niet worden geopend. uw setup is opgeslagen; gebruik Open-instellingen om te retry."
+  },
+  "wizardSaveFailed": {
+    "message": "De instelling kon niet worden gereserveerd. uw keuzes zijn hier; laat u zich terug."
+  },
+  "wizardLoadFailed": {
+    "message": "Setting kan niet worden geladen. Niets is gereserveerd. Reload deze pagina om terug te trekken."
+  },
+  "wizardLanguageFailed": {
+    "message": "De taal kan niet worden geladen. de eergere taal wordt nog steeds geselecteerd."
+  },
+  "wizardReopen": {
+    "message": "Open setup weduwe"
+  },
+  "settingsAppearance": {
+    "message": "Uiterlijk"
+  },
+  "settingsPrivacy": {
+    "message": "Privacy"
+  },
+  "settingsScanning": {
+    "message": "Bescherming"
+  },
+  "settingsProviders": {
+    "message": "Analysediensten"
+  },
+  "settingsSenders": {
+    "message": "Afzenderregels"
+  },
+  "settingsData": {
+    "message": "Gegevens en hulpmiddelen"
+  },
+  "settingsWorkspace": {
+    "message": "Uw werkruimte"
+  },
+  "settingsEyebrow": {
+    "message": "Maak het uw"
+  },
+  "settingsSubtitle": {
+    "message": "Pas het uiterlijk van Thundy AV en de bescherming van je e-mail aan."
+  },
+  "settingsLocalBadge": {
+    "message": "Locatie door default"
+  },
+  "settingsLocalNote": {
+    "message": "Uw voorkeuren. opgeslagen op dit gereedschap."
+  },
+  "settingsSkip": {
+    "message": "Skip naar Setting"
+  },
+  "settingsProviderGuide": {
+    "message": "Over leveranciers en API sleutels"
+  },
+  "settingsWizardHelp": {
+    "message": "Reviseer de gidsinstelling op elk moment."
+  },
+  "themeIntro": {
+    "message": "Thundy AV voelt als uw. verschijning wijzigingen worden onmiddelen door de add-on opgeslagen."
+  },
+  "themeMode": {
+    "message": "Uiterlijk"
+  },
+  "themeSystem": {
+    "message": "Thema van Thunderbird volgen"
+  },
+  "themeLight": {
+    "message": "Licht"
+  },
+  "themeDark": {
+    "message": "Donker"
+  },
+  "themeAccent": {
+    "message": "Accent kleur"
+  },
+  "themeOcean": {
+    "message": "Oceaan"
+  },
+  "themeViolet": {
+    "message": "Violet"
+  },
+  "themeForest": {
+    "message": "bossen"
+  },
+  "themeAmber": {
+    "message": "Amberkleurig"
+  },
+  "themeReady": {
+    "message": "De verschijning wordt gehaald.Andere instellingen gebruiken de Save-knop."
+  },
+  "themeSaving": {
+    "message": "Het besparen van het uiterlijk…"
+  },
+  "themeSaved": {
+    "message": "De verschijning is gered."
+  },
+  "themeLoadError": {
+    "message": "De verschijning kan niet worden geladen. Probeer de opties opnieuw te openen."
+  },
+  "themeSaveError": {
+    "message": "U kunt niet opslaan.Kies uw keuzes opnieuw om te retreeren."
+  },
+  "themeRetry": {
+    "message": "Retry Saving verschijning"
+  },
+  "themeDensity": {
+    "message": "Informatie Densiteit"
+  },
+  "themeComfortable": {
+    "message": "Comfortabel"
+  },
+  "themeCompact": {
+    "message": "Compact"
+  },
+  "themeDensityHelp": {
+    "message": "Aanpassing van de spacing in instellingen en lokale administratie-tools."
+  },
+  "profilesChanges": {
+    "message": "Verandering in overeenstemming met bewaard selectie"
+  },
+  "profilesDiscard": {
+    "message": "Ontvang onbeheerde wijzigingen"
+  },
+  "profilesLoadRetry": {
+    "message": "Reload gespaard selectie"
+  },
+  "profilesNotLoaded": {
+    "message": "Speelbare selectie niet opgeladen"
+  },
+  "profilesUnsaved": {
+    "message": "Onbeheerde wijzigingen · inactieve ontwerp"
+  },
+  "profilesUnchanged": {
+    "message": "Gevallen selectie · inactieve ontwerp"
+  },
+  "profilesSaving": {
+    "message": "Het besparen van lokale selectie…"
+  },
+  "settingsUnsaved": {
+    "message": "Onverminderde wijzigingen"
+  },
+  "providerUnknown": {
+    "message": "Onbekend uitslag"
+  },
+  "auditVerdictAtDecision": {
+    "message": "Het uitslag bij beslissing"
+  },
+  "ui_169": {
+    "message": "Analyseprotocol: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "Job ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "Aantal voorzitter: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protocol herhaald: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": "Het resultate wordt elke $P1$-seconde (tent $P2$) gehaald; het eindige analyseprotocol verschijnt hier zonder een nieuwe verzoek zodra het is opgeslagen.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "Na een herstart of verlies van de processen, dit is nog steeds op te wachten; niet te wijzen dat de link is geopend of geannuleerd."
+  },
+  "auditCancelUser": {
+    "message": "Afgeschaft door de gebruiker"
+  },
+  "auditCancelEscape": {
+    "message": "Afgesloten met ontsnapping"
+  },
+  "auditCancelDestination": {
+    "message": "bestemmingen gewijzigd"
+  },
+  "auditCancelContext": {
+    "message": "Boekcontext gesloten"
+  },
+  "auditCancelUnknown": {
+    "message": "Onbekende annuleringshulp"
+  },
+  "reportNotSaved": {
+    "message": "Het rapport is zichtbaar, maar kon niet lokaal worden gered. heropenen om terug te trekken."
+  },
+  "checkOrigin_live": {
+    "message": "De lopende provider uitkomst"
+  },
+  "checkOrigin_stored": {
+    "message": "bewaard uitslag"
+  },
+  "checkOrigin_none": {
+    "message": "Geen waarneming van de provider"
+  },
+  "checkOutcome_success": {
+    "message": "Verzoek succesvol"
+  },
+  "checkOutcome_failed": {
+    "message": "Verzoek mislukt"
+  },
+  "checkOutcome_disabled": {
+    "message": "Externe analyses ontbreken"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Gastenvergunning ontbreekt"
+  },
+  "checkOutcome_missing_key": {
+    "message": "De sleutelverstrekker ontbreekt"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Geen referentie van leverancier"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Geen nieuwe verzoek"
+  },
+  "checkOutcome_no_result": {
+    "message": "Geen gebruikelijk nieuw uitslag"
+  },
+  "checkAttempted": {
+    "message": "Probeer te controleren"
+  },
+  "checkObserved": {
+    "message": "Het uitslag waargenomen"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Rechten bij beslissing"
+  },
+  "auditReasonsLatest": {
+    "message": "De laatste beschikbare oorzaken"
+  },
+  "auditReasonsMissing": {
+    "message": "Niet opgenomen op dat moment"
+  },
+  "coverageSummary": {
+    "message": "De verpakking - ontdekt: $1• in aanmerking komen: $2• verwerkt : $3• mislukte $4De schijf: $5De gescheiden onderdelen zijn onbeoordeeld."
+  },
+  "supportTitle": {
+    "message": "Lokale ondersteuningsverslag"
+  },
+  "supportHelp": {
+    "message": "Voorafgaand aan een minimum diagnostisch rapport, sla het dan lokaal op. Niets wordt verzonden. Checksums authentiek zijn bron niet."
+  },
+  "supportPreview": {
+    "message": "Voorbeeldverslag"
+  },
+  "supportConfiguration": {
+    "message": "Inclusief coarse instellingen (geen sleutels of verzendlijsten)"
+  },
+  "supportSave": {
+    "message": "Het rapport op lokaal"
+  },
+  "coverageAttachments": {
+    "message": "Atacties"
+  },
+  "coverageDomains": {
+    "message": "Unieke domeinen"
+  },
+  "coverageBatch": {
+    "message": "Groepscontrole van links"
+  },
+  "coverageLimits": {
+    "message": "Limieten per pass: 100 bijlagen, 25 MiB per bijlage, 100 uniek domeinen, 20 pakketverbindingen."
+  },
+  "localProfileTitle": {
+    "message": "Lokale profielen"
+  },
+  "localProfileHelp": {
+    "message": "Export bewaard verschijning of lokale bewaring opties afgescheiden. voorbeeld en bevestiging van de invoer. Keys, instelling, vergunningen, vertrouwde verzenders en auditsgeschieden zijn uitgesloten."
+  },
+  "localProfileExport": {
+    "message": "Export verschijning"
+  },
+  "localProfileFile": {
+    "message": "Kies een profielbestand (JSON, tot 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Profile JSON (of past hier)"
+  },
+  "localProfilePreview": {
+    "message": "Voorbeeld wijzigingen"
+  },
+  "localProfileApply": {
+    "message": "Geef de aangetoonde wijzigingen aan"
+  },
+  "localProfileDiscard": {
+    "message": "Vermijd invoer"
+  },
+  "localProfileInvalid": {
+    "message": "Onbeperkte profielen, niet ondersteunde versies of verboden velden."
+  },
+  "localProfileChanged": {
+    "message": "De verschijning is gewijzigd vanaf de voorbeeld. voorbeeld weer voor het toepassen."
+  },
+  "localProfileFailed": {
+    "message": "Profile kan niet worden opgeslagen. bekijk de actuele instellingen en retry."
+  },
+  "localProfileApplied": {
+    "message": "Afbeelding profiel toegepast. Bescherming en instelling onveranderd."
+  },
+  "analysisTitle": {
+    "message": "Analyseren bronnen"
+  },
+  "analysisMixed": {
+    "message": "Locale + externe controles"
+  },
+  "analysisExternal": {
+    "message": "Externe waarnemingen beschikbaar"
+  },
+  "analysisLocal": {
+    "message": "Lokale · Geen externe uitkomsten opgenomen"
+  },
+  "analysisLocalChecked": {
+    "message": "De lokale bericht/link heuristiek is voltooid."
+  },
+  "analysisLocalPending": {
+    "message": "De lokale beoordeling is nog niet opgenomen."
+  },
+  "analysisUnknown": {
+    "message": "Onbekend"
+  },
+  "analysisTimeUnknown": {
+    "message": "Tijd niet opgenomen"
+  },
+  "analysisObserved": {
+    "message": "Laatste gebruikte reactie"
+  },
+  "analysisFindingObserved": {
+    "message": "Vinding opgenomen"
+  },
+  "analysisAttempted": {
+    "message": "Laatste aanvraag poging"
+  },
+  "analysisPartial": {
+    "message": "Sommige verzoeken mislukten; beschikbare uitkomsten omvatten niet elk item."
+  },
+  "analysisOtherServices": {
+    "message": "Andere diensten / niet gecontroleerd"
+  },
+  "analysisLimit": {
+    "message": "Een lokale scoring is geen antivirus-besluit. verzoeken en uploaden zijn niet afgerond analyses. opgeslagen uitkomsten houden hun oorspronkelijke leeftijd; ontbrekende opnamen bewijzen niet dat er geen eergere verzoeken zijn plaatsgevonden."
+  },
+  "analysisScope_hash": {
+    "message": "File hash getuigenis"
+  },
+  "analysisScope_file": {
+    "message": "bestand submissie"
+  },
+  "analysisScope_url": {
+    "message": "URL analyses"
+  },
+  "analysisScope_domain": {
+    "message": "Domain Reputatie"
+  },
+  "analysisScope_ip": {
+    "message": "Public IP Reputatie"
+  },
+  "analysisScope_report": {
+    "message": "Analysebericht"
+  },
+  "analysisState_running": {
+    "message": "Vraagde · Geen eindresultaat nog"
+  },
+  "analysisState_checked": {
+    "message": "Het uitslag is verkregen"
+  },
+  "analysisState_received": {
+    "message": "Reactie ontvangt · oordeel niet verkrijgbaar"
+  },
+  "analysisState_submitted": {
+    "message": "Aanvraag geaccepteerd · analyses niet bevestigd voltooid"
+  },
+  "analysisState_not_found": {
+    "message": "Geen leverancier record ontdekt"
+  },
+  "analysisState_failed": {
+    "message": "Verzoek faalde; geen nieuwe oordeel"
+  },
+  "analysisState_incomplete": {
+    "message": "Geen volledige analyses opgenomen"
+  },
+  "analysisSource_remote": {
+    "message": "Externe service contact opgenomen"
+  },
+  "analysisSource_cache": {
+    "message": "Memory cache · geen nieuwe providerverzoek"
+  },
+  "analysisSource_stored": {
+    "message": "Uitgesloten externe waarneming"
+  },
+  "analysisSource_attempt": {
+    "message": "Request tent; reactie niet bevestigd"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Gericht ontoegankelijk"
+  },
+  "analysisVerdict_none": {
+    "message": "Beschikbare opvattingen: geen detectie (geen bewaring van bevoegdheid)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "De beschikbare opvattingen zijn onder meer verdachte indicators"
+  },
+  "analysisVerdict_malicious": {
+    "message": "De beschikbare opvattingen omvatten een bedreigingsdetectie"
+  },
+  "analysisReason_unconfigured": {
+    "message": "Momenteel niet geconfigureerd"
+  },
+  "analysisReason_disabled": {
+    "message": "Nieuwe externe verzoeken ontbreekt"
+  },
+  "analysisReason_permission": {
+    "message": "Hostingvergunning ontbreekt voor nieuwe verzoeken"
+  },
+  "analysisReason_authorization": {
+    "message": "Geen automatische machtiging voor deze boodschap / handmatige mode"
+  },
+  "analysisReason_policy": {
+    "message": "Niet toegestaan door de actuele privé-niveau"
+  },
+  "analysisReason_on_action": {
+    "message": "Alleen na een uitdrukkelijke link-actie"
+  },
+  "analysisReason_unrecorded": {
+    "message": "Geen check opgenomen voor deze boodschap"
+  },
+  "analysisUnavailable": {
+    "message": "Analyses bronnen zijn op dit moment niet beschikbaar"
+  },
+  "analysisModeUnknown": {
+    "message": "Analysestatus nog niet opgenomen"
+  },
+  "analysisModeRunning": {
+    "message": "Externe verzoek in werking · result pending"
+  },
+  "analysisModeSubmitted": {
+    "message": "Afgegeven naar buiten · analyses nog niet voltooid"
+  },
+  "analysisModeIncomplete": {
+    "message": "Externe check onvolledig · voltooiing niet bevestigd"
+  },
+  "analysisModePartial": {
+    "message": "Externe uitkomsten verkrijgbaar; een aantal verzoeken mislukte"
+  },
+  "analysisModeFailed": {
+    "message": "Externe aanvraag mislukt; geen gebruikelijk resultate opgenomen"
+  },
+  "analysisModeResults": {
+    "message": "Externe antwoorden verkrijgbaar · zie controles onder"
+  },
+  "analysisResourceMessage": {
+    "message": "Boek / Transport Reputatie"
+  },
+  "analysisResourceAttachment": {
+    "message": "aanhangig"
+  },
+  "analysisResourceLink": {
+    "message": "Link"
+  },
+  "analysisResourceUnknown": {
+    "message": "Eerder samenvatting · Resource not recorded"
+  },
+  "analysisTruncated": {
+    "message": "Sommige resource-detalaties werden verwaarloosd omdat de lokale weergegeven grens werd bereikt."
+  },
+  "analysisResources": {
+    "message": "Resursen in deze boodschap"
+  },
+  "analysisResourceLocal": {
+    "message": "Achtergrond opgeslagen met het bericht; geen bewijs van een antivirus-scan"
+  },
+  "analysisResourceTarget": {
+    "message": "Verbindende bestemmingen · Loading remote content is geen bewijs van een externe analyses"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Geen externe check opgenomen voor deze bron"
+  },
+  "analysisContextChanged": {
+    "message": "De boodschapcontext is gewijzigd.Klos en opnieuw de pop-up openen voor het opnieuw indienen."
+  },
+  "analysisLocalIncomplete": {
+    "message": "De lokale analyses zijn onvolledig: een aantal berichteninhoud is niet toegankelijk."
+  },
+  "analysisLocalUnavailable": {
+    "message": "De lokale analyses zijn niet toegankelijk: de boodschap kan niet worden gelezen."
+  },
+  "analysisHistoryTitle": {
+    "message": "Geschieden van de verzameling onbevestigd"
+  },
+  "analysisHistoryWarning": {
+    "message": "Deze historische opnamen kunnen behoren tot een andere boodschap met het zelfde Message-ID. Ze bevestigen geen check van deze boodschap."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Nieuwe bronnen waarnemingen konden niet worden gered. de geschieden die er zijn, werden bewaard."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "Een rapport update kon niet worden gered. eergere protocollen werden bewaard."
+  },
+  "sourceExportOpen": {
+    "message": "Voorbeeld van de bron-analyse"
+  },
+  "sourceExportTitle": {
+    "message": "Analyses van het bronnenverslag"
+  },
+  "sourceExportIntro": {
+    "message": "Creëer een lokale snapshot van de opgenomen checks. Dit voert geen nieuwe analyses uit. De actuele waarnemingen en de opgeslagen geschieden met onbevestigde associatie worden gescheiden gehouden."
+  },
+  "sourceExportPrivacy": {
+    "message": "Inclusief diensten, staten, beslissingen en exacte observatie tijden. Uitgesloten URLs, filenamen, hashes, IPs, sleutels, bericht tekst en intern identificateurs. Resource nummers gelden alleen binnen dit rapport. Dit is geen volledige geschieden of een geauthenticated record. Niets wordt geüpload automatisch. Reviewer voor het delen."
+  },
+  "sourceExportCancel": {
+    "message": "Discard voorbeeld"
+  },
+  "sourceExportContentLabel": {
+    "message": "Voorbeeld van het rapport ( JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "De berichtcontext is niet meer verkrijgbaar. heropenen van het rapport van de bericht toolbar popup."
+  },
+  "sourceExportChanged": {
+    "message": "De opgenomen staat is gewijzigd. Creëren van een nieuwe voorbeeld voor het besparen."
+  },
+  "sourceExportReady": {
+    "message": "Overweeg de voorbeeld voor het besparen of delen."
+  },
+  "sourceExportRequested": {
+    "message": "Zorg voor een verzocht. check completion in Thunderbird download."
+  },
+  "sourceExportFailed": {
+    "message": "Het rapport is niet gered. Create a new preview to try back."
+  },
+  "analysisHistoryPages": {
+    "message": "Geschichtspagina's"
+  },
+  "analysisHistoryEntries": {
+    "message": "Ingang"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Verdachte of kwaadaardige historische vondsten · vereniging onbevestigd"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Zie eerste historische waarschuwing"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Zie de sterkste actuele vondst"
+  },
+  "reportDisplayFailed": {
+    "message": "Een opgeslagen rapport kan niet worden weergegeven.Andere uitkomsten zijn nog steeds verkrijgbaar."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Sommige rapportage-detalaties hebben een niet ondersteunde vorm en kunnen niet worden weergegeven."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Sommige opgeslagen analysedaten kunnen niet worden gelezen.Andere uitkomsten zijn nog steeds verkrijgbaar."
+  },
+  "analysisModeResponses": {
+    "message": "Reacties verkregen · Geen beoordeelbaar oordeel verkrijgbaar"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Antwoorden die zonder een beoordeelbaar oordeel zijn verkregen; een aantal verzoeken mislukte"
+  },
+  "analysisCurrentAvailability": {
+    "message": "Voor nieuwe verzoeken"
+  },
+  "reasonMaliciousIp": {
+    "message": "Schadelijke server adres IP gedetecteerd ( $IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "Externe bedreigingsindicateurs (URLhaus & IP Reputatie)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus – Bekende malware domeinen gedetecteerd: $DOMAINS$",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "IP Reputatie ( $PROVIDER$) – Verdachte server IPs: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "urlscan.io Uitslag:"
+  },
+  "urlscanStatus": {
+    "message": "Standaard: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridReportLink": {
+    "message": "Volledige verslag op Hybrid Analysis"
+  },
+  "hybridProviderMessage": {
+    "message": "Aanbieder bericht: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "De Hybrid Analysis tariefgrens of quota is bereikt. proberen we dan weer later."
+  },
+  "reasonArchivedMaliciousAttachment": {
+    "message": "Historische vondsten ( $OBSERVED$). $PROVIDER$ geacclaatste bijlage “ $NAME$ ” als kwaadaardig.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonArchivedSuspiciousAttachment": {
+    "message": "Historische vondsten ( $OBSERVED$). $PROVIDER$ geclassificeerd aanhangsel “ $NAME$ ” als verdachte.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonMaliciousAttachment": {
+    "message": "De aanhang \" $NAME$ \" werd geclassificeerd als schadelijk door $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "De aanhang \" $NAME$ \" werd geclassificeerd als verdacht door $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanReportLink": {
+    "message": "Volledige verslag op urlscan.io"
+  },
+  "hybridLinkVerdictStatus": {
+    "message": "Hybrid Analysis: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonMaliciousLinkVerdict": {
+    "message": "Link \" $URL$ \" werd geclassificeerd als kwaadaardig door $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousLinkVerdict": {
+    "message": "Link \" $URL$ \" werd geclassificeerd als verdacht door $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanErrorDetails": {
+    "message": "Oorspronkelijke naam: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "De urlscan.io tariefgrens of quota is bereikt. proberen we dan weer later."
+  },
+  "urlscanInvalidKey": {
+    "message": "Onbeperkte of niet-geautoriseerde urlscan.io API sleutel."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Het is niet bereid binnen het enquêtevenster.De geaccepteerde scan kan opnieuw worden gecontroleerd zonder een nieuwe indienen."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Domain kan niet worden opgelost door urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Het element is nog niet opgenomen in Hybrid Analysis (niet voorgaande analyses ontdekt)."
+  },
+  "virustotalNotFound": {
+    "message": "Het element is nog niet opgenomen in de VirusTotal-database."
+  },
+  "virustotalRateLimited": {
+    "message": "De VirusTotal tariefgrens of quota is bereikt. proberen we dan weer later."
+  },
+  "virustotalInvalidKey": {
+    "message": "Onbeperkte of niet-geautoriseerde VirusTotal API sleutel."
+  },
+  "abuseipdbRateLimited": {
+    "message": "De AbuseIPDB tariefgrens of quota is bereikt. proberen we dan weer later."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Onbeperkte of niet-geautoriseerde AbuseIPDB API sleutel."
+  },
+  "urlhausRateLimited": {
+    "message": "De URLhaus tariefgrens of quota is bereikt. proberen we dan weer later."
+  },
+  "urlhausInvalidKey": {
+    "message": "Onbeperkte of niet-geautoriseerde URLhaus API sleutel."
+  },
+  "testApiKeyButton": {
+    "message": "Verbinding testen"
+  },
+  "testApiKeyTesting": {
+    "message": "Test verbinding…"
+  },
+  "testApiKeyValid": {
+    "message": "Verzoek is geaccepteerd. dit bevestigt geen opnamerechten of overgebleven quota."
+  },
+  "testApiKeyInvalid": {
+    "message": "Verbinding mislukt: Invalid API sleutel."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Rate limit of quota bereikt. proberen dan weer later."
+  },
+  "testApiKeyError": {
+    "message": "Het verbindingstest mislukt."
+  },
+  "testApiKeyEmpty": {
+    "message": "Voer dan een API sleutel in."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "De vergunning om verbinding te maken met de service host werd geweigerd."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Kies dan een IP-rekeningsprovider voor het eerste."
+  },
+  "rateLimitWithWait": {
+    "message": "Rate limit of quota bereikt. Probeer dan nogmaals in $SECONDS$ seconden.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Rate limit bereikt"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Invalide API sleutel"
+  },
+  "auditErrorCode": {
+    "message": "foutcode"
+  },
+  "auditErrorDetails": {
+    "message": "Error detail"
+  },
+  "auditRetryAfter": {
+    "message": "Wacht tijd"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ seconden",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "securityTitle": {
+    "message": "Management en linkbescherming"
+  },
+  "securityScope": {
+    "message": "Locale aan dit profiel Thunderbird. Verhindert geen profielwijzigingen, het afschakelen van de add-on of het openen van gecopierde links elders."
+  },
+  "securityAdminPassword": {
+    "message": "Passwoord van de beheerder (12+ tekens; laat het wit om te houden)"
+  },
+  "securityApprovalPassword": {
+    "message": "Afgescheiden link goedkeuring wachtwoord (12+ tekens; laat het wit om te houden)"
+  },
+  "securityThreshold": {
+    "message": "Geneesmiddelen op risicocor (0-100, inbegrepen)"
+  },
+  "securityEnablePolicy": {
+    "message": "Gebruik een verplichte linkbescherming"
+  },
+  "securityUnknownApproval": {
+    "message": "Ook onvolledige controles moeten goedgekeurd worden"
+  },
+  "securityUnlock": {
+    "message": "Onlock instellingen"
+  },
+  "securitySave": {
+    "message": "Save de bewakingsinstellingen"
+  },
+  "securityLock": {
+    "message": "Lock nu"
+  },
+  "securityDisable": {
+    "message": "Verwijder de instellingen wachtwoord"
+  },
+  "securityRecovery": {
+    "message": "Herstelcode"
+  },
+  "securityRecover": {
+    "message": "Reset admin wachtwoord met behulp van code"
+  },
+  "securityStopTransfers": {
+    "message": "Stoppen met externe overdrachten"
+  },
+  "securityLocked": {
+    "message": "De instellingen zijn vergrendeld. Voer het beheerderswachtwoord in om ze te ontgrendelen."
+  },
+  "securityUnlocked": {
+    "message": "Setting ontgrendeld; vergrendel na vijf uur zonder activiteit."
+  },
+  "securityOptional": {
+    "message": "Passwordbescherming is optieel en op dit moment uit. zonder een goedkeuringsschrijving, worden bewaarde links geblokkeerd."
+  },
+  "securityError": {
+    "message": "Operatie ontkend. check your password, sessie en invoer."
+  },
+  "securityWait": {
+    "message": "Te veel pogingen. wacht voor het terugtrekking."
+  },
+  "securityLength": {
+    "message": "Gebruik ten minste twaalf tekens en verschillende wachtwoorden."
+  },
+  "securityRecoverySave": {
+    "message": "Speel deze eenmalige herstelcode afgescheiden. het zal niet weer worden weergegeven:"
+  },
+  "securitySaved": {
+    "message": "De bewakingsinstellingen zijn gered."
+  },
+  "securityDisableConfirm": {
+    "message": "Verwijder de instellingen wachtwoord? Linkbescherming wordt nog steeds geconfigureerd."
+  },
+  "securityStopped": {
+    "message": "De externe overdrachten zijn gestopt."
+  },
+  "securityApprovalTitle": {
+    "message": "- het goedkeuren van potentieel gevaarlijke content"
+  },
+  "securityConfirmDanger": {
+    "message": "Ik wil deze potentieel gevaarlijke content in elk geval openen."
+  },
+  "securityApproveOnce": {
+    "message": "Eenmaal geaccepteerd en geopend"
+  },
+  "securityExpired": {
+    "message": "De goedkeuring is uitgesteld of de samenhang is gewijzigd. start opnieuw met de boodschap."
+  },
+  "securityOpened": {
+    "message": "Thunderbird heeft de openingsverzoek geaccepteerd."
+  },
+  "securityApprovalFailed": {
+    "message": "Openen geweigerd. Controleer het wachtwoord of start de goedkeuring opnieuw vanuit het bericht als deze is verlopen."
+  },
+  "providerTestDisclosure": {
+    "message": "Dit stuurt uw API sleutel en vast testdata naar de geselecteerde provider, zonder berichtinhoud. Een succesvolle lestest verifieert niet de opladen of de beschikbare quota."
+  },
+  "analysisSimple": {
+    "message": "Overzicht"
+  },
+  "analysisExpert": {
+    "message": "Technische detail"
+  },
+  "analysisSimpleNone": {
+    "message": "Geen verdachte tekenen ontdekt"
+  },
+  "analysisSimpleCaution": {
+    "message": "Verdacht"
+  },
+  "analysisSimpleDanger": {
+    "message": "kwaadaardige vondsten"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Onvolledige controle"
+  },
+  "analysisScoreExplanation": {
+    "message": "De risicoscore is gebaseerd op regels en geeft geen waarschijnlijkheid of veiligheidsgarantie aan."
+  },
+  "analysisSimpleBasis": {
+    "message": "Diensten met uitkomsten / niet beschikbare"
+  },
+  "analysisProviderSetup": {
+    "message": "Aanbieder toegang en informatieverlening"
+  },
+  "analysisProviderConfigured": {
+    "message": "De sleutel is geconfigureerd; het opslaan van het begint geen scan."
+  },
+  "analysisProviderNoKey": {
+    "message": "Geen sleutel geconfigureerd"
+  },
+  "analysisDataHash": {
+    "message": "Vingerdrukken van bestanden ( SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Volledige aanhang"
+  },
+  "analysisDataUrl": {
+    "message": "Complet URL; kan vertrouwde tokens"
+  },
+  "analysisDataDomain": {
+    "message": "Link domein"
+  },
+  "analysisDataIp": {
+    "message": "Public IP van boodschappenhoofden"
+  },
+  "analysisDataReport": {
+    "message": "Berichten Identificatie"
+  },
+  "analysisApprovalRequired": {
+    "message": "Aanvullende goedkeuring vereist; annuleren of verzoeken van een administrator."
+  },
+  "analysisContinueWarning": {
+    "message": "Lees de oorzaken voor het doorgaan. u kunt annuleren."
+  },
+  "analysisConflict": {
+    "message": "De leveranciers zijn het niet eens; over de uitkomsten wordt de prioriteit genomen."
+  },
+  "analysisExportSensitive": {
+    "message": "Overzicht voor de uitvoer: Technische informatie kan berichtenbronnen identificeren."
+  },
+  "scanActions": {
+    "message": "Externe controles"
+  },
+  "scanStart": {
+    "message": "Nu controleren"
+  },
+  "scanRepeat": {
+    "message": "Opnieuw controleren"
+  },
+  "scanRefresh": {
+    "message": "Resultaten vernieuwen"
+  },
+  "scanRunning": {
+    "message": "Externe check in vooruitgang"
+  },
+  "scanProgress": {
+    "message": "Volledige middelen"
+  },
+  "scanMigrationNotice": {
+    "message": "Kies een automatische scan-modus in instellingen. tot dan toe zijn de eergangene verzenders en handmatige regels van kracht."
+  },
+  "scanState_idle": {
+    "message": "Geen scanwerk is actief in dit opzicht."
+  },
+  "scanState_queued": {
+    "message": "Kijk geaccepteerd; wachten op het begin"
+  },
+  "scanState_running": {
+    "message": "Externe check in vooruitgang"
+  },
+  "scanState_completed": {
+    "message": "check voltooid"
+  },
+  "scanState_pending": {
+    "message": "De leverancier is nog steeds in de processie; herstel van de uitslag"
+  },
+  "scanState_incomplete": {
+    "message": "Onvolledige check; een aantal uitkomsten ontbreekt"
+  },
+  "scanState_failed": {
+    "message": "Kijk mislukte; proef weer"
+  },
+  "scanState_blocked": {
+    "message": "Geen externe check is gestart; zie de vereisten hieronder"
+  },
+  "analysisReason_manual": {
+    "message": "Handmatige modus"
+  },
+  "analysisReason_sender": {
+    "message": "Sender niet goedgekeurd"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Automatische link-analyse uit"
+  },
+  "analysisReason_no_resources": {
+    "message": "Geen matching van middelen"
+  },
+  "analysisReason_quota": {
+    "message": "Quota bereikt; wacht voor terugtrek"
+  },
+  "analysisReason_running": {
+    "message": "De leverancier is verwerkt"
+  },
+  "analysisReason_provider_error": {
+    "message": "Aanvraag van de leverancier faalt"
+  },
+  "scanModeLabel": {
+    "message": "Automatische externe scans"
+  },
+  "scanModeKeep": {
+    "message": "Houd de voorgaande instelling vast (keuze een mode)"
+  },
+  "scanModeAll": {
+    "message": "Alle geopende berichten"
+  },
+  "scanModeSenders": {
+    "message": "Alleen goedgekeurde afzenders"
+  },
+  "scanModeManual": {
+    "message": "Alleen handmatig"
+  },
+  "scanModeHelp": {
+    "message": "Automatische controles sturen alleen hashes, domeinen en openbare IP-adressen. Volledige links en bijlagen moeten afzonderlijk worden goedgekeurd. Ongeopende berichten blijven lokaal."
+  },
+  "assessmentCompletion": {
+    "message": "Verwerking van status"
+  },
+  "assessmentCompletion_pending": {
+    "message": "De leverancier is nog steeds verwerkt"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Reportage voltooid"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "Geen concluderende beoordeling beschikbaar"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Technische verwerking mislukt"
+  },
+  "assessmentConflict": {
+    "message": "Verscheidenheid van gedeeltelijke beoordeling; de sterkste vondst bepaalt de actie."
+  },
+  "assessmentSignals": {
+    "message": "Beoordelingsbasis"
+  },
+  "assessmentJob": {
+    "message": "Job ID leverancier"
+  },
+  "assessmentSignal_verdict": {
+    "message": "De provider veroordeelt"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Scanner vinden"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Oorspronkelijke bedreiging scoren"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Oorspronkelijke multiscan"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Oorspronkelijke bedreiging"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Providers witlijn indicatie"
+  },
+  "assessmentSignal_overall": {
+    "message": "Urlscan Overzicht beoordeling"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Urlscan motorbeoordeling"
+  },
+  "assessmentSignal_engines": {
+    "message": "Andere motoren vinden"
+  },
+  "assessmentSignal_brand": {
+    "message": "Brandindicatie; bepaalt niet risico’s door zichzelf"
+  },
+  "assessmentSignal_report": {
+    "message": "Statement rapporteert"
+  },
+  "assessmentOriginal": {
+    "message": "Oorspronkelijke provider veroordeling"
+  },
+  "hybridExpertTitle": {
+    "message": "API v2 verslag gedetailleerd"
+  },
+  "hybridExpertScope": {
+    "message": "Alleen de werkelijk verkregen velden worden weergegeven. Een snelle scan bewijst geen volledige sandbox-uitvoering. Verloren data is geen negatief vinden. URLs verwaarloosde credentials, vragenlijnen en fragmen; bestellijnen en grondrapporten worden niet weergegroeid. Opening van deze informatie stuurt geen verzoek."
+  },
+  "hybridExpertMissing": {
+    "message": "Niet in dit verslag verstrekt"
+  },
+  "hybridExpertYes": {
+    "message": "Ja Ja"
+  },
+  "hybridExpertNo": {
+    "message": "niet"
+  },
+  "hybridExpert_identity": {
+    "message": "Bestand en resource identiteit"
+  },
+  "hybridExpert_assessment": {
+    "message": "Oorspronkelijke beoordeling en verwerking"
+  },
+  "hybridExpert_scanners": {
+    "message": "Scannerresultaten"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Individual antivirus detecties"
+  },
+  "hybridExpert_reports": {
+    "message": "Referenties Sandbox rapporten"
+  },
+  "hybridExpert_counts": {
+    "message": "Totale verslag"
+  },
+  "hybridExpert_signatures": {
+    "message": "Gedragsgevoel ondertekeningen"
+  },
+  "hybridExpert_mitre": {
+    "message": "Het is ATT&CK"
+  },
+  "hybridExpert_network": {
+    "message": "Netwerkindicator"
+  },
+  "hybridExpert_processes": {
+    "message": "Procedures"
+  },
+  "hybridExpert_extracted": {
+    "message": "Uitgegeven bestanden"
+  },
+  "hybridExpert_certificates": {
+    "message": "Certificaat"
+  },
+  "hybridExpertEmpty": {
+    "message": "Gevuld als een leeg lijst; geen inzichten gemeld"
+  },
+  "securityPasswordHelp": {
+    "message": "Optieel behoud voor dit profiel. Gebruik verschillende wachtwoorden van ten minste twaalf tekens voor administratie en link goedkeuring. Laat nieuwe wachtwoordvelden leeg om de beste wachtwoords te houden. Save the one-time recovery code apart."
+  },
+  "securityAdminConfirm": {
+    "message": "Confirmatie van het nieuwe administrator-passwoord"
+  },
+  "securityApprovalConfirm": {
+    "message": "Confirmatie nieuwe link goedkeuring wachtwoord"
+  },
+  "securityRecoveryPassword": {
+    "message": "Nieuwe administrator wachtwoord voor herstel"
+  },
+  "securityApprovalConfigured": {
+    "message": "Een link goedkeuring wachtwoord is ingesteld; het kan worden vervangd maar nooit weergegeven."
+  },
+  "securityApprovalMissing": {
+    "message": "Geen link goedkeuring wachtwoord is ingesteld. links die wachtwoord goedkeuring vereisen, worden geblokkeerd."
+  },
+  "securityConfirmMismatch": {
+    "message": "De nieuwe wachtwoorden en hun bevestiging komen niet overeen."
+  },
+  "securityUnlockPassword": {
+    "message": "De actuele administrator wachtwoord"
+  },
+  "displaySettingsTitle": {
+    "message": "Analyses toont"
+  },
+  "displaySettingsHelp": {
+    "message": "De weergave-voorkeuren wijzigen niet scans, externe overdrachten, scores of linkbescherming. u kunt nog steeds tussen overzicht en deskundige-visie schakelen tijdens het bekijken van de uitslag."
+  },
+  "displayDefaultView": {
+    "message": "Default-beeld voor bericht en popup"
+  },
+  "displayHybridDetails": {
+    "message": "Zie de extra Hybrid API rapport secties"
+  },
+  "displaySave": {
+    "message": "Speel de voorkeuren van de afbeelding"
+  },
+  "displaySaved": {
+    "message": "De voorkeuren zijn gered."
+  },
+  "urlscanDnsError": {
+    "message": "De provider kon de doeltreffende domein niet oplossen."
+  },
+  "urlscanInvalidRequest": {
+    "message": "De leverancier weigerde de ongeldig indienen van de parameter."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "De provider weigerde de indienen; de reactie stelt geen DNS-falen."
+  },
+  "analysisQuotaReset": {
+    "message": "Gevraagd quota reset"
+  },
+  "analysisRetryAt": {
+    "message": "Eerste retraite"
+  },
+  "analysisLocalBackoff": {
+    "message": "Deze poging werd plaatselijk afgerond; geen nieuwe aanvraag van de provider werd verzonden."
+  },
+  "scanState_deferred": {
+    "message": "Analyses afgewikkeld: alle achtergrondslots zijn bezet. Retry na een andere analytische afsluiten."
+  },
+  "scanCoverage": {
+    "message": "Sommige middelen zijn niet gecontroleerd."
+  },
+  "scanCoverageAttachments": {
+    "message": "Aantrekkingen voorbereid"
+  },
+  "scanCoverageLinks": {
+    "message": "Link geselecteerd"
+  },
+  "scanCoverage_read_failed": {
+    "message": "Een bijlage kan niet worden gelezen of gehackt."
+  },
+  "scanCoverage_size_limit": {
+    "message": "Een aanhang overschrijdt de scanlimit van 25 MiB."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "De scan-resource grens is bereikt."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "Het inventaris van de bijlage is onvolledig."
+  },
+  "scanFailure_source_capacity": {
+    "message": "De brongeschiede is vol. Deze check is niet gestart; de beschikbare registers werden bewaard."
+  },
+  "scanFailure_cancelled": {
+    "message": "De check is geannuleerd. geen voltooide uitkomst is impliceerd."
+  },
+  "scanFailure_timeout": {
+    "message": "De check is uitgesteld. de uitslag is onvolledig."
+  },
+  "scanFailure_scan_failed": {
+    "message": "De check kon niet worden afgerond.De beschikbare registers werden bewaard."
+  },
+  "localProtectionProfileExport": {
+    "message": "Exportbeschermingssystemen"
+  },
+  "localProfileYes": {
+    "message": "Ja Ja"
+  },
+  "localProfileNo": {
+    "message": "niet"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Oudere bewaringsprofielen kunnen de automatische scan niet uitbreiden of de URL-aanvraag niet opstarten."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "De geschieden van de bron kunnen niet worden gelezen en zijn onveranderd bewaard."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "Een opslagconflict verhindert dat de brongeschieden worden verlengd."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "Het bronarchief voor deze boodschap heeft zijn invoergrens bereikt."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "Het bronarchief voor deze boodschap heeft zijn opslaggrens bereikt."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "De toegang tot de lokale opslag is niet gelukt."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Uitgevonden informatie • documentatie onvolledig"
+  },
+  "apiDebugTitle": {
+    "message": "API afvalmodi"
+  },
+  "apiDebugHelp": {
+    "message": "Capture new API proberen lokaal te diagnostiseren. Toegeleverd, herstellen van de fout, dan voorzien of exporteer het rapport. administrator-outlock is vereist wanneer een administrator-passwoord is ingesteld. Keys, privé URLs, berichtinhoud en grondstoffen worden verwaarloosd; referentiedoelingen zijn pseudo-nimed. Tot 100 inzichten / 1 MiB worden in het geheugen geduurd voor een uur en verloren bij herstart."
+  },
+  "apiDebugEnable": {
+    "message": "API diagnostische mogelijkheid"
+  },
+  "apiDebugSave": {
+    "message": "Save de Debug Setting"
+  },
+  "apiDebugPreview": {
+    "message": "Voorbeeld Debug rapport"
+  },
+  "apiDebugExport": {
+    "message": "Export Debug rapport"
+  },
+  "apiDebugClear": {
+    "message": "Een duidelijke debug-verslag"
+  },
+  "apiDebugSaved": {
+    "message": "De afvalsetting is gered.Vorige diagnostische oplossingen zijn verduidelijkt."
+  },
+  "apiDebugCleared": {
+    "message": "Debug rapport is verduidelijkt."
+  },
+  "apiDebugFailed": {
+    "message": "Debug-operatie mislukt. de administratie ontgrendelen en proberen opnieuw."
+  },
+  "apiDebugFailureHint": {
+    "message": "Voor een gedetailleerde mislukte-rapportage, kunt u de API-drabmodus in instellingen invoeren, de check herhalen en de afvalverslag exporteren."
+  },
+  "urlscanResultGone": {
+    "message": "Dit is geëlimineerd door urlscan.io. Updates kunnen het niet herstellen; een nieuwe submissie vereist een uitdrukkelijke scan."
+  },
+  "apiDebugOpen": {
+    "message": "Open API diagnostische"
+  },
+  "diagTitle": {
+    "message": "API Diagnose"
+  },
+  "diagHelp": {
+    "message": "Gefilterde controles in lokale geheugen. Keys, private URLs en grondige content worden verborgen. succes van HTTP is geen voltooide bewijs van bewaking. Alleen de stappen die na de activatie zijn opgenomen zijn verkrijgbaar."
+  },
+  "diagOff": {
+    "message": "Debug mode is uitgeschakeld. het in instellingen mogelijk maken."
+  },
+  "diagEmpty": {
+    "message": "Geen matching van de opnamen."
+  },
+  "diagPause": {
+    "message": "Pauze uitzicht"
+  },
+  "diagResume": {
+    "message": "Resume uitzicht"
+  },
+  "diagPaused": {
+    "message": "Zie gestopt; de opname is actief."
+  },
+  "diagActive": {
+    "message": "Opname actief; verfrissing eenmaal per second."
+  },
+  "diagProvider": {
+    "message": "leverancier"
+  },
+  "diagState": {
+    "message": "staat"
+  },
+  "diagPurpose": {
+    "message": "Operatie type"
+  },
+  "diagFrom": {
+    "message": "van"
+  },
+  "diagTo": {
+    "message": "Tot"
+  },
+  "diagAll": {
+    "message": "Alle"
+  },
+  "diagRuns": {
+    "message": "Kijk de stroom"
+  },
+  "diagDetails": {
+    "message": "Selecteerde flow-detalaties"
+  },
+  "diagDropped": {
+    "message": "Verloren opnamen of stappen"
+  },
+  "diagNoHttp": {
+    "message": "Geen HTTP oproep is opgenomen voor deze stroom."
+  },
+  "diagNotCaptured": {
+    "message": "Niet gevangen"
+  },
+  "diagTimeline": {
+    "message": "Tijdlijn"
+  },
+  "diagRequest": {
+    "message": "Filterde verzoek"
+  },
+  "diagResponse": {
+    "message": "Transport en gefilterde reactie"
+  },
+  "diagReset": {
+    "message": "Filters wissen"
+  },
+  "diagTruncated": {
+    "message": "Deze stroom werd verdronken vanwege de opnamegrens."
+  },
+  "diag_phase_precondition": {
+    "message": "Voorwaarde"
+  },
+  "diag_phase_queue": {
+    "message": "Wachtrij"
+  },
+  "diag_phase_attempt": {
+    "message": "Stuur een poging"
+  },
+  "diag_phase_response": {
+    "message": "HTTP reactie / transport voltooid"
+  },
+  "diag_phase_parse": {
+    "message": "JSON verwerking"
+  },
+  "diag_phase_assessment": {
+    "message": "beoordeling"
+  },
+  "diag_phase_persistence": {
+    "message": "Persistentie"
+  },
+  "diag_phase_cache": {
+    "message": "Cache aanval"
+  },
+  "diag_phase_wait": {
+    "message": "Wacht"
+  },
+  "diag_phase_cancelled": {
+    "message": "geannuleerd"
+  },
+  "diag_phase_expired": {
+    "message": "Het opnemen is uitgesteld zonder bevestigde voltooiing"
+  },
+  "diag_purpose_automatic": {
+    "message": "Automatische check"
+  },
+  "diag_purpose_manual": {
+    "message": "Handmatige controle"
+  },
+  "diag_purpose_link": {
+    "message": "Linkcontrole"
+  },
+  "diag_purpose_key_test": {
+    "message": "Sleuteltest"
+  },
+  "diag_purpose_report": {
+    "message": "Berichten verzoeken"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analyseren"
+  },
+  "diag_state_running": {
+    "message": "Rennen"
+  },
+  "diag_state_complete": {
+    "message": "Operatie voltooid"
+  },
+  "diag_state_pending": {
+    "message": "Vervolg"
+  },
+  "diag_state_blocked": {
+    "message": "Niet gestart / geblokkeerd"
+  },
+  "diag_state_incomplete": {
+    "message": "onvolledige"
+  },
+  "diag_state_failed": {
+    "message": "mislukte"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Onbevestigde voltooiing"
+  },
+  "localScoreMessage": {
+    "message": "Lokale boodschap scoren"
+  },
+  "localScoreLink": {
+    "message": "Locale scoring voor deze link in de boodschap"
+  },
+  "localScoreNoIndicators": {
+    "message": "Er zijn geen lokale waarschuwingsindicateurs te vinden."
+  },
+  "localScoreIndicators": {
+    "message": "Lokale waarschuwingsindicateurs zijn ontdekt. beoordelen de oorzaken voor het openen."
+  },
+  "uploadSentLabel": {
+    "message": "Upload naar Sending"
+  },
+  "uploadSentUnassigned": {
+    "message": "De opname werd verzonden, maar het uitslag kon niet worden toegewezen aan deze bijlage."
+  },
+  "hybridReportTitle": {
+    "message": "Hybrid Analysis verslag"
+  },
+  "hybridReportIntro": {
+    "message": "Lees alleen de bekekening van de ontvangende uitkomsten. Opening van dit rapport stuurt geen verzoek van de provider."
+  },
+  "hybridReportOpen": {
+    "message": "Zie het analysebericht"
+  },
+  "hybridReportUnavailable": {
+    "message": "Meld niet verkrijgbaar. heropen het van de actuele boodschap."
+  },
+  "hybridReportTechnical": {
+    "message": "Provider en verbindingshandelen"
+  },
+  "hybridReportExplanation": {
+    "message": "Over deze beoordeling"
+  },
+  "hybridReportSummary": {
+    "message": "Beoordeling en afkomst"
+  },
+  "hybridReportSnapshot": {
+    "message": "Speelde rapportage snapshot; geen nieuwe scan"
+  },
+  "hybridReportScope": {
+    "message": "De providerresultaten en de lokale scoren zijn gescheiden. vervallen velden zijn geen negatief. Alleen beschikbare, gebonden data worden weergegeven."
+  },
+  "hybridReportCopy": {
+    "message": "Kopieer"
+  },
+  "hybridReportCopied": {
+    "message": "Kopieerd als tekst."
+  },
+  "hybridReportCopyFailed": {
+    "message": "Niet kunnen kopiëren.Kies en kopieer de tekst handmatig."
+  },
+  "hybridReportAvailableOnly": {
+    "message": "Routen in beschikbare data"
+  },
+  "hybridReportNoMatches": {
+    "message": "Geen matchende velden in beschikbare data."
+  },
+  "hybridReportAvailability": {
+    "message": "Beschikbaarheid en grenzen"
+  },
+  "hybridReportRun": {
+    "message": "Analyses run"
+  },
+  "hybridReportSearch": {
+    "message": "Zoek naar beschikbare velden"
+  },
+  "hybridReportReady": {
+    "message": "Het rapport is geladen. geen nieuwe scan is gestart."
+  },
+  "hybridReportResource_name": {
+    "message": "Achternaam"
+  },
+  "hybridReportResource_url": {
+    "message": "Binnen doel URL"
+  },
+  "hybridReportResource_sha256": {
+    "message": "SHA-256 van het object"
+  },
+  "hybridField_type": {
+    "message": "bestandstype"
+  },
+  "hybridField_type_short": {
+    "message": "Kort bestand type"
+  },
+  "hybridField_size": {
+    "message": "Grootte in bytes"
+  },
+  "hybridField_last_file_name": {
+    "message": "De laatste bestandnaam"
+  },
+  "hybridField_submit_name": {
+    "message": "Aanvraagnaam"
+  },
+  "hybridField_url_analysis": {
+    "message": "URL analyses"
+  },
+  "hybridField_target_url": {
+    "message": "Provider doel URL (kan worden verkorteerd)"
+  },
+  "hybridField_id": {
+    "message": "Reactie ID (type niet aangegeven)"
+  },
+  "hybridField_job_id": {
+    "message": "Sandbox Job ID"
+  },
+  "hybridField_submission_id": {
+    "message": "Aanvraag ID"
+  },
+  "hybridField_state": {
+    "message": "leverancier staat"
+  },
+  "hybridField_finished": {
+    "message": "Afgerond"
+  },
+  "hybridField_verdict": {
+    "message": "De provider veroordeelt"
+  },
+  "hybridField_threat_score": {
+    "message": "Hybrid Analysis bedreiging scoren"
+  },
+  "hybridField_threat_level": {
+    "message": "Bedreigingsniveau leverancier"
+  },
+  "hybridField_multiscan_result": {
+    "message": "Multiscan (vermogen van de leverancier)"
+  },
+  "hybridField_av_detect": {
+    "message": "AV-detectiewaarde (voorziening van de leverancier)"
+  },
+  "hybridField_whitelisted": {
+    "message": "Providers witlijn ingang"
+  },
+  "hybridField_vx_family": {
+    "message": "De malware familie"
+  },
+  "hybridField_classification_tags": {
+    "message": "Classificatie tags"
+  },
+  "hybridField_tags": {
+    "message": "Tags"
+  },
+  "hybridField_analysis_start_time": {
+    "message": "Analyseren starttijd"
+  },
+  "hybridField_environment_id": {
+    "message": "Milieu ID"
+  },
+  "hybridField_environment_description": {
+    "message": "Sandbox Milieu"
+  },
+  "hybridField_error_type": {
+    "message": "De leverancier fout type"
+  },
+  "hybridField_error_origin": {
+    "message": "De provider fout oorsprong"
+  },
+  "hybridField_name": {
+    "message": "naam"
+  },
+  "hybridField_status": {
+    "message": "status"
+  },
+  "hybridField_progress": {
+    "message": "Vooruitgang (de leverancier van de waardes)"
+  },
+  "hybridField_positives": {
+    "message": "Positieve detecties"
+  },
+  "hybridField_total": {
+    "message": "Totale checks"
+  },
+  "hybridField_percent": {
+    "message": "percentage (de leverancier van de vergoeding)"
+  },
+  "hybridField_scan_time": {
+    "message": "Scan duur (provider unit)"
+  },
+  "hybridField_scan_date": {
+    "message": "Scandatum"
+  },
+  "hybridField_product": {
+    "message": "Scanner van het produkt"
+  },
+  "hybridField_version": {
+    "message": "Scanner versie"
+  },
+  "hybridField_update": {
+    "message": "Scaner update"
+  },
+  "hybridField_total_network_connections": {
+    "message": "Netwerkverbindingen"
+  },
+  "hybridField_total_processes": {
+    "message": "Procedures"
+  },
+  "hybridField_total_signatures": {
+    "message": "Signature ondertekens"
+  },
+  "hybridField_category": {
+    "message": "Categorieën"
+  },
+  "hybridField_attck_id": {
+    "message": "MITRE ATT&CK Technische ID"
+  },
+  "hybridField_tactic": {
+    "message": "MITRE ATT & CK tactiek"
+  },
+  "hybridField_technique": {
+    "message": "MITRE ATT & CK Techniek"
+  },
+  "hybridField_description": {
+    "message": "Beschrijving"
+  },
+  "hybridField_domains": {
+    "message": "Toegekend domein"
+  },
+  "hybridField_hosts": {
+    "message": "Bewaken gastheer"
+  },
+  "hybridField_compromised_hosts": {
+    "message": "Compromiseerde host (aanvraag van de provider)"
+  },
+  "hybridField_domain": {
+    "message": "Domein"
+  },
+  "hybridField_host": {
+    "message": "gastheer"
+  },
+  "hybridField_ip": {
+    "message": "IP adres"
+  },
+  "hybridField_port": {
+    "message": "Porten"
+  },
+  "hybridField_protocol": {
+    "message": "Protocol"
+  },
+  "hybridField_country": {
+    "message": "Landen"
+  },
+  "hybridField_asn": {
+    "message": "autonome systemen nummer"
+  },
+  "hybridField_uid": {
+    "message": "Procedure UID"
+  },
+  "hybridField_process_id": {
+    "message": "proces ID (PID)"
+  },
+  "hybridField_parent_uid": {
+    "message": "Ouderenprocedure UID"
+  },
+  "hybridField_file_path": {
+    "message": "File pad"
+  },
+  "hybridField_subject": {
+    "message": "Certificaat onderwerp"
+  },
+  "hybridField_issuer": {
+    "message": "Certificaat uitgegeven"
+  },
+  "hybridField_valid_from": {
+    "message": "Geldig van"
+  },
+  "hybridField_valid_until": {
+    "message": "Geldig totdat"
+  },
+  "hybridField_serial_number": {
+    "message": "Serieuze nummer certificaat"
+  },
+  "hybridField_sha256": {
+    "message": "SHA-256"
+  },
+  "hybridField_sha1": {
+    "message": "SHA-1"
+  },
+  "hybridField_md5": {
+    "message": "MD5"
+  },
+  "hybridField_sha512": {
+    "message": "SHA-512"
+  },
+  "hybridField_imphash": {
+    "message": "De hash"
+  },
+  "hybridReportResource_quickScanId": {
+    "message": "Een snel scan ID"
+  },
+  "analysisLocalOnly": {
+    "message": "Alleen lokaal gecontroleerd"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "Diensten met uitkomsten"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Diensten in pending"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Diensten met fouten"
+  },
+  "hybridReportSection": {
+    "message": "sectie"
+  },
+  "hybridReportAllSections": {
+    "message": "Alle secties"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "Verwerking compleet"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "Verwerking pending"
+  },
+  "hybridReportProcessing_failed": {
+    "message": "Verwerking mislukt"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "Verwerking van de status onbekend"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Berichten teruggetrokken"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Snapshot gemaakt"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Zorg voor Hybrid Analysis vinden voor deze bron"
+  },
+  "hybridReportSaved": {
+    "message": "Hybrid Analysis verslag gered"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Kopieer UTC"
+  },
+  "hybridReportWhy": {
+    "message": "En wat is dan deze beoordeling?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Andere beoordelingssignaal"
+  },
+  "hybridReportCompare": {
+    "message": "Vergelijk de analytische runs"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Secties met data"
+  },
+  "hybridReportAssessment": {
+    "message": "Thundy beoordeling van Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Bron en tijdstamp"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Zoekbaar · voltooien onbevestigd"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Open Hybrid rapport"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Zoek naar detail"
+  },
+  "attachmentProtectionTitle": {
+    "message": "Achtergrondbescherming"
+  },
+  "attachmentProtectionScope": {
+    "message": "Deze regel geldt bij het besparen met Thundy. Thunderbird’s eigen bijlagebevelen zijn nog steeds verkrijgbaar."
+  },
+  "attachmentPolicyMode": {
+    "message": "wanneer de grens wordt bereikt"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Hybrid Analysis puntengrens"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Aansluiting zonder bevestigde punten"
+  },
+  "attachmentModeOff": {
+    "message": "Afgesloten"
+  },
+  "attachmentModeWarn": {
+    "message": "waarschuw"
+  },
+  "attachmentModeApproval": {
+    "message": "Geneesmiddelen vereist"
+  },
+  "attachmentModeBlock": {
+    "message": "blokken"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Opslaan met Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "Save aanhang"
+  },
+  "attachmentCancelSave": {
+    "message": "Annuleren"
+  },
+  "attachmentThresholdReached": {
+    "message": "Hybride scoren bereiken de geconfigureerde drempel."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis heeft deze bestand als schadelijk geclassificeerd."
+  },
+  "attachmentUnknown": {
+    "message": "Geen bevestigde punten voor deze bijlage."
+  },
+  "attachmentBlocked": {
+    "message": "Het besparen met Thundy is geblokkeerd."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Voer het goedkeuringsschrijvingswoord in om deze bestand te beveilen."
+  },
+  "attachmentFailed": {
+    "message": "Ik kan niet begonnen met het besparen van de aanhang."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy kon deze bijlage niet gelezen."
+  },
+  "attachmentContextChanged": {
+    "message": "Het bericht of de bijlage is gewijzigd.Kies de bijlage weer."
+  },
+  "attachmentRefresh": {
+    "message": "Zoek opnieuw opgeslagen opvattingen"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "De gered vondst is onveranderd."
+  },
+  "attachmentDecisionChanged": {
+    "message": "Het uitslag of het kader is gewijzigd. beoordel de bijgewerkte beslissing."
+  },
+  "attachmentSaveRequested": {
+    "message": "Het Save-verzoek is begonnen."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Save geannuleerd"
+  },
+  "auditDecisionScore": {
+    "message": "Besluit Score"
+  },
+  "linkHandoffPending": {
+    "message": "De browser handoff is verzocht. Thunderbird heeft het nog niet bevestigd. U kunt deze dialoog sluiten."
+  },
+  "linkPreflightTimeout": {
+    "message": "De check kan niet worden voltooid.Verk dit dialoog en selecteer de link opnieuw."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Historische Hybrid Analysis vinden"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Hybrid Analysis vinden"
+  },
+  "auditShare": {
+    "message": "Uitvoer geëvalueerd"
+  },
+  "auditFullNotice": {
+    "message": "De volledige auditie omvat privé URLs en de informatie. deel het alleen met geautoriseerde ontvanger."
+  },
+  "auditFullSave": {
+    "message": "Volledige exporteerbeoordeling"
+  },
+  "managedByCompany": {
+    "message": "Gestuurd door uw organisatie"
+  },
+  "managedLocal": {
+    "message": "Bron: dit profiel Thunderbird"
+  },
+  "managedRevision": {
+    "message": "Politieke versie"
+  },
+  "managedThreshold": {
+    "message": "grens"
+  },
+  "managedPolicyInvalid": {
+    "message": "Het bedrijfsbeleid is niet-gevalideerd.Kontakte uw IT-team."
+  },
+  "managedLinkBlocked": {
+    "message": "Uw bedrijf heeft deze link geblokkeerd."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Openen met Thundy"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Open aanhang"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy controlert deze bijlage voor het verzenden aan Thunderbird."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird heeft de aanvraag geaccepteerd om de bijlage te openen."
+  },
+  "attachmentOpenFailed": {
+    "message": "De aanhang kan niet geopend worden."
+  },
+  "reportingTitle": {
+    "message": "Bedrijfsbewaking verslag"
+  },
+  "reportingOff": {
+    "message": "De automatische rapportage is uitgeschakeld."
+  },
+  "reportingNeedsConsent": {
+    "message": "Het rapporten vereist uw instelling en een verzendtoek."
+  },
+  "reportingNeedsPermission": {
+    "message": "De rapportagevergunning is ontbreekt. mogelijk om opnieuw te rapporten om het te herstellen."
+  },
+  "reportingReady": {
+    "message": "Uw bedrijf kan een automatische rapportage krijgen."
+  },
+  "reportingQueued": {
+    "message": "Gedegen rapporten :"
+  },
+  "reportingMalicious": {
+    "message": "kwaadaardige uitvindingen"
+  },
+  "reportingSuspicious": {
+    "message": "Schadelijke opvattingen en grensoverschrijvingen"
+  },
+  "reportingConsent": {
+    "message": "Ik ben het ermee akkoord om het evenement ID, tijd, actie, vinden, beslissing en beleidsversie naar de bovenstaand aangegeven bedrijfadres te sturen."
+  },
+  "reportingConsentIndicators": {
+    "message": "Ik ben het ermee akkoord om het evenement ID, tijd, actie, vinden, beslissing, beleidsversie en link hostname of bijlage SHA-256 naar de bovenstaand aangegeven bedrijfadres te sturen."
+  },
+  "reportingToken": {
+    "message": "Stuur een token van je IT team"
+  },
+  "reportingActivate": {
+    "message": "Het mogelijk maken om te melden of te vervangen token"
+  },
+  "reportingRevoke": {
+    "message": "Het terugtrekken van de instelling en duidelijke meldingen"
+  },
+  "reportingSetupFailed": {
+    "message": "De rapportage-instellingen konden niet worden toegepast."
+  },
+  "reportingAuthentication": {
+    "message": "De server weigerde de verzendtoek."
+  },
+  "reportingRejected": {
+    "message": "De server weigerde een rapport."
+  },
+  "reportingStorage": {
+    "message": "Thundy kon de rapportage niet gelezen of schrijven."
+  },
+  "reportingFull": {
+    "message": "De kooi is vol. Berichten kunnen verloren gaan."
+  },
+  "reportingExpired": {
+    "message": "Een rapport is voor de aflevering uitgestorven."
+  },
+  "reportingPrivacy": {
+    "message": "Met afgescheiden instelling stuurt Thundy informatie over kwalitatief geprobeerde pogingen om links te openen of bijlagen te openen en te bewaren naar de geconfigureerde bedrijfadres. Berichten omvatten het evenement-ID, tijd, actie, vinden, beslissing en beleidsversie, plus een optie-hostname of bijlage SHA-256. Thundy wacht op berichten lokaal tot 24 uur. U kunt het instelling-aanvraag en de kooi in Setting uitschakelen."
+  },
+  "reportingConsentDetails": {
+    "message": "Ik ben ook het ermee akkoord de oorzaak van de beslissing, de beschikbare punten, de bijlage-filenaam, de verzoekers en de beschikbaar verslaggebieden te verzenden."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Gedetailleerde rapporten kunnen de filennaam van de bijlage en links naar rapporten van de provider omvatten."
+  },
+  "analysisRunningHeading": {
+    "message": "Controle wordt uitgevoerd"
+  },
+  "analysisLocalNoFinding": {
+    "message": "Bij de lokale controle zijn geen aanwijzingen voor een dreiging gevonden"
+  },
+  "analysisLinksGroup": {
+    "message": "links"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Atacties"
+  },
+  "protectionOpenAllowed": {
+    "message": "Openen toegestaan"
+  },
+  "protectionSaveAllowed": {
+    "message": "Opslaan toegestaan"
+  },
+  "protectionWarn": {
+    "message": "Waarschuwing"
+  },
+  "protectionApproval": {
+    "message": "Goedkeuring vereist"
+  },
+  "protectionRequestApproval": {
+    "message": "Vraag goedkeuring"
+  },
+  "protectionBlocked": {
+    "message": "Geblokkeerd"
+  },
+  "protectionMalicious": {
+    "message": "Een aanbieder heeft een kwaadaardige bevinding gemeld."
+  },
+  "protectionThreshold": {
+    "message": "Beschermingsdrempel bereikt"
+  },
+  "protectionManagedThreshold": {
+    "message": "Bedrijfsdrempel bereikt"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "De toepasselijke instellingen toestaan deze actie."
+  },
+  "linkContextChanged": {
+    "message": "De link of bericht is tijdens de check gewijzigd."
+  },
+  "auditPolicyBlocked": {
+    "message": "Geblokkeerd door beleid"
+  },
+  "reportingLastReceipt": {
+    "message": "De laatste ontvangst bevestigd door de server"
+  },
+  "reportingOldestPending": {
+    "message": "Oudste pending rapport"
+  },
+  "addonLanguage": {
+    "message": "Taal van de add-on"
+  },
+  "addonLanguageSystem": {
+    "message": "Taal van Thunderbird volgen"
+  },
+  "addonLanguageSaved": {
+    "message": "Taal opgeslagen. Open de Thundy-weergaven opnieuw om deze toe te passen."
+  },
+  "addonLanguageFailed": {
+    "message": "De taal kon niet worden opgeslagen."
+  },
+  "profilesOpenSource": {
+    "message": "Open source"
+  },
+  "transferReview": {
+    "message": "Externe verzending beoordelen"
+  },
+  "transferSend": {
+    "message": "Verzenden naar aanbieder"
+  },
+  "transferVisibility": {
+    "message": "Zichtbaarheid: niet vermeld. Iedereen met de rapportlink kan het rapport openen."
+  },
+  "transferAccepted": {
+    "message": "De aanbieder heeft de aanvraag aanvaard. Het rapport kan nog in behandeling zijn."
+  },
+  "transferFailed": {
+    "message": "De verzending naar de aanbieder kon niet worden voltooid."
+  },
+  "transferUsePopup": {
+    "message": "Open het Thundy-paneel om een specifieke link of bijlage te bekijken en goed te keuren."
+  },
+  "providerGrantAccess": {
+    "message": "Toegang tot deze aanbieder toestaan"
+  },
+  "sourceSessionOnly": {
+    "message": "Het bronnenarchief is vol. De huidige bronweergave is alleen in deze sessie beschikbaar."
+  },
+  "analysisReason_transfer_approval": {
+    "message": "Volledige links en bijlagen vereisen afzonderlijke bevestiging."
+  },
+  "analysisCompactDetails": {
+    "message": "Controledetails"
+  },
+  "riskScoreFormula": {
+    "message": "De lokale score telt punten op tot maximaal 100. Bevindingen van aanbieders worden apart beoordeeld."
+  },
+  "riskScoreNoPoints": {
+    "message": "Geen lokale regels voegden punten toe."
+  },
+  "riskScoreTotal": {
+    "message": "Lokale berekening"
+  },
+  "riskLinkBrandRule": {
+    "message": "Minstens één domein lijkt op een bekend merk. De punten tellen één keer."
+  },
+  "reportingConsentDetections": {
+    "message": "Meldingen kunnen namen, categorieën, handtekeningen en nagebootste merken bevatten."
+  },
+  "detectionKind_family": {
+    "message": "Malwarefamilie"
+  },
+  "detectionKind_category": {
+    "message": "Categorie"
+  },
+  "detectionKind_brand": {
+    "message": "Nagebootst merk"
+  },
+  "detectionKind_signature": {
+    "message": "Leveranciersdetectie"
+  },
+  "detectionCategory_fraudulent_shop": {
+    "message": "Frauduleuze winkel"
+  },
+  "detectionCategory_phishing_shop": {
+    "message": "Phishingwinkel"
+  },
+  "analysisDetectionGrouping": {
+    "message": "Detecties groeperen"
+  },
+  "detectionCategory_malware": {
+    "message": "Malware"
+  },
+  "detectionCategory_virus": {
+    "message": "Virus"
+  },
+  "detectionCategory_trojan": {
+    "message": "Trojaans paard"
+  },
+  "detectionCategory_ransomware": {
+    "message": "Ransomware"
+  },
+  "detectionCategory_worm": {
+    "message": "Worm"
+  },
+  "detectionCategory_spyware": {
+    "message": "Spyware"
+  },
+  "detectionCategory_adware": {
+    "message": "Adware"
+  },
+  "detectionCategory_backdoor": {
+    "message": "Achterdeur"
+  },
+  "detectionCategory_downloader": {
+    "message": "Downloader"
+  },
+  "detectionCategory_dropper": {
+    "message": "Dropper"
+  },
+  "detectionCategory_infostealer": {
+    "message": "Gegevensdief"
+  },
+  "detectionCategory_rootkit": {
+    "message": "Rootkit"
+  },
+  "detectionCategory_phishing": {
+    "message": "Phishing"
+  },
+  "detectionCategory_scam": {
+    "message": "Fraude"
+  }
+}

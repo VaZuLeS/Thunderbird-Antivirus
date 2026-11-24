@@ -1,4 +1,99 @@
 {
+  "protectionSeverity_low": { "message": "Rischio basso" },
+  "protectionSeverity_unknown": { "message": "Rischio sconosciuto" },
+  "protectionSeverity_caution": { "message": "Rischio significativo" },
+  "protectionSeverity_high": { "message": "Rischio alto" },
+  "protectionSeverity_critical": { "message": "Rischio critico" },
+  "linkScanSummary": { "message": "Risultati delle scansioni URL" },
+  "linkScansPending": { "message": "Le scansioni URL sono ancora in corso." },
+  "linkNoScanResults": { "message": "Non sono disponibili risultati delle scansioni URL." },
+  "protectionCategoryUnavailable": { "message": "Il fornitore non ha indicato una categoria di minaccia." },
+  "linkWaitForResults": { "message": "Attendi le scansioni URL in corso" },
+  "linkAutoOpenBelow": { "message": "Apri direttamente sotto questo punteggio" },
+  "linkOpeningOptionsHelp": { "message": "Lascia vuoto il punteggio per mostrare sempre la finestra del collegamento." },
+  "linkAuditRetentionTitle": { "message": "Conservazione del registro dei collegamenti" },
+  "linkAuditLimit": { "message": "Numero massimo di voci (vuoto = illimitato)" },
+  "linkAuditDays": { "message": "Giorni di conservazione (vuoto = illimitati)" },
+  "protectionManagedColors": { "message": "La tua organizzazione imposta i colori dei livelli di rischio." },
+  "linkOpenedAutomatically": { "message": "Aperto automaticamente" },
+  "providerSwitchHelp": {
+    "message": "Attiva o disattiva ogni servizio e salva le impostazioni. Le chiavi e i risultati salvati restano disponibili quando metti in pausa un servizio."
+  },
+  "providerKeyLink": {
+    "message": "Ottieni una chiave API"
+  },
+  "providerDocsLink": {
+    "message": "Documentazione API"
+  },
+  "providerApiKeyLabel": {
+    "message": "Chiave API"
+  },
+  "providerUse": {
+    "message": "Usa questo servizio"
+  },
+  "providerVirusUse": {
+    "message": "Usa VirusTotal per controllare i file"
+  },
+  "providerHybridStrength": {
+    "message": "Trova i rapporti esistenti per gli hash noti dei file. Se il caricamento è autorizzato, Falcon Sandbox può analizzare il comportamento di un file quando viene eseguito."
+  },
+  "providerHybridSetup": {
+    "message": "Crea un account, poi apri Profile → API Key per creare una chiave."
+  },
+  "providerUrlhausStrength": {
+    "message": "Verifica se gli host dei link sono stati segnalati come fonti di malware."
+  },
+  "providerUrlhausSetup": {
+    "message": "Accedi ad abuse.ch e ottieni una Auth-Key dal tuo account."
+  },
+  "providerUrlscanStrength": {
+    "message": "Esamina gli URL completi e i reindirizzamenti per individuare indizi di phishing. Thundy lo usa al livello massimo di protezione dei dati."
+  },
+  "providerUrlscanSetup": {
+    "message": "Crea un account e seleziona Settings & API → New API key."
+  },
+  "providerVirusTotalStrength": {
+    "message": "Cerca l’hash SHA-256 di un file e mostra i risultati di più motori di scansione."
+  },
+  "providerVirusTotalSetup": {
+    "message": "Accedi a VirusTotal e copia la chiave dalla pagina API Key del tuo profilo."
+  },
+  "providerIpTitle": {
+    "message": "Reputazione IP"
+  },
+  "providerIpUse": {
+    "message": "Controlla la reputazione IP"
+  },
+  "providerIpChoose": {
+    "message": "Servizio di reputazione IP"
+  },
+  "providerIpKeyNotice": {
+    "message": "Inserisci una chiave del servizio selezionato. La pausa conserva il servizio scelto e la relativa chiave."
+  },
+  "providerIpGuide": {
+    "message": "Scegli e configura un servizio di reputazione IP"
+  },
+  "providerVirusIpStrength": {
+    "message": "Verifica gli IP pubblici con i motori di rilevamento e le valutazioni della community di VirusTotal."
+  },
+  "providerAbuseStrength": {
+    "message": "Usa le segnalazioni della community per individuare IP pubblici associati a spam, scansioni di rete o altri abusi."
+  },
+  "providerAbuseSetup": {
+    "message": "Crea un account AbuseIPDB e genera o copia una chiave dalla scheda API del pannello di controllo."
+  },
+  "providerIpVirusKey": {
+    "message": "Chiave API VirusTotal per la reputazione IP"
+  },
+  "providerIpAbuseKey": {
+    "message": "Chiave API AbuseIPDB"
+  },
+  "providerTestDisabled": {
+    "message": "Attiva il servizio e salva le impostazioni prima di provare la chiave."
+  },
+  "analysisReason_provider_disabled": {
+    "message": "Questo servizio è in pausa nelle impostazioni."
+  },
   "extensionName": {
     "message": "Thundy AV – Scanner email per Thunderbird"
   },
@@ -765,7 +860,7 @@
     "message": "Impedisce analisi esterne automatiche. Le azioni manuali richiedono consenso e il livello adeguato."
   },
   "ui_162": {
-    "message": "Analizza i link all’apertura di un messaggio autorizzato"
+    "message": "Aggiorna automaticamente i rapporti dei link in attesa"
   },
   "ui_163": {
     "message": "I controlli dei link richiedono consenso, autorizzazione e il livello adeguato."
@@ -774,7 +869,7 @@
     "message": "Controlla i link prima di aprirli"
   },
   "ui_165": {
-    "message": "Sospende l’apertura per mostrare il risultato. Link non controllati ed errori sono indicati. L’analisi di URL completi richiede il livello massimo."
+    "message": "Sospende l’apertura per mostrare il risultato. Link non controllati ed errori sono indicati. L’analisi di URL completi richiede il livello massimo. I link completi e gli allegati richiedono una conferma individuale."
   },
   "ui_166": {
     "message": "Ricorda di salvare le impostazioni."
@@ -840,7 +935,7 @@
     "message": "Indica solo server destinatari che amministri o conosci esplicitamente. Senza configurazione, i rapporti nelle intestazioni restano non verificati."
   },
   "consentHelp": {
-    "message": "Senza consenso non viene inviato nulla. Dopo il consenso sono consentite solo analisi autorizzate per messaggio o mittente. Rigoroso consente hash, domini e IP pubblici; Bilanciato aggiunge file sconosciuti; Massimo aggiunge URL completi. Disattiva questa opzione per fermare nuovi trasferimenti e annullare le richieste in attesa. I dati già inviati non possono essere richiamati."
+    "message": "Senza consenso non viene inviato nulla. Dopo il consenso sono consentite solo analisi autorizzate per messaggio o mittente. Rigoroso consente hash, domini e IP pubblici; Bilanciato aggiunge file sconosciuti; Massimo aggiunge URL completi. Disattiva questa opzione per fermare nuovi trasferimenti e annullare le richieste in attesa. I dati già inviati non possono essere richiamati. I link completi e gli allegati richiedono una conferma individuale."
   },
   "visualImpersonation": {
     "message": "Rilevamento visivo: la pagina imita $BRANDS$ (sospetto phishing).",
@@ -1173,7 +1268,7 @@
     "message": "Lingua della procedura guidata"
   },
   "wizardLanguageNote": {
-    "message": "L’estensione segue la lingua di Thunderbird. Questa scelta cambia solo la procedura guidata."
+    "message": "Questa scelta vale solo per la procedura guidata. La lingua dell’estensione si può cambiare nelle impostazioni."
   },
   "wizardWelcome": {
     "message": "Benvenuto"
@@ -2329,7 +2424,7 @@
     "message": "Solo manuale"
   },
   "scanModeHelp": {
-    "message": "Tutti i messaggi aperti elimina l’autorizzazione per mittente. I servizi configurati possono ricevere hash e, con Massimo e analisi automatica dei link, URL completi. Consenso e permessi restano necessari. I messaggi non aperti non vengono analizzati."
+    "message": "I controlli automatici inviano solo hash, domini e indirizzi IP pubblici. I link completi e gli allegati richiedono una conferma individuale. I messaggi non aperti restano in locale."
   },
   "assessmentCompletion": {
     "message": "Stato di elaborazione"
@@ -3368,5 +3463,128 @@
   },
   "reportingOldestPending": {
     "message": "Segnalazione in attesa più vecchia"
+  },
+  "addonLanguage": {
+    "message": "Lingua dell’estensione"
+  },
+  "addonLanguageSystem": {
+    "message": "Usa la lingua di Thunderbird"
+  },
+  "addonLanguageSaved": {
+    "message": "Lingua salvata. Riapri le schermate di Thundy per applicarla."
+  },
+  "addonLanguageFailed": {
+    "message": "Non è stato possibile salvare la lingua."
+  },
+  "profilesOpenSource": {
+    "message": "Open source"
+  },
+  "transferReview": {
+    "message": "Controlla l’invio esterno"
+  },
+  "transferSend": {
+    "message": "Invia al fornitore"
+  },
+  "transferVisibility": {
+    "message": "Visibilità: non in elenco. Chiunque abbia il link può aprire il rapporto."
+  },
+  "transferAccepted": {
+    "message": "Il fornitore ha accettato la richiesta. Il rapporto potrebbe essere ancora in attesa."
+  },
+  "transferFailed": {
+    "message": "Non è stato possibile completare l’invio al fornitore."
+  },
+  "transferUsePopup": {
+    "message": "Apri il pannello di Thundy per controllare e approvare un link o un allegato specifico."
+  },
+  "providerGrantAccess": {
+    "message": "Consenti l’accesso a questo fornitore"
+  },
+  "sourceSessionOnly": {
+    "message": "L’archivio delle fonti è pieno. La vista attuale delle fonti è disponibile solo in questa sessione."
+  },
+  "analysisReason_transfer_approval": {
+    "message": "I link completi e gli allegati richiedono una conferma individuale."
+  },
+  "analysisCompactDetails": {
+    "message": "Dettagli del controllo"
+  },
+  "riskScoreFormula": {
+    "message": "Il punteggio locale somma i punti fino a 100. I risultati dei fornitori sono valutati separatamente."
+  },
+  "riskScoreNoPoints": {
+    "message": "Nessuna regola locale ha aggiunto punti."
+  },
+  "riskScoreTotal": {
+    "message": "Calcolo locale"
+  },
+  "riskLinkBrandRule": {
+    "message": "Almeno un dominio somiglia a un marchio noto. I punti si contano una volta."
+  },
+  "reportingConsentDetections": {
+    "message": "Le segnalazioni possono includere nomi, categorie, firme e marchi imitati nel phishing."
+  },
+  "detectionKind_family": {
+    "message": "Famiglia malware"
+  },
+  "detectionKind_category": {
+    "message": "Categoria"
+  },
+  "detectionKind_brand": {
+    "message": "Marchio imitato"
+  },
+  "detectionKind_signature": {
+    "message": "Rilevamento del produttore"
+  },
+  "detectionCategory_fraudulent_shop": {
+    "message": "Negozio fraudolento"
+  },
+  "detectionCategory_phishing_shop": {
+    "message": "Negozio di phishing"
+  },
+  "analysisDetectionGrouping": {
+    "message": "Raggruppa i rilevamenti"
+  },
+  "detectionCategory_malware": {
+    "message": "Malware"
+  },
+  "detectionCategory_virus": {
+    "message": "Virus"
+  },
+  "detectionCategory_trojan": {
+    "message": "Trojan"
+  },
+  "detectionCategory_ransomware": {
+    "message": "Ransomware"
+  },
+  "detectionCategory_worm": {
+    "message": "Worm"
+  },
+  "detectionCategory_spyware": {
+    "message": "Spyware"
+  },
+  "detectionCategory_adware": {
+    "message": "Adware"
+  },
+  "detectionCategory_backdoor": {
+    "message": "Backdoor"
+  },
+  "detectionCategory_downloader": {
+    "message": "Downloader"
+  },
+  "detectionCategory_dropper": {
+    "message": "Dropper"
+  },
+  "detectionCategory_infostealer": {
+    "message": "Ladro di dati"
+  },
+  "detectionCategory_rootkit": {
+    "message": "Rootkit"
+  },
+  "detectionCategory_phishing": {
+    "message": "Phishing"
+  },
+  "detectionCategory_scam": {
+    "message": "Frode"
   }
 }

@@ -51,7 +51,8 @@ Die automatisierten Prüfungen verwenden gemockte Thunderbird-APIs. Für die rea
 5. Theme ändern, ohne andere Einstellungen zu speichern: API-Schlüssel, Einwilligung und Absenderfreigaben bleiben erhalten. Schreibfehler auslösen und erneut speichern.
 6. Scanner über das Nachrichten-/Kontextmenü öffnen; feste Popup-Breite und ausführliche Ergebnisse prüfen. Links aus einer bereits geöffneten Nachricht prüfen, abbrechen und mit Browserübergabe öffnen; Protokollierung und semantische Warnfarben prüfen.
 7. Einrichtungsassistent, Protokoll, Datenschutzhinweise und Unternehmensprofile mitlesen. Updates öffnen den Assistenten weiterhin nicht erneut.
+8. Den Link- und den Anhangdialog bei 200 Prozent Zoom mit erzwungenen Systemfarben öffnen. Die Entscheidung, der Schweregrad und der Sperrgrund müssen als Text sichtbar bleiben. Prüfen, ob „Abbrechen“ beim Öffnen einen sichtbaren Fokusrahmen erhält und der Rahmen beim Wechsel zu den Detailabschnitten mitwandert.
 
-Die Ausführung dieser realen Abnahme bleibt offen; Browser-Screenshots belegen die gerenderte Oberfläche mit Test-APIs.
+Für die beiden Öffnungsdialoge wurde Punkt 8 im Entwicklungsstand 1.26.2 mit Thunderbird 140 ESR und Thunderbird 160 bei 200 Prozent Zoom geprüft. Der Gecko-Testmodus erzwang die Systemfarben im jeweiligen Dialog. Entscheidung, Sperrgrund und Schweregrad blieben lesbar. Der Fokusrahmen am Abbrechen-Knopf blieb auch ohne `:focus-visible` sichtbar. Text und Fokusrahmen erreichten mit der geprüften Palette 21:1. Die vollständige Plattform-, Windows-Systemtheme- und Screenreader-Abnahme bleibt separat.
 
 Der [versionierte UX05-Browser-/axe-Prüflauf](UI_BROWSERPRUEFUNG.md) ergänzt `npm run check:ui` und unabhängige Sprachprüfungen in der CI. Gefundene Hauptbereichs-, Link- und Tabellenfokusprobleme wurden korrigiert. Reale Thunderbird-/OS-/Screenreader-Abnahme bleibt offen.

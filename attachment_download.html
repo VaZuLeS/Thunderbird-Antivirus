@@ -15,13 +15,17 @@
 <p id="attachmentReason"></p>
 </div>
 <p><span id="attachmentAction"></span> · <strong id="attachmentName"></strong></p>
+<ul id="attachmentDetections" hidden></ul>
 <p id="attachmentScope" data-i18n="attachmentProtectionScope"></p>
+<details>
+<summary data-i18n="analysisExpert">Expert view</summary>
 <dl>
 <dt data-i18n="hybridField_threat_score">Hybrid Analysis score</dt><dd id="attachmentScore"></dd>
 <dt data-i18n="attachmentScoreThreshold">Attachment score threshold</dt><dd id="attachmentThreshold"></dd>
 <dt data-i18n="assessmentCompletion">Processing status</dt><dd id="attachmentState"></dd>
 </dl>
 <p id="attachmentProvenance" hidden></p>
+</details>
 </section>
 <form id="attachmentSaveForm" hidden>
 <label id="attachmentPasswordLabel" hidden><span data-i18n="securityApprovalPassword">Approval password</span>

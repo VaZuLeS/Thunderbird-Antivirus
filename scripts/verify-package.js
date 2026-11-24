@@ -7,18 +7,14 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { catalogFiles } = require('./locale-catalogs.js');
 
 const ALLOWED_FILES = [
   'manifest.json',
   'onboarding.html',
   'onboarding.js',
   'onboarding.css',
-  '_locales/en/messages.json',
-  '_locales/de/messages.json',
-  '_locales/fr/messages.json',
-  '_locales/es/messages.json',
-  '_locales/it/messages.json',
-  '_locales/pl/messages.json',
+  ...catalogFiles,
   'i18n.js',
   'runtime.js',
   'enterprise_profiles.js',
@@ -79,12 +75,7 @@ const REQUIRED_FILES = [
   'onboarding.html',
   'onboarding.js',
   'onboarding.css',
-  '_locales/en/messages.json',
-  '_locales/de/messages.json',
-  '_locales/fr/messages.json',
-  '_locales/es/messages.json',
-  '_locales/it/messages.json',
-  '_locales/pl/messages.json',
+  ...catalogFiles,
   'i18n.js',
   'runtime.js',
   'enterprise_profiles.js',
@@ -162,8 +153,8 @@ const FORBIDDEN = [
 // First-install wizard adds six-language instructions, UI and bundled fallback.
 // 1.24.6 ships 47 allowlisted files including analysis_status, source_export and remote provider parsers.
 // Generator sources stay excluded; retain a small, explicit size budget.
-// Includes the dedicated diagnostic viewer and six-language flow labels.
-const MAX_UNCOMPRESSED_BYTES = 1740 * 1024;
+// The package includes complete catalogs for the 24 official EU languages.
+const MAX_UNCOMPRESSED_BYTES = 3900 * 1024;
 
 /**
  * Picks the artifact to check. `web-ext` writes one ZIP per version into the

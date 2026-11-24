@@ -1,0 +1,3590 @@
+{
+  "protectionSeverity_low": { "message": "Maža rizika" },
+  "protectionSeverity_unknown": { "message": "Nežinoma rizika" },
+  "protectionSeverity_caution": { "message": "Padidėjusi rizika" },
+  "protectionSeverity_high": { "message": "Didelė rizika" },
+  "protectionSeverity_critical": { "message": "Kritinė rizika" },
+  "linkScanSummary": { "message": "URL patikrų rezultatai" },
+  "linkScansPending": { "message": "URL patikros dar vykdomos." },
+  "linkNoScanResults": { "message": "URL patikrų rezultatų nėra." },
+  "protectionCategoryUnavailable": { "message": "Paslaugos teikėjas nenurodė grėsmės kategorijos." },
+  "linkWaitForResults": { "message": "Palaukti vykdomų URL patikrų" },
+  "linkAutoOpenBelow": { "message": "Atverti tiesiogiai, jei balas mažesnis už šį" },
+  "linkOpeningOptionsHelp": { "message": "Palikite balą tuščią, kad visada būtų rodomas nuorodos dialogas." },
+  "linkAuditRetentionTitle": { "message": "Nuorodų žurnalo saugojimas" },
+  "linkAuditLimit": { "message": "Didžiausias įrašų skaičius (tuščia = neribota)" },
+  "linkAuditDays": { "message": "Saugojimo dienos (tuščia = neribota)" },
+  "protectionManagedColors": { "message": "Rizikos lygių spalvas nustato jūsų organizacija." },
+  "linkOpenedAutomatically": { "message": "Atverta automatiškai" },
+  "providerSwitchHelp": {
+    "message": "Įjunkite arba išjunkite paslaugas atskirai ir išsaugokite nuostatas. Pristabdžius paslaugą išsaugoti raktai ir radiniai išlieka."
+  },
+  "providerKeyLink": {
+    "message": "Įsigykite API raktą"
+  },
+  "providerDocsLink": {
+    "message": "API dokumentacija"
+  },
+  "providerApiKeyLabel": {
+    "message": "API raktas"
+  },
+  "providerUse": {
+    "message": "Naudoti šią paslaugą"
+  },
+  "providerVirusUse": {
+    "message": "Naudokite VirusTotal failų peržiūros"
+  },
+  "providerHybridStrength": {
+    "message": "Ieško jau esamų ataskaitų pagal žinomas failų maišos reikšmes. Leidus įkelti failą, „Falcon Sandbox“ gali analizuoti jo elgseną vykdymo metu."
+  },
+  "providerHybridSetup": {
+    "message": "Sukurkite sąskaitą, tada atidarykite profilių → API raktą, kad sukurtumėte raktą."
+  },
+  "providerUrlhausStrength": {
+    "message": "Tikrinama nuorodų šeimininkai prieš žinomų malware šaltinių."
+  },
+  "providerUrlhausSetup": {
+    "message": "Prisijunkite prie abuse.ch ir gaukite Auth-Key iš savo sąskaitos."
+  },
+  "providerUrlscanStrength": {
+    "message": "Visiškai peržiūri URLs ir perkelia į phishingo požymius. Thundy naudoja jį Maksimalus privatumo lygis."
+  },
+  "providerUrlscanSetup": {
+    "message": "Sukurkite sąskaitą ir pasirinksite Stojimo ir API → Naujas API raktas."
+  },
+  "providerVirusTotalStrength": {
+    "message": "Rodyti failą SHA-256 hash ir rodyti rezultatai iš kelių skenavimo variklių."
+  },
+  "providerVirusTotalSetup": {
+    "message": "Prisijunkite prie VirusTotal ir kopijuokite raktą iš jūsų profilo API raktų puslapių."
+  },
+  "providerIpTitle": {
+    "message": "IP adresų reputacija"
+  },
+  "providerIpUse": {
+    "message": "IP reputacija"
+  },
+  "providerIpChoose": {
+    "message": "IP reputacijos teikėjas"
+  },
+  "providerIpKeyNotice": {
+    "message": "Įveskite pasirinkto paslaugų teikėjo raktą. Pristabdžius IP adresų patikrą išsaugomas teikėjo pasirinkimas ir raktas."
+  },
+  "providerIpGuide": {
+    "message": "Rinkitės ir įdiegti IP reputacijos teikėjo"
+  },
+  "providerVirusIpStrength": {
+    "message": "Patikrins viešąsias IP prieš VirusTotal aptikimo variklius ir visuomenines reitingus."
+  },
+  "providerAbuseStrength": {
+    "message": "Naudokite bendrijos ataskaitas, kad būtų galima nustatyti viešąsias IP, kurias sieja slaptažodis, skenavimo ar kitos piktnaudžiavimo sąlygos."
+  },
+  "providerAbuseSetup": {
+    "message": "Sukurkite AbuseIPDB paskyrą ir sukurkite arba kopijuokite raktą iš API lauko lentelėje."
+  },
+  "providerIpVirusKey": {
+    "message": "VirusTotal API raktas IP reputacijai"
+  },
+  "providerIpAbuseKey": {
+    "message": "AbuseIPDB API raktas"
+  },
+  "providerTestDisabled": {
+    "message": "Prieš tikrindami raktą įjunkite paslaugą ir išsaugokite nuostatas."
+  },
+  "analysisReason_provider_disabled": {
+    "message": "Šis tiekėjas yra pertrauktas į parametrus."
+  },
+  "extensionName": {
+    "message": "Thundy AV – „Thunderbird“ el. pašto tikrintuvas"
+  },
+  "extensionDescription": {
+    "message": "Galutinis, opt-in skeneris el. Laiškų priedams ir nuorodoms. Niekas nepalieka jūsų skaičiuoklės be jūsų aiškios leidimo."
+  },
+  "actionTitle": {
+    "message": "Thundy AV – šioje žinutėje skenuoti statusą"
+  },
+  "bannerScanOnce": {
+    "message": "Šį laišką išbandykite kartą"
+  },
+  "bannerScanSender": {
+    "message": "Visada šiek tiek skanokite šį siuntėją"
+  },
+  "bannerTitleOptIn": {
+    "message": "Thundy AV : Šio žinutės tikruoju laiku skenavimo neįjungta."
+  },
+  "bannerNoteOptIn": {
+    "message": "Skanymas perteikia dujas išorės analizės sistemoms, tačiau tik jei įjungėte ją į papildymo parametrus ir tik po to, kai suteikėte savo pritarimą."
+  },
+  "bannerScanRunning": {
+    "message": "Skaičiuojant…"
+  },
+  "bannerScanDone": {
+    "message": "Užbaigtas prašymas – žr. analizės šaltinius"
+  },
+  "bannerScanFailed": {
+    "message": "Skanymas nesėkmingas"
+  },
+  "bannerPermissionDenied": {
+    "message": "Reikalingas leidimas buvo atmestas"
+  },
+  "bannerConsentMissing": {
+    "message": "Nauji išoriniai prašymai yra neįjungti. ankstesnės saugomos ataskaitos vis dar gali būti rodomos."
+  },
+  "bannerThreatTitle": {
+    "message": "Thundy AV įspėjimai"
+  },
+  "bannerThreatScore": {
+    "message": "Rizikos rezultatai: $SCORE$ 100",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerSenderOptIn": {
+    "message": "Šis siuntėjas dabar skanuojamas automatiškai."
+  },
+  "notificationScanStarted": {
+    "message": "Skanymas pradėtas: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "Skanymas sėkmingai pateiktas. Darbo ID: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanError": {
+    "message": "Šanavimo klaida: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Thundy AV skanierius"
+  },
+  "notificationTitleError": {
+    "message": "Thundy AV skenavimo klaida"
+  },
+  "bannerAuthPass": {
+    "message": "Pasitikėjimo serverio ataskaitos SPF / DKIM/ DMARC praėjo"
+  },
+  "bannerOpenOptions": {
+    "message": "Atviros galimybės"
+  },
+  "menuScanLink": {
+    "message": "Skaičiuoti nuorodą su Thundy AV"
+  },
+  "menuScanMessageLinks": {
+    "message": "Skanuokite visus nuorodas į šį laišką"
+  },
+  "notificationNoLinks": {
+    "message": "Šiame laiške nėra jokių nuorodų."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "Analizės įrangos leidimas trūksta. prašome suteikti jį papildomose parinktimis."
+  },
+  "errorHostPermissionMissing": {
+    "message": "Analizės leidimas nėra. prašome suteikti jį papildomose parinktimis."
+  },
+  "errorTierUploadBlocked": {
+    "message": "Atsisiųsti priedus yra išjungtas privatumo lygio \"Stiprus\". perjungti į \"Balanced\" arba \"Maximum\" į priedų parinktis."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "Pateikimas URLs leidžiamas tik privatumo lygmeniu \"Maximum\"."
+  },
+  "notificationInjectionFailed": {
+    "message": "Banneriai gali būti įterpti į žinutės vaizdą. prašome tai pateikti su jūsų Thunderbird versija."
+  },
+  "bannerTierBlocked": {
+    "message": "Ši veikla neleidžiama pagal dabartinį privatumo lygį. žr. papildomų variantų."
+  },
+  "ui_001": {
+    "message": "Įspėjimai :"
+  },
+  "ui_002": {
+    "message": "Nėra Hybrid Analysis API raktas konfigūruotas. galite naudotis vietiniais tikrinimais arba konfigūruoti teikėjo parametrus."
+  },
+  "ui_003": {
+    "message": "Atviros nuostatos"
+  },
+  "ui_004": {
+    "message": "Išsirinkti el. Laišką, kad jį patikrintumėte."
+  },
+  "ui_005": {
+    "message": "Įkrovimo analizės rezultatai…"
+  },
+  "ui_006": {
+    "message": "Išorinis analizė yra išjungta: jokių hashų, failų ar nuorodų nėra siunčiamos analizės dienoms."
+  },
+  "ui_007": {
+    "message": "Šiame laiške nėra saugomų priedų ar nuorodų skenavimo rezultatų."
+  },
+  "ui_008": {
+    "message": "Šiam el. Laiškui nėra analizės rezultatų."
+  },
+  "ui_009": {
+    "message": "Neįtikėtina klaida, kai įkrovimo analizės rezultatai."
+  },
+  "ui_010": {
+    "message": "Statuso būklė :"
+  },
+  "ui_011": {
+    "message": "Analizė vis dar tęsiasi, prašome vėl pabandyti."
+  },
+  "ui_012": {
+    "message": "SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_013": {
+    "message": "Grėsmės rezultatai:"
+  },
+  "ui_014": {
+    "message": "Teismo sprendimas :"
+  },
+  "ui_015": {
+    "message": "Malware šeima:"
+  },
+  "ui_016": {
+    "message": "Multišokų rezultatai: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_017": {
+    "message": "Papildoma informacija :"
+  },
+  "ui_018": {
+    "message": "Analizė pradėta: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_019": {
+    "message": "Žymės: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_020": {
+    "message": "VirusTotal rezultatai:"
+  },
+  "ui_021": {
+    "message": "Žalos: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_022": {
+    "message": "Neįtikėtina: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_023": {
+    "message": "Įtariamasis: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_024": {
+    "message": "Nežalingas: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_025": {
+    "message": "Skydliaukė: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_026": {
+    "message": "Statuso: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_027": {
+    "message": "Antivirusiniai rezultatai:"
+  },
+  "ui_028": {
+    "message": "ir : $P1$ Teismo sprendimas : $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_029": {
+    "message": "Skandalo rezultatų nėra."
+  },
+  "ui_030": {
+    "message": "SHA-256 šifravimas: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_031": {
+    "message": "Paskutinis failų vardas: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_032": {
+    "message": "Dydis: $P1$ bytai",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_033": {
+    "message": "Žyma: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_034": {
+    "message": "vėl skenuoti"
+  },
+  "ui_035": {
+    "message": "Sanitizuoja ir atsisiųsti (vietinis)"
+  },
+  "ui_036": {
+    "message": "Įvertintas straipsnis: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_037": {
+    "message": "Vietinis rezultatas: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_038": {
+    "message": "SHA-256 : $P1$ – išorinis analizė yra neįjungta.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_039": {
+    "message": "Išorinis tyrimas nėra, nes išorinis analizė yra neįmanoma."
+  },
+  "ui_040": {
+    "message": "Išorinio analizės sutrikimas"
+  },
+  "ui_041": {
+    "message": "Skaičiuojant skaną…"
+  },
+  "ui_042": {
+    "message": "Atsisiųsti failą naujo skanavimo…"
+  },
+  "ui_043": {
+    "message": "Skanuotas pateiktas. atsisiųsti rezultatus…"
+  },
+  "ui_044": {
+    "message": "Sėkmingai"
+  },
+  "ui_045": {
+    "message": "Skaičiavimas nesėkmingas:"
+  },
+  "ui_046": {
+    "message": "Nežinomas klaidas"
+  },
+  "ui_047": {
+    "message": "Išbandykite dar kartą"
+  },
+  "ui_048": {
+    "message": "Komunikacijos klaida:"
+  },
+  "ui_049": {
+    "message": "Sanitarinė…"
+  },
+  "ui_050": {
+    "message": "HTML tinkamumo vietiniu būdu…"
+  },
+  "ui_051": {
+    "message": "Atsisiųsti pradėjo."
+  },
+  "ui_052": {
+    "message": "Sanitarinė"
+  },
+  "ui_053": {
+    "message": "Atsisiųsti nepavyko:"
+  },
+  "ui_054": {
+    "message": "API klaida: $P1$ elementui $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_055": {
+    "message": "(API raktas gali būti neveiksmingas arba trūksta.)"
+  },
+  "ui_056": {
+    "message": "Tinklalapio klaida: $P1$ elementui $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_057": {
+    "message": "Pateikiant URL…"
+  },
+  "ui_058": {
+    "message": "Siųsti URL į Hybrid Analysis…"
+  },
+  "ui_059": {
+    "message": "Skanymas pateiktas. įkrovimo rezultatai…"
+  },
+  "ui_060": {
+    "message": "Įkrovimas nepavyko:"
+  },
+  "ui_061": {
+    "message": "URL: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_062": {
+    "message": "Šis URL buvo rastas el. Laiške. kad apsaugotumėte savo privatumą, jis buvo"
+  },
+  "ui_063": {
+    "message": "Ne automatiškai įkeliamas"
+  },
+  "ui_064": {
+    "message": "Skaičiuokite URL dabar"
+  },
+  "ui_065": {
+    "message": "Įkėlimas…"
+  },
+  "ui_066": {
+    "message": "Siųsti failą į Hybrid Analysis…"
+  },
+  "ui_067": {
+    "message": "Įkrovimas baigėsi. įkrovimo rezultatai…"
+  },
+  "ui_068": {
+    "message": "Skanus failą dabar (perkelti)"
+  },
+  "ui_069": {
+    "message": "Įkrovimo įranga: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_070": {
+    "message": "Šiame faile nėra jokių išorinių ataskaitų. kad apsaugotumėte jūsų privatumą, jis buvo"
+  },
+  "ui_071": {
+    "message": "Automatiškai įkeliami įjungti; privatumo lygis vis dar taikomas rankiniam skenavimui."
+  },
+  "ui_072": {
+    "message": "Link apsauga lieka prieinama kartu su automatiniu skenavimu."
+  },
+  "ui_073": {
+    "message": "Taupyti…"
+  },
+  "ui_074": {
+    "message": "Įrenginiai išsaugoti"
+  },
+  "ui_075": {
+    "message": "Įrašyti"
+  },
+  "ui_076": {
+    "message": "Leidimas perdavti asmens tapatybę netaikomas; niekas nebus siunčiamas."
+  },
+  "ui_077": {
+    "message": "Svečių leidimas netaikomas:"
+  },
+  "ui_078": {
+    "message": "Šie tiekėjai nėra prieinami be leidimo."
+  },
+  "ui_079": {
+    "message": "Negalėjo išsaugoti įkrovimo."
+  },
+  "ui_080": {
+    "message": "Tai pašalina visus vietiniu būdu saugomus analizės rezultatus."
+  },
+  "ui_081": {
+    "message": "Išvalymas…"
+  },
+  "ui_082": {
+    "message": "Išvalytas slapukas"
+  },
+  "ui_083": {
+    "message": "Dabar nėra bazinės bazės, arba ji jau tuščia."
+  },
+  "ui_084": {
+    "message": "Negalėjau išvalyti kasos."
+  },
+  "ui_085": {
+    "message": "Išsamios cache"
+  },
+  "ui_086": {
+    "message": "API raktas trūksta."
+  },
+  "ui_087": {
+    "message": "SPF kontrolė nepavyko (galimas spoofing)."
+  },
+  "ui_088": {
+    "message": "DKIM parašas yra neigiamas (galima spoofing)."
+  },
+  "ui_089": {
+    "message": "DMARC kontrolė nepavyko (galimas spoofing)."
+  },
+  "ui_090": {
+    "message": "URLhaus sąrašo domenas ( $P1$) kaip kenksmingas.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_091": {
+    "message": "Atsiųsti į domeno ( $P1$) skiriasi nuo siuntėjo domeno ( $P2$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_092": {
+    "message": "Galimas kompromisas su elektroniniu paštu: pirmasis kontaktas su šiuo siuntėju ir skubios klaviatūros ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_093": {
+    "message": "Atsargumo raktiniai žodžiai rasta ( $P1$). atidžiai peržiūrėkite šį prašymą.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_094": {
+    "message": "Tai pirmasis jūsų ryšys su šiuo siuntėju."
+  },
+  "ui_095": {
+    "message": "Siuntėjo domenas ( $P1$) panašus į žinomą prekių ženklą $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_096": {
+    "message": "Link domenas ( $P1$) panašus į žinomą prekių ženklą $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_097": {
+    "message": "Nė vienas iš nuorodų teksto taško į siuntėjo domeno ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_098": {
+    "message": "Švarus"
+  },
+  "ui_099": {
+    "message": "URL skenavimo nesėkmė:"
+  },
+  "ui_100": {
+    "message": "Galėjo pradėti urlscan.io skenavimo:"
+  },
+  "ui_101": {
+    "message": "urlscan.io neatšaukė skanavimo ID."
+  },
+  "ui_102": {
+    "message": "urlscan.io identifikuoja URL kaip kenksmingą."
+  },
+  "ui_103": {
+    "message": "Vaizdo aptikimas: puslapių impersonalizmas"
+  },
+  "ui_104": {
+    "message": "(Numatoma ir apie filmavimą)"
+  },
+  "ui_105": {
+    "message": "Negalėjo atgauti urlscan.io rezultatų:"
+  },
+  "ui_106": {
+    "message": "Thundy AV – elektroninio pašto skeneris"
+  },
+  "ui_107": {
+    "message": "Žiūrėti visus Hybrid Analysis pateiktus laiškus"
+  },
+  "ui_108": {
+    "message": "Peržiūrėti visus Hybrid Analysis pateiktus laiškus (atverti naują skirtuką)"
+  },
+  "ui_109": {
+    "message": "Subjektas yra:"
+  },
+  "ui_110": {
+    "message": "Iš iš:"
+  },
+  "ui_111": {
+    "message": "Žinutės ID:"
+  },
+  "ui_112": {
+    "message": "Thundy AV įkrovimo įranga"
+  },
+  "ui_113": {
+    "message": "Hybrid Analysis yra žalingos programos analizės sistema. galite pateikti statinio ir dinamiško analizės failus."
+  },
+  "ui_114": {
+    "message": "Hybrid Analysis naudoja CrowdStrike Falcon Sandbox tyrinėti nežinomus grėsmes."
+  },
+  "ui_115": {
+    "message": "Paslaugų teikėjo sąskaitos ir teikimo sąlygos taikomos išoriniam analizei. vietiniai tikrinimai nereikalauja sąskaitos."
+  },
+  "ui_116": {
+    "message": "Thundy AV įkrovimo įranga"
+  },
+  "ui_117": {
+    "message": "Kas yra Hybrid Analysis?"
+  },
+  "ui_118": {
+    "message": "Išorinio failų analizės tikslais gaukite API raktą iš"
+  },
+  "ui_119": {
+    "message": "Užsiėmę, eikite į savo profilį ir rasite API raktų skyrių."
+  },
+  "ui_120": {
+    "message": "Įdėkite čia API raktą. vietiniai kontrolės veikia be jo."
+  },
+  "ui_121": {
+    "message": "API raktinis įdiegimas"
+  },
+  "ui_122": {
+    "message": "hybrid-analysis.com"
+  },
+  "ui_123": {
+    "message": "hybrid-analysis.com (atverti naują skirtuką)"
+  },
+  "ui_124": {
+    "message": "Leisti išorinę analizę (siųsti duomenis išoriniams teikėjams)"
+  },
+  "ui_125": {
+    "message": "Be šio leidimo,"
+  },
+  "ui_126": {
+    "message": "Hash, failai, nuorodos arba IP adresai siunčiami į išorines sistemas.Po leidimo, įgalioti skundai gali siųsti priedą ir susieti su Hybrid Analysis, VirusTotal, urlscan.io, URLhaus arba AbuseIPDBAtsižvelgiant į privatumo lygį. atšaukti šią parinktį, kad atšauktumėte savo pritarimą:"
+  },
+  "ui_127": {
+    "message": "Ne"
+  },
+  "ui_128": {
+    "message": "Privatumo politika"
+  },
+  "ui_129": {
+    "message": "Privatumo politika (atverti naują skirtuką)"
+  },
+  "ui_130": {
+    "message": "Hybrid Analysis API raktas (pasirenkamas):"
+  },
+  "ui_131": {
+    "message": "Pavyzdžiui, abcdef123456…"
+  },
+  "ui_132": {
+    "message": "URLhaus API raktas (valiaujama domeno reputacija):"
+  },
+  "ui_133": {
+    "message": "Galite įsigyti API raktą"
+  },
+  "ui_134": {
+    "message": "."
+  },
+  "ui_135": {
+    "message": "urlhaus.abuse.ch"
+  },
+  "ui_136": {
+    "message": "urlhaus.abuse.ch (atverti naują skirtuką)"
+  },
+  "ui_137": {
+    "message": "urlscan.io API raktas (valiaujamas URL analizė):"
+  },
+  "ui_138": {
+    "message": "Galite įsigyti API raktą"
+  },
+  "ui_139": {
+    "message": "urlscan.io"
+  },
+  "ui_140": {
+    "message": "urlscan.io (atverti naują skirtuką)"
+  },
+  "ui_141": {
+    "message": "VirusTotal API raktas (pasirenkamas failų reputacija):"
+  },
+  "ui_142": {
+    "message": "virustotal.com"
+  },
+  "ui_143": {
+    "message": "virustotal.com (atverti naują skirtuką)"
+  },
+  "ui_144": {
+    "message": "Privatumo lygis:"
+  },
+  "ui_145": {
+    "message": "Griežta (default: hashai ir domenas tik, nėra įkėlimo)"
+  },
+  "ui_146": {
+    "message": "Atlyginimas (perkelti nežinomus failus, ne visą URLs)"
+  },
+  "ui_147": {
+    "message": "Maksimalus analizė (pakeisti nežinomus failus ir užbaigti URLs)"
+  },
+  "ui_148": {
+    "message": "Apribojamas analizės teikėjams siunčiami data. taikoma tik tada, kai įjungtas išorinis analizė."
+  },
+  "ui_149": {
+    "message": "IP reputacija (patikrink gautas vadovas):"
+  },
+  "ui_150": {
+    "message": "neįgaliųjų"
+  },
+  "ui_151": {
+    "message": "VirusTotal (reikalauja VirusTotal API raktą)"
+  },
+  "ui_152": {
+    "message": "AbuseIPDB (reikalauja AbuseIPDB API raktą)"
+  },
+  "ui_153": {
+    "message": "IP reputacija API raktas:"
+  },
+  "ui_154": {
+    "message": "Siųsti viešą adresą IP iš elektroninio pašto gautų adresų pasirenkamam tiekėjui. reikalauja išorinio analizės sutarties ir skenavimo leidimo."
+  },
+  "ui_155": {
+    "message": "Leidimo sąrašas (komma atskiri domenas arba el. pašto adresai):"
+  },
+  "ui_156": {
+    "message": "Pavyzdžiui, example.com, test@ example.com"
+  },
+  "ui_157": {
+    "message": "Pasitikintys siuntėjų įrašai slopina vietinius siuntėjų įspėjimus. Jie neleidžia išorinių skenavimų."
+  },
+  "ui_158": {
+    "message": "Blokklist (komma atskiri domenas arba el. pašto adresai):"
+  },
+  "ui_159": {
+    "message": "Įveskite blokuotus domenas arba el. pašto adresus."
+  },
+  "ui_160": {
+    "message": "Visada skenuoti rankiniu būdu (ne automatiniai įkrovimai)"
+  },
+  "ui_161": {
+    "message": "Išaiškinti rankiniai darbai vis dar reikalauja leidimo ir atitinkamo privatumo lygio."
+  },
+  "ui_162": {
+    "message": "Automatiškai atnaujinti laukiančias nuorodų ataskaitas"
+  },
+  "ui_163": {
+    "message": "Link kontrolės reikalauja leidimo, skenavimo leidimo ir atitinkamo privatumo lygio."
+  },
+  "ui_164": {
+    "message": "Peržiūrėkite nuorodas prieš juos atidarydami"
+  },
+  "ui_165": {
+    "message": "Navigacija nutraukiama, kad būtų rodomas rezultatas.Nekrečiami ryšiai ir klaidos aiškiai nustatyti.Visi URL analizė reikalauja Maksimalus lygis. Visoms nuorodoms ir priedams reikia atskiro patvirtinimo."
+  },
+  "ui_166": {
+    "message": "Atminkite, kad išsaugokite savo parametrus."
+  },
+  "ui_167": {
+    "message": "Duomenų valdymas"
+  },
+  "ui_168": {
+    "message": "Aiškūs vietiniu būdu saugomi rezultatai ir reputacijos slapukai."
+  },
+  "linkChecking": {
+    "message": "Tikrinimas link…"
+  },
+  "linkWarning": {
+    "message": "Šis ryšys buvo laikomas įtartinu ar kenksmingu."
+  },
+  "linkUnknown": {
+    "message": "Šis nuorodas nebūtų galima tikrinti. atidaryti jį gali būti rizikinga."
+  },
+  "linkNoDetection": {
+    "message": "Nėra grėsmės, kuri būtų aptikta tiekėjo. tai nėra saugumo garantija."
+  },
+  "linkProceed": {
+    "message": "Atviras ryšys bet kokiu būdu"
+  },
+  "linkCancel": {
+    "message": "Atsisakyti"
+  },
+  "localMode": {
+    "message": "Vietos kontrolės veikia be API raktų. išoriniai skenavimai reikalauja jūsų leidimo ir žinutės ar siuntėjo leidimo."
+  },
+  "statusNormal": {
+    "message": "(Nėra jokių aptikimų)"
+  },
+  "statusSuspicious": {
+    "message": "( Įtariamasis ir įtarimas)"
+  },
+  "statusCritical": {
+    "message": "(Kritinis iššūkis"
+  },
+  "noSubject": {
+    "message": "(Nėra jokių temų)"
+  },
+  "noSender": {
+    "message": "(Nepatvirtintas išsiuntėjas)"
+  },
+  "noId": {
+    "message": "(Nėra jokių nuorodų)"
+  },
+  "unknownAttachment": {
+    "message": "Nežinomas"
+  },
+  "statusDangerous": {
+    "message": "( pavojingas ir pavojingas"
+  },
+  "sizeLimit": {
+    "message": "Priedai viršijo vietinio dydžio ribą 25 MiB ir nėra perskaitomi ar įkelti."
+  },
+  "trustedAuthLabel": {
+    "message": "Pasitikimi autentikos serveriai (komma atskirti)"
+  },
+  "trustedAuthHelp": {
+    "message": "Tik adresato pašto serverių, kurias valdote arba aiškiai pasitiki.Nesuprantami vadovo ataskaitos lieka nekonfiduotos."
+  },
+  "consentHelp": {
+    "message": "Be sutikimo duomenys nesiunčiami išorinėms paslaugoms. Gavus sutikimą, tikrinami tik aiškiai patvirtinti laiškai arba siuntėjai. Griežtu lygiu galima siųsti maišos reikšmes, domenus ir viešuosius IP adresus. Subalansuotas lygis taip pat leidžia įkelti nežinomus failus, o aukščiausias – ir siųsti pilnus URL. Išjunkite parinktį, jei norite sustabdyti naują siuntimą ir atšaukti laukiančias užklausas. Jau perduotų duomenų atšaukti negalima. Visoms nuorodoms ir priedams reikia atskiro patvirtinimo."
+  },
+  "visualImpersonation": {
+    "message": "Vizualus aptikimas: puslapiu apibūdinamas $BRANDS$ (pripažįstamas filtravimas).",
+    "placeholders": {
+      "brands": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedEmail": {
+    "message": "Siuntėjo el. Laiškas ( $P1$) yra bloko sąraše.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedDomain": {
+    "message": "Dviejų dienų ($P1$Įtraukta į blokų sąrašą ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedEmail": {
+    "message": "Siuntėjo el. Laiškas ( $P1$) yra leidimo sąraše.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedDomain": {
+    "message": "Dviejų dienų ($P1$Įtraukta į leidimo sąrašą ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanVisibility": {
+    "message": "urlscan.io pateikimai yra ne sąraše, ne privatus. pilnas URL gali turėti asmens datą ar prieigos tokenus. pateikti tik URLs jums leidžiama dalintis."
+  },
+  "notificationScanCount": {
+    "message": "Siunčiamas skenavimo kodas: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "gatewayRequestTimeout": {
+    "message": "Pardavėjo prašymas buvo atšauktas arba atšaukta."
+  },
+  "gatewayInvalidJson": {
+    "message": "Paskyrėjas grąžino neskaitytiną atsakymą."
+  },
+  "gatewayNetworkError": {
+    "message": "Pardavėjas buvo neįmanomas."
+  },
+  "noMessageFound": {
+    "message": "Nėra rodomo žinutės."
+  },
+  "providerNoDetection": {
+    "message": "Nėra aptiktos grėsmės"
+  },
+  "providerMalicious": {
+    "message": "Kenkėjiška"
+  },
+  "providerSuspicious": {
+    "message": "Įtartina"
+  },
+  "providerPending": {
+    "message": "Analizė įtempta"
+  },
+  "privacyLocalData": {
+    "message": "Thundy AV skaito rodomą žinutę, jos siuntėją, temą, antraštes, tekstą ir priedus atlikti vietinius tikrinimus. Vietiniai tikrinimai veikia be API raktų. Nėra telemetrijos ir nėra kūrėjo analizės serverio."
+  },
+  "privacyProviders": {
+    "message": "Autorizuoti išoriniai prašymai eina tiesiogiai į konfigūruotus teikėjus: Hybrid Analysis failų hashes ir uolų, VirusTotal failų hash arba IP ir reputaciją, URLhaus ir domenoje, urlscan.io Už pilną URLs ir AbuseIPDB viešųjų IP adresų. „Hashes“ gali identifikuoti žinomus failus. „Provider“ sąlygos ir privatumo politika taikomos; pateikti duomenys gali būti dalijami „Providers“ informacija."
+  },
+  "privacyRetention": {
+    "message": "Sutarimai, pritarimas, siuntėjų leidimai ir API raktai yra saugomi jūsų Thunderbird profilyje. API klaviatūros nėra šifruotos ten. Vietos skenavimo įrašai gali apimti temą, siuntėjo adresus, išsamius nuorodas ir priedų metaduomenis. Slapukas laikosi iki 1000 žinutės įrašų 30 dienų ir išvalomas bazinės bazės pradžioje. Atminties reputacijos rezultatai baigiasi po 15 minučių."
+  },
+  "privacyControl": {
+    "message": "Išorinės analizės išjungimas, kad sustabdytumėte naujus užklausas ir atšauktumėte laukiamus užklausus. Jau perdavę Duomenys neįmanoma atgauti. Naudokite „Clear cache“ ištrinti saugomus analizės rezultatus ir reputacijos cache. Individualūs siuntėjų leidimai gali būti pašalinti parametruose."
+  },
+  "privacyDetailed": {
+    "message": "Išsami privatumo politika (anglų / vokiečių)"
+  },
+  "senderAuthorizationsLabel": {
+    "message": "Autorizuoti siuntėjai (vienas el. pašto adresas eilutėje)"
+  },
+  "senderAuthorizationsHelp": {
+    "message": "Šie siuntėjai gali būti automatizuojami, kai įjungtas išorinis analizė. pašalinti adresą, kad būtų sustabdyta automatinė skenavimo būsimiems laiškams. Šis sąrašas neviršija privatumo lygio ar rankinio režimo."
+  },
+  "invalidSenderAddress": {
+    "message": "Įveskite plokščias el. pašto adresus, vienas linijoje."
+  },
+  "popupSubtitle": {
+    "message": "Žinutės saugumo apžvalga"
+  },
+  "popupDetails": {
+    "message": "Techninės žinios detalės"
+  },
+  "popupLocalAssessment": {
+    "message": "Vietos rizikos vertinimo"
+  },
+  "popupLocalExplanation": {
+    "message": "Šis rodiklis nėra antivirusinis teismo sprendimas ar saugumo garantija."
+  },
+  "linkDialogTitle": {
+    "message": "Peržiūrėkite prieš atidarymą"
+  },
+  "linkDestination": {
+    "message": "Paskirties svetainė"
+  },
+  "linkUrlDetails": {
+    "message": "Parodyti visą nuorodą adresą"
+  },
+  "linkOpenBrowser": {
+    "message": "Atverti naršyklėje"
+  },
+  "linkOpening": {
+    "message": "Atviras…"
+  },
+  "linkOpenFailed": {
+    "message": "Nuorodos atverti nepavyko. Bandykite dar kartą arba patikrinkite numatytosios naršyklės nuostatas."
+  },
+  "linkCheckLimited": {
+    "message": "Tik esamų skenavimo rezultatai gali būti rodomi. praleisti kontrolės nereiškia, kad nuoroda yra saugi."
+  },
+  "auditTitle": {
+    "message": "Link sprendimo log"
+  },
+  "auditOpen": {
+    "message": "Apžvalga Link log"
+  },
+  "auditScope": {
+    "message": "Įrašai HTTP (S) spustelėjimai, kurie yra sustabdyti nuorodos apsauga. OPENED reiškia, kad Thunderbird priėmė atidarymo prašymą be klaidos ataskaitos. Tai nepaaiškina, kad operacinė sistema pradėjo naršyklę arba kad svetainė buvo aplankyta."
+  },
+  "auditPrivacy": {
+    "message": "Vietoj saugomi iki 30 dienų, 2000 įrašų arba 2 MiB (seniausi įrašai pašalinami). Full URLs gali turėti asmens datą ar prieigos tokenus. Nieko nėra automatiškai įkelta. Vietinis logas gali būti keičiamas ar pašalintas profilių naudotojų; tai nėra tamper-proof centrinė audito pjūvis. Vietinis rezultatas naudoja spustelėjamą nuorodą ir žinutę kontekste, o ne teikėjo rezultatas. Vertinimo priežastys gali apimti siuntėjo ar domeno detales."
+  },
+  "auditSearch": {
+    "message": "URL, domeno ar renginio ID"
+  },
+  "auditOutcome": {
+    "message": "Sprendimas"
+  },
+  "auditAll": {
+    "message": "Visi"
+  },
+  "auditOpened": {
+    "message": "Prašoma atidaryti"
+  },
+  "auditAborted": {
+    "message": "Abortas"
+  },
+  "auditOpenError": {
+    "message": "Atvirumas nesėkmingas"
+  },
+  "auditPending": {
+    "message": "Nėra užbaigtos sprendimo"
+  },
+  "auditMinScore": {
+    "message": "Minimalus sprendimų rezultatai"
+  },
+  "auditFrom": {
+    "message": "iš"
+  },
+  "auditTo": {
+    "message": "į"
+  },
+  "auditRefresh": {
+    "message": "Šviežias"
+  },
+  "auditJson": {
+    "message": "Eksporto JSON"
+  },
+  "auditCsv": {
+    "message": "Eksporto CSV"
+  },
+  "auditClear": {
+    "message": "Ištrinti vietinį logą"
+  },
+  "auditExportHelp": {
+    "message": "Eksportuojami visi filtruojami eilutės, o ne tik dabartinė pusė. JSON apima SHA-256 tikrinimo numerį; jis neparodo tikrumo. CSV neutralizuoja skirstymo formules. Eksportuoja visą URLs : dalijasi tik su įgaliotais vertintojais."
+  },
+  "auditTime": {
+    "message": "Klika / Sprendimo laikotarpis"
+  },
+  "auditLocalScore": {
+    "message": "Vietinis rezultatas (linkas ir žinutė)"
+  },
+  "auditVerdict": {
+    "message": "Paslaugų teikėjas"
+  },
+  "auditAddress": {
+    "message": "URL ir detalės"
+  },
+  "auditPrevious": {
+    "message": "Ankstesnis"
+  },
+  "auditNext": {
+    "message": "Toliau"
+  },
+  "auditClearConfirm": {
+    "message": "Ištrinti visus vietinius nuorodų log įrašus? eksportuoti reikalingus įrodymus pirmiausia. skenavimo rezultatai ir nustatymo laikomos."
+  },
+  "auditFailure": {
+    "message": "Vietinis nuorodos logas nebūtų galima perskaityti ar išsaugoti."
+  },
+  "auditUnavailable": {
+    "message": "Nėra prieinamos"
+  },
+  "auditScoreAtDecision": {
+    "message": "Skaičius sprendime"
+  },
+  "auditRecords": {
+    "message": "Rekordai"
+  },
+  "auditDetails": {
+    "message": "Rodyti URL ir įrodymus"
+  },
+  "auditEventId": {
+    "message": "Renginio ID"
+  },
+  "auditCancelReason": {
+    "message": "Atšaukimo priežastis"
+  },
+  "auditFinalResult": {
+    "message": "Paskutinis tikrinimo rezultatas"
+  },
+  "auditProfile": {
+    "message": "Vietos profilis ID"
+  },
+  "auditExported": {
+    "message": "Eksportas išsaugotas"
+  },
+  "auditRiskyOpened": {
+    "message": "Prašoma atidaryti didelę riziką"
+  },
+  "auditExportFailed": {
+    "message": "Eksportas buvo atšauktas arba nesėkmingas."
+  },
+  "profilesTitle": {
+    "message": "Opcinis verslas profilis"
+  },
+  "profilesIntro": {
+    "message": "Išsirinkti bendras sistemas savarankiškai arba palikti integracijas neįjungtas. Šie profiliai rengia konfigūraciją; jie nesusiję su kompanijos servisu arba aktyvuoja centrinį prisijungimą."
+  },
+  "profilesOpen": {
+    "message": "Įmonės profilių parinkimas"
+  },
+  "profilesBundle": {
+    "message": "Siūloma derinys"
+  },
+  "profilesLocal": {
+    "message": "Vietos paruošimas"
+  },
+  "profilesCustom": {
+    "message": "Kūrybiškas atrankos"
+  },
+  "profilesHosting": {
+    "message": "Hostingas"
+  },
+  "profilesSso": {
+    "message": "Vieno sign-on (SSO) ir"
+  },
+  "profilesDevices": {
+    "message": "Įrenginio valdymas"
+  },
+  "profilesSiem": {
+    "message": "Saugumo stebėsenos (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "bilietų sistema"
+  },
+  "profilesRequirements": {
+    "message": "Reikalingas konfigūracija"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Vėlesnės nustatymo metu pateikiamos galutinės taikos ir sąskaitos nustatymo. žemiau pateikiami vardai nustato reikalingus nustatymo ir slaptų nuorodų reikalavimus; čia įveskite jokių įrodymų."
+  },
+  "profilesPreview": {
+    "message": "Konfiguravimo projektas"
+  },
+  "profilesPrivacy": {
+    "message": "Susijimai lieka neįjungti. dizainas nesuteikia API raktų, tokenų, spustelėjusių URLs ar žinutės."
+  },
+  "profilesSave": {
+    "message": "Išsaugokite vietinį atrankos"
+  },
+  "profilesExport": {
+    "message": "Eksporto konfigūracijos projektas"
+  },
+  "profilesReset": {
+    "message": "Atsisiųsti atrankos"
+  },
+  "profilesNone": {
+    "message": "Neįgali / Neįgali"
+  },
+  "profilesSelfHosted": {
+    "message": "Savarankiškai prižiūrimi / on-premises"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Šiam atrankos atrankos metu nereikalingi išoriniai integracijos nustatymo įtaisai."
+  },
+  "profilesSaved": {
+    "message": "Išsamios sąsajos išsaugotos vietovėje. ryšiai išlieka neįjungti."
+  },
+  "profilesExported": {
+    "message": "Konfiguravimo projektas eksportuotas.Nėra jokių aktyvuotų."
+  },
+  "profilesFailed": {
+    "message": "Atranka nebūtų įkrauta, išsaugota ar eksportuota, arba operacija buvo atšaukta."
+  },
+  "wizardTitle": {
+    "message": "Nustatyti „Thundy AV“"
+  },
+  "wizardLanguage": {
+    "message": "Vediklio kalba"
+  },
+  "wizardLanguageNote": {
+    "message": "Šis pasirinkimas taikomas tik vedikliui. Papildinio kalbą galite pakeisti nuostatose."
+  },
+  "wizardWelcome": {
+    "message": "Sveiki atvykę"
+  },
+  "wizardProtection": {
+    "message": "Linkų apsauga"
+  },
+  "wizardExternal": {
+    "message": "Opcinis analizė"
+  },
+  "wizardIntro": {
+    "message": "Norėdami peržiūrėti el. Laišką, naudokite Thundy AV banerį arba skenavimo akciją. Galite nuspręsti, ar konfigūruoti analizės teikėjus."
+  },
+  "wizardLocalNotice": {
+    "message": "Be išorės analizės leidimo, jokių įrodymų siunčiami analizės teikėjams.Šis burtininkas niekada nesuteikia tokio leidimo."
+  },
+  "wizardPrivacy": {
+    "message": "Privatumo informacija"
+  },
+  "wizardLinkChoice": {
+    "message": "Įspūdžiai prieš atverdami nuorodas ir įrašydami sprendimus vietoj"
+  },
+  "wizardLinkExplanation": {
+    "message": "Susietų dialogas rodo paskirties ir turimų rizikos vertinimą. atidarant rankas nuorodą į jūsų naršyklę; tai neparodo svetainės apsilankymą."
+  },
+  "wizardAuditNotice": {
+    "message": "Vietinis nuorodos log gali apimti visą URLs ir vertinimo priežastis. jis išlieka iki 30 dienų, 2000 įrašų arba 2 MiB. Profilo naudotojas gali perskaityti, keisti ar ištrinti jį; tai nėra apsaugotas korporacijos auditas."
+  },
+  "wizardExternalExplanation": {
+    "message": "Išoriniai tiekėjai yra atrankiniai ir gali reikalauti API raktų. Priklauso nuo jūsų privatumo lygio, hashų, domeno, viešųjų IP, failų ar visi URLs gali būti perdavta."
+  },
+  "wizardNextAction": {
+    "message": "Ką norėtumėte padaryti kitą kartą?"
+  },
+  "wizardKeepLocal": {
+    "message": "Baigti vietinius tikrinimus"
+  },
+  "wizardKeepExisting": {
+    "message": "Išorinių nuostatų palaikymas"
+  },
+  "wizardExistingExternal": {
+    "message": "Išorinis analizė jau įjungta šiame profilyje. „Vaišų“ netaikomas toks pritarimas. Naudokite parametrus, kad jį išjungtumėte arba peržiūrėtumėte leidimus."
+  },
+  "wizardConfigure": {
+    "message": "Išorinio analizės konfigūracija parametruose"
+  },
+  "wizardNoConsent": {
+    "message": "Rinkdami šią parinktį tik atidaro parametrus.Nėra įkelta ir ši magijos leidimas nereikalauja."
+  },
+  "wizardBack": {
+    "message": "Atgal"
+  },
+  "wizardNext": {
+    "message": "Toliau"
+  },
+  "wizardFinish": {
+    "message": "Išsaugoti SITUP"
+  },
+  "wizardFinishConfigure": {
+    "message": "Išsaugoti ir atidaryti parametrus"
+  },
+  "wizardSkip": {
+    "message": "Ne dabar"
+  },
+  "wizardDone": {
+    "message": "Įdiegimas išsaugotas"
+  },
+  "wizardDoneText": {
+    "message": "Jūsų nuorodos apsaugą parinktis buvo išsaugota vietiniu būdu. Nėra API raktas, išorinis pritarimas ar siuntėjo pritarimas buvo pakeistas."
+  },
+  "wizardSettings": {
+    "message": "Atviros nuostatos"
+  },
+  "wizardProfilesNotice": {
+    "message": "Įmonės profilius sudaro atrankos konfigūracijos projektai. jų atrankos neveikia įmonių ryšį."
+  },
+  "wizardDeferred": {
+    "message": "Įdiegimas atidėtas"
+  },
+  "wizardDeferredText": {
+    "message": "Nėra jokių pakeitimų. atnaujinti stebuklingą iš parametrų, kai esate pasiruošę."
+  },
+  "wizardSettingsOpened": {
+    "message": "Sutarimai atidaromi. nustatyti tiekėjus ir išsaugoti savo pritarimą ten."
+  },
+  "wizardSettingsFailed": {
+    "message": "Nustatymai gali būti neatidėliojami. jūsų nustatymo išsaugota; naudokite Atviras nustatymo atgal."
+  },
+  "wizardSaveFailed": {
+    "message": "Įdiegimas nebūtų išsaugotas. Jūsų parinkimai lieka čia; prašome atsikratyti."
+  },
+  "wizardLoadFailed": {
+    "message": "Nustatymai nebūtų įkrauti.Nėra išsaugota. Atsisiųskite šią puslapią atgal."
+  },
+  "wizardLanguageFailed": {
+    "message": "Kalba nebus įkrauta. ankstesnė lieka parinkta."
+  },
+  "wizardReopen": {
+    "message": "Atviras įkūrimo burtininkas"
+  },
+  "settingsAppearance": {
+    "message": "Išvaizda"
+  },
+  "settingsPrivacy": {
+    "message": "Privatumas"
+  },
+  "settingsScanning": {
+    "message": "Apsauga"
+  },
+  "settingsProviders": {
+    "message": "Analizės paslaugos"
+  },
+  "settingsSenders": {
+    "message": "Siuntėjų taisyklės"
+  },
+  "settingsData": {
+    "message": "Duomenys ir priemonės"
+  },
+  "settingsWorkspace": {
+    "message": "Jūsų darbo vieta"
+  },
+  "settingsEyebrow": {
+    "message": "Padaryti savo"
+  },
+  "settingsSubtitle": {
+    "message": "Pritaikykite „Thundy AV“ išvaizdą ir el. pašto apsaugą."
+  },
+  "settingsLocalBadge": {
+    "message": "Vietos pagal numatytuosius"
+  },
+  "settingsLocalNote": {
+    "message": "Jūsų pageidavimai. saugomi šioje įrangoje."
+  },
+  "settingsSkip": {
+    "message": "Pasivaikščiojimas į SITINGS"
+  },
+  "settingsProviderGuide": {
+    "message": "Apie tiekėjus ir API raktus"
+  },
+  "settingsWizardHelp": {
+    "message": "Bet kuriuo metu peržiūrėkite vadinamąją parametrą."
+  },
+  "themeIntro": {
+    "message": "Padarykite, kad Thundy AV jaustųsi kaip jūsų. Apskritimo pokyčiai iškart išsaugomi per priedą."
+  },
+  "themeMode": {
+    "message": "Išvaizda"
+  },
+  "themeSystem": {
+    "message": "Naudoti „Thunderbird“ temą"
+  },
+  "themeLight": {
+    "message": "Šviesi"
+  },
+  "themeDark": {
+    "message": "Tamsi"
+  },
+  "themeAccent": {
+    "message": "Akcentas spalva"
+  },
+  "themeOcean": {
+    "message": "Okeanijos"
+  },
+  "themeViolet": {
+    "message": "Violetų"
+  },
+  "themeForest": {
+    "message": "Miškas"
+  },
+  "themeAmber": {
+    "message": "Amberio"
+  },
+  "themeReady": {
+    "message": "Atsiliepimai išsaugomi automatiškai.Kiti parametrai naudoja tašką Išsaugoti."
+  },
+  "themeSaving": {
+    "message": "Išsaugoti išvaizdą…"
+  },
+  "themeSaved": {
+    "message": "Išsaugotas pasirodymas"
+  },
+  "themeLoadError": {
+    "message": "Rodyti nebegalima įkrauti. pabandykite atverti parametrus."
+  },
+  "themeSaveError": {
+    "message": "Išvaizda nebūtų išsaugota. vėl rinktis savo parinktis atgal."
+  },
+  "themeRetry": {
+    "message": "Atgal išsaugoti išvaizda"
+  },
+  "themeDensity": {
+    "message": "Informacijos tankumas"
+  },
+  "themeComfortable": {
+    "message": "Patogūs"
+  },
+  "themeCompact": {
+    "message": "Kompaktiškas"
+  },
+  "themeDensityHelp": {
+    "message": "Pritaikyti erdvės parametrus ir vietinius administratoriaus įrankius."
+  },
+  "profilesChanges": {
+    "message": "Pokyčiai palyginti su išsaugotu atrankos"
+  },
+  "profilesDiscard": {
+    "message": "Išvengti nesveikiamų pokyčių"
+  },
+  "profilesLoadRetry": {
+    "message": "Atsisiųsti išsaugotas atrankos"
+  },
+  "profilesNotLoaded": {
+    "message": "Išsaugotas atrankos nepakrautas"
+  },
+  "profilesUnsaved": {
+    "message": "Nepažengtos pasikeitimų projektas"
+  },
+  "profilesUnchanged": {
+    "message": "Išsaugotas atrankos projektas · neaktyvus projektas"
+  },
+  "profilesSaving": {
+    "message": "Vietos rinkimų taupymas…"
+  },
+  "settingsUnsaved": {
+    "message": "Nepažengusios pokyčiai"
+  },
+  "providerUnknown": {
+    "message": "Rezultatai nežinomi"
+  },
+  "auditVerdictAtDecision": {
+    "message": "Rezultatai sprendime"
+  },
+  "ui_169": {
+    "message": "Analizės prototipas: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "Darbo ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "Pateikimo ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Atgaunamasis prototipas: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": "Rezultatas automatiškai atšaukiamas kas $P1$ sekundę (pasižymi $P2$); baigtas analizės protocolas čia pasirodo be naujo prašymo, kai jis yra saugomas.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "Po atnaujinimo arba procesų praradimo, tai lieka laukiama; nesuprantama, kad nuoroda buvo atidaryta arba atšaukta."
+  },
+  "auditCancelUser": {
+    "message": "Atsisakė naudotojo"
+  },
+  "auditCancelEscape": {
+    "message": "Uždarytas pabėgimas"
+  },
+  "auditCancelDestination": {
+    "message": "Pasikeitė paskirties vieta"
+  },
+  "auditCancelContext": {
+    "message": "Paskelbimo kontekste uždarytas"
+  },
+  "auditCancelUnknown": {
+    "message": "Nežinomas atšaukimo priežastis"
+  },
+  "reportNotSaved": {
+    "message": "Ataskaita yra matoma, bet vietiniu būdu ji nebūtų išsaugota."
+  },
+  "checkOrigin_live": {
+    "message": "Dabartinis tiekėjas rezultatas"
+  },
+  "checkOrigin_stored": {
+    "message": "Suvartotas rezultatas"
+  },
+  "checkOrigin_none": {
+    "message": "Nėra teikėjo stebėjimo"
+  },
+  "checkOutcome_success": {
+    "message": "Prašymas sėkmingas"
+  },
+  "checkOutcome_failed": {
+    "message": "Prašymas nesėkmingas"
+  },
+  "checkOutcome_disabled": {
+    "message": "Išorinis analizė neįmanoma"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Praleistas leidimas"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Paslaugų teikėjas trūksta"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Nėra teikėjo nuorodos"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Nėra naujų prašymų"
+  },
+  "checkOutcome_no_result": {
+    "message": "Nėra naujų rezultatų"
+  },
+  "checkAttempted": {
+    "message": "Patikrink bandymą"
+  },
+  "checkObserved": {
+    "message": "Rezultatai stebimi"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Sprendimo priežastys"
+  },
+  "auditReasonsLatest": {
+    "message": "Paskutinė priežastis, prieinamos"
+  },
+  "auditReasonsMissing": {
+    "message": "Įrašas tuo metu nėra"
+  },
+  "coverageSummary": {
+    "message": "Apdaila – aptikta: $1• Priimtinai $2• apdorojami : $3• nesėkmingai: $4Išskirtinė išmintis: $5Išmetami daiktai yra nevertinami."
+  },
+  "supportTitle": {
+    "message": "Vietos paramos ataskaita"
+  },
+  "supportHelp": {
+    "message": "Iš anksto pateikiamas minimalus diagnostinis ataskaitas, tada jį išsaugokite vietiniu būdu. Nėra siunčiama."
+  },
+  "supportPreview": {
+    "message": "Previdentavimo ataskaita"
+  },
+  "supportConfiguration": {
+    "message": "Įtraukti siauras nuostatas (nėra raktų ar siuntėjų sąrašų)"
+  },
+  "supportSave": {
+    "message": "Išsaugokite ataskaitą vietiniu būdu"
+  },
+  "coverageAttachments": {
+    "message": "Priedai"
+  },
+  "coverageDomains": {
+    "message": "Unikalios domeno"
+  },
+  "coverageBatch": {
+    "message": "Batch kairiosios"
+  },
+  "coverageLimits": {
+    "message": "Ribos per pasą: 100 priedų, 25 MiB per priedą, 100 unikalių domeno, 20 pakuotės nuorodų."
+  },
+  "localProfileTitle": {
+    "message": "Vietos profilis"
+  },
+  "localProfileHelp": {
+    "message": "Eksporto išsaugotas išvaizda arba vietinės apsaugos nustatymo atskirai. Preview ir konfirmuoti importuoti. raktai, leidimas, leidimai, pasitikrinti siuntėjai ir audito istorija yra išjungti."
+  },
+  "localProfileExport": {
+    "message": "Eksporto išvaizda"
+  },
+  "localProfileFile": {
+    "message": "Rinkitės profilio failą ( JSON, iki 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "JSON profilis (arba čia įdėti)"
+  },
+  "localProfilePreview": {
+    "message": "Pokyčiai iš anksto"
+  },
+  "localProfileApply": {
+    "message": "Įveskite rodomą pakeitimą"
+  },
+  "localProfileDiscard": {
+    "message": "Įvežimas apribotas"
+  },
+  "localProfileInvalid": {
+    "message": "Neįgali profilių, nepalaikytos versijos ar uždrausta laukas."
+  },
+  "localProfileChanged": {
+    "message": "Išvaizda pasikeitė nuo išankstinio peržiūros. išankstinis peržiūra dar prieš taikydamas."
+  },
+  "localProfileFailed": {
+    "message": "Profilis nebūtų išsaugotas. peržiūrėti dabartines parametrus ir atšaukti."
+  },
+  "localProfileApplied": {
+    "message": "Apskritai, naudojamas profilis. apsauga ir pritarimas nesikeičia."
+  },
+  "analysisTitle": {
+    "message": "Analizės šaltiniai"
+  },
+  "analysisMixed": {
+    "message": "Vietos + išorės kontrolės"
+  },
+  "analysisExternal": {
+    "message": "Išorinės stebėjimai prieinami"
+  },
+  "analysisLocal": {
+    "message": "Vietos · nėra išorinių rezultatų"
+  },
+  "analysisLocalChecked": {
+    "message": "Vietos žinutės / nuorodos heuristikos užbaigtas."
+  },
+  "analysisLocalPending": {
+    "message": "Vietos vertinimo dar nėra užfiksuota."
+  },
+  "analysisUnknown": {
+    "message": "Nežinomas"
+  },
+  "analysisTimeUnknown": {
+    "message": "Laikas neįrašytas"
+  },
+  "analysisObserved": {
+    "message": "Paskutinis naudingas atsakymas"
+  },
+  "analysisFindingObserved": {
+    "message": "Rasti įrašą"
+  },
+  "analysisAttempted": {
+    "message": "Paskutinis prašymas bandymas"
+  },
+  "analysisPartial": {
+    "message": "Kai kurie prašymai nesugebėjo; turimi rezultatai ne kiekvieną elementą."
+  },
+  "analysisOtherServices": {
+    "message": "Kiti produktai / Nėra tikrinami"
+  },
+  "analysisLimit": {
+    "message": "Vietinis rezultatas nėra antivirusinis teismo sprendimas. prašymai ir įkėlimai nėra baigtos analizės. saugomi rezultatai išlaiko savo pradinį amžių; trūkstami įrašai nesuteikia įrodymų, kad anksčiau prašymo nenustatyta."
+  },
+  "analysisScope_hash": {
+    "message": "Failo hash reputacija"
+  },
+  "analysisScope_file": {
+    "message": "Failo pateikimas"
+  },
+  "analysisScope_url": {
+    "message": "URL analizė"
+  },
+  "analysisScope_domain": {
+    "message": "Domeno reputacija"
+  },
+  "analysisScope_ip": {
+    "message": "Viešoji reputacija IP"
+  },
+  "analysisScope_report": {
+    "message": "Analizės ataskaita"
+  },
+  "analysisState_running": {
+    "message": "Prašyta · dar nėra baigto rezultato"
+  },
+  "analysisState_checked": {
+    "message": "Rezultatai gaunami"
+  },
+  "analysisState_received": {
+    "message": "Atsakymas gautas · Teismo sprendimas nepatenkintas"
+  },
+  "analysisState_submitted": {
+    "message": "Pateikimas priimtinas · analizė nepateikta"
+  },
+  "analysisState_not_found": {
+    "message": "Nėra registruotų tiekėjų"
+  },
+  "analysisState_failed": {
+    "message": "Prašymas nesėkmingas; jokių naujų teismo sprendimų"
+  },
+  "analysisState_incomplete": {
+    "message": "Nėra atlikto analizės"
+  },
+  "analysisSource_remote": {
+    "message": "Išorinė pagalba susisiekta"
+  },
+  "analysisSource_cache": {
+    "message": "Atminties atsarginė kortelė · jokių naujų teikėjų prašymų"
+  },
+  "analysisSource_stored": {
+    "message": "Išorinės stebėjimo saugojimas"
+  },
+  "analysisSource_attempt": {
+    "message": "Prašymas bandymas · Atsakymas neatsakytas"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Teismo sprendimas nepatenkintas"
+  },
+  "analysisVerdict_none": {
+    "message": "Galimi rezultatai: jokių aptikimų (nėra saugos garantijos)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "Galimi rezultatai apima įtartinus rodiklius"
+  },
+  "analysisVerdict_malicious": {
+    "message": "Galimi rezultatai apima grėsmės aptikimą"
+  },
+  "analysisReason_unconfigured": {
+    "message": "Šiuo metu nėra konfigūruota"
+  },
+  "analysisReason_disabled": {
+    "message": "Išoriniai prašymai neįmanomi"
+  },
+  "analysisReason_permission": {
+    "message": "Pritrūksta leidimo įteikti naujus prašymus"
+  },
+  "analysisReason_authorization": {
+    "message": "Nėra automatinio leidimo šiam žinutėms / rankiniu režimu"
+  },
+  "analysisReason_policy": {
+    "message": "Neleidžiama pagal dabartinį privatumo lygį"
+  },
+  "analysisReason_on_action": {
+    "message": "Veikia tik po aiškios nuorodos"
+  },
+  "analysisReason_unrecorded": {
+    "message": "Nėra įrašų, kad būtų galima peržiūrėti šį laišką"
+  },
+  "analysisUnavailable": {
+    "message": "Analizės šaltiniai šiuo metu nėra prieinami"
+  },
+  "analysisModeUnknown": {
+    "message": "Analizės būklė dar neįrašyta"
+  },
+  "analysisModeRunning": {
+    "message": "Išorinis prašymas veikia · rezultatas laukia"
+  },
+  "analysisModeSubmitted": {
+    "message": "Išorinis pateikimas · analizė dar nėra baigtas"
+  },
+  "analysisModeIncomplete": {
+    "message": "Išorinis tikrinimas nepilnas · užbaigimas neatsirado"
+  },
+  "analysisModePartial": {
+    "message": "Išoriniai rezultatai prieinami · Kai kurie prašymai nesėkmingi"
+  },
+  "analysisModeFailed": {
+    "message": "Išorinis prašymas nesėkmingas · nenaudojamas rezultatas įrašytas"
+  },
+  "analysisModeResults": {
+    "message": "Išoriniai atsakymai prieinami · žiūrėti žemiau esančius tikrinimus"
+  },
+  "analysisResourceMessage": {
+    "message": "Žinios kontekste / transportas reputacija"
+  },
+  "analysisResourceAttachment": {
+    "message": "prisijungimas"
+  },
+  "analysisResourceLink": {
+    "message": "Linkas"
+  },
+  "analysisResourceUnknown": {
+    "message": "Ankstesnis straipsnis: Išteklių įrašas neįrašytas"
+  },
+  "analysisTruncated": {
+    "message": "Kai kurie išteklių detalės buvo pamirštos, nes buvo pasiektas vietinis rodiklio ribas."
+  },
+  "analysisResources": {
+    "message": "Šioje žinutėje pateikiami ištekliai"
+  },
+  "analysisResourceLocal": {
+    "message": "Priedai, saugomi su žinutėmis · ne antivirusinio skenavimo įrodymai"
+  },
+  "analysisResourceTarget": {
+    "message": "Nuotolinio turinio įkrovimas nėra išorinio analizės įrodymas"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Nėra išorės kontrolės užrašyta šiam ištekliui"
+  },
+  "analysisContextChanged": {
+    "message": "Pranešimo kontekste pasikeitė. Uždarykite ir vėl atidarykite popupą prieš pateikiant vėl."
+  },
+  "analysisLocalIncomplete": {
+    "message": "Vietinis analizė yra netobula: kai kurie žinutės turinys nėra prieinamas."
+  },
+  "analysisLocalUnavailable": {
+    "message": "Vietinis analizė nėra prieinama: žinutė nebūtų galima perskaityti."
+  },
+  "analysisHistoryTitle": {
+    "message": "Paskelbta istorijos · Asamblėja nepateikta"
+  },
+  "analysisHistoryWarning": {
+    "message": "Šie istoriniai įrašai gali priklausyti kitam žinutėms su tuo pačiu Message-ID. Jie netvirtina šio žinutės tikrinimo."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Naujų šaltinių stebėjimai nebūtų išgelbėti; esama istorija buvo išsaugota."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "Atnaujinimą ataskaitoje neįmanoma išsaugoti. ankstesni protokolai buvo išsaugomi."
+  },
+  "sourceExportOpen": {
+    "message": "Analizės šaltinis iš anksto"
+  },
+  "sourceExportTitle": {
+    "message": "Analizės šaltinis"
+  },
+  "sourceExportIntro": {
+    "message": "Sukurkite vietinį įrašytų kontrolės vaizdą. tai neperduoda naujo analizės. Dabartinės stebėjimai ir saugoma istorija su netvirtinta asocijacijacija laikomi atskirai."
+  },
+  "sourceExportPrivacy": {
+    "message": "Įtraukia teikiamas, statybos, teismo sprendimai ir tiksli stebėjimo laikotarpiai. Išskyrus URLs, filenamus, hashus, IP, raktus, laiško tekstą ir vidinius identifikatorius. Išteklių numerius taikoma tik šiame ataskaitoje. Tai nėra pilnas istorijos ar autentizuotas įrašas. Nėra siunčiama automatiškai. Peržiūra prieš dalijimąsi."
+  },
+  "sourceExportCancel": {
+    "message": "Išskirtinis išankstinis"
+  },
+  "sourceExportContentLabel": {
+    "message": "Ataskaitos išvada ( JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "Pranešimo kontekste nebėra. Atnaujinti ataskaitą iš savo žinutės įrankio juosto popup."
+  },
+  "sourceExportChanged": {
+    "message": "Įrašyta būklė pasikeitė. prieš taupydami sukurkite naują išankstinį peržiūrą."
+  },
+  "sourceExportReady": {
+    "message": "Peržiūrėkite išankstinį peržiūrą prieš išsaugojdami ar dalijdami."
+  },
+  "sourceExportRequested": {
+    "message": "Išsaugokite prašymą. peržiūrėkite užbaigimą Thunderbird atsisiuntimis."
+  },
+  "sourceExportFailed": {
+    "message": "Ataskaita nėra išsaugota. sukurti naują išankstinį peržiūrą pabandyti dar kartą."
+  },
+  "analysisHistoryPages": {
+    "message": "Istorijos puslapių"
+  },
+  "analysisHistoryEntries": {
+    "message": "Įvadas"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Įtariamas ar kenksmingas istorinis atradimas · asocijacijacija nepateikta"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Pirmą kartą pateikiama istorinė įspėjama"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Rodyti stipresnę dabartinę atradimą"
+  },
+  "reportDisplayFailed": {
+    "message": "Išsaugotas ataskaitas nebus rodomas.Kiti rezultatai lieka prieinami."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Kai kurie ataskaitos detalės turi nepalaikytą formatą ir gali būti nepaaiškintos."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Kai kurie saugomi analizės rezultatai nebūtų perskaityti, kiti rezultatai lieka prieinami."
+  },
+  "analysisModeResponses": {
+    "message": "Atsakymai gaunami · nėra vertinamo sprendimo"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Atsakymai gavę be vertinamų sprendimų · Kai kurie prašymai nesugebėjo"
+  },
+  "analysisCurrentAvailability": {
+    "message": "Naujų prašymų"
+  },
+  "reasonMaliciousIp": {
+    "message": "Šalti serverio IP adresas aptiktas ( $IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "Išoriniai grėsmės rodikliai ( URLhaus ir IP reputacija)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus – Žinomi kenkėjiškų programų domenas aptiktas: $DOMAINS$",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "IP Reputation ( $PROVIDER$) – Įtariamas serverio IP: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "urlscan.io rezultatai:"
+  },
+  "urlscanStatus": {
+    "message": "Statuso: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridReportLink": {
+    "message": "Atviras išsamias ataskaitas apie Hybrid Analysis"
+  },
+  "hybridProviderMessage": {
+    "message": "Paslaugų teikėjas: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "Hybrid Analysis norma ribos arba kvotos buvo pasiektos. prašome pabandyti dar kartą vėlesniame etape."
+  },
+  "reasonArchivedMaliciousAttachment": {
+    "message": "Istoriniai tyrimai ($OBSERVED$). $PROVIDER$ Klasikinės įtraukos »$NAME$„Kaip ir kenksmingai.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonArchivedSuspiciousAttachment": {
+    "message": "Istoriniai tyrimai ($OBSERVED$). $PROVIDER$ Klasikinės įtraukos »$NAME$„Kaip įtarus yra.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonMaliciousAttachment": {
+    "message": "Priedai \" $NAME$ \" buvo klasifikuojamas kaip kenksmingas $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "Įtampa \" $NAME$ \" buvo klasifikuota kaip įtariama $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanReportLink": {
+    "message": "Atviras išsamias ataskaitas apie urlscan.io"
+  },
+  "hybridLinkVerdictStatus": {
+    "message": "Hybrid Analysis: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonMaliciousLinkVerdict": {
+    "message": "nuoroda \" $URL$ \" buvo klasifikuota kaip kenksminga $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousLinkVerdict": {
+    "message": "nuoroda \" $URL$ \" buvo klasifikuota kaip įtariama $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanErrorDetails": {
+    "message": "Žyma: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "urlscan.io norma ribos arba kvotos buvo pasiektos. prašome pabandyti dar kartą vėlesniame etape."
+  },
+  "urlscanInvalidKey": {
+    "message": "Neteisingas arba neleistinas urlscan.io API raktas."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Rezultatas nėra paruoštas apklausos langelyje. priimtą skenavimą galima vėl peržiūrėti be naujo pateikimo."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Domeno nebūtų galima išspręsti urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Hybrid Analysis elementas dar nėra įrašytas (nėra ankstesnio analizės)."
+  },
+  "virustotalNotFound": {
+    "message": "Elemento dar nėra įrašytas VirusTotal bazėje."
+  },
+  "virustotalRateLimited": {
+    "message": "VirusTotal norma ribos arba kvotos buvo pasiektos. prašome pabandyti dar kartą vėlesniame etape."
+  },
+  "virustotalInvalidKey": {
+    "message": "Neteisingas arba neleistinas VirusTotal API raktas."
+  },
+  "abuseipdbRateLimited": {
+    "message": "AbuseIPDB norma ribos arba kvotos buvo pasiektos. prašome pabandyti dar kartą vėlesniame etape."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Neteisingas arba neleistinas AbuseIPDB API raktas."
+  },
+  "urlhausRateLimited": {
+    "message": "URLhaus norma ribos arba kvotos buvo pasiektos. prašome pabandyti dar kartą vėlesniame etape."
+  },
+  "urlhausInvalidKey": {
+    "message": "Neteisingas arba neleistinas URLhaus API raktas."
+  },
+  "testApiKeyButton": {
+    "message": "Patikrinti ryšį"
+  },
+  "testApiKeyTesting": {
+    "message": "Testas ryšį…"
+  },
+  "testApiKeyValid": {
+    "message": "Prašymas priimtinas. tai netvirtina įkėlimo teisių ar likusios kvotos."
+  },
+  "testApiKeyInvalid": {
+    "message": "Prijungimas nesugebėjo: Neteisingas API raktas."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Palūkanų riba arba kvotas pasiekiami. prašome vėl pabandyti vėlesniame etape."
+  },
+  "testApiKeyError": {
+    "message": "Atsijungimo testas nesėkmingas."
+  },
+  "testApiKeyEmpty": {
+    "message": "Pirmiausia įveskite API raktą."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "Leidimas prisijungti prie serverio šeimininkų buvo atmestas."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Prašome pirmiausia rinktis IP reputacijos teikėjo."
+  },
+  "rateLimitWithWait": {
+    "message": "Palūkanų riba arba kvotas pasiekiamas. prašome vėl pabandyti $SECONDS$ sekundėse.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Rinkos riba pasiekiama"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Įvertintas API raktas"
+  },
+  "auditErrorCode": {
+    "message": "Klaidos kodas"
+  },
+  "auditErrorDetails": {
+    "message": "Klaidos detalės"
+  },
+  "auditRetryAfter": {
+    "message": "Laukti laiku"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ sekundės",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "securityTitle": {
+    "message": "Valdymas ir nuorodos apsauga"
+  },
+  "securityScope": {
+    "message": "Vietos į šį Thunderbird profilį. Neleidžia profilio pokyčius, išjungti priedą ar atidaryti kopijuotus nuorodas kitur."
+  },
+  "securityAdminPassword": {
+    "message": "Paslaptis administratorius (12+ simbolių; palikti tuščią laikyti)"
+  },
+  "securityApprovalPassword": {
+    "message": "Atskiras nuorodos paraiškas (12+ simbolių; palikti tuščią laikyti)"
+  },
+  "securityThreshold": {
+    "message": "Reikalingas leidimas rizikos rezultatų (0–100, įskaitant)"
+  },
+  "securityEnablePolicy": {
+    "message": "Įsigykite privalomą nuorodų apsaugą"
+  },
+  "securityUnknownApproval": {
+    "message": "Taip pat reikalingas netobulos kontrolės leidimas"
+  },
+  "securityUnlock": {
+    "message": "Atverti nuostatas"
+  },
+  "securitySave": {
+    "message": "Saugoti apsaugą"
+  },
+  "securityLock": {
+    "message": "Užrakinti dabar"
+  },
+  "securityDisable": {
+    "message": "Ištrinti parametrų slaptažodį"
+  },
+  "securityRecovery": {
+    "message": "Atkūrimo kodas"
+  },
+  "securityRecover": {
+    "message": "Atsisiųskite admin slaptažodį naudojant kodą"
+  },
+  "securityStopTransfers": {
+    "message": "Sustabdyti išorinius perdavimus"
+  },
+  "securityLocked": {
+    "message": "Nuostatos užrakintos. Norėdami jas atrakinti, įveskite administratoriaus slaptažodį."
+  },
+  "securityUnlocked": {
+    "message": "Nustatymai atverti; užrakinti po penkių minučių be veikimo."
+  },
+  "securityOptional": {
+    "message": "Slaptosios nuorodos apsauga yra atviros ir šiuo metu išjungtos. be slaptažodžio, apsaugoti nuorodos lieka blokuojamos."
+  },
+  "securityError": {
+    "message": "Atsisakoma atlikti operaciją. patikrink savo slaptažodį, sesiją ir įvedimą."
+  },
+  "securityWait": {
+    "message": "Per daug bandymų. laukti prieš atsipalaidavimą."
+  },
+  "securityLength": {
+    "message": "Naudokite bent 12 simbolių ir atskirus slaptažodžius."
+  },
+  "securityRecoverySave": {
+    "message": "Išsaugokite šį vienkartinį atkūrimo kodą atskirai. jis nebus vėl rodomas:"
+  },
+  "securitySaved": {
+    "message": "Apsaugos įranga išsaugota."
+  },
+  "securityDisableConfirm": {
+    "message": "Ištrinti parametrų slaptažodį? nuorodos apsauga lieka konfigūruota."
+  },
+  "securityStopped": {
+    "message": "Išoriniai perdavimai sustojo."
+  },
+  "securityApprovalTitle": {
+    "message": "Potencialios pavojingos turinio atėmimas"
+  },
+  "securityConfirmDanger": {
+    "message": "Bet kuriuo metu norėčiau atidaryti šį potencialiai pavojingą turinį."
+  },
+  "securityApproveOnce": {
+    "message": "Atnaujinti ir atidaryti kartą"
+  },
+  "securityExpired": {
+    "message": "Pasibaigė leidimas arba kontekste pasikeitė. pradėti iš naujo iš žinutės."
+  },
+  "securityOpened": {
+    "message": "Thunderbird pritarė prašymui atidaryti."
+  },
+  "securityApprovalFailed": {
+    "message": "Atverti neleidžiama. Patikrinkite slaptažodį arba, jei patvirtinimas nebegalioja, pradėkite iš naujo nuo laiško."
+  },
+  "providerTestDisclosure": {
+    "message": "Tai siunčia jūsų API raktinius ir fiksuotus bandymų datus pasirenkamam tiekėjui, be žinutės turinio. Sėkmingas skaito testas nevertina įkėlimo ar turimos kvotos."
+  },
+  "analysisSimple": {
+    "message": "Apžvalga"
+  },
+  "analysisExpert": {
+    "message": "Techninės detalės"
+  },
+  "analysisSimpleNone": {
+    "message": "Nėra įtartinų požymių"
+  },
+  "analysisSimpleCaution": {
+    "message": "Įtarimas"
+  },
+  "analysisSimpleDanger": {
+    "message": "Žalingas atradimas"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Patikra nebaigta"
+  },
+  "analysisScoreExplanation": {
+    "message": "Rizikos balas apskaičiuojamas pagal taisykles ir nereiškia tikimybės ar saugumo garantijos."
+  },
+  "analysisSimpleBasis": {
+    "message": "Paslaugos su atradimais / neįmanoma"
+  },
+  "analysisProviderSetup": {
+    "message": "Paslaugų teikėjo prieiga ir atskleidimas"
+  },
+  "analysisProviderConfigured": {
+    "message": "Pagrindinis raktas konfigūruotas; saugojant jį nesikreipiama."
+  },
+  "analysisProviderNoKey": {
+    "message": "Nėra konfigūruotų raktų"
+  },
+  "analysisDataHash": {
+    "message": "Duomenų atspaudai ( SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Visiškas priedai"
+  },
+  "analysisDataUrl": {
+    "message": "Išsamus URL; gali būti konfidencialių tokenų"
+  },
+  "analysisDataDomain": {
+    "message": "Domeno nuoroda"
+  },
+  "analysisDataIp": {
+    "message": "Viešasis IP iš žinutės vadybininkų"
+  },
+  "analysisDataReport": {
+    "message": "Ataskaitos identifikatorius"
+  },
+  "analysisApprovalRequired": {
+    "message": "Papildomas leidimas reikalingas; atšaukti arba paprašyti administratoriaus."
+  },
+  "analysisContinueWarning": {
+    "message": "Peržiūrėkite priežastis prieš tęsiant. galite atšaukti."
+  },
+  "analysisConflict": {
+    "message": "Pardavėjai nesutaria; dėl išvados imasi pirmenybės."
+  },
+  "analysisExportSensitive": {
+    "message": "Prieš eksportavimą apžvalga: techninės detalės gali nustatyti žinutės išteklius."
+  },
+  "scanActions": {
+    "message": "Išoriniai kontrolės"
+  },
+  "scanStart": {
+    "message": "Tikrinti dabar"
+  },
+  "scanRepeat": {
+    "message": "Tikrinti iš naujo"
+  },
+  "scanRefresh": {
+    "message": "Atnaujinti rezultatus"
+  },
+  "scanRunning": {
+    "message": "Išorinis tikrinimas progresuoja"
+  },
+  "scanProgress": {
+    "message": "Išsamūs ištekliai"
+  },
+  "scanMigrationNotice": {
+    "message": "Įrenginyje pasirinksite automatinį skenavimo režimą. iki to momento taikomos ankstesnių siuntėjų ir vadybinių taisyklių."
+  },
+  "scanState_idle": {
+    "message": "Šioje vietoje nėra aktyvių skanavimo darbų."
+  },
+  "scanState_queued": {
+    "message": "Įvertinti priimtą; laukti pradėti"
+  },
+  "scanState_running": {
+    "message": "Išorinis tikrinimas progresuoja"
+  },
+  "scanState_completed": {
+    "message": "Įvertinti užbaigtas"
+  },
+  "scanState_pending": {
+    "message": "Pardavėjas vis dar tvarko; atnaujinti rezultatus"
+  },
+  "scanState_incomplete": {
+    "message": "Patikrink nepilną; kai kurie rezultatai trūksta"
+  },
+  "scanState_failed": {
+    "message": "Patikrink nesėkmę; pabandykite dar kartą"
+  },
+  "scanState_blocked": {
+    "message": "Išorinio tikrinimo pradžia; žr. reikalavimus žemiau"
+  },
+  "analysisReason_manual": {
+    "message": "Manualų režimas"
+  },
+  "analysisReason_sender": {
+    "message": "Siuntėjas nepateikė"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Automatiškas nuorodos analizė"
+  },
+  "analysisReason_no_resources": {
+    "message": "Nėra atitinkamų išteklių"
+  },
+  "analysisReason_quota": {
+    "message": "Kitas įrašas: Laukite, kol atsiliepsite"
+  },
+  "analysisReason_running": {
+    "message": "Pardavėjas tvarko"
+  },
+  "analysisReason_provider_error": {
+    "message": "Pardavėjo prašymas nesėkmingas"
+  },
+  "scanModeLabel": {
+    "message": "Automatiškas išorinis skenavimo"
+  },
+  "scanModeKeep": {
+    "message": "Laikykite ankstesnį parametrą (pasirenkate režimą)"
+  },
+  "scanModeAll": {
+    "message": "Visi atverti laiškai"
+  },
+  "scanModeSenders": {
+    "message": "Tik patvirtinti siuntėjai"
+  },
+  "scanModeManual": {
+    "message": "Tik rankiniu būdu"
+  },
+  "scanModeHelp": {
+    "message": "Automatinės patikros siunčia tik maišos reikšmes, domenus ir viešuosius IP adresus. Visos nuorodos ir priedai tvirtinami atskirai. Neatverti laiškai lieka vietoje."
+  },
+  "assessmentCompletion": {
+    "message": "Apdorojimo statusas"
+  },
+  "assessmentCompletion_pending": {
+    "message": "Pardavėjas vis dar tvarko"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Atnaujinta ataskaita"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "Nėra galutinio vertinimo"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Techninė apdorojimo procedūra nesėkminga"
+  },
+  "assessmentConflict": {
+    "message": "Skirtingos dalinės vertinimai; stipresnis atradimas lemia veikimą."
+  },
+  "assessmentSignals": {
+    "message": "Vertinimo pagrindas"
+  },
+  "assessmentJob": {
+    "message": "Darbo ID teikėjas"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Teismas teikia teismo sprendimą"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Skanerių paieška"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Pradinis grėsmės rezultatas"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Išskirtinis multiscan rezultatas"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Pradinis grėsmės lygis"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Pardavėjas baltymų indikacija"
+  },
+  "assessmentSignal_overall": {
+    "message": "Urlscan bendras vertinimas"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Urlscan variklio vertinimo"
+  },
+  "assessmentSignal_engines": {
+    "message": "Kiti variklio atradimai"
+  },
+  "assessmentSignal_brand": {
+    "message": "Prekės ženklas; nepaaiškina rizikos savaime"
+  },
+  "assessmentSignal_report": {
+    "message": "Ataskaita apie valstybę"
+  },
+  "assessmentOriginal": {
+    "message": "Pradinis teismo sprendimas"
+  },
+  "hybridExpertTitle": {
+    "message": "API v2 ataskaitos detalės"
+  },
+  "hybridExpertScope": {
+    "message": "Tik faktiniai laukai rodomi. Greitas skenavimo neįrodoma, kad visi sandbox vykdymas. dingę duomenys nėra neigiamas atradimas. URLs ignoruoja pažymėjimus, užklausos juostus ir fragmentai; komandos linijos ir žaliavos ataskaitos nėra rodomi. Atverti šiuos detales siunčia prašymą."
+  },
+  "hybridExpertMissing": {
+    "message": "Šiame straipsnyje nenurodyta"
+  },
+  "hybridExpertYes": {
+    "message": "Taip"
+  },
+  "hybridExpertNo": {
+    "message": "Ne"
+  },
+  "hybridExpert_identity": {
+    "message": "Failo ir išteklių tapatybė"
+  },
+  "hybridExpert_assessment": {
+    "message": "Pradinė vertinimo ir apdorojimo procedūra"
+  },
+  "hybridExpert_scanners": {
+    "message": "Skandalo rezultatai"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Individualus antivirusinis aptikimas"
+  },
+  "hybridExpert_reports": {
+    "message": "Sandbox ataskaitos"
+  },
+  "hybridExpert_counts": {
+    "message": "Atskaičiuota bendra"
+  },
+  "hybridExpert_signatures": {
+    "message": "Veiklos parašai"
+  },
+  "hybridExpert_mitre": {
+    "message": "ATT ir CK"
+  },
+  "hybridExpert_network": {
+    "message": "Tinklo rodikliai"
+  },
+  "hybridExpert_processes": {
+    "message": "procesai"
+  },
+  "hybridExpert_extracted": {
+    "message": "Išimti failai"
+  },
+  "hybridExpert_certificates": {
+    "message": "Sertifikatas"
+  },
+  "hybridExpertEmpty": {
+    "message": "Siūloma kaip tuščias sąrašas; jokių įrašų"
+  },
+  "securityPasswordHelp": {
+    "message": "Šio profilo apsauga. Naudokite skirtingus slaptažodžius, turinčius bent dvylika simbolių, kad būtų galima valdyti ir susieti su leidimu. Palikite naujus slaptažiniais laukus tuščias, kad būtų išsaugoti esami slaptažodos."
+  },
+  "securityAdminConfirm": {
+    "message": "Įvertinti naują administratoriaus slaptažodį"
+  },
+  "securityApprovalConfirm": {
+    "message": "Paskutinės nuorodos paspaudimas"
+  },
+  "securityRecoveryPassword": {
+    "message": "Naujas administratoriaus slaptažodis atkūrimo"
+  },
+  "securityApprovalConfigured": {
+    "message": "Sujungimo pritarimo slaptažodis yra konfigūruotas; jį galima pakeisti, bet niekada neparodyti."
+  },
+  "securityApprovalMissing": {
+    "message": "Nėra nuorodos, kuriomis reikalingas slaptažodžio leidimas, slaptažoda yra užblokuota."
+  },
+  "securityConfirmMismatch": {
+    "message": "Nauji slaptažodžiai ir jų pastabos neatitinka."
+  },
+  "securityUnlockPassword": {
+    "message": "Dabartinis administratoriaus slaptažodis"
+  },
+  "displaySettingsTitle": {
+    "message": "Analizės rodymas"
+  },
+  "displaySettingsHelp": {
+    "message": "Rodyti pageidavimai nesikeičia skenavimo, išorinių perdavimų, rezultatų ar nuorodų apsauga. Jūs vis dar galite pereiti tarp peržiūrų ir ekspertų peržiūrą, kai skaitote rezultatus."
+  },
+  "displayDefaultView": {
+    "message": "Išimtiniai ženklai žinutėms ir popup"
+  },
+  "displayHybridDetails": {
+    "message": "Parodyti papildomus hibridinių API ataskaitų skyrius"
+  },
+  "displaySave": {
+    "message": "Išsaugokite parinktis"
+  },
+  "displaySaved": {
+    "message": "Parodo preferencijos išsaugotos."
+  },
+  "urlscanDnsError": {
+    "message": "Pardavėjas nesugebėjo išspręsti tikslo domeno."
+  },
+  "urlscanInvalidRequest": {
+    "message": "Pardavėjas atmetė neigiamus pateikimo parametrus."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "Pardavėjas atmetė pateikimą; atsakymas nenustato DNS nesėkmių."
+  },
+  "analysisQuotaReset": {
+    "message": "Atnaujinta kvotų suma"
+  },
+  "analysisRetryAt": {
+    "message": "Ankstesnis atsiliepimas"
+  },
+  "analysisLocalBackoff": {
+    "message": "Šis bandymas buvo išsiųstas vietiniu mastu; naujų teikėjų prašymų nėra."
+  },
+  "scanState_deferred": {
+    "message": "Analizė ištrinta: visi fone sloty yra užimti. atgal po kito analizės pabaigos."
+  },
+  "scanCoverage": {
+    "message": "Kai kurie ištekliai netikrintos."
+  },
+  "scanCoverageAttachments": {
+    "message": "Priemonės paruoštos"
+  },
+  "scanCoverageLinks": {
+    "message": "Išrinktos nuorodos"
+  },
+  "scanCoverage_read_failed": {
+    "message": "Įrašas nebūtų galima perskaityti ar iššifruoti."
+  },
+  "scanCoverage_size_limit": {
+    "message": "Vienas priedas viršija 25 MiB skenavimo ribą."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "Skanymo išteklių riba buvo pasiektas."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "Įrašų sąrašas yra nepaklusnis."
+  },
+  "scanFailure_source_capacity": {
+    "message": "Šaltinis istorija yra pilna. Šis tikrinimas nesibaigė; esami įrašai buvo išsaugoti."
+  },
+  "scanFailure_cancelled": {
+    "message": "Tikrinimas atšauktas.Nėra rezultatų."
+  },
+  "scanFailure_timeout": {
+    "message": "Tikrinimas baigėsi, rezultatai lieka nepakartojami."
+  },
+  "scanFailure_scan_failed": {
+    "message": "Tikrinimas nesugebėjo baigtis. esami įrašai buvo išsaugoti."
+  },
+  "localProtectionProfileExport": {
+    "message": "Eksporto apsauga"
+  },
+  "localProfileYes": {
+    "message": "Taip"
+  },
+  "localProfileNo": {
+    "message": "Ne"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Senesni apsauginiai profiliai gali neplėsti automatinio skenavimo taikymo arba pasukti URL pateikimo."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "Esamo šaltinio istorija nėra galima perskaityti ir išsaugota nekeičiama."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "Sklandimo konfliktas neleido šaltinio istorijos pratęsti."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "Šio žinutės šaltinis archyvas siekė savo įėjimo ribą."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "Šio žinutės šaltinis archyvas pasieks savo saugojimo ribą."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "Prieiga prie vietinio saugojimo nesėkminga."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Galimybės: dokumentacija nepilna"
+  },
+  "apiDebugTitle": {
+    "message": "API plokštės režimas"
+  },
+  "apiDebugHelp": {
+    "message": "Įrašyti naujas API bandymai lokali diagnozuoti gedimus. Įgalinti, atkurti gedimą, tada iš anksto peržiūrėti ar eksportuoti ataskaitą. administratoriaus atverti reikalingas, kai nustatyta administratoriaus slaptažodis. raktai, privatus URLs, žinutės turinys ir žalia kūnai yra pamirštos; nuorodos ID yra pseudo. Iki 100 įrašų / 1 MiB yra laikomi atmintyje per vienos valanda ir prarandami atnaujinant. Atverti atveria ataskaitą, nėra papildomų prašymų."
+  },
+  "apiDebugEnable": {
+    "message": "API diagnozė"
+  },
+  "apiDebugSave": {
+    "message": "Išsaugokite debugą"
+  },
+  "apiDebugPreview": {
+    "message": "Išankstinis debugų ataskaita"
+  },
+  "apiDebugExport": {
+    "message": "Eksporto debugų ataskaita"
+  },
+  "apiDebugClear": {
+    "message": "aiškus debugų ataskaitas"
+  },
+  "apiDebugSaved": {
+    "message": "Suvokimo aprašymas išsaugotas. ankstesnė diagnozė išaiškinta."
+  },
+  "apiDebugCleared": {
+    "message": "Debugų ataskaita išaiškinta."
+  },
+  "apiDebugFailed": {
+    "message": "Debug operacija nesėkminga. atverti administraciją ir pabandyti dar kartą."
+  },
+  "apiDebugFailureHint": {
+    "message": "Išsamiam nesėkmių ataskaitui leidžiama API dulkių režimas, atkurti kontrolę ir eksportuoti dulkių ataskaitą."
+  },
+  "urlscanResultGone": {
+    "message": "Šis rezultatas buvo ištrintas urlscan.io. Atnaujinimai jo negrąžina; naujam pateikimui reikia aiškios skenavimo."
+  },
+  "apiDebugOpen": {
+    "message": "API diagnozė"
+  },
+  "diagTitle": {
+    "message": "API diagnozė"
+  },
+  "diagHelp": {
+    "message": "Filtruoti kontrolės vietinėje atmintyje. raktai, privatus URLs ir žalia turinys lieka paslėpti. HTTP sėkmė nėra baigtas saugos teismo sprendimas. Tik po aktyvacijos įrašyti žingsniai yra prieinami."
+  },
+  "diagOff": {
+    "message": "Debug režimas išjungtas. įjungti jį į parametrus."
+  },
+  "diagEmpty": {
+    "message": "Nėra atitikties įrašų."
+  },
+  "diagPause": {
+    "message": "Pauzės vaizdas"
+  },
+  "diagResume": {
+    "message": "Apžvalga"
+  },
+  "diagPaused": {
+    "message": "Žiūrėti pertrauką; įrašymas išlieka aktyvus."
+  },
+  "diagActive": {
+    "message": "Atkreipkite į aktyvų įrašą; atšildykite kartą per sekundę."
+  },
+  "diagProvider": {
+    "message": "Pardavėjas"
+  },
+  "diagState": {
+    "message": "valstybė"
+  },
+  "diagPurpose": {
+    "message": "Operacijos tipas"
+  },
+  "diagFrom": {
+    "message": "iš"
+  },
+  "diagTo": {
+    "message": "į"
+  },
+  "diagAll": {
+    "message": "Visi"
+  },
+  "diagRuns": {
+    "message": "Peržiūrėkite srautus"
+  },
+  "diagDetails": {
+    "message": "Išrinktas srauto detalės"
+  },
+  "diagDropped": {
+    "message": "Sumažintos įrašai ar žingsniai"
+  },
+  "diagNoHttp": {
+    "message": "Nėra HTTP skambučių įrašyta šiam srautui."
+  },
+  "diagNotCaptured": {
+    "message": "Neįsivaizduoti"
+  },
+  "diagTimeline": {
+    "message": "Laikrodis"
+  },
+  "diagRequest": {
+    "message": "Filtruotas prašymas"
+  },
+  "diagResponse": {
+    "message": "Transporto ir filtruojamo atsakymo"
+  },
+  "diagReset": {
+    "message": "Atsigavimo filtrai"
+  },
+  "diagTruncated": {
+    "message": "Šis srautas buvo sutrikęs dėl įrašymo ribų."
+  },
+  "diag_phase_precondition": {
+    "message": "Priešpriešiniai"
+  },
+  "diag_phase_queue": {
+    "message": "Kūrybiškumas"
+  },
+  "diag_phase_attempt": {
+    "message": "Siųsti bandymą"
+  },
+  "diag_phase_response": {
+    "message": "HTTP atsakymas / transportas užbaigimas"
+  },
+  "diag_phase_parse": {
+    "message": "JSON apdorojimas"
+  },
+  "diag_phase_assessment": {
+    "message": "vertinimas"
+  },
+  "diag_phase_persistence": {
+    "message": "Tvarumas"
+  },
+  "diag_phase_cache": {
+    "message": "Cache įžymybės"
+  },
+  "diag_phase_wait": {
+    "message": "Laukiama"
+  },
+  "diag_phase_cancelled": {
+    "message": "Atšauktas"
+  },
+  "diag_phase_expired": {
+    "message": "Įrašas baigėsi be patikrintos užbaigimo"
+  },
+  "diag_purpose_automatic": {
+    "message": "Automatiškas tikrinimas"
+  },
+  "diag_purpose_manual": {
+    "message": "Manualus tikrinimas"
+  },
+  "diag_purpose_link": {
+    "message": "Linkas tikrinimas"
+  },
+  "diag_purpose_key_test": {
+    "message": "Svarbiausias testas"
+  },
+  "diag_purpose_report": {
+    "message": "Pranešimo prašymas"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analizė"
+  },
+  "diag_state_running": {
+    "message": "bėgimas"
+  },
+  "diag_state_complete": {
+    "message": "Operacija baigta"
+  },
+  "diag_state_pending": {
+    "message": "Laikykitės"
+  },
+  "diag_state_blocked": {
+    "message": "Neatsirado / blokuotas"
+  },
+  "diag_state_incomplete": {
+    "message": "Nesąžiningas"
+  },
+  "diag_state_failed": {
+    "message": "Nesėkmė"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Užbaigimas nepagrįstas"
+  },
+  "localScoreMessage": {
+    "message": "Vietos žinutės rezultatai"
+  },
+  "localScoreLink": {
+    "message": "Vietinis rezultatas šiam nuorodui žinutėje"
+  },
+  "localScoreNoIndicators": {
+    "message": "Vietinių įspėjamųjų rodiklių nerasta."
+  },
+  "localScoreIndicators": {
+    "message": "Rasti vietiniai įspėjamieji rodikliai. peržiūrėti priežastis prieš atidarymą."
+  },
+  "uploadSentLabel": {
+    "message": "Įkėlimas siunčiamas"
+  },
+  "uploadSentUnassigned": {
+    "message": "Įkėlimas buvo išsiųstas, tačiau jo rezultatas nebūtų priskirtas šiam priedui."
+  },
+  "hybridReportTitle": {
+    "message": "Hybrid Analysis ataskaita"
+  },
+  "hybridReportIntro": {
+    "message": "Skaityti tik gautų rezultatų peržiūra. atverti šį ataskaitą neleidžia teikėjo prašymą."
+  },
+  "hybridReportOpen": {
+    "message": "Peržiūrėti analizės ataskaitą"
+  },
+  "hybridReportUnavailable": {
+    "message": "Atskleidimas nėra prieinamas. atnaujinti jį iš dabartinės žinutės."
+  },
+  "hybridReportTechnical": {
+    "message": "Paslaugų teikėjas ir ryšio informacija"
+  },
+  "hybridReportExplanation": {
+    "message": "Apie šią vertinimą"
+  },
+  "hybridReportSummary": {
+    "message": "Vertinimai ir kilmė"
+  },
+  "hybridReportSnapshot": {
+    "message": "Skelbtas ataskaitos snapshot; ne naujas skenavimo"
+  },
+  "hybridReportScope": {
+    "message": "Pardavėjo rezultatai ir vietinis rodiklis yra atskiri. praleisti laukai nėra neigiami rezultatai. rodomas tik turimas, ribotas data."
+  },
+  "hybridReportCopy": {
+    "message": "Kopija"
+  },
+  "hybridReportCopied": {
+    "message": "Kopijuoti kaip tekstas."
+  },
+  "hybridReportCopyFailed": {
+    "message": "Neįmanoma kopijuoti.Rinkti ir kopijuoti tekstą rankiniu būdu."
+  },
+  "hybridReportAvailableOnly": {
+    "message": "Rūmai prieinamuose duomenuose"
+  },
+  "hybridReportNoMatches": {
+    "message": "Nėra atitinkamų laukų prieinamose datos."
+  },
+  "hybridReportAvailability": {
+    "message": "Prieinamumas ir apribojimai"
+  },
+  "hybridReportRun": {
+    "message": "Analizės rungtynės"
+  },
+  "hybridReportSearch": {
+    "message": "Ieškoti prieinamų laukų"
+  },
+  "hybridReportReady": {
+    "message": "Atnaujinta informacija, naujų skanų nebus pradėta."
+  },
+  "hybridReportResource_name": {
+    "message": "Prijungimo vardas"
+  },
+  "hybridReportResource_url": {
+    "message": "Užtikrinamas URL"
+  },
+  "hybridReportResource_sha256": {
+    "message": "Išteklių SHA-256"
+  },
+  "hybridField_type": {
+    "message": "Failo tipas"
+  },
+  "hybridField_type_short": {
+    "message": "Trumpas failo tipas"
+  },
+  "hybridField_size": {
+    "message": "dydis byte"
+  },
+  "hybridField_last_file_name": {
+    "message": "Paskutinis failų vardas"
+  },
+  "hybridField_submit_name": {
+    "message": "Pateikimo vardas"
+  },
+  "hybridField_url_analysis": {
+    "message": "URL analizė"
+  },
+  "hybridField_target_url": {
+    "message": "Siūlėjas tikslo URL (gali būti sutrumpintas)"
+  },
+  "hybridField_id": {
+    "message": "Atsakymų ID (neaiškintas tipo)"
+  },
+  "hybridField_job_id": {
+    "message": "Sandbox darbo ID"
+  },
+  "hybridField_submission_id": {
+    "message": "Pateikimo ID"
+  },
+  "hybridField_state": {
+    "message": "Paslaugų teikėjas"
+  },
+  "hybridField_finished": {
+    "message": "Baigė"
+  },
+  "hybridField_verdict": {
+    "message": "Teismas teikia teismo sprendimą"
+  },
+  "hybridField_threat_score": {
+    "message": "Hybrid Analysis grėsmės rezultatai"
+  },
+  "hybridField_threat_level": {
+    "message": "Gamintojo grėsmės lygis"
+  },
+  "hybridField_multiscan_result": {
+    "message": "Multiskan rezultatas (pardavėjo vertė)"
+  },
+  "hybridField_av_detect": {
+    "message": "AV aptikimo vertė (paslaugų teikėjo vertė)"
+  },
+  "hybridField_whitelisted": {
+    "message": "Paslaugų teikėjas Baltarusija"
+  },
+  "hybridField_vx_family": {
+    "message": "Malware šeimos teikėjas"
+  },
+  "hybridField_classification_tags": {
+    "message": "Klassifikacijos žymės"
+  },
+  "hybridField_tags": {
+    "message": "Žymos"
+  },
+  "hybridField_analysis_start_time": {
+    "message": "Analizės pradžia"
+  },
+  "hybridField_environment_id": {
+    "message": "Aplinkos ID"
+  },
+  "hybridField_environment_description": {
+    "message": "Sandbox aplinka"
+  },
+  "hybridField_error_type": {
+    "message": "Paslaugų teikėjo klaidos tipas"
+  },
+  "hybridField_error_origin": {
+    "message": "Pirkėjo klaida kilmė"
+  },
+  "hybridField_name": {
+    "message": "Vardas"
+  },
+  "hybridField_status": {
+    "message": "Statuso"
+  },
+  "hybridField_progress": {
+    "message": "Paslaugų teikėjas (Provider Value)"
+  },
+  "hybridField_positives": {
+    "message": "Teigiami aptikimai"
+  },
+  "hybridField_total": {
+    "message": "Iš viso tikrinimas"
+  },
+  "hybridField_percent": {
+    "message": "Procentas (pardavėjo vertė)"
+  },
+  "hybridField_scan_time": {
+    "message": "Skaninimo trukmė (pardavėjo vienetas)"
+  },
+  "hybridField_scan_date": {
+    "message": "Skaičiuoti datą"
+  },
+  "hybridField_product": {
+    "message": "Skanerių produktas"
+  },
+  "hybridField_version": {
+    "message": "Skanerių versija"
+  },
+  "hybridField_update": {
+    "message": "Skydliaukės atnaujinimai"
+  },
+  "hybridField_total_network_connections": {
+    "message": "tinklo ryšiai"
+  },
+  "hybridField_total_processes": {
+    "message": "procesai"
+  },
+  "hybridField_total_signatures": {
+    "message": "Pasirašymai"
+  },
+  "hybridField_category": {
+    "message": "Kategorija"
+  },
+  "hybridField_attck_id": {
+    "message": "MITRE ATT&CK Techninė ID"
+  },
+  "hybridField_tactic": {
+    "message": "ATT & CK taktikos"
+  },
+  "hybridField_technique": {
+    "message": "MITRE ATT & CK techninė"
+  },
+  "hybridField_description": {
+    "message": "Aprašymas"
+  },
+  "hybridField_domains": {
+    "message": "stebimas domenas"
+  },
+  "hybridField_hosts": {
+    "message": "Stebėtas svečias"
+  },
+  "hybridField_compromised_hosts": {
+    "message": "Kompromisinis hostas (pirkėjo reikalavimai)"
+  },
+  "hybridField_domain": {
+    "message": "Domenoje"
+  },
+  "hybridField_host": {
+    "message": "Svečių"
+  },
+  "hybridField_ip": {
+    "message": "IP adresas"
+  },
+  "hybridField_port": {
+    "message": "uostas"
+  },
+  "hybridField_protocol": {
+    "message": "Protokolas"
+  },
+  "hybridField_country": {
+    "message": "Šalis"
+  },
+  "hybridField_asn": {
+    "message": "Autonominės sistemos numeris"
+  },
+  "hybridField_uid": {
+    "message": "Procedūra UID"
+  },
+  "hybridField_process_id": {
+    "message": "Procedūros ID (PID)"
+  },
+  "hybridField_parent_uid": {
+    "message": "Tėvų procesas UID"
+  },
+  "hybridField_file_path": {
+    "message": "Failo kelias"
+  },
+  "hybridField_subject": {
+    "message": "Sertifikavimo tema"
+  },
+  "hybridField_issuer": {
+    "message": "Sertifikato išdavėjas"
+  },
+  "hybridField_valid_from": {
+    "message": "Galiojanti iš"
+  },
+  "hybridField_valid_until": {
+    "message": "galiojimas iki"
+  },
+  "hybridField_serial_number": {
+    "message": "Serijinis serijos numeris"
+  },
+  "hybridField_sha256": {
+    "message": "SHA-256"
+  },
+  "hybridField_sha1": {
+    "message": "SHA-1"
+  },
+  "hybridField_md5": {
+    "message": "MD5"
+  },
+  "hybridField_sha512": {
+    "message": "SHA-512"
+  },
+  "hybridField_imphash": {
+    "message": "Įvežimas hash"
+  },
+  "hybridReportResource_quickScanId": {
+    "message": "Atsisiųsti „Quick-Scan ID“"
+  },
+  "analysisLocalOnly": {
+    "message": "Tik patikrinta vietiniu"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "Paslaugos su rezultatais"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Paslaugos laukiamos"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Paslaugos su klaidomis"
+  },
+  "hybridReportSection": {
+    "message": "skyrius"
+  },
+  "hybridReportAllSections": {
+    "message": "Visi skyrių"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "Apdorojimas baigtas"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "Apdorojimas pending"
+  },
+  "hybridReportProcessing_failed": {
+    "message": "Apdorojimas nesėkmingas"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "Apdorojimo statusas nežinomas"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Atnaujinta ataskaita"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Snapshot sukurtas"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Rasti Hybrid Analysis surasti šį išteklių"
+  },
+  "hybridReportSaved": {
+    "message": "Išsaugotas Hybrid Analysis ataskaita"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Atsisiųsti UTC"
+  },
+  "hybridReportWhy": {
+    "message": "Kodėl ši vertinimo sistema?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Kiti vertinimo signalai"
+  },
+  "hybridReportCompare": {
+    "message": "Palyginti analizės rungtynes"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Skyriai su informacija"
+  },
+  "hybridReportAssessment": {
+    "message": "Thundy vertinimas iš Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Šaltinis ir laikrodis"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Ieškoti prieinamo · užbaigti nepateikta"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Atviros hibridinės ataskaitos"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Rodyti išsamią detalę"
+  },
+  "attachmentProtectionTitle": {
+    "message": "Apsauga nuo prijungimo"
+  },
+  "attachmentProtectionScope": {
+    "message": "Ši nuostata taikoma, kai sutaupoma su Thundy. Thunderbird 's pačių priedų komandos lieka prieinamos."
+  },
+  "attachmentPolicyMode": {
+    "message": "Kai pasiekiamas ribas"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Hybrid Analysis rezultatų ribos"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Įtraukimas be įrodytų rezultatų"
+  },
+  "attachmentModeOff": {
+    "message": "Išjungti"
+  },
+  "attachmentModeWarn": {
+    "message": "Įspėjimai"
+  },
+  "attachmentModeApproval": {
+    "message": "Reikia leidimo"
+  },
+  "attachmentModeBlock": {
+    "message": "Blokai"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Įrašyti su „Thundy“"
+  },
+  "attachmentConfirmSave": {
+    "message": "Išsaugoti priedą"
+  },
+  "attachmentCancelSave": {
+    "message": "Atsisakyti"
+  },
+  "attachmentThresholdReached": {
+    "message": "Hybridinis rezultatas siekia konfigūruotą ribą."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis klasifikuoja šį failą kaip kenksmingą."
+  },
+  "attachmentUnknown": {
+    "message": "Nėra jokių rezultatų dėl šio priedo."
+  },
+  "attachmentBlocked": {
+    "message": "Sumažinti su Thundy yra blokuota."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Įveskite paraišką, kad išsaugotumėte šį failą."
+  },
+  "attachmentFailed": {
+    "message": "Negalėjo pradėti taupyti priedų."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy nesugebėjo perskaityti šio priedo."
+  },
+  "attachmentContextChanged": {
+    "message": "Pranešimas arba priedas pasikeitė. vėl išsirinkti priedą."
+  },
+  "attachmentRefresh": {
+    "message": "Išsaugoti atradimai vėl"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "Išgelbėtas atradimas yra nekeičiamas."
+  },
+  "attachmentDecisionChanged": {
+    "message": "Rezultatas arba politika pasikeitė. peržiūrėti atnaujintą sprendimą."
+  },
+  "attachmentSaveRequested": {
+    "message": "Pradėjo išsaugoti prašymą."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Išsaugoti atšauktas"
+  },
+  "auditDecisionScore": {
+    "message": "Sprendimo rezultatai"
+  },
+  "linkHandoffPending": {
+    "message": "naršyklės nuolaida buvo prašoma. „Thunderbird“ dar to nepateikė."
+  },
+  "linkPreflightTimeout": {
+    "message": "Tikrinimas nebus baigtas. uždaryti šį dialogą ir vėl parsisiųsti nuorodą."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Istorinis Hybrid Analysis atradimas"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Įdomu, kad Hybrid Analysis"
+  },
+  "auditShare": {
+    "message": "Eksporto auditas"
+  },
+  "auditFullNotice": {
+    "message": "Visiškas auditas apima privatų URLs ir detales. pasidalinti tik su įgaliotais gavėjais."
+  },
+  "auditFullSave": {
+    "message": "Eksporto auditas"
+  },
+  "managedByCompany": {
+    "message": "Jūsų organizacijos valdymas"
+  },
+  "managedLocal": {
+    "message": "Šaltinis: šis Thunderbird profilis"
+  },
+  "managedRevision": {
+    "message": "Politikos versija"
+  },
+  "managedThreshold": {
+    "message": "ribos"
+  },
+  "managedPolicyInvalid": {
+    "message": "Įmonės politika yra neigiama. susisiekite su savo IT komandos."
+  },
+  "managedLinkBlocked": {
+    "message": "Jūsų įmonė blokuoja šį ryšį."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Atverti su „Thundy“"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Atviros priedai"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy patikrina šį priedą prieš jį siunčiant į Thunderbird."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird pritarė prašymui atidaryti priedą."
+  },
+  "attachmentOpenFailed": {
+    "message": "Įrašas nebūtų galėjęs atidaryti."
+  },
+  "reportingTitle": {
+    "message": "Bendrovės saugumo ataskaitos"
+  },
+  "reportingOff": {
+    "message": "Automatiškas ataskaitų teikimas išjungtas."
+  },
+  "reportingNeedsConsent": {
+    "message": "Ataskaita reikalauja jūsų pritarimo ir siunčiant tokeną."
+  },
+  "reportingNeedsPermission": {
+    "message": "Ataskaitos leidimas trūksta. leidžiama vėl atnaujinti atnaujinimą."
+  },
+  "reportingReady": {
+    "message": "Jūsų įmonė gali automatiškai pateikti ataskaitas."
+  },
+  "reportingQueued": {
+    "message": "Laikantis ataskaitų:"
+  },
+  "reportingMalicious": {
+    "message": "kenksmingų išradimų"
+  },
+  "reportingSuspicious": {
+    "message": "Šalti atradimai ir ribų pažeidimai"
+  },
+  "reportingConsent": {
+    "message": "Susitariu siųsti renginio ID, laikotarpį, veikimą, ieškymą, sprendimą ir politikos versiją į pirmiau nurodytoje kompanijos adreso."
+  },
+  "reportingConsentIndicators": {
+    "message": "Sutinku siųsti renginio ID, laikotarpį, veikimą, ieškymą, sprendimą, politikos versiją ir nuorodą į „SHA-256“ hostname ar priedą į pirmiau nurodytoje kompanijos adreso adresą."
+  },
+  "reportingToken": {
+    "message": "Siųsti tokeną iš jūsų IT komandos"
+  },
+  "reportingActivate": {
+    "message": "Leidžiama ataskaityti arba pakeisti tokeną"
+  },
+  "reportingRevoke": {
+    "message": "Susitarimo atšaukimas ir aiškios laukiamos ataskaitos"
+  },
+  "reportingSetupFailed": {
+    "message": "Ataskaitos nuostatos nebūtų taikomos."
+  },
+  "reportingAuthentication": {
+    "message": "Serveris atmetė siunčiamą tokeną."
+  },
+  "reportingRejected": {
+    "message": "Paskyrėjas atmetė ataskaitą."
+  },
+  "reportingStorage": {
+    "message": "Thundy nesugebėjo perskaityti ar rašyti ataskaitų eilutės."
+  },
+  "reportingFull": {
+    "message": "Pranešimai gali būti prarasti."
+  },
+  "reportingExpired": {
+    "message": "Ataskaita baigėsi prieš pristatymo."
+  },
+  "reportingPrivacy": {
+    "message": "Su atskiru leidimu, Thundy siunčia išsamius bandymus atidaryti nuorodas arba atidaryti ar išsaugoti priedus į konfigūruotą kompanijos adresą. ataskaitos turi įvykio ID, laikotarpį, veikimą, ieškymą, sprendimą ir politikos versiją, taip pat atrankinį namą ar priedą SHA-256. Thundy srautas laukiančias ataskaitas vietiniu mastu iki 24 val. Galite atšaukti leidimą ir ištrinti srauto Stojimo."
+  },
+  "reportingConsentDetails": {
+    "message": "Taip pat sutinkame siųsti sprendimo priežastį, turimus rezultatus, priedų vardą, teikėjo teismo sprendimus ir turimus ataskaitų nuorodas."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Išsamios ataskaitos gali apimti priedo failų vardą ir nuorodas į teikėjo ataskaitas."
+  },
+  "analysisRunningHeading": {
+    "message": "Vykdoma patikra"
+  },
+  "analysisLocalNoFinding": {
+    "message": "Vietinė patikra grėsmės požymių neaptiko"
+  },
+  "analysisLinksGroup": {
+    "message": "Kairė"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Priedai"
+  },
+  "protectionOpenAllowed": {
+    "message": "Leidžiama atverti"
+  },
+  "protectionSaveAllowed": {
+    "message": "Leidžiama įrašyti"
+  },
+  "protectionWarn": {
+    "message": "Įspėjimas"
+  },
+  "protectionApproval": {
+    "message": "Reikia patvirtinimo"
+  },
+  "protectionRequestApproval": {
+    "message": "Prašymas dėl leidimo"
+  },
+  "protectionBlocked": {
+    "message": "Užblokuota"
+  },
+  "protectionMalicious": {
+    "message": "Paslaugos teikėjas pranešė apie kenkėjišką radinį."
+  },
+  "protectionThreshold": {
+    "message": "Pasiektas apsaugos slenkstis"
+  },
+  "protectionManagedThreshold": {
+    "message": "Pasiektas įmonės nustatytas slenkstis"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "Taikomi nustatymo būdai leidžia tokią veiką."
+  },
+  "linkContextChanged": {
+    "message": "Pranešimas arba nuoroda per kontrolę pasikeitė."
+  },
+  "auditPolicyBlocked": {
+    "message": "Užblokuota pagal taisykles"
+  },
+  "reportingLastReceipt": {
+    "message": "Paskutinis gavimas, kurį patikrino serveris"
+  },
+  "reportingOldestPending": {
+    "message": "Seniausias laukiamasis ataskaitas"
+  },
+  "addonLanguage": {
+    "message": "Papildinio kalba"
+  },
+  "addonLanguageSystem": {
+    "message": "Naudoti „Thunderbird“ kalbą"
+  },
+  "addonLanguageSaved": {
+    "message": "Kalba išsaugota. Norėdami ją pritaikyti, iš naujo atverkite „Thundy“ rodinius."
+  },
+  "addonLanguageFailed": {
+    "message": "Kalbos išsaugoti nepavyko."
+  },
+  "profilesOpenSource": {
+    "message": "Atvirasis kodas"
+  },
+  "transferReview": {
+    "message": "Peržiūrėti išorinį siuntimą"
+  },
+  "transferSend": {
+    "message": "Siųsti teikėjui"
+  },
+  "transferVisibility": {
+    "message": "Matomumas: neįtrauktas į sąrašą. Ataskaitą gali atverti bet kas, kas turi jos nuorodą."
+  },
+  "transferAccepted": {
+    "message": "Teikėjas priėmė užklausą. Ataskaita gali būti dar rengiama."
+  },
+  "transferFailed": {
+    "message": "Siuntimo teikėjui užbaigti nepavyko."
+  },
+  "transferUsePopup": {
+    "message": "Atverkite „Thundy“ skydelį, kad peržiūrėtumėte ir patvirtintumėte konkrečią nuorodą ar priedą."
+  },
+  "providerGrantAccess": {
+    "message": "Leisti prieigą prie šio teikėjo"
+  },
+  "sourceSessionOnly": {
+    "message": "Šaltinių archyvas pilnas. Dabartinis šaltinių rodinys prieinamas tik šiame seanse."
+  },
+  "analysisReason_transfer_approval": {
+    "message": "Visoms nuorodoms ir priedams reikia atskiro patvirtinimo."
+  },
+  "analysisCompactDetails": {
+    "message": "Patikros informacija"
+  },
+  "riskScoreFormula": {
+    "message": "Vietinis balas sudeda taškus iki 100. Tiekėjų išvados vertinamos atskirai."
+  },
+  "riskScoreNoPoints": {
+    "message": "Vietinės taisyklės nepridėjo taškų."
+  },
+  "riskScoreTotal": {
+    "message": "Vietinis skaičiavimas"
+  },
+  "riskLinkBrandRule": {
+    "message": "Bent vienas domenas primena žinomą prekės ženklą. Taškai skaičiuojami vieną kartą."
+  },
+  "reportingConsentDetections": {
+    "message": "Pranešimuose gali būti vardų, kategorijų, signatūrų ir imituojamų prekės ženklų."
+  },
+  "detectionKind_family": {
+    "message": "Kenkėjiškos programos šeima"
+  },
+  "detectionKind_category": {
+    "message": "Kategorija"
+  },
+  "detectionKind_brand": {
+    "message": "Imituojamas prekės ženklas"
+  },
+  "detectionKind_signature": {
+    "message": "Gamintojo signatūra"
+  },
+  "detectionCategory_fraudulent_shop": {
+    "message": "Apgaulinga parduotuvė"
+  },
+  "detectionCategory_phishing_shop": {
+    "message": "Sukčiavimo parduotuvė"
+  },
+  "analysisDetectionGrouping": {
+    "message": "Grupuoti radinius"
+  },
+  "detectionCategory_malware": {
+    "message": "Kenkėjiška programa"
+  },
+  "detectionCategory_virus": {
+    "message": "Virusas"
+  },
+  "detectionCategory_trojan": {
+    "message": "Trojos arklys"
+  },
+  "detectionCategory_ransomware": {
+    "message": "Išpirkos programa"
+  },
+  "detectionCategory_worm": {
+    "message": "Kirminas"
+  },
+  "detectionCategory_spyware": {
+    "message": "Šnipinėjimo programa"
+  },
+  "detectionCategory_adware": {
+    "message": "Reklaminė programa"
+  },
+  "detectionCategory_backdoor": {
+    "message": "Galinės durys"
+  },
+  "detectionCategory_downloader": {
+    "message": "Atsiuntiklis"
+  },
+  "detectionCategory_dropper": {
+    "message": "Dropper"
+  },
+  "detectionCategory_infostealer": {
+    "message": "Duomenų vagis"
+  },
+  "detectionCategory_rootkit": {
+    "message": "Rootkit"
+  },
+  "detectionCategory_phishing": {
+    "message": "Duomenų viliojimas"
+  },
+  "detectionCategory_scam": {
+    "message": "Sukčiavimas"
+  }
+}

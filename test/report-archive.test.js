@@ -111,8 +111,10 @@ test('manual URL and file paths preserve protocols and never repeat an accepted 
   const original={messageHeader:'mail',attachments:[attachment],links:[{url:'https://old.invalid/',state:'KNOWN',report:{state:'COMPLETE',verdict:'malicious'}}]};
   if(full)original.analysisReportArchive={schemaVersion:1,entries:Array.from({length:128},(_,i)=>({id:String(i),kind:'attachment',slot:0,resource:item('previous-'+i)}))};
   const s=setup(original);let requests=0;
+  s.c.providerEnabled = () => true;
   Object.assign(s.c,{getSharedDB:async()=>s.db,messageReportOptions:(_message, options)=>options,Logger:{error(){}},URLSearchParams,File,FormData,apikey_hybridanalysis:'key',assertExternalAnalysisAllowed(){},tierAtLeast:()=>true,requireHostPermissionFor:async()=>true,requireHostPermission:async()=>{},getHybridAnalysisOptions:()=>({}),getMessageAnalysisContext:async()=>null,get_sha256_hash:async()=>hash,browser:{messages:{get:async()=>({id:7,headerMessageId:'mail'}),getAttachmentFile:async()=>new File(['bytes'],'same.bin')}},apiGateway:{fetchWithTimeout:async()=>{requests++;return {status:201,json:async()=>({job_id:'new-job',submission_id:'new-submission',sha256:name==='handleManualUpload'?hash:'b'.repeat(64)})};}}});
   loadBackgroundFunction(s.c,name);
+  s.c.sameAnalysisUrl = (left,right) => left === right;
   const before=JSON.stringify(s.records.get('mail'));
   if(name==='handleUrlScan')await s.c.handleUrlScan('https://old.invalid/','mail');else await s.c.handleManualUpload(7,'1.2','same.bin',hash,'mail');
   assert.equal(requests,1,name);

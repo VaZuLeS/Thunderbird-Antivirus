@@ -20,6 +20,7 @@ const ThundyIncidentReporting = (() => {
     function fingerprint(config) {
         const settings = [config.endpoint, config.mode, config.indicators];
         if (config.details) settings.push(true);
+        if (config.detections) settings.push('detections');
         return JSON.stringify(settings);
     }
 
@@ -71,7 +72,7 @@ const ThundyIncidentReporting = (() => {
         const oldest = pending.reduce((first,item) => !first || item.created < first.created ? item : first,null);
         return {
             state, endpoint: config.endpoint, origin: config.origin, mode: config.mode,
-            indicators: config.indicators, details: config.details, queued: pending.length,
+            indicators: config.indicators, details: config.details, detections: config.detections === true, queued: pending.length,
             lastReceiptAt: saved.lastReceiptAt ?? null, lastReceiptId: saved.lastReceiptId ?? null,
             oldestPendingAt: oldest?.created ?? null, oldestPendingId: oldest?.event.id ?? null,
             failure: storageError ? 'storage' : saved.authRejected ? 'authentication' : saved.failure
@@ -84,7 +85,8 @@ const ThundyIncidentReporting = (() => {
             await serialize(() => browser.storage.local.remove(key));
             return;
         }
-        if (!enabled(config) || request.consent !== true || (config.details && request.details !== true) || !tokenPattern.test(request.credential || '') ||
+        if (!enabled(config) || request.consent !== true || (config.details && request.details !== true) ||
+            (config.detections && request.detections !== true) || !tokenPattern.test(request.credential || '') ||
             request.endpoint !== config.endpoint || !await hasPermission(config)) {
             throw Object.assign(new Error('REPORTING_SETUP_INVALID'), { code: 'REPORTING_SETUP_INVALID' });
         }
@@ -99,7 +101,7 @@ const ThundyIncidentReporting = (() => {
         wake();
     }
 
-    function projectDetails({ kind, reason, score, threshold, name, evidence }) {
+    function projectDetails({ kind, reason, score, threshold, name, evidence, includeDetections }) {
         const numericScore = value => Number.isFinite(value) && value >= 0 && value <= 100;
         const details = { reason };
         if (numericScore(score)) details.score = score;
@@ -132,6 +134,11 @@ const ThundyIncidentReporting = (() => {
                 for (const key of ['maliciousCount','suspiciousCount']) {
                     if (Number.isSafeInteger(entry[key]) && entry[key] >= 0) row[key] = entry[key];
                 }
+            }
+            if (includeDetections && row.verdict !== 'no_detection') {
+                const detections = ThundyProviderResults.projectDetections(entry.detections).filter(entry =>
+                    entry.kind !== 'brand' || row.provider === 'urlscan' && row.verdict === 'malicious');
+                if (detections.length) row.detections = detections;
             }
             providers.push(row);
         }
@@ -169,7 +176,10 @@ const ThundyIncidentReporting = (() => {
                     if (kind === 'link_open') event.hostname = new URL(indicator).hostname;
                     else if (/^[a-f0-9]{64}$/i.test(indicator)) event.sha256 = indicator.toLowerCase();
                 }
-                if (config.details) event.details = projectDetails({kind,reason,score,threshold,name,evidence});
+                if (config.details) {
+                    event.details = projectDetails({kind,reason,score,threshold,name,evidence,includeDetections:config.detections});
+                    if (event.details.providers.some(row => row.detections)) event.schemaVersion = 2;
+                }
                 saved.events.push({ event, created: now, attempts: 0, next: now });
                 await save(saved);
                 return true;

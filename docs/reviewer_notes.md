@@ -4,7 +4,7 @@
 
 **Add-on name:** Thundy AV – Email Scanner for Thunderbird (short name: "Thundy AV")
 **Add-on ID:** thundy-av@bludau-it-services.de
-**Version:** 1.26.2
+**Version:** 1.26.3
 **Manifest:** MV3 (`manifest_version: 3`), `strict_min_version: 140.0`
 **License:** GNU GPL v3 (`GPL-3.0-only`)
 **Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus
@@ -67,23 +67,19 @@ There is no `<all_urls>`, no `webRequest`, no `tabs` and no `cookies` permission
    key `externalAnalysisConsent`. **Default: off.** While it is off, the add-on transmits **nothing**
    to third parties: no attachment or file upload, no hash lookup, no URL/domain lookup, no IP
    lookup. Local checks and banners keep working.
-2. **Per-sender opt-in** — for automatic scans of messages from a sender, that sender must be added
-   to `scanningEnabledSenders`. The banner in the message view offers two separate buttons:
+2. **Scope for scanning** — choose all displayed messages, approved senders or scans on demand.
+   In approved-sender mode the banner in the message view offers two separate buttons:
    - "Scan this message only" → one-off scan, the sender is not stored permanently;
    - "Scan this sender permanently" → the sender is added to the persistent list and future messages
      from that sender are scanned automatically (while the global consent is enabled).
 3. **Privacy tier (`privacyTier`)** — selectable in the options dialog, **default `strict`**. The tier
    limits **every** transmission path, not only the automatic scan:
-   - `strict`: only SHA-256 hashes of attachments are transmitted; the manual attachment upload and the
-     manual URL scan in the popup are disabled and show a notice to switch to `balanced`/`max` in the
-     options;
-   - `balanced`: additionally full attachments of *unknown* files are uploaded to Hybrid Analysis
-     (automatic scan and manual upload);
-   - `max`: additionally URLs from the message are submitted to Hybrid Analysis (automatic scan and
-     manual URL scan).
+   - `strict`: reputation queries use SHA-256 hashes, domains and public IP addresses when configured;
+   - `balanced`: additionally allows explicit individual approval for sending an attachment;
+   - `max`: additionally allows explicit individual approval for sending a complete URL.
 
-   Hash lookups (SHA-256), URLhaus/urlscan.io checks and IP reputation lookups remain possible in all
-   tiers as long as a key is configured and the global consent is enabled.
+   A click or batch scan can read matching stored findings or use an already accepted job identifier.
+   The user confirms the resource, provider and, for urlscan.io, visibility in the popup before submission.
 
 ### 3.2 Why the add-on implements its own consent dialog
 
@@ -99,7 +95,7 @@ triggered a scan.
 `manifest.json` declares the data-collection permission as:
 
 ```json
-"data_collection_permissions": { "required": ["none"], "optional": ["personalCommunications"] }
+"data_collection_permissions": { "required": ["none"], "optional": ["personalCommunications", "technicalAndInteraction"] }
 ```
 
 `required: "none"` means that the add-on collects and transmits none of the declared categories unless
@@ -124,9 +120,9 @@ either automatically (sender opted in) or manually ("Scan this message only" / c
 |---|---|---|---|
 | SHA-256 hash of an attachment | attachment scan, all tiers (`strict`, `balanced`, `max`); only if a VirusTotal key is configured | VirusTotal (`www.virustotal.com`) | check whether the file is already known |
 | SHA-256 hash of an attachment | attachment scan, all tiers | Hybrid Analysis (`hybrid-analysis.com`) | check whether the file is already analysed (hash overview) |
-| Complete attachment (file content, file name, MIME type, size) | tier `balanced` and `max`; automatic scan (hash lookup returned no match) or manual attachment upload in the popup | Hybrid Analysis (`hybrid-analysis.com`) | static and dynamic analysis in the Falcon Sandbox |
-| URLs from the message | tier `max`; automatic scan or manual URL scan in the popup | Hybrid Analysis (`hybrid-analysis.com/api/v2/quick-scan/url`) | URL analysis |
-| URLs when the user clicks/checks a link, and links marked for review | whenever an urlscan.io key is configured (in all tiers) | urlscan.io (`urlscan.io`) | link/phishing analysis (screenshot-based) |
+| Complete attachment (file content, file name, MIME type, size) | tier `balanced` and `max`; individual approval in the popup | Hybrid Analysis (`hybrid-analysis.com`) | static and dynamic analysis in the Falcon Sandbox |
+| URLs from the message | tier `max`; individual approval in the popup | Hybrid Analysis (`hybrid-analysis.com`) | URL analysis |
+| URLs from the message | tier `max`; individual approval in the popup with visibility shown | urlscan.io (`urlscan.io`) | link/phishing analysis |
 | Domains extracted from the message body | whenever a URLhaus key is configured | URLhaus (`urlhaus-api.abuse.ch`) | check the domain against malware URL lists |
 | IP addresses found in the `Received` headers | only when a provider + key for IP reputation are configured | AbuseIPDB (`api.abuseipdb.com`) or VirusTotal (`www.virustotal.com`) | IP reputation |
 
@@ -143,7 +139,7 @@ What is **not** transmitted, regardless of tier:
 - sender and recipient addresses,
 - attachment contents of plain-text types (`text/plain`, `text/html`, `text/css`, `text/csv`,
   `text/javascript`, `application/json`, `application/xml`, `application/xhtml+xml`),
-- settings, consent flags, whitelist/blacklist entries and API keys,
+- settings, consent flags and allowlist or blocklist entries,
 - any data at all while the global consent is off.
 
 ## 5. Local storage and deletion
@@ -258,10 +254,10 @@ a test account instead of using real mail.
     (the Thundy AV button in the message display action). The manual attachment upload and the manual
     URL scan are disabled and show a notice telling you to switch to *balanced*/*max* in the options.
 19. **Tier `balanced` — manual attachment upload.** Switch the tier to `balanced`, save and re-open the
-    popup; the manual attachment upload becomes available. With the global consent on it sends
+    popup; the manual attachment upload becomes available. After individual approval it sends
     `POST https://hybrid-analysis.com/api/v2/quick-scan/file`.
-20. **Tier `max` — manual URL scan.** Switch the tier to `max` and use the manual URL scan in the popup;
-    it sends `POST https://hybrid-analysis.com/api/v2/quick-scan/url`.
+20. **Tier `max` — manual URL scan.** Switch the tier to `max` and select the provider in the popup.
+    Confirm the full URL before submission.
 21. **Popup consent.** With the global consent switched off, the popup shows a notice and transmits
     nothing, regardless of the tier; no manual upload or URL scan is possible from the popup.
 22. **Context menu.** Right-click a link in the message → **"Scan link with Thundy AV"**, and use

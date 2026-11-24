@@ -1,0 +1,3590 @@
+{
+  "protectionSeverity_low": { "message": "Risc scăzut" },
+  "protectionSeverity_unknown": { "message": "Risc necunoscut" },
+  "protectionSeverity_caution": { "message": "Risc crescut" },
+  "protectionSeverity_high": { "message": "Risc ridicat" },
+  "protectionSeverity_critical": { "message": "Risc critic" },
+  "linkScanSummary": { "message": "Rezultatele scanărilor URL" },
+  "linkScansPending": { "message": "Scanările URL sunt încă în desfășurare." },
+  "linkNoScanResults": { "message": "Nu sunt disponibile rezultate ale scanărilor URL." },
+  "protectionCategoryUnavailable": { "message": "Furnizorul nu a indicat o categorie a amenințării." },
+  "linkWaitForResults": { "message": "Așteaptă finalizarea scanărilor URL" },
+  "linkAutoOpenBelow": { "message": "Deschide direct sub acest scor" },
+  "linkOpeningOptionsHelp": { "message": "Lasă scorul necompletat pentru a afișa întotdeauna dialogul linkului." },
+  "linkAuditRetentionTitle": { "message": "Păstrarea jurnalului de linkuri" },
+  "linkAuditLimit": { "message": "Număr maxim de înregistrări (gol = nelimitat)" },
+  "linkAuditDays": { "message": "Zile de păstrare (gol = nelimitat)" },
+  "protectionManagedColors": { "message": "Organizația ta stabilește culorile nivelurilor de risc." },
+  "linkOpenedAutomatically": { "message": "Deschis automat" },
+  "providerSwitchHelp": {
+    "message": "Pornește sau oprește fiecare serviciu și salvează setările. La suspendarea unui serviciu, cheile și constatările salvate se păstrează."
+  },
+  "providerKeyLink": {
+    "message": "Obțineți o cheie API"
+  },
+  "providerDocsLink": {
+    "message": "API documentare"
+  },
+  "providerApiKeyLabel": {
+    "message": "Cheie API"
+  },
+  "providerUse": {
+    "message": "Folosește acest serviciu"
+  },
+  "providerVirusUse": {
+    "message": "Foloseste VirusTotal pentru verificați fișierele"
+  },
+  "providerHybridStrength": {
+    "message": "Găsește rapoarte existente pe baza amprentelor cunoscute ale fișierelor. Dacă încărcarea este autorizată, Falcon Sandbox poate analiza comportamentul unui fișier în timpul executării."
+  },
+  "providerHybridSetup": {
+    "message": "Creați un cont, apoi se va desprinde Profile → API cheie pentru a crea o cheie."
+  },
+  "providerUrlhausStrength": {
+    "message": "Verifică host-urile de link-uri contra surse de malware."
+  },
+  "providerUrlhausSetup": {
+    "message": "Înregistrați-vă la abuse.ch și obțineți un Auth-Key de la contul dvs."
+  },
+  "providerUrlscanStrength": {
+    "message": "Examină complet URLs și redirecționează pentru semne de phishing. Thundy îl utilizează la nivelul maxim de intimitate."
+  },
+  "providerUrlscanSetup": {
+    "message": "Creați un cont și alegeți Setări & API → Noul cheie API."
+  },
+  "providerVirusTotalStrength": {
+    "message": "Se afișează hash-ul unui fișier SHA-256 și afișează rezultatele din mai multe motoare de scanare."
+  },
+  "providerVirusTotalSetup": {
+    "message": "Înregistrați-vă la VirusTotal și copiați cheia de pe pagina cheie API a profilului dvs."
+  },
+  "providerIpTitle": {
+    "message": "Reputația adreselor IP"
+  },
+  "providerIpUse": {
+    "message": "Verificați reputația IP"
+  },
+  "providerIpChoose": {
+    "message": "IP furnizor de reputație"
+  },
+  "providerIpKeyNotice": {
+    "message": "Introdu o cheie de la furnizorul selectat. Suspendarea verificărilor IP păstrează furnizorul selectat și cheia."
+  },
+  "providerIpGuide": {
+    "message": "Alegeți și creați un furnizor de reputație IP"
+  },
+  "providerVirusIpStrength": {
+    "message": "Verifică IP-urile publicului în legătură cu motoarele de detecție și ratele comunitare ale VirusTotal."
+  },
+  "providerAbuseStrength": {
+    "message": "Folosește rapoartele comunitare pentru a identifica IP-urile publicului asociate cu spam, scanare sau alte abuzuri."
+  },
+  "providerAbuseSetup": {
+    "message": "Creați un cont AbuseIPDB și generați sau copiați o cheie din fila API în panou."
+  },
+  "providerIpVirusKey": {
+    "message": "VirusTotal API cheie pentru reputația IP"
+  },
+  "providerIpAbuseKey": {
+    "message": "AbuseIPDB API cheie"
+  },
+  "providerTestDisabled": {
+    "message": "Activează serviciul și salvează setările înainte de a testa cheia."
+  },
+  "analysisReason_provider_disabled": {
+    "message": "Acest furnizor este întrerupt în setări."
+  },
+  "extensionName": {
+    "message": "Thundy AV – Scaner de e-mail pentru Thunderbird"
+  },
+  "extensionDescription": {
+    "message": "Option, opt-in scanner pentru atașamente de e-mail și link-uri. nimic nu părăsește computerul fără consimțământul dvs. explicit."
+  },
+  "actionTitle": {
+    "message": "Thundy AV – scanarea stării pentru acest mesaj"
+  },
+  "bannerScanOnce": {
+    "message": "Scrieți acest mesaj o dată"
+  },
+  "bannerScanSender": {
+    "message": "Întâlniți întâi acest trimiter"
+  },
+  "bannerTitleOptIn": {
+    "message": "Thundy AV : Scanarea în timp real nu este activată pentru acest mesaj."
+  },
+  "bannerNoteOptIn": {
+    "message": "Scanarea transmite date către serviciile de analiză externe, dar numai dacă o activezi în setările de add-on și numai după ce ai dat consimțământul."
+  },
+  "bannerScanRunning": {
+    "message": "Scanare…"
+  },
+  "bannerScanDone": {
+    "message": "Cererile au fost completate - vezi sursele de analiză"
+  },
+  "bannerScanFailed": {
+    "message": "Scanarea eșuată"
+  },
+  "bannerPermissionDenied": {
+    "message": "Autorizația de găzduire a fost respinsă"
+  },
+  "bannerConsentMissing": {
+    "message": "Noile cereri externe sunt dezactivate. rapoartele stocate anterior pot fi încă afișate."
+  },
+  "bannerThreatTitle": {
+    "message": "Thundy AV avertizare"
+  },
+  "bannerThreatScore": {
+    "message": "Scorul de risc: $SCORE$ de 100",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerSenderOptIn": {
+    "message": "Acest mesaj este acum scanat automat."
+  },
+  "notificationScanStarted": {
+    "message": "Scanarea a început pentru: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "Scanul a fost prezentat cu succes. ID-ul de lucru: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanError": {
+    "message": "Erori de scanare: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Scanare Thundy AV"
+  },
+  "notificationTitleError": {
+    "message": "Erori de scanare Thundy AV"
+  },
+  "bannerAuthPass": {
+    "message": "Raportele serverului de încredere SPF / DKIM/ DMARC au fost depuse"
+  },
+  "bannerOpenOptions": {
+    "message": "Opțiuni Deschise"
+  },
+  "menuScanLink": {
+    "message": "Caută link-ul cu Thundy AV"
+  },
+  "menuScanMessageLinks": {
+    "message": "Scanarea link-urilor din acest mesaj"
+  },
+  "notificationNoLinks": {
+    "message": "Nu se găsesc link-uri în acest mesaj."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "Permisul de găzduire pentru serviciul de analiză este lipsit. vă rugăm să-l acordați în opțiunile de add-on."
+  },
+  "errorHostPermissionMissing": {
+    "message": "Permisul de găzduire pentru serviciul de analiză este lipsit. vă rugăm să-l acordați în opțiunile de add-on."
+  },
+  "errorTierUploadBlocked": {
+    "message": "Încărcarea aditivilor este dezactivată în secțiunea de intimitate \"Strict\". Schimbarea la \"Balanced\" sau \"Maximum\" în opțiunile de ad-on."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "Submiterea URLs este permisa numai in gradul de privinta \"Maxim\"."
+  },
+  "notificationInjectionFailed": {
+    "message": "Bannerul nu poate fi insertat în vizualizarea mesajului. vă rugăm să raportați acest lucru cu versiunea Thunderbird."
+  },
+  "bannerTierBlocked": {
+    "message": "Această acțiune nu este permisă de nivelul actual de protecție a vieții private.Vezi opțiunile de ad-on."
+  },
+  "ui_001": {
+    "message": "Avertismentul :"
+  },
+  "ui_002": {
+    "message": "Nu este configurat cheia Hybrid Analysis API. puteți utiliza controale locale sau puteți configura un furnizor în setări."
+  },
+  "ui_003": {
+    "message": "Setări de acces"
+  },
+  "ui_004": {
+    "message": "Selectați un e-mail pentru a verifica."
+  },
+  "ui_005": {
+    "message": "Rezultatele analizei de încărcare…"
+  },
+  "ui_006": {
+    "message": "Analiza externa este disabilata: nu sunt trimise hashuri, fișiere sau link-uri la serviciile de analiză."
+  },
+  "ui_007": {
+    "message": "Nu sunt stocate nici un anex sau rezultate de scanare a link-urilor pentru acest mesaj."
+  },
+  "ui_008": {
+    "message": "Nu sunt rezultate de analiză pentru acest e-mail."
+  },
+  "ui_009": {
+    "message": "Erori neașteptate în timpul analizei de încărcare."
+  },
+  "ui_010": {
+    "message": "Starea de stat:"
+  },
+  "ui_011": {
+    "message": "Analiza este în curs, vă rugăm să o experimentați din nou mai târziu."
+  },
+  "ui_012": {
+    "message": "SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_013": {
+    "message": "Scorul de amenințare:"
+  },
+  "ui_014": {
+    "message": "Judecăţi în:"
+  },
+  "ui_015": {
+    "message": "Familia de malware:"
+  },
+  "ui_016": {
+    "message": "Rezultatul multiscanului: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_017": {
+    "message": "Informații adiționale:"
+  },
+  "ui_018": {
+    "message": "Analiza începe: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_019": {
+    "message": "Etichetă: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_020": {
+    "message": "VirusTotal rezultate:"
+  },
+  "ui_021": {
+    "message": "$P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_022": {
+    "message": "Cuvânt cheie: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_023": {
+    "message": "Cuvânt cheie: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_024": {
+    "message": "Impozitarea: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_025": {
+    "message": "Scanare: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_026": {
+    "message": "Starea: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_027": {
+    "message": "Rezultatele antivirusului:"
+  },
+  "ui_028": {
+    "message": "în: $P1$ Decizia de hotărâre: $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_029": {
+    "message": "Nu sunt accesibile rezultate de scanare."
+  },
+  "ui_030": {
+    "message": "SHA-256 hash: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_031": {
+    "message": "Numele ultimei fișiere: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_032": {
+    "message": "Dimensiune: $P1$ byte",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_033": {
+    "message": "Tipul: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_034": {
+    "message": "Scanarea din nou"
+  },
+  "ui_035": {
+    "message": "Sanitizează și descărcă (local)"
+  },
+  "ui_036": {
+    "message": "Cuvânt cheie: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_037": {
+    "message": "Rezultat local: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_038": {
+    "message": "SHA-256 : $P1$ – este disabilizat analizele externe.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_039": {
+    "message": "Nu se face niciun lookup, pentru că este disabilită analizele externe."
+  },
+  "ui_040": {
+    "message": "Analiza externa - disabilitate"
+  },
+  "ui_041": {
+    "message": "Înregistrarea scanului…"
+  },
+  "ui_042": {
+    "message": "Încărcați fișierul pentru un nou scan…"
+  },
+  "ui_043": {
+    "message": "Scanare prezentată.Relocarea rezultatelor…"
+  },
+  "ui_044": {
+    "message": "Succesul"
+  },
+  "ui_045": {
+    "message": "Scanarea a eşuat:"
+  },
+  "ui_046": {
+    "message": "Erori necunoscute"
+  },
+  "ui_047": {
+    "message": "Încercați din nou"
+  },
+  "ui_048": {
+    "message": "Erori de comunicare:"
+  },
+  "ui_049": {
+    "message": "Sanitarea…"
+  },
+  "ui_050": {
+    "message": "Sănătatea HTML locală…"
+  },
+  "ui_051": {
+    "message": "Descărcarea a început."
+  },
+  "ui_052": {
+    "message": "Sanitară"
+  },
+  "ui_053": {
+    "message": "Descărcarea a eşuat:"
+  },
+  "ui_054": {
+    "message": "Eroră API: $P1$ pentru elementul $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_055": {
+    "message": "(Cuvântul API poate fi inactiv sau lipsit.)"
+  },
+  "ui_056": {
+    "message": "Eroră de rețea: $P1$ pentru elementul $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_057": {
+    "message": "Înregistrarea URL…"
+  },
+  "ui_058": {
+    "message": "Trimite URL la Hybrid Analysis…"
+  },
+  "ui_059": {
+    "message": "Scanare prezentată. rezultatele încărcării…"
+  },
+  "ui_060": {
+    "message": "Încărcarea a eşuat:"
+  },
+  "ui_061": {
+    "message": "URL: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_062": {
+    "message": "Acest URL a fost găsit în e-mail. pentru a vă proteja intimitatea, a fost"
+  },
+  "ui_063": {
+    "message": "Nu se încărcă automat"
+  },
+  "ui_064": {
+    "message": "Scanarea URL acum"
+  },
+  "ui_065": {
+    "message": "Încărcare…"
+  },
+  "ui_066": {
+    "message": "Trimiteți fișierul la Hybrid Analysis…"
+  },
+  "ui_067": {
+    "message": "Încărcare completă.Cărcare rezultatele…"
+  },
+  "ui_068": {
+    "message": "Scanarea fișierului acum (încărcare)"
+  },
+  "ui_069": {
+    "message": "Etichetă: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_070": {
+    "message": "Nu este disponibil niciun raport exterior pentru acest fișier. pentru a vă proteja intimitatea, acesta a fost"
+  },
+  "ui_071": {
+    "message": "Încărcarea automată este dezactivată; nivelul de privatitate se aplică încă scanurilor manuale."
+  },
+  "ui_072": {
+    "message": "Protejarea link-ului rămâne disponibilă în plus față de scanarea automată."
+  },
+  "ui_073": {
+    "message": "Scăderea…"
+  },
+  "ui_074": {
+    "message": "Setări salvate"
+  },
+  "ui_075": {
+    "message": "Salvează"
+  },
+  "ui_076": {
+    "message": "Nu a fost acordată permisiunea de a transmite date. nu va fi trimise nimic."
+  },
+  "ui_077": {
+    "message": "Nu a fost acordată permisiunea de gazdă pentru:"
+  },
+  "ui_078": {
+    "message": "Checurile pentru acești furnizori nu sunt accesibile fără permisiunea lor."
+  },
+  "ui_079": {
+    "message": "Nu puteau să salveze setările."
+  },
+  "ui_080": {
+    "message": "Acest lucru îndepărtează toate rezultatele de analiză stocate local."
+  },
+  "ui_081": {
+    "message": "Se șterge…"
+  },
+  "ui_082": {
+    "message": "Cache este curat."
+  },
+  "ui_083": {
+    "message": "Database nu este disponibilă sau este deja goală."
+  },
+  "ui_084": {
+    "message": "Nu puteam să clarificăm cache-ul."
+  },
+  "ui_085": {
+    "message": "Cache clară"
+  },
+  "ui_086": {
+    "message": "API cheie lipsită."
+  },
+  "ui_087": {
+    "message": "SPF verifica eșuat (posibil spoofing)."
+  },
+  "ui_088": {
+    "message": "Semnarea DKIM este inadecvată (posibilă spoofing)."
+  },
+  "ui_089": {
+    "message": "DMARC verifica eșuat (posibil spoofing)."
+  },
+  "ui_090": {
+    "message": "URLhaus lista de domeniu ( $P1$) ca malign.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_091": {
+    "message": "Domeniul de răspundere ( $P1$) diferă de domeniu de trimitere ( $P2$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_092": {
+    "message": "Posibil compromis de e-mail de business: primul contact cu acest trimitător și cuvântul cheie de urgentă găsit ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_093": {
+    "message": "Cuvinte cheie de urgent găsite ( $P1$). Verificați această cerere cu atenție.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_094": {
+    "message": "Este prima dvs. comunicare cu acest mesaj."
+  },
+  "ui_095": {
+    "message": "Domeniul de trimitere ( $P1$) seamănă cu marca $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_096": {
+    "message": "Domeniul de link ( $P1$) seamănă cu marca $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_097": {
+    "message": "Niciunul dintre link-urile din punctul text la domeniu de trimitere ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_098": {
+    "message": "curat"
+  },
+  "ui_099": {
+    "message": "Scanarea URL a eşuat:"
+  },
+  "ui_100": {
+    "message": "Nu puteți începe scanarea urlscan.io:"
+  },
+  "ui_101": {
+    "message": "urlscan.io nu a întors un ID de scanare."
+  },
+  "ui_102": {
+    "message": "urlscan.io a identificat URL ca fiind dăunător."
+  },
+  "ui_103": {
+    "message": "Detectarea vizuală: pagina impersonalizează"
+  },
+  "ui_104": {
+    "message": "(Pentru a fi un phishing presupus)"
+  },
+  "ui_105": {
+    "message": "Nu puteți obține rezultate urlscan.io:"
+  },
+  "ui_106": {
+    "message": "Thundy AV – Scanner de e-mail"
+  },
+  "ui_107": {
+    "message": "Vezi toate subiecțiile Hybrid Analysis"
+  },
+  "ui_108": {
+    "message": "Vezi toate subiecțiile Hybrid Analysis (acoperiți o nouă pagină)"
+  },
+  "ui_109": {
+    "message": "Subiectul este:"
+  },
+  "ui_110": {
+    "message": "De la:"
+  },
+  "ui_111": {
+    "message": "Mesajul ID:"
+  },
+  "ui_112": {
+    "message": "Thundy AV setări"
+  },
+  "ui_113": {
+    "message": "Hybrid Analysis este un servici de analiză a malware. puteți trimite fișiere pentru analiză statică și dinamică."
+  },
+  "ui_114": {
+    "message": "Hybrid Analysis utilizează CrowdStrike Falcon Sandbox pentru a investiga amenințări necunoscute."
+  },
+  "ui_115": {
+    "message": "Conturile furnizorilor și termenii de service se aplică analizei externe. controalele locale nu necesită un cont."
+  },
+  "ui_116": {
+    "message": "Thundy AV setări"
+  },
+  "ui_117": {
+    "message": "Ce este Hybrid Analysis?"
+  },
+  "ui_118": {
+    "message": "Pentru analizele de fișiere externe, obțineți o cheie API de la"
+  },
+  "ui_119": {
+    "message": "După înregistrare, du-te la profilul tău și găsește secțiunea API KEY."
+  },
+  "ui_120": {
+    "message": "Puneți cheia API aici. controlurile locale funcționează fără ea."
+  },
+  "ui_121": {
+    "message": "API setare cheie"
+  },
+  "ui_122": {
+    "message": "hybrid-analysis.com"
+  },
+  "ui_123": {
+    "message": "hybrid-analysis.com (a se găsi o nouă pagină)"
+  },
+  "ui_124": {
+    "message": "Permite analiza externă (trimiterea datelor către furnizori terți)"
+  },
+  "ui_125": {
+    "message": "Fără acest consimţământ,"
+  },
+  "ui_126": {
+    "message": "hash, fișiere, link-uri sau IP adresele sunt trimise la serviciile externe.După consimțământul, scanurile autorizate pot trimite atașament și pot conecta date la Hybrid Analysis, VirusTotal, urlscan.io, URLhaus sau AbuseIPDB, în funcție de nivelul de confidentialitate. optați această opțiune pentru a retrage consimțământul:"
+  },
+  "ui_127": {
+    "message": "Nu"
+  },
+  "ui_128": {
+    "message": "Politică de confidentialitate"
+  },
+  "ui_129": {
+    "message": "Politică de confidentialitate (acoperiți o nouă pagină)"
+  },
+  "ui_130": {
+    "message": "Hybrid Analysis API cheie (opțiune):"
+  },
+  "ui_131": {
+    "message": "E.g. abcdef123456…"
+  },
+  "ui_132": {
+    "message": "URLhaus API cheie (reumă de domeniu opțiune):"
+  },
+  "ui_133": {
+    "message": "Puteți obține o cheie API la"
+  },
+  "ui_134": {
+    "message": "."
+  },
+  "ui_135": {
+    "message": "urlhaus.abuse.ch"
+  },
+  "ui_136": {
+    "message": "urlhaus.abuse.ch (a se găsi o nouă pagină)"
+  },
+  "ui_137": {
+    "message": "urlscan.io API cheie (analiză opțială URL):"
+  },
+  "ui_138": {
+    "message": "Puteți obține o cheie API la"
+  },
+  "ui_139": {
+    "message": "urlscan.io"
+  },
+  "ui_140": {
+    "message": "urlscan.io (a se găsi o nouă pagină)"
+  },
+  "ui_141": {
+    "message": "VirusTotal API cheie (reumă de fișier opțial):"
+  },
+  "ui_142": {
+    "message": "virustotal.com"
+  },
+  "ui_143": {
+    "message": "virustotal.com (a se găsi o nouă pagină)"
+  },
+  "ui_144": {
+    "message": "Întregul nivel de privatitate:"
+  },
+  "ui_145": {
+    "message": "Strict (default: hashes și domenii numai, nu sunt încărcate)"
+  },
+  "ui_146": {
+    "message": "Echilibrat (încărcați fișiere necunoscute, fără complet URLs)"
+  },
+  "ui_147": {
+    "message": "Analiza maximă (încărcați fișiere necunoscute și completați URLs)"
+  },
+  "ui_148": {
+    "message": "Limitează date trimise furnizorilor de analiză. se aplică numai atunci când este activată analizele externe."
+  },
+  "ui_149": {
+    "message": "Reputația IP (checuri pentru titluri primite):"
+  },
+  "ui_150": {
+    "message": "Dispărți"
+  },
+  "ui_151": {
+    "message": "VirusTotal (recepe un cheie VirusTotal API)"
+  },
+  "ui_152": {
+    "message": "AbuseIPDB (recepe un cheie AbuseIPDB API)"
+  },
+  "ui_153": {
+    "message": "IP reputație API cheie:"
+  },
+  "ui_154": {
+    "message": "Trimite adresele IP din adresele primite ale e-mailului furnizorului ales. necesită consimțământul de analiză externa și autorizația de scanare."
+  },
+  "ui_155": {
+    "message": "Listă de permisiuni (domenii sau adresele de e-mail separate de comma):"
+  },
+  "ui_156": {
+    "message": "e.g. example.com, test@ example.com"
+  },
+  "ui_157": {
+    "message": "Intrările de trimitere încrezător suprimă avertismentele de trimiteri locale. nu autorizează scanările externe."
+  },
+  "ui_158": {
+    "message": "Blocklist (domenii sau adresele de e-mail separate de comma):"
+  },
+  "ui_159": {
+    "message": "Introduceți domenii blocate sau adresa de e-mail."
+  },
+  "ui_160": {
+    "message": "Scanarea manuală (nu se face încărcătură automată)"
+  },
+  "ui_161": {
+    "message": "Previne scanarea automată a scanurilor externe. acțiunile manuale explicite necesită încă consimțământul și nivelul corespunzător de intimitate."
+  },
+  "ui_162": {
+    "message": "Actualizează automat rapoartele de linkuri în așteptare"
+  },
+  "ui_163": {
+    "message": "Verificările de link-uri necesită consimțământ, autorizație de scanare și nivelul corespunzător de intimitate."
+  },
+  "ui_164": {
+    "message": "Verificați link-urile până când le-ați dat"
+  },
+  "ui_165": {
+    "message": "Navigația se oprește pentru a arăta rezultatul. link-urile necontrollate și erorile sunt identificate în mod clar. Analiza completă a URL necesită nivelul maxim. Linkurile complete și atașamentele necesită confirmări individuale."
+  },
+  "ui_166": {
+    "message": "Amintiți-vă să vă salvați setările."
+  },
+  "ui_167": {
+    "message": "Managementul Datelor"
+  },
+  "ui_168": {
+    "message": "Ceea ce este clar este rezultatele stocate local și cache-urile de reputație."
+  },
+  "linkChecking": {
+    "message": "Verificarea link-ului…"
+  },
+  "linkWarning": {
+    "message": "Acest link a fost raportat ca suspect sau malign."
+  },
+  "linkUnknown": {
+    "message": "Acest link nu poate fi verificat. a se putea fi riscant."
+  },
+  "linkNoDetection": {
+    "message": "Nu se detectează nici o amenințare de către furnizor. aceasta nu este o garanție de siguranta."
+  },
+  "linkProceed": {
+    "message": "Link-ul este în orice caz"
+  },
+  "linkCancel": {
+    "message": "Anulează"
+  },
+  "localMode": {
+    "message": "Verificările locale funcționează fără cheile API. Scanările externe necesită consimțământul dvs. și o autoritate de trimitere sau de trimiteri."
+  },
+  "statusNormal": {
+    "message": "(nu este detectată)"
+  },
+  "statusSuspicious": {
+    "message": "(în cazul în care este suspect)"
+  },
+  "statusCritical": {
+    "message": "(Citește mai mult →"
+  },
+  "noSubject": {
+    "message": "(nu este niciun motiv)"
+  },
+  "noSender": {
+    "message": "(întrunecarea unui mesaj necunoscut)"
+  },
+  "noId": {
+    "message": "(nu este identificat)"
+  },
+  "unknownAttachment": {
+    "message": "necunoscut"
+  },
+  "statusDangerous": {
+    "message": "( în condiţii de risc)"
+  },
+  "sizeLimit": {
+    "message": "Atacarea depășește limitul de mărime locală de 25 MiB și nu a fost citită sau încărcată."
+  },
+  "trustedAuthLabel": {
+    "message": "Serverele de autenticitate încrezabile (comma-separate)"
+  },
+  "trustedAuthHelp": {
+    "message": "Numai lista serverelor de poștă destinatară pe care le administrați sau care vă încred în mod explicit. rapoartele de titlu neconfigurate rămân neconfigurabile."
+  },
+  "consentHelp": {
+    "message": "Fără consimțământ, nu se trimit date către servicii externe. După ce îți dai consimțământul, sunt verificate doar mesajele sau expeditorii autorizați în mod explicit. La nivelul strict pot fi trimise amprente, domenii și adrese IP publice. Nivelul echilibrat permite și încărcarea fișierelor necunoscute, iar nivelul maxim și trimiterea adreselor URL complete. Dezactivează opțiunea pentru a opri transferurile noi și a anula solicitările în așteptare. Datele deja transmise nu pot fi retrase. Linkurile complete și atașamentele necesită confirmări individuale."
+  },
+  "visualImpersonation": {
+    "message": "Detectia vizuală: pagina impersonalizează $BRANDS$ (pentru a fi presupus să fie phish).",
+    "placeholders": {
+      "brands": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedEmail": {
+    "message": "E-mailul de trimitere ( $P1$) este pe lista de blocuri.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedDomain": {
+    "message": "Domeniul de înregistrare ($P1$În acest caz, este în blocul ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedEmail": {
+    "message": "E-mailul de trimitere ( $P1$) este pe lista de permisiuni.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedDomain": {
+    "message": "Domeniul de înregistrare ($P1$(a) este pe lista de permisiuni ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanVisibility": {
+    "message": "Submiterea urlscan.io este neînregistrată, nu privată. O completă URL poate conține date personale sau tokenuri de acces. Submiterea numai URLs vă este permis să partajați."
+  },
+  "notificationScanCount": {
+    "message": "Scanare: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "gatewayRequestTimeout": {
+    "message": "Cererea furnizorului a fost anulată sau expirată."
+  },
+  "gatewayInvalidJson": {
+    "message": "Furnizorul a dat un mesaj necunoscut."
+  },
+  "gatewayNetworkError": {
+    "message": "Furnizorul nu a fost reușit să se atingă."
+  },
+  "noMessageFound": {
+    "message": "Nu a fost găsit niciun mesaj afișat."
+  },
+  "providerNoDetection": {
+    "message": "Nu se detectează amenințări"
+  },
+  "providerMalicious": {
+    "message": "Rău intenționat"
+  },
+  "providerSuspicious": {
+    "message": "Suspect"
+  },
+  "providerPending": {
+    "message": "Analiza pending"
+  },
+  "privacyLocalData": {
+    "message": "Thundy AV citește mesajul afișat, trimiterea sa, obiectul, titlurile, textul și atașamentele pentru a efectua controale locale. controale locale funcționează fără cheile API. Nu este nici telemetry, nici server de analiză de către developer."
+  },
+  "privacyProviders": {
+    "message": "Cererile externe autorizate merg direct la furnizorii configurați: Hybrid Analysis pentru hash-urile şi încărcăturile de fişiere, VirusTotal pentru dosarul hash sau IP reputaţie , URLhaus pentru domenii, urlscan.io Pentru complet URLs şi AbuseIPDB pentru IP-urile public. hash-urile pot identifica fișiere cunoștințe. termenii și politica de confidentialitate a furnizorului se aplică; informațiile transmise pot fi partajate de furnizor."
+  },
+  "privacyRetention": {
+    "message": "setări, consimțământ, autorizații de trimitere și API cheile sunt stocate în Thunderbird Profila de profil. API cheile nu sunt criptate acolo. înregistrările de scan local pot cuprinde subiecte, adresele de trimitere, link-uri completă și metadata de atașament. cache-ul păstrează până la 1.000 de înregistrări de mesaje timp de 30 de zile și este curățat pe start-up-ul bazei de date."
+  },
+  "privacyControl": {
+    "message": "Închideți analizele externe pentru a opri noi solicitare și a anula solicitățile în curs. Datele deja transmise nu pot fi recunoscute. Utilizați Cache clare pentru a șterge rezultatele de analiză stocate și cache-uri de reputație. Autorizațiile de trimitere individuale pot fi șterse în setări."
+  },
+  "privacyDetailed": {
+    "message": "Politică de confidentialitate (în engleză/germană)"
+  },
+  "senderAuthorizationsLabel": {
+    "message": "Trimite autorizate (o adresă de e-mail pe linie)"
+  },
+  "senderAuthorizationsHelp": {
+    "message": "Aceste trimiteri pot fi scanate automat atunci când este activată analizele externe. îndepărtați un adres pentru a opri scanările automate pentru mesajele viitoare. Această listă nu depășește gradul de privatitate sau modul manual."
+  },
+  "invalidSenderAddress": {
+    "message": "Introduceți adresele de e-mail, una pe linie."
+  },
+  "popupSubtitle": {
+    "message": "Informații despre Securitate"
+  },
+  "popupDetails": {
+    "message": "Detalii tehnice ale mesajului"
+  },
+  "popupLocalAssessment": {
+    "message": "Evaluarea riscului local"
+  },
+  "popupLocalExplanation": {
+    "message": "Acest scor nu este o hotărâre antivirus sau o garanție de siguranta."
+  },
+  "linkDialogTitle": {
+    "message": "Verifică-te până la lansare"
+  },
+  "linkDestination": {
+    "message": "Site-ul de destinatie"
+  },
+  "linkUrlDetails": {
+    "message": "afișează adresa completă link"
+  },
+  "linkOpenBrowser": {
+    "message": "Deschide în browser"
+  },
+  "linkOpening": {
+    "message": "Încălzirea…"
+  },
+  "linkOpenFailed": {
+    "message": "Linkul nu a putut fi deschis. Încearcă din nou sau verifică setările browserului implicit."
+  },
+  "linkCheckLimited": {
+    "message": "Se pot afișa doar rezultatele de scanare disponibilă. verificații lipsite nu implică că un link este sigur."
+  },
+  "auditTitle": {
+    "message": "Link decizie log"
+  },
+  "auditOpen": {
+    "message": "Citește link log"
+  },
+  "auditScope": {
+    "message": "Înregistrări HTTP (S) clicuri interceptate de protecția link-ului. OPENED se referă la Thunderbird a acceptat cererea de a se încheia fără a raporta o eroare. Acest lucru nu confirmă că sistemul de operare a lansat un browser sau că site-ul a fost vizitat."
+  },
+  "auditPrivacy": {
+    "message": "Închiderea locală timp de până la 30 de zile, 2000 de înregistrări sau 2 MiB (înregistrările cele mai înalte sunt îndepărtate). Full URLs poate conține date personale sau tokenuri de acces. Nimic nu este încărcat automat. Logul local poate fi modificat sau șters de către utilizatorii de profil; nu este un pas de auditare centrală de tamper-proof. Scorul local utilizează link-ul și mesajul de contact, nu un scor de furnizor. Motive de analiză pot includ detașarea trimiterului sau a domenii."
+  },
+  "auditSearch": {
+    "message": "URL, ID de domeniu sau eveniment"
+  },
+  "auditOutcome": {
+    "message": "Decizia"
+  },
+  "auditAll": {
+    "message": "toate"
+  },
+  "auditOpened": {
+    "message": "Deschiderea solicitată"
+  },
+  "auditAborted": {
+    "message": "Avorturi"
+  },
+  "auditOpenError": {
+    "message": "Aperarea eșuată"
+  },
+  "auditPending": {
+    "message": "Nu se face decizie completă"
+  },
+  "auditMinScore": {
+    "message": "Scorul minim de decizie"
+  },
+  "auditFrom": {
+    "message": "din"
+  },
+  "auditTo": {
+    "message": "pentru"
+  },
+  "auditRefresh": {
+    "message": "Refrigere"
+  },
+  "auditJson": {
+    "message": "Exportul JSON"
+  },
+  "auditCsv": {
+    "message": "Exportul CSV"
+  },
+  "auditClear": {
+    "message": "Îndepărtează logul local"
+  },
+  "auditExportHelp": {
+    "message": "Exporturile includ toate rândurile filtrate, nu numai pagina curentă. JSON conține un număr de verificare SHA-256 pentru verificare; nu dovedește autenticitate. CSV neutrează formulele de frunze. Exporturile conțin complet URLs : partajați numai cu revizorii autorizați."
+  },
+  "auditTime": {
+    "message": "Click / Timp de decizie"
+  },
+  "auditLocalScore": {
+    "message": "Scorul local (link și mesaj)"
+  },
+  "auditVerdict": {
+    "message": "Rezultatele furnizorilor"
+  },
+  "auditAddress": {
+    "message": "URL și mai multe informații"
+  },
+  "auditPrevious": {
+    "message": "Anul trecut"
+  },
+  "auditNext": {
+    "message": "Înainte"
+  },
+  "auditClearConfirm": {
+    "message": "Eliminați toate intrările de log local link? Export dovezi cerute mai întâi. rezultatele de scanare și setările sunt păstrate."
+  },
+  "auditFailure": {
+    "message": "Logul de link local nu a fost citit sau salvat."
+  },
+  "auditUnavailable": {
+    "message": "Nu este disponibil"
+  },
+  "auditScoreAtDecision": {
+    "message": "Scorul la decizie"
+  },
+  "auditRecords": {
+    "message": "înregistrări"
+  },
+  "auditDetails": {
+    "message": "URL și dovezi"
+  },
+  "auditEventId": {
+    "message": "ID eveniment"
+  },
+  "auditCancelReason": {
+    "message": "Motivația anulării"
+  },
+  "auditFinalResult": {
+    "message": "Ultima verificare rezultat"
+  },
+  "auditProfile": {
+    "message": "ID-ul de profil local"
+  },
+  "auditExported": {
+    "message": "Exportul a fost salvat."
+  },
+  "auditRiskyOpened": {
+    "message": "Deschiderea solicitată la risc ridicat"
+  },
+  "auditExportFailed": {
+    "message": "Exportul a fost anulat sau a fost anulată."
+  },
+  "profilesTitle": {
+    "message": "Profile opționale ale întreprinderilor"
+  },
+  "profilesIntro": {
+    "message": "Alegeți sistemele comune în mod independent sau lăsați integrările dezactivate. Aceste profiluri pregătesc configurația; nu se conectează la un servici de companie sau activă log-ul central."
+  },
+  "profilesOpen": {
+    "message": "Selectați profilurile de întreprindere"
+  },
+  "profilesBundle": {
+    "message": "Combinația recomandată"
+  },
+  "profilesLocal": {
+    "message": "Pregătirea locală"
+  },
+  "profilesCustom": {
+    "message": "Selecție personalizată"
+  },
+  "profilesHosting": {
+    "message": "Găzduire"
+  },
+  "profilesSso": {
+    "message": "Un semn de semn (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Managementul dispozitivelor"
+  },
+  "profilesSiem": {
+    "message": "monitorizare a sigurantei (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Sistemul de bilete"
+  },
+  "profilesRequirements": {
+    "message": "Configurație necesară"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Setările de puncte finale și cont sunt furnizate în timpul setării ulterioare.Numele de mai jos identifică setările solicitate și referințele secrete; nu înregistrați aici credențiale."
+  },
+  "profilesPreview": {
+    "message": "Proiectul de Configurare"
+  },
+  "profilesPrivacy": {
+    "message": "Conectările rămân dezactivate. proiectul nu conține cheile API, tokenele, date de mesaj URLs sau date de mesaj. Datele de bază sunt planificate cu redactarea doar a domenii."
+  },
+  "profilesSave": {
+    "message": "Salvați selecția locală"
+  },
+  "profilesExport": {
+    "message": "Proiectul de Configurație Export"
+  },
+  "profilesReset": {
+    "message": "Selecție reînnoită"
+  },
+  "profilesNone": {
+    "message": "Disabilitate / nu selectați"
+  },
+  "profilesSelfHosted": {
+    "message": "Însuși / pe premise"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Nu sunt cerute setări de integrare externe pentru această selecție."
+  },
+  "profilesSaved": {
+    "message": "Selecția a fost salvată local. conectivitatea rămâne dezactivată."
+  },
+  "profilesExported": {
+    "message": "Proiectul de configuranță a fost exportat. nimic nu a fost activat."
+  },
+  "profilesFailed": {
+    "message": "Selecția nu a fost încărcată, salvată sau exportată sau operațiunea a fost anulată."
+  },
+  "wizardTitle": {
+    "message": "Configurează Thundy AV"
+  },
+  "wizardLanguage": {
+    "message": "Limba asistentului de configurare"
+  },
+  "wizardLanguageNote": {
+    "message": "Această alegere se aplică doar asistentului. Poți schimba limba extensiei în setări."
+  },
+  "wizardWelcome": {
+    "message": "Bun venit"
+  },
+  "wizardProtection": {
+    "message": "Link protecție"
+  },
+  "wizardExternal": {
+    "message": "Analiza opțiunii"
+  },
+  "wizardIntro": {
+    "message": "Pentru a verifica un e-mail, utilizați banerul sau acțiunea de scanare Thundy AV. Puteți hotărî mai târziu dacă să configurați furnizorii de analiză."
+  },
+  "wizardLocalNotice": {
+    "message": "Fără consimțământul pentru analiză externa, nu sunt trimise date furnizorilor de analiză. acest mag nu acordă niciodata consimțătura."
+  },
+  "wizardPrivacy": {
+    "message": "Informații de confidentialitate"
+  },
+  "wizardLinkChoice": {
+    "message": "Avertizează-te, în timp ce îți dai link-uri și înregistrați deciziile în localitate"
+  },
+  "wizardLinkExplanation": {
+    "message": "Dialogul de link-uri afișează destinatia și disponibilitatea de a evalua riscul.Deschiderea mâinilor link-ul către browser-ul dvs. nu dovedește o vizită la site-ul web."
+  },
+  "wizardAuditNotice": {
+    "message": "Logul de link local poate cuprinde URLs complet și motivele de evaluatie. se menține până la 30 de zile, 2000 de intrări sau 2 MiB. Utilizatorii de profil pot citi, schimba sau șterge; nu este un control corporativ protejat."
+  },
+  "wizardExternalExplanation": {
+    "message": "Furnizorii externe sunt opționali și pot solicita cheile API. În funcție de nivelul de intimitate, hash-urile, domenii, IP-urile public, fișierele sau completul URLs pot fi transmise."
+  },
+  "wizardNextAction": {
+    "message": "Ce vrei să faci următoarea?"
+  },
+  "wizardKeepLocal": {
+    "message": "Începeți cu controalele locale"
+  },
+  "wizardKeepExisting": {
+    "message": "menține setările externe existente"
+  },
+  "wizardExistingExternal": {
+    "message": "Analiza externa este deja activata in acest profil. magul nu modifica acest consimtamant. folositi setari pentru a dezactiva sau revizuirea permisiilor."
+  },
+  "wizardConfigure": {
+    "message": "Configurarea analizei externe în setări"
+  },
+  "wizardNoConsent": {
+    "message": "Alegerea acestui opțiune doar se va desfasura setările. nimic nu este încărcat și nici o permisiune nu este solicitată de acest mag."
+  },
+  "wizardBack": {
+    "message": "Înapoi"
+  },
+  "wizardNext": {
+    "message": "Înainte"
+  },
+  "wizardFinish": {
+    "message": "salvare setup"
+  },
+  "wizardFinishConfigure": {
+    "message": "Salvați și dezvăluiți setările"
+  },
+  "wizardSkip": {
+    "message": "Nu acum"
+  },
+  "wizardDone": {
+    "message": "Setare salvată"
+  },
+  "wizardDoneText": {
+    "message": "Opțiunea dvs. de protecție a link-ului a fost salvată local. nu s-a modificat cheia API, consimțământul externe sau aprobarea trimiterii. puteți reapăra magia din setări."
+  },
+  "wizardSettings": {
+    "message": "Setări de acces"
+  },
+  "wizardProfilesNotice": {
+    "message": "Profile de întreprindere sunt proiecte de configuranță opționale. alegerea lor nu activă o conectivitate corporativă."
+  },
+  "wizardDeferred": {
+    "message": "Instalare întârziată"
+  },
+  "wizardDeferredText": {
+    "message": "Nu s-au modificat setările. reaperează magia din setări atunci când sunteți gata."
+  },
+  "wizardSettingsOpened": {
+    "message": "Setări sunt puse la dispozitie. Configurați furnizorii și salvează consimțământul dvs. acolo."
+  },
+  "wizardSettingsFailed": {
+    "message": "Setările nu pot fi desfasurate. setarea ta este salvată; utilizați setările Deschise pentru a retrage."
+  },
+  "wizardSaveFailed": {
+    "message": "Setarea nu a fost salvată. opțiunile tale rămân aici; vă rugăm să retrageți."
+  },
+  "wizardLoadFailed": {
+    "message": "Setările nu pot fi încărcate. nimic nu a fost salvat. Rescărcați această pagină pentru a retrage."
+  },
+  "wizardLanguageFailed": {
+    "message": "Limba nu poate fi încărcată.Limba anterioară rămâne selecționată."
+  },
+  "wizardReopen": {
+    "message": "Călărețul de setare"
+  },
+  "settingsAppearance": {
+    "message": "Aspect"
+  },
+  "settingsPrivacy": {
+    "message": "Confidențialitate"
+  },
+  "settingsScanning": {
+    "message": "Protecție"
+  },
+  "settingsProviders": {
+    "message": "Servicii de analiză"
+  },
+  "settingsSenders": {
+    "message": "Reguli pentru expeditori"
+  },
+  "settingsData": {
+    "message": "Date și instrumente"
+  },
+  "settingsWorkspace": {
+    "message": "spațiul tău de lucru"
+  },
+  "settingsEyebrow": {
+    "message": "Faceți-o pe dvs."
+  },
+  "settingsSubtitle": {
+    "message": "Personalizează aspectul Thundy AV și protecția e-mailului tău."
+  },
+  "settingsLocalBadge": {
+    "message": "Localizare în mod default"
+  },
+  "settingsLocalNote": {
+    "message": "Preferințele dvs. stocate pe acest dispozitiv."
+  },
+  "settingsSkip": {
+    "message": "Plecare la setări"
+  },
+  "settingsProviderGuide": {
+    "message": "despre furnizori și cheile API"
+  },
+  "settingsWizardHelp": {
+    "message": "Revizuiți setarea ghidată în orice moment."
+  },
+  "themeIntro": {
+    "message": "Faceți Thundy AV să se simtă ca al tău. modificările de afișare sunt salvate în mod direct pe tot parcursul ad-on."
+  },
+  "themeMode": {
+    "message": "Aspect"
+  },
+  "themeSystem": {
+    "message": "Urmează tema Thunderbird"
+  },
+  "themeLight": {
+    "message": "Luminoasă"
+  },
+  "themeDark": {
+    "message": "Întunecată"
+  },
+  "themeAccent": {
+    "message": "Accentul culorilor"
+  },
+  "themeOcean": {
+    "message": "Oceanul"
+  },
+  "themeViolet": {
+    "message": "Violetă"
+  },
+  "themeForest": {
+    "message": "pădurea"
+  },
+  "themeAmber": {
+    "message": "Amberă"
+  },
+  "themeReady": {
+    "message": "Apariția este salvată automat.Alte setări folosesc butonul de salvare."
+  },
+  "themeSaving": {
+    "message": "Scăderea aparenței…"
+  },
+  "themeSaved": {
+    "message": "Apariția a fost salvată."
+  },
+  "themeLoadError": {
+    "message": "Apariția nu poate fi încărcată. încearcă să reîncepeți setările."
+  },
+  "themeSaveError": {
+    "message": "Apariția nu a fost salvată. alege din nou pentru a retrage."
+  },
+  "themeRetry": {
+    "message": "Retragerea de salvare aparent"
+  },
+  "themeDensity": {
+    "message": "densitatea informației"
+  },
+  "themeComfortable": {
+    "message": "Confortul"
+  },
+  "themeCompact": {
+    "message": "Compactă"
+  },
+  "themeDensityHelp": {
+    "message": "Adaptarea spațiului în setări și instrumente de administrare locală."
+  },
+  "profilesChanges": {
+    "message": "Modificări în raport cu selecția salvată"
+  },
+  "profilesDiscard": {
+    "message": "A se evita schimbările neînsăvârșite"
+  },
+  "profilesLoadRetry": {
+    "message": "Reload salvat selecție"
+  },
+  "profilesNotLoaded": {
+    "message": "Selecția salvată nu încărcată"
+  },
+  "profilesUnsaved": {
+    "message": "Modificări neînregistrate · Proiect inactiv"
+  },
+  "profilesUnchanged": {
+    "message": "Proiectul de selecție - Proiectul inactiv"
+  },
+  "profilesSaving": {
+    "message": "Scăderea selecţiei locale…"
+  },
+  "settingsUnsaved": {
+    "message": "Schimbări nesfârșite"
+  },
+  "providerUnknown": {
+    "message": "Rezultat necunoscut"
+  },
+  "auditVerdictAtDecision": {
+    "message": "Rezultatele deciziei"
+  },
+  "ui_169": {
+    "message": "Protokolul de analiză: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "ID de lucru: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "ID de depunere: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protokolul retrăcut: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": "Rezultatul este recalcat automat la fiecare $P1$ secunde (atempt $P2$); protocoalul de analiză terminat apare aici fără o nouă cerere odată ce este stocat.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "După o restartare sau pierderea procesului, acest lucru rămâne în așteptare; nu se indică că link-ul a fost pus sau anulat."
+  },
+  "auditCancelUser": {
+    "message": "Anulată de către utilizator"
+  },
+  "auditCancelEscape": {
+    "message": "Închisă cu fuga"
+  },
+  "auditCancelDestination": {
+    "message": "Destinatia a fost modificata"
+  },
+  "auditCancelContext": {
+    "message": "Continutul mesajului închis"
+  },
+  "auditCancelUnknown": {
+    "message": "Cauza anulată necunoscută"
+  },
+  "reportNotSaved": {
+    "message": "Raportul este vizibil, dar nu a fost posibil să fie salvat local. reapere pentru retragere."
+  },
+  "checkOrigin_live": {
+    "message": "Rezultatele furnizorilor curente"
+  },
+  "checkOrigin_stored": {
+    "message": "Rezultatul stocat"
+  },
+  "checkOrigin_none": {
+    "message": "Nu exista niciun monitorizare"
+  },
+  "checkOutcome_success": {
+    "message": "Cererea a reușit"
+  },
+  "checkOutcome_failed": {
+    "message": "Cererea a eşuat"
+  },
+  "checkOutcome_disabled": {
+    "message": "Analiza externa este disabilita"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Permisul de gazdă dispărut"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Proprietarul cheie lipsit"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Nu se referă la furnizor"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Nu exista cerere noua"
+  },
+  "checkOutcome_no_result": {
+    "message": "Nu se utilizează un nou rezultat"
+  },
+  "checkAttempted": {
+    "message": "Verificarea tentativelor"
+  },
+  "checkObserved": {
+    "message": "Rezultatele observate"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Motive pentru decizie"
+  },
+  "auditReasonsLatest": {
+    "message": "Cele mai noi cauze"
+  },
+  "auditReasonsMissing": {
+    "message": "Nu a fost înscrisă în acel moment"
+  },
+  "coverageSummary": {
+    "message": "Cuvânt cheie - detectat: $1• eligibilă : $2• prelucrată : $3Încălcată : $4Încălcată : $5Obiectele de la care se află sunt neevaluate."
+  },
+  "supportTitle": {
+    "message": "Raportul de suport local"
+  },
+  "supportHelp": {
+    "message": "Previne un raport de diagnoză minimă, apoi îl salvează local. nimic nu este trimis."
+  },
+  "supportPreview": {
+    "message": "Raportul de preaviz"
+  },
+  "supportConfiguration": {
+    "message": "Include setări strânse (nu sunt cheile sau listele de trimitere)"
+  },
+  "supportSave": {
+    "message": "Salvați raportul local"
+  },
+  "coverageAttachments": {
+    "message": "Atracție"
+  },
+  "coverageDomains": {
+    "message": "Domeniile unice"
+  },
+  "coverageBatch": {
+    "message": "Liniștile batch"
+  },
+  "coverageLimits": {
+    "message": "Limite pe pas: 100 de atașamente, 25 MiB pe atașament, 100 de domenii unice, 20 de link-uri de batch."
+  },
+  "localProfileTitle": {
+    "message": "Profile locale"
+  },
+  "localProfileHelp": {
+    "message": "Exportul este salvată sau setările de protecție locală în mod separat. Preview și confirmarea importurilor. Chei, consimțământ, permisiuni, trimiteri de încredere și istorie de auditare sunt excluse."
+  },
+  "localProfileExport": {
+    "message": "Exportul aparent"
+  },
+  "localProfileFile": {
+    "message": "Selectați un fișier de profil ( JSON, până la 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Profila JSON (sau pastă aici)"
+  },
+  "localProfilePreview": {
+    "message": "Previziuni modificări"
+  },
+  "localProfileApply": {
+    "message": "Aplicați modificările afișate"
+  },
+  "localProfileDiscard": {
+    "message": "Importație discardă"
+  },
+  "localProfileInvalid": {
+    "message": "Profile invalide, versiunea neînsoțită sau câmpurile interzise."
+  },
+  "localProfileChanged": {
+    "message": "Apariția a fost modificată de la preview. preview din nou, mai întâi de aplicare."
+  },
+  "localProfileFailed": {
+    "message": "Profilul nu a fost salvat. revizuirea setările actuale și retragerea."
+  },
+  "localProfileApplied": {
+    "message": "Apariția profilului aplicat. protecția și consimțământul nu au fost modificate."
+  },
+  "analysisTitle": {
+    "message": "Sursele de analiză"
+  },
+  "analysisMixed": {
+    "message": "Verificări locale + externe"
+  },
+  "analysisExternal": {
+    "message": "Observări externe disponibilă"
+  },
+  "analysisLocal": {
+    "message": "Locale · nu au fost înregistrate rezultate externe"
+  },
+  "analysisLocalChecked": {
+    "message": "Mesajul local/link heuristică completată."
+  },
+  "analysisLocalPending": {
+    "message": "Evaluarea locală nu a fost încă înregistrată."
+  },
+  "analysisUnknown": {
+    "message": "necunoscut"
+  },
+  "analysisTimeUnknown": {
+    "message": "Timpul nu este înscris"
+  },
+  "analysisObserved": {
+    "message": "Ultima reacție utilizată"
+  },
+  "analysisFindingObserved": {
+    "message": "Căutarea înregistrată"
+  },
+  "analysisAttempted": {
+    "message": "Ultima cerere de tentativă"
+  },
+  "analysisPartial": {
+    "message": "Unele cereri au eşuat; rezultatele disponibilă nu acoperă fiecare element."
+  },
+  "analysisOtherServices": {
+    "message": "Alte Servicii / nu verificat"
+  },
+  "analysisLimit": {
+    "message": "Un scor local nu este un verdict antivirus. cererile și încărcăturile nu sunt analize finite. rezultatele stocate păstrează vârsta lor originală; înregistrările lipsite nu dovedesc că nu s-a produs nici o cerere anterioară."
+  },
+  "analysisScope_hash": {
+    "message": "Reputația hash"
+  },
+  "analysisScope_file": {
+    "message": "Dosar de depunere"
+  },
+  "analysisScope_url": {
+    "message": "URL analiză"
+  },
+  "analysisScope_domain": {
+    "message": "Reputația domeniu"
+  },
+  "analysisScope_ip": {
+    "message": "Reputația publicului IP"
+  },
+  "analysisScope_report": {
+    "message": "Raportul de analiză"
+  },
+  "analysisState_running": {
+    "message": "Cerut · nu a terminat încă rezultat"
+  },
+  "analysisState_checked": {
+    "message": "Rezultatele primite"
+  },
+  "analysisState_received": {
+    "message": "Răspunsul primit · hotărâre inaccesibilă"
+  },
+  "analysisState_submitted": {
+    "message": "Analiză acceptată · analiză nu confirmată completă"
+  },
+  "analysisState_not_found": {
+    "message": "Nu s-a găsit niciun registru de furnizori"
+  },
+  "analysisState_failed": {
+    "message": "Cererea a eşuată; nu a fost pronunţat niciun nou verdict"
+  },
+  "analysisState_incomplete": {
+    "message": "Nu se înregistra nici o analiză completă"
+  },
+  "analysisSource_remote": {
+    "message": "Serviciul exterior contactat"
+  },
+  "analysisSource_cache": {
+    "message": "Cache-ul de memorie · nu se solicită un nou furnizor"
+  },
+  "analysisSource_stored": {
+    "message": "Observarea externa stocata"
+  },
+  "analysisSource_attempt": {
+    "message": "Cerere de tentativă · Răspuns nu a fost confirmat"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Hotărârea nu este disponibilă"
+  },
+  "analysisVerdict_none": {
+    "message": "Rezultatele: nu se detectează (nu se asigură nici o garanție de siguranta)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "Rezultatele sunt suspective indicatori"
+  },
+  "analysisVerdict_malicious": {
+    "message": "Rezultatele sunt incluse în detecția amenințării"
+  },
+  "analysisReason_unconfigured": {
+    "message": "În prezent nu este configurată"
+  },
+  "analysisReason_disabled": {
+    "message": "Noi cereri externe dispun"
+  },
+  "analysisReason_permission": {
+    "message": "Permisul de găzduire lipsit pentru noi cereri"
+  },
+  "analysisReason_authorization": {
+    "message": "Nu se autorizează automat acest mesaj / modul manual"
+  },
+  "analysisReason_policy": {
+    "message": "Nu este permisa de nivelul actual de privinta"
+  },
+  "analysisReason_on_action": {
+    "message": "Răspundeți după o acțiune explicită de link"
+  },
+  "analysisReason_unrecorded": {
+    "message": "Nu se verifică înregistrarea pentru acest mesaj"
+  },
+  "analysisUnavailable": {
+    "message": "Surse de analiză în prezent inaccesibile"
+  },
+  "analysisModeUnknown": {
+    "message": "Analiza nu a fost încă înregistrată"
+  },
+  "analysisModeRunning": {
+    "message": "Cerere externa in curs de lucru · rezultat pending"
+  },
+  "analysisModeSubmitted": {
+    "message": "Analiză prezentată în mod externe; analiză încă completă"
+  },
+  "analysisModeIncomplete": {
+    "message": "Verificare externa incompletă · completare nu confirmată"
+  },
+  "analysisModePartial": {
+    "message": "Rezultatele externe sunt la dispozitie; unii solicitari nu au reusit sa se"
+  },
+  "analysisModeFailed": {
+    "message": "Cerere externa a eşuată · nu s-a înscris niciun rezultat util"
+  },
+  "analysisModeResults": {
+    "message": "Răspunsuri externe la dispozitie · Vezi verificați mai jos"
+  },
+  "analysisResourceMessage": {
+    "message": "Contextul mesajului / reputația transportului"
+  },
+  "analysisResourceAttachment": {
+    "message": "Adăugarea"
+  },
+  "analysisResourceLink": {
+    "message": "Linkuri"
+  },
+  "analysisResourceUnknown": {
+    "message": "Recomandări anterioare · resursele nu sunt înregistrate"
+  },
+  "analysisTruncated": {
+    "message": "Unele date de resursă au fost omise, pentru că limitele de afișare locale au fost atinse."
+  },
+  "analysisResources": {
+    "message": "Resursele din acest mesaj"
+  },
+  "analysisResourceLocal": {
+    "message": "Atacuri stocate cu mesajul · nu dovada unui scan antivirus"
+  },
+  "analysisResourceTarget": {
+    "message": "Conținutul de încărcare la distanță nu este dovada unei analize externe"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Nu se înregistra niciun control exterior pentru acest resurs"
+  },
+  "analysisContextChanged": {
+    "message": "Contextul mesajului s-a modificat. închideți și reapărați pop-up-ul, mai întâi decât trimiteți din nou."
+  },
+  "analysisLocalIncomplete": {
+    "message": "Analiza locală este incompletă: un anumit conținut de mesaj este inaccesibil."
+  },
+  "analysisLocalUnavailable": {
+    "message": "Analiza locală nu este disponibilă: mesajul nu a fost citit."
+  },
+  "analysisHistoryTitle": {
+    "message": "Istoria stocată · asociere neconfirmată"
+  },
+  "analysisHistoryWarning": {
+    "message": "Aceste înregistrări istorice pot aparține unui alt mesaj cu aceeași Message-ID. Nu confirmă o verificare a acestui mesaj."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Nu s-au salvat observatii noi de sursa; istoria existenta a fost mentinuta."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "Nu se poate salva o actualizare a raportului. protocoalele anterioare au fost păstrate."
+  },
+  "sourceExportOpen": {
+    "message": "Analiză preliminară raportul de sursă"
+  },
+  "sourceExportTitle": {
+    "message": "Analiza sursei raportului"
+  },
+  "sourceExportIntro": {
+    "message": "Creați un snapshot local al controalelor înregistrate. Acest lucru nu conduce o nouă analiză. observările curente și istoria stocată cu asociere neconfirmată sunt păstrate separate."
+  },
+  "sourceExportPrivacy": {
+    "message": "Include serviciile, statutul, hotărârea și timpul exact de observare. Exclude URLs, denumirile de fișiere, hash-urile, IP-urile, cheile, textul mesajului și identificatorii interni. Numerele de resursă se aplică numai în cadrul acestui raport. Acest lucru nu este o istorie completă sau un record autentic. Nimic nu este trimis automat. Revizuire, mai târziu, în fața partajării."
+  },
+  "sourceExportCancel": {
+    "message": "Previziune discard"
+  },
+  "sourceExportContentLabel": {
+    "message": "Previziunea raportului ( JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "Contextul mesajului nu mai este disponibil. reaperează raportul din pop-up-ul barului de instrumente de mesaj."
+  },
+  "sourceExportChanged": {
+    "message": "Starea înregistrată a fost modificată. Creează o nouă preview-ul, mai întâi decât să economisească."
+  },
+  "sourceExportReady": {
+    "message": "Revizuiți preview-ul, mai întâi decât să economisiți sau să împărtășiți."
+  },
+  "sourceExportRequested": {
+    "message": "Verificați completarea în Thunderbird descărcări."
+  },
+  "sourceExportFailed": {
+    "message": "Raportul nu a fost salvat. Creați o nouă preview pentru a incerca din nou."
+  },
+  "analysisHistoryPages": {
+    "message": "Pagini istorice"
+  },
+  "analysisHistoryEntries": {
+    "message": "intrări"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Suma istorică suspectă sau malignă · asociere neconfirmată"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Afișează primul avertisment istoric"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Mostra cele mai mari rezultate actuale"
+  },
+  "reportDisplayFailed": {
+    "message": "Un raport stocat nu poate fi afișat; alte rezultate rămân la dispozitie."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Unele informații de raport au un format neînsoțit și nu ar putea fi afișate."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Unele date de analiză stocate nu pot fi citite; alte rezultate rămân la dispozitie."
+  },
+  "analysisModeResponses": {
+    "message": "Răspunsuri primite · nu este disponibilă nici o hotărâre evaluată"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Răspunsuri primite fără o hotărâre evaluată · Unele cereri au eşuat"
+  },
+  "analysisCurrentAvailability": {
+    "message": "Pentru cereri noi"
+  },
+  "reasonMaliciousIp": {
+    "message": "Detectate adresa de server dăunător IP ( $IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "Indicatorii de amenințare externa (URLhaus & IP Reputatie)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus – Domainele malware recunoscute detectează: $DOMAINS$",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "IP Reputatie ( $PROVIDER$) – IP-uri suspecte server: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "urlscan.io Rezultatele sunt:"
+  },
+  "urlscanStatus": {
+    "message": "Starea: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridReportLink": {
+    "message": "A se face raportul complet despre Hybrid Analysis"
+  },
+  "hybridProviderMessage": {
+    "message": "Mesaj furnizor: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "Limita sau cota de rată Hybrid Analysis a fost atinsă. vă rugăm să faceți o nouă tentativă mai târziu."
+  },
+  "reasonArchivedMaliciousAttachment": {
+    "message": "Înregistrări istorice ($OBSERVED$). $PROVIDER$ Clasificare a aderenţei »$NAME$„Cât de rău.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonArchivedSuspiciousAttachment": {
+    "message": "Înregistrări istorice ($OBSERVED$). $PROVIDER$ Clasificare a aderenţei »$NAME$„Cât de suspectă.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonMaliciousAttachment": {
+    "message": "Atacamentul \" $NAME$ \" a fost clasificat ca dăunător de $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "Atacamentul \" $NAME$ \" a fost clasificat ca suspect de $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanReportLink": {
+    "message": "A se face raportul complet despre urlscan.io"
+  },
+  "hybridLinkVerdictStatus": {
+    "message": "Hybrid Analysis: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonMaliciousLinkVerdict": {
+    "message": "Link-ul \" $URL$ \" a fost clasificat ca malign de $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousLinkVerdict": {
+    "message": "Link-ul \" $URL$ \" a fost clasificat ca suspect de $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanErrorDetails": {
+    "message": "Cuvânt cheie: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "Limita sau cota de rată urlscan.io a fost atinsă. vă rugăm să faceți o nouă tentativă mai târziu."
+  },
+  "urlscanInvalidKey": {
+    "message": "Invalid sau neautorizat urlscan.io API cheie."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Rezultatul nu a fost gata în fereastra de sondaj. scanul acceptat poate fi verificat din nou fără o nouă depunere."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Domeniul nu poate fi soluționat de urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "elementul nu a fost încă înscris în Hybrid Analysis (nu s-a găsit nici o analiză anterioară)."
+  },
+  "virustotalNotFound": {
+    "message": "element nu este încă înscris în baza de date VirusTotal."
+  },
+  "virustotalRateLimited": {
+    "message": "Limita sau cota de rată VirusTotal a fost atinsă. vă rugăm să faceți o nouă tentativă mai târziu."
+  },
+  "virustotalInvalidKey": {
+    "message": "Invalid sau neautorizat VirusTotal API cheie."
+  },
+  "abuseipdbRateLimited": {
+    "message": "Limita sau cota de rată AbuseIPDB a fost atinsă. vă rugăm să faceți o nouă tentativă mai târziu."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Invalid sau neautorizat AbuseIPDB API cheie."
+  },
+  "urlhausRateLimited": {
+    "message": "Limita sau cota de rată URLhaus a fost atinsă. vă rugăm să faceți o nouă tentativă mai târziu."
+  },
+  "urlhausInvalidKey": {
+    "message": "Invalid sau neautorizat URLhaus API cheie."
+  },
+  "testApiKeyButton": {
+    "message": "Testează conexiunea"
+  },
+  "testApiKeyTesting": {
+    "message": "Testarea legăturii…"
+  },
+  "testApiKeyValid": {
+    "message": "Cererea este acceptată. Acest lucru nu confirmă drepturile de încărcare sau cota rămășiță."
+  },
+  "testApiKeyInvalid": {
+    "message": "Încălcarea de conectivitate: cheia API este invalidă."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Limita de rată sau cota a ajuns. vă rugăm să faceți o nouă tentativă mai târziu."
+  },
+  "testApiKeyError": {
+    "message": "Testul de conectivitate a eșuat."
+  },
+  "testApiKeyEmpty": {
+    "message": "Vă rugăm să intrați mai întâi un cheie API."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "Permisul de a se conecta la host-ul de service a fost respins."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Vă rugăm să alegeți mai întâi un furnizor de reputație IP."
+  },
+  "rateLimitWithWait": {
+    "message": "Limita de rată sau cota a ajuns. vă rugăm să începeți din nou în $SECONDS$ secunde.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Limita de rată atinsă"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Cuvânt cheie API"
+  },
+  "auditErrorCode": {
+    "message": "Cod de eroare"
+  },
+  "auditErrorDetails": {
+    "message": "Detalii erorilor"
+  },
+  "auditRetryAfter": {
+    "message": "Aștept timp"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ secunde",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "securityTitle": {
+    "message": "Administrarea și protecția link-ului"
+  },
+  "securityScope": {
+    "message": "Localizează acest profil Thunderbird. Nu împiedică modificările profilului, dezactivând ad-on sau de a se descărca link-uri copiate în altă parte."
+  },
+  "securityAdminPassword": {
+    "message": "Parola administratorului (12+ caractere; lăsați gol pentru a păstra)"
+  },
+  "securityApprovalPassword": {
+    "message": "Parola de aprobare a link-ului separat (12+ caractere; lăsați gol pentru a păstra)"
+  },
+  "securityThreshold": {
+    "message": "Cerința de aprobare la un scor de risc (0-100, incluzând)"
+  },
+  "securityEnablePolicy": {
+    "message": "Permite protecția obligatorie a link-ului"
+  },
+  "securityUnknownApproval": {
+    "message": "Cerința de aprobare pentru controale incomplete"
+  },
+  "securityUnlock": {
+    "message": "Dezactivați setările"
+  },
+  "securitySave": {
+    "message": "Salvați setările de protecție"
+  },
+  "securityLock": {
+    "message": "Lock acum"
+  },
+  "securityDisable": {
+    "message": "Îndepărtați parolele de setare"
+  },
+  "securityRecovery": {
+    "message": "Codul de recovery"
+  },
+  "securityRecover": {
+    "message": "Recuperați parolele admin folosind codul"
+  },
+  "securityStopTransfers": {
+    "message": "Stop transferurile externe"
+  },
+  "securityLocked": {
+    "message": "Setările sunt blocate. Introdu parola de administrator pentru a le debloca."
+  },
+  "securityUnlocked": {
+    "message": "Setări dezactivate; închide după 5 minute fără activitate."
+  },
+  "securityOptional": {
+    "message": "Protejarea parolelor este opțială și în prezent este dezactivată. fără un parolă de aprobare, link-urile protejate rămân blocate."
+  },
+  "securityError": {
+    "message": "Verifică parolele, sesiunea și intrarea."
+  },
+  "securityWait": {
+    "message": "Sunt prea multe tentative. așteptați până când retrag."
+  },
+  "securityLength": {
+    "message": "Utilizați cel putin 12 caractere și parolele distincte."
+  },
+  "securityRecoverySave": {
+    "message": "Salvați acest cod de recovery de o dată în mod separat. nu va fi afișat din nou:"
+  },
+  "securitySaved": {
+    "message": "Soluțiile de protecție sunt salvate."
+  },
+  "securityDisableConfirm": {
+    "message": "Îndepărtați parolele setări? protecția link-ului rămâne configurată."
+  },
+  "securityStopped": {
+    "message": "Transfertele externe au fost oprită."
+  },
+  "securityApprovalTitle": {
+    "message": "- aprobarea conținutului potencial de risc"
+  },
+  "securityConfirmDanger": {
+    "message": "Vreau să vă dau acest conținut potencial de risc în orice caz."
+  },
+  "securityApproveOnce": {
+    "message": "aprobate și de o dată"
+  },
+  "securityExpired": {
+    "message": "A se încheie aprobarea sau a se schimba conținutul. reîncepeți cu mesajul."
+  },
+  "securityOpened": {
+    "message": "Thunderbird a acceptat cererea de intrare."
+  },
+  "securityApprovalFailed": {
+    "message": "Deschiderea a fost refuzată. Verifică parola sau, dacă aprobarea a expirat, reia solicitarea din mesaj."
+  },
+  "providerTestDisclosure": {
+    "message": "Acest lucru trimite date de testare cheie și fixe API furnizorului ales, fără conținut de mesaj. un test de citire de succes nu verifică încărcături sau cota disponibilă."
+  },
+  "analysisSimple": {
+    "message": "Revizuire"
+  },
+  "analysisExpert": {
+    "message": "Detalii tehnice"
+  },
+  "analysisSimpleNone": {
+    "message": "Nu au fost identificate semne suspecte"
+  },
+  "analysisSimpleCaution": {
+    "message": "Suspectă"
+  },
+  "analysisSimpleDanger": {
+    "message": "Găsirea dăunătoră"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Verificare incompletă"
+  },
+  "analysisScoreExplanation": {
+    "message": "Scorul de risc se bazează pe reguli și nu reprezintă o probabilitate sau o garanție de siguranță."
+  },
+  "analysisSimpleBasis": {
+    "message": "Servicii cu rezultate / inaccesibile"
+  },
+  "analysisProviderSetup": {
+    "message": "accesul furnizorilor și dezvăluirea de date"
+  },
+  "analysisProviderConfigured": {
+    "message": "Cheia este configurată; stocarea nu începe un scan."
+  },
+  "analysisProviderNoKey": {
+    "message": "Nu este configurat niciun cheie"
+  },
+  "analysisDataHash": {
+    "message": "Imprimarea degetelor de fișier ( SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Adaptare completă"
+  },
+  "analysisDataUrl": {
+    "message": "URL complet; poate conține tokenuri confidentiale"
+  },
+  "analysisDataDomain": {
+    "message": "Domeniul link"
+  },
+  "analysisDataIp": {
+    "message": "Public IP de la șiruri de mesaje"
+  },
+  "analysisDataReport": {
+    "message": "Raportul identificator"
+  },
+  "analysisApprovalRequired": {
+    "message": "Este necesară aprobarea adiționară; anularea sau solicitare a unui administrator."
+  },
+  "analysisContinueWarning": {
+    "message": "Revizuiți motivele, mai întâi decât să continuați. puteți anula."
+  },
+  "analysisConflict": {
+    "message": "Furnizorii nu sunt de acord; în ceea ce priveste rezultatele, prioritate."
+  },
+  "analysisExportSensitive": {
+    "message": "Revizuirea pre-export: Detalii tehnice pot identifica resursele de mesaj."
+  },
+  "scanActions": {
+    "message": "Verificări externe"
+  },
+  "scanStart": {
+    "message": "Verifică acum"
+  },
+  "scanRepeat": {
+    "message": "Verifică din nou"
+  },
+  "scanRefresh": {
+    "message": "Actualizează rezultatele"
+  },
+  "scanRunning": {
+    "message": "Verificarea externa in progrese"
+  },
+  "scanProgress": {
+    "message": "Resursele completate"
+  },
+  "scanMigrationNotice": {
+    "message": "Selectați un mod de scanare automată în setări. până atunci, se aplică regulile de trimitere anterioară și manual."
+  },
+  "scanState_idle": {
+    "message": "Nu este activă nici o lucrare de scanare în acest sens."
+  },
+  "scanState_queued": {
+    "message": "Verificare acceptată; așteptând să înceapă"
+  },
+  "scanState_running": {
+    "message": "Verificarea externa in progrese"
+  },
+  "scanState_completed": {
+    "message": "Verificare completă"
+  },
+  "scanState_pending": {
+    "message": "Furnizorul este în curs de prelucrare; refresh rezultatele"
+  },
+  "scanState_incomplete": {
+    "message": "Verificarea incompletă; un rezultat este lipsit"
+  },
+  "scanState_failed": {
+    "message": "Verificare eșuată; încearcă din nou"
+  },
+  "scanState_blocked": {
+    "message": "Nu a fost lansat niciun control exterior; vezi cerințele de mai jos"
+  },
+  "analysisReason_manual": {
+    "message": "Modul manual"
+  },
+  "analysisReason_sender": {
+    "message": "Sărbătorul nu a fost aprobat"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Analiză automată a link-ului"
+  },
+  "analysisReason_no_resources": {
+    "message": "Nu se potrivesc resursele"
+  },
+  "analysisReason_quota": {
+    "message": "Cuvânt cheie: așteptați până la retragere"
+  },
+  "analysisReason_running": {
+    "message": "Furnizorul este procesat"
+  },
+  "analysisReason_provider_error": {
+    "message": "Cererea furnizorului a eşuat"
+  },
+  "scanModeLabel": {
+    "message": "Scanare automată externa"
+  },
+  "scanModeKeep": {
+    "message": "menține setarea anterioară (selectați un mod)"
+  },
+  "scanModeAll": {
+    "message": "Toate mesajele deschise"
+  },
+  "scanModeSenders": {
+    "message": "Doar expeditorii aprobați"
+  },
+  "scanModeManual": {
+    "message": "Doar manual"
+  },
+  "scanModeHelp": {
+    "message": "Verificările automate trimit doar amprente, domenii și adrese IP publice. Confirmă separat fiecare link complet și atașament. Mesajele nedeschise rămân locale."
+  },
+  "assessmentCompletion": {
+    "message": "Starea de prelucrare"
+  },
+  "assessmentCompletion_pending": {
+    "message": "Furnizorul este în curs de prelucrare"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Raportul de retragere complet"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "Nu exista o estimare concluzionala"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Procedura tehnică eșuată"
+  },
+  "assessmentConflict": {
+    "message": "Evaluări parțiale diferite; cele mai forte rezultate determină acțiunea."
+  },
+  "assessmentSignals": {
+    "message": "Baza de Evaluare"
+  },
+  "assessmentJob": {
+    "message": "Providatorul de ID-uri de lucru"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Proprietarul a hotărât"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Scanner găsirea"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Scorul de amenințare original"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Rezultatul original multiscan"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Nivelul de amenințare original"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Indicarea furnizorului de albire"
+  },
+  "assessmentSignal_overall": {
+    "message": "Urlscan, o analiză generală"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Urlscan motor de analiză"
+  },
+  "assessmentSignal_engines": {
+    "message": "Alte rezultate ale motorului"
+  },
+  "assessmentSignal_brand": {
+    "message": "Indicarea mărcii; nu determină riscul de la sine"
+  },
+  "assessmentSignal_report": {
+    "message": "Raportul statului"
+  },
+  "assessmentOriginal": {
+    "message": "Proprietarul original a fost condamnat"
+  },
+  "hybridExpertTitle": {
+    "message": "API v2 informații"
+  },
+  "hybridExpertScope": {
+    "message": "Numai câmpurile primite sunt afișate. Un scan rapid nu dovedește o executare completă a sandbox-ului. Datele pierdute nu sunt o descoperire negativă. URLs omite credențiale, ringiile de căutare și fragmente; liniile de comanda și rapoartele crude nu sunt afișat. Deschiderea unor astfel de informații nu trimite nicio cerere."
+  },
+  "hybridExpertMissing": {
+    "message": "Nu este prezentat în acest raport"
+  },
+  "hybridExpertYes": {
+    "message": "Da"
+  },
+  "hybridExpertNo": {
+    "message": "Nu"
+  },
+  "hybridExpert_identity": {
+    "message": "Fișier și identitate de resursă"
+  },
+  "hybridExpert_assessment": {
+    "message": "Evaluarea și prelucrarea inițială"
+  },
+  "hybridExpert_scanners": {
+    "message": "Scanner rezultatele"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Detecții individuale antivirus"
+  },
+  "hybridExpert_reports": {
+    "message": "Raporturi de referință Sandbox"
+  },
+  "hybridExpert_counts": {
+    "message": "raportate totale"
+  },
+  "hybridExpert_signatures": {
+    "message": "semnături comportamentale"
+  },
+  "hybridExpert_mitre": {
+    "message": "Cuvânt cheie & CK"
+  },
+  "hybridExpert_network": {
+    "message": "Indicatorii de rețea"
+  },
+  "hybridExpert_processes": {
+    "message": "proceselor"
+  },
+  "hybridExpert_extracted": {
+    "message": "File extractate"
+  },
+  "hybridExpert_certificates": {
+    "message": "certificate"
+  },
+  "hybridExpertEmpty": {
+    "message": "furnizat ca o listă goală; nu se raportează"
+  },
+  "securityPasswordHelp": {
+    "message": "Protejarea opțială pentru acest profil. Utilizați parolele de cel putin 12 caractere pentru administrarea și aprobarea link-ului. Lasă noi câmpuri de parolă goale pentru a păstra parolele existente. Salvați codul de recovery de o dată în mod separat."
+  },
+  "securityAdminConfirm": {
+    "message": "Confirmă noua parolă a administratorului"
+  },
+  "securityApprovalConfirm": {
+    "message": "Confirmă noua parolă de aprobare a link-ului"
+  },
+  "securityRecoveryPassword": {
+    "message": "Noul cod de administrator pentru recovery"
+  },
+  "securityApprovalConfigured": {
+    "message": "Un parolă de aprobare a link-ului este configurat; poate fi înlocuit, dar nu este afișat."
+  },
+  "securityApprovalMissing": {
+    "message": "Nu este configurată nici o parolă de aprobare a link-ului. link-urile care necesită aprobarea parolelor rămân blocate."
+  },
+  "securityConfirmMismatch": {
+    "message": "Noile parolele și confirmările lor nu se potrivesc."
+  },
+  "securityUnlockPassword": {
+    "message": "Password administrator curent"
+  },
+  "displaySettingsTitle": {
+    "message": "Analiza afișării"
+  },
+  "displaySettingsHelp": {
+    "message": "Preferințele de afișare nu schimbă scanurile, transferurile externe, scorurile sau protecția link-ului. puteți schimba între vizualizare și vizualizare de experți în timp ce citiți rezultatele."
+  },
+  "displayDefaultView": {
+    "message": "Vizualizare de tip default pentru mesaj și popup"
+  },
+  "displayHybridDetails": {
+    "message": "Afișează secțiunile de raportare Hybrid API"
+  },
+  "displaySave": {
+    "message": "Salvați preferințele afișării"
+  },
+  "displaySaved": {
+    "message": "Preferințele de afișare sunt salvate."
+  },
+  "urlscanDnsError": {
+    "message": "Furnizorul nu a reușit să soluționeze domeniu-țintă."
+  },
+  "urlscanInvalidRequest": {
+    "message": "Furnizorul a respins parametrele de depunere inadecvate."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "Furnizorul a respins depunerea; Răspunsul nu stabilește o eșecă DNS."
+  },
+  "analysisQuotaReset": {
+    "message": "Cuvânt cheie: Cuvânt cuvant"
+  },
+  "analysisRetryAt": {
+    "message": "Cea mai devreme retragere"
+  },
+  "analysisLocalBackoff": {
+    "message": "Această tentativă a fost depusă local; nu a fost trimis nicio nouă cerere de furnizor."
+  },
+  "scanState_deferred": {
+    "message": "Analiza este deferită: toate sloturile de fundal sunt ocupate. retragerea după ce o altă analiză se termină."
+  },
+  "scanCoverage": {
+    "message": "Unele surse nu au fost verificat."
+  },
+  "scanCoverageAttachments": {
+    "message": "Atacuri pregătite"
+  },
+  "scanCoverageLinks": {
+    "message": "Link-uri aleasă"
+  },
+  "scanCoverage_read_failed": {
+    "message": "Un anex nu poate fi citit sau hashat."
+  },
+  "scanCoverage_size_limit": {
+    "message": "Un aditiv depășește limitul de scanare de 25 MiB."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "Limita de scanare a resurselor a fost atinsă."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "Inventorul de adăpost este incomplet."
+  },
+  "scanFailure_source_capacity": {
+    "message": "Acest control nu a început; înregistrările existente au fost păstrate."
+  },
+  "scanFailure_cancelled": {
+    "message": "Verificarea a fost anulată.Nu se implică niciun rezultat completat."
+  },
+  "scanFailure_timeout": {
+    "message": "Verificarea este terminată; rezultatele rămân incomplete."
+  },
+  "scanFailure_scan_failed": {
+    "message": "Nu s-a terminat verifica, au fost păstrate înregistrările existente."
+  },
+  "localProtectionProfileExport": {
+    "message": "Protejarea exportaţiei"
+  },
+  "localProfileYes": {
+    "message": "Da"
+  },
+  "localProfileNo": {
+    "message": "Nu"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Profile de protecție mai în vârstă nu pot extinde scara de scan automat sau pot fi înlocuite cu subiecția URL."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "Istoria sursă existentă nu poate fi citită și a fost păstrată fără schimbare."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "Un conflict de stocare a împiedicat prelungirea istoriei surselor."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "Arhiva sursă pentru acest mesaj a atins limitele sale de intrare."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "Arhiva sursă pentru acest mesaj a atins limitele sale de stocare."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "accesul la stocarea locală a eşuat."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Cuvinte: documentare incompletă"
+  },
+  "apiDebugTitle": {
+    "message": "API modul de debug"
+  },
+  "apiDebugHelp": {
+    "message": "Capture new API încearcă local să se diagnoze eșecuri. Permite, repeta eșecul, apoi preview sau exporta raportul. se cere dezactivarea administratorului atunci când se stabilește un parolă administrator. cheile, conținutul de mesaj privat URLs și corpurile crude sunt omise; ID-urile de referință sunt pseudo-nimizate. Până la 100 de intrări / 1 MiB sunt păstrate în memorie timp de o oră și pierdute la reînnoire. dezactivarea clarifică raportul. Nu se face o cerere de service adiționată."
+  },
+  "apiDebugEnable": {
+    "message": "- Pot fi utilizate diagnoza API"
+  },
+  "apiDebugSave": {
+    "message": "Salvați setarea de debug"
+  },
+  "apiDebugPreview": {
+    "message": "Raportul de debug"
+  },
+  "apiDebugExport": {
+    "message": "Raportul de exportare a deșeurilor"
+  },
+  "apiDebugClear": {
+    "message": "Raportul de debug clar"
+  },
+  "apiDebugSaved": {
+    "message": "Sentimentul de debug a fost salvat. diagnoza anterioară a fost clarificată."
+  },
+  "apiDebugCleared": {
+    "message": "Raportul de debug este clarificat."
+  },
+  "apiDebugFailed": {
+    "message": "Operațiunea de debug a eşuat. dezactivați administrarea și încearcă din nou."
+  },
+  "apiDebugFailureHint": {
+    "message": "Pentru un raport de eșec detallat, permiteți modul de deșeuri API în setări, repetați verifica și exportați raportul de deșeu."
+  },
+  "urlscanResultGone": {
+    "message": "Acest rezultat a fost șters de urlscan.io. Actualizarea nu poate fi restabilită; o nouă depunere necesită o scanare explicită."
+  },
+  "apiDebugOpen": {
+    "message": "Diagnostică API"
+  },
+  "diagTitle": {
+    "message": "API Diagnostică"
+  },
+  "diagHelp": {
+    "message": "Checurile filtrate în memoria locală. cheile, conținutul privat URLs și materialul crud rămân ascunse. succesul HTTP nu este o hotărâre completă de siguranta. numai pașii înregistrate după activare sunt disponibil."
+  },
+  "diagOff": {
+    "message": "Modul de debug este dezactivat. permiteți-l în setări."
+  },
+  "diagEmpty": {
+    "message": "Nu se potrivesc recordurile."
+  },
+  "diagPause": {
+    "message": "Viziune pauză"
+  },
+  "diagResume": {
+    "message": "Vizualizare Resume"
+  },
+  "diagPaused": {
+    "message": "Vizualizare întreruptă; înregistrarea rămâne activă."
+  },
+  "diagActive": {
+    "message": "Înregistrarea activă; refrescă o dată pe secundă."
+  },
+  "diagProvider": {
+    "message": "furnizor"
+  },
+  "diagState": {
+    "message": "statului"
+  },
+  "diagPurpose": {
+    "message": "Tipul operației"
+  },
+  "diagFrom": {
+    "message": "din"
+  },
+  "diagTo": {
+    "message": "pentru"
+  },
+  "diagAll": {
+    "message": "toate"
+  },
+  "diagRuns": {
+    "message": "Verifică fluxurile"
+  },
+  "diagDetails": {
+    "message": "Detalii alegerilor de flux"
+  },
+  "diagDropped": {
+    "message": "Câștiguri sau pași pierdute"
+  },
+  "diagNoHttp": {
+    "message": "Nu se înregistra niciun apel HTTP pentru acest flux."
+  },
+  "diagNotCaptured": {
+    "message": "Nu a fost capturat"
+  },
+  "diagTimeline": {
+    "message": "Timelă"
+  },
+  "diagRequest": {
+    "message": "Cerere filtrată"
+  },
+  "diagResponse": {
+    "message": "Transport și reacție filtrată"
+  },
+  "diagReset": {
+    "message": "Reîncărcare filtrelor"
+  },
+  "diagTruncated": {
+    "message": "Acest flux a fost truncat datorită limitelor de înregistrare."
+  },
+  "diag_phase_precondition": {
+    "message": "Previziuni"
+  },
+  "diag_phase_queue": {
+    "message": "Cuvânt"
+  },
+  "diag_phase_attempt": {
+    "message": "Trimiteți un tentativ"
+  },
+  "diag_phase_response": {
+    "message": "HTTP reacție / completare transport"
+  },
+  "diag_phase_parse": {
+    "message": "JSON procesare"
+  },
+  "diag_phase_assessment": {
+    "message": "Evaluare"
+  },
+  "diag_phase_persistence": {
+    "message": "Persistenţă"
+  },
+  "diag_phase_cache": {
+    "message": "Cache înapoi"
+  },
+  "diag_phase_wait": {
+    "message": "Aşteptare"
+  },
+  "diag_phase_cancelled": {
+    "message": "Anulată"
+  },
+  "diag_phase_expired": {
+    "message": "Înregistrarea expiră fără completare confirmată"
+  },
+  "diag_purpose_automatic": {
+    "message": "Verificare automată"
+  },
+  "diag_purpose_manual": {
+    "message": "Verificare manuală"
+  },
+  "diag_purpose_link": {
+    "message": "Link verificare"
+  },
+  "diag_purpose_key_test": {
+    "message": "Testul cheie"
+  },
+  "diag_purpose_report": {
+    "message": "Cerere de raportare"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analiza"
+  },
+  "diag_state_running": {
+    "message": "Război"
+  },
+  "diag_state_complete": {
+    "message": "Operaţiunea a fost terminată"
+  },
+  "diag_state_pending": {
+    "message": "Pătrunzător"
+  },
+  "diag_state_blocked": {
+    "message": "Nu a fost lansat / blocat"
+  },
+  "diag_state_incomplete": {
+    "message": "incompletă"
+  },
+  "diag_state_failed": {
+    "message": "eșec"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Completarea neconfirmată"
+  },
+  "localScoreMessage": {
+    "message": "Scorul de mesaje locale"
+  },
+  "localScoreLink": {
+    "message": "Scorul local pentru acest link în mesaj"
+  },
+  "localScoreNoIndicators": {
+    "message": "Nu au fost găsite indicatori de avertizare."
+  },
+  "localScoreIndicators": {
+    "message": "Indicatorii de avertizare locală au fost găsiți. revizuiește motivele de a se întoarce."
+  },
+  "uploadSentLabel": {
+    "message": "Încărcare trimise"
+  },
+  "uploadSentUnassigned": {
+    "message": "Încărcarea a fost trimitută, dar rezultatul nu a fost alocat acestui atașament. Închideți și reapărați popup-ul până când trimiteți din nou."
+  },
+  "hybridReportTitle": {
+    "message": "Hybrid Analysis raport"
+  },
+  "hybridReportIntro": {
+    "message": "Citește doar vizualizarea rezultatelor primite.Aprinderea acestui raport nu trimite o cerere de furnizor."
+  },
+  "hybridReportOpen": {
+    "message": "Vezi raportul de analiză"
+  },
+  "hybridReportUnavailable": {
+    "message": "Reportați nu este disponibilă. reaperează-l din mesajul actual."
+  },
+  "hybridReportTechnical": {
+    "message": "Furnizorul și informațiile de legătură"
+  },
+  "hybridReportExplanation": {
+    "message": "În ceea ce priveste aceasta evaluatie"
+  },
+  "hybridReportSummary": {
+    "message": "Evaluare şi provenienţă"
+  },
+  "hybridReportSnapshot": {
+    "message": "Raportul stocat snapshot; nu un nou scan"
+  },
+  "hybridReportScope": {
+    "message": "Rezultatele furnizorului și scorurile locale sunt separate. câmpurile lipsite nu sunt rezultate pozitive. se afișează numai date accesibile, limitate."
+  },
+  "hybridReportCopy": {
+    "message": "Copie"
+  },
+  "hybridReportCopied": {
+    "message": "Copiat ca text."
+  },
+  "hybridReportCopyFailed": {
+    "message": "Nu poți să copiezi. selectați și copiați textul manual."
+  },
+  "hybridReportAvailableOnly": {
+    "message": "Războiul în date disponibilă"
+  },
+  "hybridReportNoMatches": {
+    "message": "Nu sunt incluse câmpuri de corespondență în date."
+  },
+  "hybridReportAvailability": {
+    "message": "disponibilitate și limitări"
+  },
+  "hybridReportRun": {
+    "message": "Analiza de curse"
+  },
+  "hybridReportSearch": {
+    "message": "Căutare de câmpuri accesibile"
+  },
+  "hybridReportReady": {
+    "message": "A fost încărcată raportul. nu a fost lansată nicio nouă scanare."
+  },
+  "hybridReportResource_name": {
+    "message": "Numele de aderare"
+  },
+  "hybridReportResource_url": {
+    "message": "Obiectivul limitat URL"
+  },
+  "hybridReportResource_sha256": {
+    "message": "Cuvânt cheie SHA-256"
+  },
+  "hybridField_type": {
+    "message": "Tipul de fișier"
+  },
+  "hybridField_type_short": {
+    "message": "Tipul de fișier scurte"
+  },
+  "hybridField_size": {
+    "message": "Dimensiuni în byte"
+  },
+  "hybridField_last_file_name": {
+    "message": "Ultima carte de nume"
+  },
+  "hybridField_submit_name": {
+    "message": "Numele de depunere"
+  },
+  "hybridField_url_analysis": {
+    "message": "URL analiză"
+  },
+  "hybridField_target_url": {
+    "message": "Furnizorul țintă URL (poate fi scurtat)"
+  },
+  "hybridField_id": {
+    "message": "ID de răspundere (tipul nu este indicat)"
+  },
+  "hybridField_job_id": {
+    "message": "Sandbox ID de lucru"
+  },
+  "hybridField_submission_id": {
+    "message": "ID de depunere"
+  },
+  "hybridField_state": {
+    "message": "furnizor de stat"
+  },
+  "hybridField_finished": {
+    "message": "Finalizat"
+  },
+  "hybridField_verdict": {
+    "message": "Proprietarul a hotărât"
+  },
+  "hybridField_threat_score": {
+    "message": "Hybrid Analysis Scorul de amenințare"
+  },
+  "hybridField_threat_level": {
+    "message": "Nivelul de amenințare al furnizorilor"
+  },
+  "hybridField_multiscan_result": {
+    "message": "Multiscan (Valoarea furnizorului)"
+  },
+  "hybridField_av_detect": {
+    "message": "Valorile de detecție AV (valorile furnizorilor)"
+  },
+  "hybridField_whitelisted": {
+    "message": "Providierul de intrare albe"
+  },
+  "hybridField_vx_family": {
+    "message": "Familia furnizorilor de malware"
+  },
+  "hybridField_classification_tags": {
+    "message": "Etichete clasificare"
+  },
+  "hybridField_tags": {
+    "message": "Etichete"
+  },
+  "hybridField_analysis_start_time": {
+    "message": "Analiza timpului de pornire"
+  },
+  "hybridField_environment_id": {
+    "message": "ID-ul mediului"
+  },
+  "hybridField_environment_description": {
+    "message": "Mediul Sandbox"
+  },
+  "hybridField_error_type": {
+    "message": "Tipul de eroare furnizor"
+  },
+  "hybridField_error_origin": {
+    "message": "Originea erorii furnizorului"
+  },
+  "hybridField_name": {
+    "message": "Numele"
+  },
+  "hybridField_status": {
+    "message": "Statistică"
+  },
+  "hybridField_progress": {
+    "message": "Proprietăți (proprietățile de furnizare a valorii)"
+  },
+  "hybridField_positives": {
+    "message": "Detecții pozitive"
+  },
+  "hybridField_total": {
+    "message": "Verificări totale"
+  },
+  "hybridField_percent": {
+    "message": "Procentul (Valoarea furnizorului de produse)"
+  },
+  "hybridField_scan_time": {
+    "message": "Durata scanării (unitatea de furnizor)"
+  },
+  "hybridField_scan_date": {
+    "message": "Data de scanare"
+  },
+  "hybridField_product": {
+    "message": "Scannerul produsului"
+  },
+  "hybridField_version": {
+    "message": "Versiune scanatoare"
+  },
+  "hybridField_update": {
+    "message": "Actualizare Scanner"
+  },
+  "hybridField_total_network_connections": {
+    "message": "Rețeaua de conectivitate"
+  },
+  "hybridField_total_processes": {
+    "message": "proceselor"
+  },
+  "hybridField_total_signatures": {
+    "message": "semnături"
+  },
+  "hybridField_category": {
+    "message": "Categorie"
+  },
+  "hybridField_attck_id": {
+    "message": "MITRE ATT&CK ID tehnică"
+  },
+  "hybridField_tactic": {
+    "message": "Tracțiuni AT&CK"
+  },
+  "hybridField_technique": {
+    "message": "Tehnica MITRE ATT & CK"
+  },
+  "hybridField_description": {
+    "message": "Descriere"
+  },
+  "hybridField_domains": {
+    "message": "Domeniul observat"
+  },
+  "hybridField_hosts": {
+    "message": "Oaspeți observati"
+  },
+  "hybridField_compromised_hosts": {
+    "message": "Hosting Compromised (providatorul pretinde)"
+  },
+  "hybridField_domain": {
+    "message": "Domeniul"
+  },
+  "hybridField_host": {
+    "message": "Gazdă"
+  },
+  "hybridField_ip": {
+    "message": "adresa IP"
+  },
+  "hybridField_port": {
+    "message": "Portul"
+  },
+  "hybridField_protocol": {
+    "message": "Protokolul"
+  },
+  "hybridField_country": {
+    "message": "Țara"
+  },
+  "hybridField_asn": {
+    "message": "Numărul de sistem autonomi"
+  },
+  "hybridField_uid": {
+    "message": "Procedura UID"
+  },
+  "hybridField_process_id": {
+    "message": "ID de proces (PID)"
+  },
+  "hybridField_parent_uid": {
+    "message": "Procedura parentală UID"
+  },
+  "hybridField_file_path": {
+    "message": "Calea fișierului"
+  },
+  "hybridField_subject": {
+    "message": "Cercetare subiecție"
+  },
+  "hybridField_issuer": {
+    "message": "certificat emitent"
+  },
+  "hybridField_valid_from": {
+    "message": "Validă de la"
+  },
+  "hybridField_valid_until": {
+    "message": "Validă până"
+  },
+  "hybridField_serial_number": {
+    "message": "Număr de certificat serial"
+  },
+  "hybridField_sha256": {
+    "message": "SHA-256"
+  },
+  "hybridField_sha1": {
+    "message": "SHA-1"
+  },
+  "hybridField_md5": {
+    "message": "MD5"
+  },
+  "hybridField_sha512": {
+    "message": "SHA-512"
+  },
+  "hybridField_imphash": {
+    "message": "Importul de hash"
+  },
+  "hybridReportResource_quickScanId": {
+    "message": "Cuvânt cheie: ID-ul de scan rapid"
+  },
+  "analysisLocalOnly": {
+    "message": "Verificate doar local"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "Servicii cu rezultate"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Servicii în așteptare"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Servicii cu erori"
+  },
+  "hybridReportSection": {
+    "message": "Secțiunea"
+  },
+  "hybridReportAllSections": {
+    "message": "Toate secțiunile"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "procesarea completă"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "prelucrarea pending"
+  },
+  "hybridReportProcessing_failed": {
+    "message": "procesarea eșuată"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "Starea de prelucrare necunoscută"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Raportul a fost retras"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Snapshot creată"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Răspundeți Hybrid Analysis găsirea pentru acest resurs"
+  },
+  "hybridReportSaved": {
+    "message": "Raportul Hybrid Analysis salvat"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Cărți UTC"
+  },
+  "hybridReportWhy": {
+    "message": "De ce această analiză?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Alte semne de evaluatie"
+  },
+  "hybridReportCompare": {
+    "message": "Comparați cursurile de analiză"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Secțiuni cu date"
+  },
+  "hybridReportAssessment": {
+    "message": "Thundy de la Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Sursă și timp"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Căutare disponibilă · completare neconfirmată"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Raportul hibrid"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Aflați găsirea de date"
+  },
+  "attachmentProtectionTitle": {
+    "message": "protecţie de ataşament"
+  },
+  "attachmentProtectionScope": {
+    "message": "Această regulă se aplică atunci când economisiți cu Thundy. comenzi de atașament ale Thunderbird rămân la dispozitie."
+  },
+  "attachmentPolicyMode": {
+    "message": "Când se atinge pragul"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Hybrid Analysis pragul de scară"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Câștiguri fără un scor confirmat"
+  },
+  "attachmentModeOff": {
+    "message": "Îndepărtare"
+  },
+  "attachmentModeWarn": {
+    "message": "avertizează"
+  },
+  "attachmentModeApproval": {
+    "message": "Cererea de aprobare"
+  },
+  "attachmentModeBlock": {
+    "message": "blocuri"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Salvează cu Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "salvare aderenţă"
+  },
+  "attachmentCancelSave": {
+    "message": "Anulează"
+  },
+  "attachmentThresholdReached": {
+    "message": "Scorul hibrid atinge pragul configurat."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis a clasificat acest fișier ca fiind dăunător."
+  },
+  "attachmentUnknown": {
+    "message": "Nu au fost confirmate puncte pentru acest adăpost."
+  },
+  "attachmentBlocked": {
+    "message": "Scăderea cu Thundy este blocată."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Introduceți parolă de aprobare pentru a salva acest fișier."
+  },
+  "attachmentFailed": {
+    "message": "Nu puteți începe să economisiți atașamentul."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy nu a reușit să citească acest anex."
+  },
+  "attachmentContextChanged": {
+    "message": "Mesajul sau atașamentul a fost modificat. selectați atașamentul din nou."
+  },
+  "attachmentRefresh": {
+    "message": "Verificați din nou rezultatele salvate"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "Cuvântul salvat este inalterat."
+  },
+  "attachmentDecisionChanged": {
+    "message": "Rezultatul sau politica s-a modificat. revizuirea deciziei actualizate."
+  },
+  "attachmentSaveRequested": {
+    "message": "Începe cererea de salvare."
+  },
+  "attachmentSaveCancelled": {
+    "message": "salvare anulată"
+  },
+  "auditDecisionScore": {
+    "message": "Scorul deciziei"
+  },
+  "linkHandoffPending": {
+    "message": "A fost solicitată descărcarea browserului. Thunderbird nu a confirmat încă. puteți închide acest dialog."
+  },
+  "linkPreflightTimeout": {
+    "message": "Verificarea nu a fost completată. închideți acest dialog și selectați link-ul din nou."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Hybrid Analysis găsirea istorică"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Hybrid Analysis găsirea curentă"
+  },
+  "auditShare": {
+    "message": "Exportul revizuit"
+  },
+  "auditFullNotice": {
+    "message": "Auditul complet conține URLs privat și informații. împărtășiți-l numai cu destinatarii autorizați."
+  },
+  "auditFullSave": {
+    "message": "Exportul complet de auditare"
+  },
+  "managedByCompany": {
+    "message": "Gestionate de organizaţia ta"
+  },
+  "managedLocal": {
+    "message": "Sursă: acest profil Thunderbird"
+  },
+  "managedRevision": {
+    "message": "Versiune politică"
+  },
+  "managedThreshold": {
+    "message": "graniţă"
+  },
+  "managedPolicyInvalid": {
+    "message": "Politica companiei este inadecvată. contateți echipele IT."
+  },
+  "managedLinkBlocked": {
+    "message": "Organizatia ta a blocat acest link."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Deschide cu Thundy"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Adaptare Open"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy verifică acest atașament, mai întâi decât să-l trimită la Thunderbird."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird a acceptat cererea de a se aprecia atașamentul."
+  },
+  "attachmentOpenFailed": {
+    "message": "Atacarea nu putea fi dezvăluită."
+  },
+  "reportingTitle": {
+    "message": "Raporturi de Securitate a Companiei"
+  },
+  "reportingOff": {
+    "message": "Raportarea automată este închisă."
+  },
+  "reportingNeedsConsent": {
+    "message": "Raportarea necesită consimțământul dvs. și un token de trimitere."
+  },
+  "reportingNeedsPermission": {
+    "message": "Autorizația de raportare este lipsită. permite raportarea din nou pentru a o restabili."
+  },
+  "reportingReady": {
+    "message": "Organizația dvs. poate primi rapoarte automată."
+  },
+  "reportingQueued": {
+    "message": "Raporturi în curs:"
+  },
+  "reportingMalicious": {
+    "message": "Găsirea dăunătoră"
+  },
+  "reportingSuspicious": {
+    "message": "Detalii dăunătoase și încălcări de prag"
+  },
+  "reportingConsent": {
+    "message": "Sunt de acord să trimit ID-ul evenimentului, timpul, acțiunea, găsirea, decizia și versiunea de politică la adresa companiei prezentată mai sus."
+  },
+  "reportingConsentIndicators": {
+    "message": "Sunt de acord să trimit ID-ul evenimentului, timpul, acțiunea, găsirea, decizia, versiunea politicii și link-ul de hostname sau adjunctul SHA-256 la adresa companiei prezentată mai sus."
+  },
+  "reportingToken": {
+    "message": "Trimiteți un token de la echipele dvs. IT"
+  },
+  "reportingActivate": {
+    "message": "Permite raportarea sau înlocuirea tokenului"
+  },
+  "reportingRevoke": {
+    "message": "Retragerea consimțământului și rapoartele clare în așteptare"
+  },
+  "reportingSetupFailed": {
+    "message": "Nu se pot aplica setările de raportare."
+  },
+  "reportingAuthentication": {
+    "message": "Serverul a respins mesajul de trimitere."
+  },
+  "reportingRejected": {
+    "message": "Serverul a respins un raport."
+  },
+  "reportingStorage": {
+    "message": "Thundy nu putea citi sau să citească rapoartele de raportare."
+  },
+  "reportingFull": {
+    "message": "Cuvântul este plin, poate că se pierd."
+  },
+  "reportingExpired": {
+    "message": "Raportul a expirat până la livrare."
+  },
+  "reportingPrivacy": {
+    "message": "Cu consimțământul separat, Thundy trimite informații despre tentativele de calificare pentru a se lansa link-uri sau pentru a se descoperi sau a se salvează atașamente la adresa companiei configure. rapoartele conțin ID-ul evenimentului, timpul, acțiunea, găsirea, decizia și versiunea de politică, plus un nume de gazdă sau atașament opțial SHA-256. Thundy se încheie cu rapoartelor care se așteaptă la rapoartă locală timp de până la 24 de ore."
+  },
+  "reportingConsentDetails": {
+    "message": "De asemenea, sunt de acord să trimit motivul deciziei, scorurile disponibilă, denumirea de fișier, hotărârile furnizorilor și referințele la raportul disponibil."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Raporturile de mai jos pot cuprinde denumirea de fișier și link-urile la raporturile furnizorilor."
+  },
+  "analysisRunningHeading": {
+    "message": "Verificare în curs"
+  },
+  "analysisLocalNoFinding": {
+    "message": "Verificarea locală nu a găsit indicii de amenințare"
+  },
+  "analysisLinksGroup": {
+    "message": "stânga"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Atracție"
+  },
+  "protectionOpenAllowed": {
+    "message": "Deschiderea este permisă"
+  },
+  "protectionSaveAllowed": {
+    "message": "Salvarea este permisă"
+  },
+  "protectionWarn": {
+    "message": "Avertisment"
+  },
+  "protectionApproval": {
+    "message": "Este necesară aprobarea"
+  },
+  "protectionRequestApproval": {
+    "message": "Cerere de aprobare"
+  },
+  "protectionBlocked": {
+    "message": "Blocat"
+  },
+  "protectionMalicious": {
+    "message": "Un furnizor a raportat o constatare malițioasă."
+  },
+  "protectionThreshold": {
+    "message": "Pragul de protecție a fost atins"
+  },
+  "protectionManagedThreshold": {
+    "message": "Pragul companiei a fost atins"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "Dispozițiile aplicabile permit această acțiune."
+  },
+  "linkContextChanged": {
+    "message": "Linkul sau mesajul s-a modificat în timpul check-ului."
+  },
+  "auditPolicyBlocked": {
+    "message": "Blocat de politică"
+  },
+  "reportingLastReceipt": {
+    "message": "Ultima recepție confirmată de server"
+  },
+  "reportingOldestPending": {
+    "message": "Cel mai veche raport"
+  },
+  "addonLanguage": {
+    "message": "Limba extensiei"
+  },
+  "addonLanguageSystem": {
+    "message": "Folosește limba Thunderbird"
+  },
+  "addonLanguageSaved": {
+    "message": "Limba a fost salvată. Redeschide paginile Thundy pentru a o aplica."
+  },
+  "addonLanguageFailed": {
+    "message": "Limba nu a putut fi salvată."
+  },
+  "profilesOpenSource": {
+    "message": "Sursă deschisă"
+  },
+  "transferReview": {
+    "message": "Verifică trimiterea externă"
+  },
+  "transferSend": {
+    "message": "Trimite furnizorului"
+  },
+  "transferVisibility": {
+    "message": "Vizibilitate: nelistat. Oricine are linkul raportului îl poate deschide."
+  },
+  "transferAccepted": {
+    "message": "Furnizorul a acceptat solicitarea. Raportul poate fi încă în așteptare."
+  },
+  "transferFailed": {
+    "message": "Trimiterea către furnizor nu a putut fi finalizată."
+  },
+  "transferUsePopup": {
+    "message": "Deschide panoul Thundy pentru a verifica și aproba un anumit link sau atașament."
+  },
+  "providerGrantAccess": {
+    "message": "Permite accesul la acest furnizor"
+  },
+  "sourceSessionOnly": {
+    "message": "Arhiva surselor este plină. Vizualizarea actuală a surselor este disponibilă numai în această sesiune."
+  },
+  "analysisReason_transfer_approval": {
+    "message": "Linkurile complete și atașamentele necesită confirmări individuale."
+  },
+  "analysisCompactDetails": {
+    "message": "Detaliile verificării"
+  },
+  "riskScoreFormula": {
+    "message": "Scorul local însumează punctele până la 100. Rezultatele furnizorilor sunt evaluate separat."
+  },
+  "riskScoreNoPoints": {
+    "message": "Nicio regulă locală nu a adăugat puncte."
+  },
+  "riskScoreTotal": {
+    "message": "Calcul local"
+  },
+  "riskLinkBrandRule": {
+    "message": "Cel puțin un domeniu seamănă cu o marcă cunoscută. Punctele se numără o dată."
+  },
+  "reportingConsentDetections": {
+    "message": "Rapoartele pot include nume, categorii, semnături și mărci imitate în phishing."
+  },
+  "detectionKind_family": {
+    "message": "Familie de malware"
+  },
+  "detectionKind_category": {
+    "message": "Categorie"
+  },
+  "detectionKind_brand": {
+    "message": "Marcă imitată"
+  },
+  "detectionKind_signature": {
+    "message": "Semnătura producătorului"
+  },
+  "detectionCategory_fraudulent_shop": {
+    "message": "Magazin fraudulos"
+  },
+  "detectionCategory_phishing_shop": {
+    "message": "Magazin de phishing"
+  },
+  "analysisDetectionGrouping": {
+    "message": "Grupează detecțiile"
+  },
+  "detectionCategory_malware": {
+    "message": "Malware"
+  },
+  "detectionCategory_virus": {
+    "message": "Virus"
+  },
+  "detectionCategory_trojan": {
+    "message": "Troian"
+  },
+  "detectionCategory_ransomware": {
+    "message": "Ransomware"
+  },
+  "detectionCategory_worm": {
+    "message": "Vierme"
+  },
+  "detectionCategory_spyware": {
+    "message": "Program spion"
+  },
+  "detectionCategory_adware": {
+    "message": "Adware"
+  },
+  "detectionCategory_backdoor": {
+    "message": "Ușă din spate"
+  },
+  "detectionCategory_downloader": {
+    "message": "Descărcător"
+  },
+  "detectionCategory_dropper": {
+    "message": "Dropper"
+  },
+  "detectionCategory_infostealer": {
+    "message": "Furt de date"
+  },
+  "detectionCategory_rootkit": {
+    "message": "Rootkit"
+  },
+  "detectionCategory_phishing": {
+    "message": "Phishing"
+  },
+  "detectionCategory_scam": {
+    "message": "Fraudă"
+  }
+}

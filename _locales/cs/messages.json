@@ -1,0 +1,3590 @@
+{
+  "protectionSeverity_low": { "message": "Nízké riziko" },
+  "protectionSeverity_unknown": { "message": "Neznámé riziko" },
+  "protectionSeverity_caution": { "message": "Zvýšené riziko" },
+  "protectionSeverity_high": { "message": "Vysoké riziko" },
+  "protectionSeverity_critical": { "message": "Kritické riziko" },
+  "linkScanSummary": { "message": "Výsledky kontrol URL" },
+  "linkScansPending": { "message": "Kontroly URL stále probíhají." },
+  "linkNoScanResults": { "message": "Výsledky kontrol URL nejsou k dispozici." },
+  "protectionCategoryUnavailable": { "message": "Poskytovatel neuvedl kategorii hrozby." },
+  "linkWaitForResults": { "message": "Počkat na probíhající kontroly URL" },
+  "linkAutoOpenBelow": { "message": "Otevřít přímo pod tímto skóre" },
+  "linkOpeningOptionsHelp": { "message": "Prázdná hodnota vždy zobrazí dialog odkazu." },
+  "linkAuditRetentionTitle": { "message": "Uchovávání protokolu odkazů" },
+  "linkAuditLimit": { "message": "Maximální počet záznamů (prázdné = bez omezení)" },
+  "linkAuditDays": { "message": "Doba uchování ve dnech (prázdné = bez omezení)" },
+  "protectionManagedColors": { "message": "Barvy stupňů rizika určuje vaše organizace." },
+  "linkOpenedAutomatically": { "message": "Otevřeno automaticky" },
+  "providerSwitchHelp": {
+    "message": "Služby můžete jednotlivě zapnout nebo vypnout a změny uložit. Při pozastavení služby zůstanou klíče i výsledky uložené."
+  },
+  "providerKeyLink": {
+    "message": "Získejte klíč API"
+  },
+  "providerDocsLink": {
+    "message": "API dokumentace"
+  },
+  "providerApiKeyLabel": {
+    "message": "Klíč API"
+  },
+  "providerUse": {
+    "message": "Používat tuto službu"
+  },
+  "providerVirusUse": {
+    "message": "Použijte VirusTotal pro kontrolu souborů"
+  },
+  "providerHybridStrength": {
+    "message": "Vyhledává existující zprávy podle známých otisků souborů. Při povoleném nahrávání může Falcon Sandbox analyzovat chování spuštěného souboru."
+  },
+  "providerHybridSetup": {
+    "message": "Vytvořte si účet a pak otevřete Profil → API Klíč, abyste vytvořili klíč."
+  },
+  "providerUrlhausStrength": {
+    "message": "Zkontroluje odkazy hosty proti údajným zdroji malware."
+  },
+  "providerUrlhausSetup": {
+    "message": "Přihlaste se na abuse.ch a získejte Auth-Key z vašeho účtu."
+  },
+  "providerUrlscanStrength": {
+    "message": "Zkontroluje plně URLs a přesměruje pro známky phishingu. Thundy ji používá na maximální úrovni soukromí."
+  },
+  "providerUrlscanSetup": {
+    "message": "Vytvořte si účet a vyberte Nastavení & API → Nový klíč API."
+  },
+  "providerVirusTotalStrength": {
+    "message": "Zobrazuje hash souboru SHA-256 a zobrazuje výsledky z více skenerů."
+  },
+  "providerVirusTotalSetup": {
+    "message": "Přihlaste se k VirusTotal a skopírujte klíč z profilu API Klíčové stránky."
+  },
+  "providerIpTitle": {
+    "message": "Reputace IP adres"
+  },
+  "providerIpUse": {
+    "message": "Zkontrolujte pověst IP"
+  },
+  "providerIpChoose": {
+    "message": "IP Reputativní poskytovatel"
+  },
+  "providerIpKeyNotice": {
+    "message": "Zadejte klíč vybraného poskytovatele. Pozastavením kontroly IP adres se volba poskytovatele ani klíč neztratí."
+  },
+  "providerIpGuide": {
+    "message": "Vyberte a nastavte IP reputační poskytovatele"
+  },
+  "providerVirusIpStrength": {
+    "message": "Kontroluje veřejné IP proti detekčním motorům a hodnocení komunity společnosti VirusTotal."
+  },
+  "providerAbuseStrength": {
+    "message": "Používá zprávy komunity k identifikaci veřejných IP souvisejících s spamem, skenováním nebo jiným zneužíváním."
+  },
+  "providerAbuseSetup": {
+    "message": "Vytvořte si účet AbuseIPDB a vytvářejte nebo kopírujte klíč z karty API v panelu."
+  },
+  "providerIpVirusKey": {
+    "message": "VirusTotal API klíč pro reputaci IP"
+  },
+  "providerIpAbuseKey": {
+    "message": "AbuseIPDB API klíč"
+  },
+  "providerTestDisabled": {
+    "message": "Před testováním klíče službu zapněte a uložte nastavení."
+  },
+  "analysisReason_provider_disabled": {
+    "message": "Tento poskytovatel je přerušen v nastavení."
+  },
+  "extensionName": {
+    "message": "Thundy AV – Kontrola e-mailů pro Thunderbird"
+  },
+  "extensionDescription": {
+    "message": "Volitelný, opt-in skener pro e-mailové přílohy a odkazy. Nic nezanechává váš počítač bez vašeho výslovného souhlasu."
+  },
+  "actionTitle": {
+    "message": "Thundy AV – skenování stavu pro tuto zprávu"
+  },
+  "bannerScanOnce": {
+    "message": "Skenujte tuto zprávu jednou"
+  },
+  "bannerScanSender": {
+    "message": "Vždy skenujte tento odesílatel"
+  },
+  "bannerTitleOptIn": {
+    "message": "Thundy AV : Skenování v reálném čase není pro tuto zprávu aktivováno."
+  },
+  "bannerNoteOptIn": {
+    "message": "Skenování přenáší data externím analytickým službám, ale pouze tehdy, pokud je aktivujete v nastavení doplňků a až poté, co jste udělili svůj souhlas."
+  },
+  "bannerScanRunning": {
+    "message": "Skenování…"
+  },
+  "bannerScanDone": {
+    "message": "Požadavky jsou dokončeny - viz zdroje analýzy"
+  },
+  "bannerScanFailed": {
+    "message": "Skenování selhalo"
+  },
+  "bannerPermissionDenied": {
+    "message": "Vyžadované povolení hostitelské služby bylo odmítnuto"
+  },
+  "bannerConsentMissing": {
+    "message": "Nové externí žádosti jsou zrušeny. předchozí ukládané zprávy mohou být stále zobrazovány."
+  },
+  "bannerThreatTitle": {
+    "message": "Thundy AV upozornění"
+  },
+  "bannerThreatScore": {
+    "message": "Hodnotit riziko: $SCORE$ 100",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerSenderOptIn": {
+    "message": "Tento odesílatel je nyní automaticky skenován."
+  },
+  "notificationScanStarted": {
+    "message": "Skenování začalo pro: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "Skenování úspěšně předložené. Job ID: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanError": {
+    "message": "Chyba skenování: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Thundy AV skener"
+  },
+  "notificationTitleError": {
+    "message": "Thundy AV chyby skenování"
+  },
+  "bannerAuthPass": {
+    "message": "Spolehlivé serverové zprávy SPF / DKIM / DMARC"
+  },
+  "bannerOpenOptions": {
+    "message": "Otevřené možnosti"
+  },
+  "menuScanLink": {
+    "message": "Skenovat odkaz s Thundy AV"
+  },
+  "menuScanMessageLinks": {
+    "message": "Skenujte všechny odkazy tohoto sdělení"
+  },
+  "notificationNoLinks": {
+    "message": "V této zprávě nejsou nalezeny žádné odkazy."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "Hostovací povolení pro analytickou službu chybí. Prosím, uveďte ji v dodatkových možnostech."
+  },
+  "errorHostPermissionMissing": {
+    "message": "Hostovací povolení pro analytickou službu chybí. Prosím, uveďte ji v dodatkových možnostech."
+  },
+  "errorTierUploadBlocked": {
+    "message": "Stáhnout přílohy je zakázáno v úrovni soukromí \"Strict\". Přepněte se na \"Balanced\" nebo \"Maximum\" v možnostech add-on."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "Předložení URLs je povoleno pouze v úrovni soukromí \"Maximum\"."
+  },
+  "notificationInjectionFailed": {
+    "message": "Banner nelze vložit do zobrazení zprávy. prosím, zveřejněte to s vaší verzí Thunderbird."
+  },
+  "bannerTierBlocked": {
+    "message": "Tato akce není povolena aktuální úrovní ochrany osobních údajů. viz možnosti doplňků."
+  },
+  "ui_001": {
+    "message": "A varování :"
+  },
+  "ui_002": {
+    "message": "Hybrid Analysis API klíč není konfigurován.Můžete použít místní kontroly nebo nastavit poskytovatele v nastavení."
+  },
+  "ui_003": {
+    "message": "Otevřené nastavení"
+  },
+  "ui_004": {
+    "message": "Vyberte si e-mail, který je zkontroluje."
+  },
+  "ui_005": {
+    "message": "Výsledky analýzy…"
+  },
+  "ui_006": {
+    "message": "Externí analýza je zrušená: žádné hashy, soubory nebo odkazy nejsou zaslány na služby analýzy."
+  },
+  "ui_007": {
+    "message": "Pro tuto zprávu nejsou k dispozici žádné uložené přílohy nebo výsledky skenování odkazů."
+  },
+  "ui_008": {
+    "message": "Výsledky analýzy nejsou k dispozici pro tento e-mail."
+  },
+  "ui_009": {
+    "message": "Nečekané chyby při nabíjení výsledků analýzy."
+  },
+  "ui_010": {
+    "message": "Státní stav :"
+  },
+  "ui_011": {
+    "message": "Analýza je stále v provozu, zkuste to znovu později."
+  },
+  "ui_012": {
+    "message": "SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_013": {
+    "message": "Výsledky ohrožení:"
+  },
+  "ui_014": {
+    "message": "Rozsudek :"
+  },
+  "ui_015": {
+    "message": "Rodina malware:"
+  },
+  "ui_016": {
+    "message": "Výsledek multidiskanu: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_017": {
+    "message": "Další informace :"
+  },
+  "ui_018": {
+    "message": "Analýza zahájila: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_019": {
+    "message": "Štítky: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_020": {
+    "message": "Výsledky VirusTotal:"
+  },
+  "ui_021": {
+    "message": "Škodlivý: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_022": {
+    "message": "Nezařazeno: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_023": {
+    "message": "Podezřelé: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_024": {
+    "message": "Škodlivý: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_025": {
+    "message": "Scénář: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_026": {
+    "message": "Stav: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_027": {
+    "message": "Výsledky antivirových programů:"
+  },
+  "ui_028": {
+    "message": "AV: $P1$ – rozsudek: $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_029": {
+    "message": "Výsledky skenování nejsou k dispozici."
+  },
+  "ui_030": {
+    "message": "SHA-256 hash: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_031": {
+    "message": "Poslední název: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_032": {
+    "message": "Velikost: $P1$ byty",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_033": {
+    "message": "Typ: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_034": {
+    "message": "Opět skenování"
+  },
+  "ui_035": {
+    "message": "Sanitizace a stahování (lokální)"
+  },
+  "ui_036": {
+    "message": "Přihláška: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_037": {
+    "message": "Výsledek: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_038": {
+    "message": "SHA-256 : $P1$ – externí analýza je zrušená.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_039": {
+    "message": "Vnější analýza není zajištěna, protože vnější analýza je zajištěna."
+  },
+  "ui_040": {
+    "message": "Externí analýza - zdravotně postižené"
+  },
+  "ui_041": {
+    "message": "Předložení skenování…"
+  },
+  "ui_042": {
+    "message": "Přihlašování souboru pro nové skenování…"
+  },
+  "ui_043": {
+    "message": "Skenování předložené.Reloading výsledky…"
+  },
+  "ui_044": {
+    "message": "Úspěšný"
+  },
+  "ui_045": {
+    "message": "Skenování se neuspělo:"
+  },
+  "ui_046": {
+    "message": "Neznámá chyba"
+  },
+  "ui_047": {
+    "message": "Zkuste znovu"
+  },
+  "ui_048": {
+    "message": "Chyby v komunikaci:"
+  },
+  "ui_049": {
+    "message": "Sanitace…"
+  },
+  "ui_050": {
+    "message": "Zpracování HTML lokálně…"
+  },
+  "ui_051": {
+    "message": "Stáhnout začalo."
+  },
+  "ui_052": {
+    "message": "Sanitace"
+  },
+  "ui_053": {
+    "message": "Snížení se neuspělo:"
+  },
+  "ui_054": {
+    "message": "API chyba: $P1$ pro položku $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_055": {
+    "message": "(Kluč API může být neplatný nebo chybí.)"
+  },
+  "ui_056": {
+    "message": "Síťová chyba: $P1$ pro položku $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_057": {
+    "message": "Přihlášení URL…"
+  },
+  "ui_058": {
+    "message": "Odeslat URL na Hybrid Analysis…"
+  },
+  "ui_059": {
+    "message": "Skenování předložené. výsledky nabíjení…"
+  },
+  "ui_060": {
+    "message": "Přihláška selhala:"
+  },
+  "ui_061": {
+    "message": "URL: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_062": {
+    "message": "Tento URL byl nalezen v e-mailu. k ochraně vašeho soukromí, to bylo"
+  },
+  "ui_063": {
+    "message": "Není automaticky nahráno"
+  },
+  "ui_064": {
+    "message": "Skenování URL nyní"
+  },
+  "ui_065": {
+    "message": "Přihlášení…"
+  },
+  "ui_066": {
+    "message": "Odeslat soubor na Hybrid Analysis…"
+  },
+  "ui_067": {
+    "message": "Přihláška je dokončena. výsledky přihlášky…"
+  },
+  "ui_068": {
+    "message": "Skenování souboru nyní (přihlášení)"
+  },
+  "ui_069": {
+    "message": "Příslušenství: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_070": {
+    "message": "V tomto souboru není k dispozici žádný externí zprávu.Pro ochranu vašeho soukromí, bylo"
+  },
+  "ui_071": {
+    "message": "Automatické nahrávání je zrušené; úroveň soukromí se stále vztahuje na manuální skenování."
+  },
+  "ui_072": {
+    "message": "Ochrana odkazu zůstává k dispozici vedle automatického skenování."
+  },
+  "ui_073": {
+    "message": "Úspora…"
+  },
+  "ui_074": {
+    "message": "Nastavení je zachráněno."
+  },
+  "ui_075": {
+    "message": "Uložit"
+  },
+  "ui_076": {
+    "message": "Povolení k přenosu údajů nebylo uděleno. nic nebude odesláno."
+  },
+  "ui_077": {
+    "message": "Hostovací povolení nebylo uděleno pro:"
+  },
+  "ui_078": {
+    "message": "Kontroly pro tyto poskytovatele nejsou k dispozici bez povolení."
+  },
+  "ui_079": {
+    "message": "Nemohla jsem zachránit nastavení."
+  },
+  "ui_080": {
+    "message": "Vyčistěte cache?Toto odstraňuje všechny lokálně uložené výsledky analýzy."
+  },
+  "ui_081": {
+    "message": "Čištění…"
+  },
+  "ui_082": {
+    "message": "Cache je vyčistěno."
+  },
+  "ui_083": {
+    "message": "Databáze zatím neexistuje, nebo je již prázdná."
+  },
+  "ui_084": {
+    "message": "Nemohla jsem vymazat cache."
+  },
+  "ui_085": {
+    "message": "Čistý cache"
+  },
+  "ui_086": {
+    "message": "API klíč chybí."
+  },
+  "ui_087": {
+    "message": "SPF kontroly selhaly (možné spoofing)."
+  },
+  "ui_088": {
+    "message": "DKIM podpis je neplatný (může být spoofing)."
+  },
+  "ui_089": {
+    "message": "DMARC kontroly selhaly (možné spoofing)."
+  },
+  "ui_090": {
+    "message": "URLhaus seznam domény ( $P1$) jako škodlivé.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_091": {
+    "message": "Odpovídat na doménu ( $P1$) se liší od odesílatele domény ( $P2$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_092": {
+    "message": "Možná obchodní e-mailová kompromis: první kontakt s tímto odesílatelem a nalezené klíčové slovo nouze ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_093": {
+    "message": "Nalezeno naléhavé klíčové slovo ( $P1$). Pozor na tuto žádost pečlivě.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_094": {
+    "message": "Toto je vaše první komunikace s tímto odesílatelem."
+  },
+  "ui_095": {
+    "message": "Doména odesílatele ( $P1$) připomíná známou značku $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_096": {
+    "message": "Linková doména ( $P1$) je podobná známé značce $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_097": {
+    "message": "Žádný z odkazů v textovém bodu do odesílatele domény ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_098": {
+    "message": "Čistý"
+  },
+  "ui_099": {
+    "message": "URL skenování selhalo:"
+  },
+  "ui_100": {
+    "message": "Nemohl jsem spustit skenování urlscan.io:"
+  },
+  "ui_101": {
+    "message": "urlscan.io nevrátil ID skenování."
+  },
+  "ui_102": {
+    "message": "urlscan.io identifikoval URL jako škodlivý."
+  },
+  "ui_103": {
+    "message": "Vizuální detekce: stránka se zobrazuje"
+  },
+  "ui_104": {
+    "message": "(předpokládaný phishing"
+  },
+  "ui_105": {
+    "message": "Nemohl získat urlscan.io výsledky:"
+  },
+  "ui_106": {
+    "message": "Thundy AV – e-mailový skener"
+  },
+  "ui_107": {
+    "message": "Zobrazit všechny předložení Hybrid Analysis"
+  },
+  "ui_108": {
+    "message": "Zobrazit všechny předložení Hybrid Analysis (otevřete novou kartu)"
+  },
+  "ui_109": {
+    "message": "Předmět :"
+  },
+  "ui_110": {
+    "message": "Z toho:"
+  },
+  "ui_111": {
+    "message": "Zprávy ID:"
+  },
+  "ui_112": {
+    "message": "Thundy AV nastavení"
+  },
+  "ui_113": {
+    "message": "Hybrid Analysis je malware analýza služba.Můžete předat soubory pro statické a dynamické analýzy."
+  },
+  "ui_114": {
+    "message": "Hybrid Analysis používá CrowdStrike Falcon Sandbox k vyšetřování neznámých hrozeb."
+  },
+  "ui_115": {
+    "message": "Účty poskytovatele a podmínky služby se vztahují na externí analýzu.Místní kontroly nevyžadují účet."
+  },
+  "ui_116": {
+    "message": "Thundy AV nastavení"
+  },
+  "ui_117": {
+    "message": "Co je to Hybrid Analysis?"
+  },
+  "ui_118": {
+    "message": "Pro externí analýzu souborů získejte klíč API z"
+  },
+  "ui_119": {
+    "message": "Po přihlášení, jděte na svůj profil a najít sekci API KEY."
+  },
+  "ui_120": {
+    "message": "Zde vložte klíč API. Lokální kontroly fungují bez něj."
+  },
+  "ui_121": {
+    "message": "API klíčové nastavení"
+  },
+  "ui_122": {
+    "message": "hybrid-analysis.com"
+  },
+  "ui_123": {
+    "message": "hybrid-analysis.com (otevře se nová karta)"
+  },
+  "ui_124": {
+    "message": "Povolit externí analýzu (odesílat data externím poskytovatelům)"
+  },
+  "ui_125": {
+    "message": "bez tohoto souhlasu,"
+  },
+  "ui_126": {
+    "message": "hashes, soubory, odkazy nebo adresy IP jsou odeslány na externí služby. Po souhlasu, autorizované skenování může posílat připojení a odkaz data na Hybrid Analysis, VirusTotal, urlscan.io, URLhaus nebo AbuseIPDB, v závislosti na úrovni soukromí. Odstranit tuto možnost k odstoupení souhlasu:"
+  },
+  "ui_127": {
+    "message": "Není"
+  },
+  "ui_128": {
+    "message": "Politika soukromí"
+  },
+  "ui_129": {
+    "message": "Zásady ochrany soukromí (otevře se nová karta)"
+  },
+  "ui_130": {
+    "message": "Hybrid Analysis API klíč (volitelné):"
+  },
+  "ui_131": {
+    "message": "Zpět na článek: abcdef123456…"
+  },
+  "ui_132": {
+    "message": "URLhaus API klíč (volitelná doménová pověst):"
+  },
+  "ui_133": {
+    "message": "Můžete získat klíč API na"
+  },
+  "ui_134": {
+    "message": "."
+  },
+  "ui_135": {
+    "message": "urlhaus.abuse.ch"
+  },
+  "ui_136": {
+    "message": "urlhaus.abuse.ch (otevře se nová karta)"
+  },
+  "ui_137": {
+    "message": "urlscan.io API klíč (volitelná analýza URL):"
+  },
+  "ui_138": {
+    "message": "Můžete získat klíč API na"
+  },
+  "ui_139": {
+    "message": "urlscan.io"
+  },
+  "ui_140": {
+    "message": "urlscan.io (otevře se nová karta)"
+  },
+  "ui_141": {
+    "message": "VirusTotal API klíč (volitelná pověst souboru):"
+  },
+  "ui_142": {
+    "message": "virustotal.com"
+  },
+  "ui_143": {
+    "message": "virustotal.com (otevře se nová karta)"
+  },
+  "ui_144": {
+    "message": "Úroveň soukromí:"
+  },
+  "ui_145": {
+    "message": "Striktní (předvolené: hashy a domény pouze, žádné nahrávky)"
+  },
+  "ui_146": {
+    "message": "Vyrovnané (přihlášení neznámých souborů, žádné kompletní URLs)"
+  },
+  "ui_147": {
+    "message": "Maximální analýza (používat neznámé soubory a dokončit URLs)"
+  },
+  "ui_148": {
+    "message": "Omezuje údaje zaslané poskytovatelům analýzy. platí pouze v případě, že je aktivována externí analýza."
+  },
+  "ui_149": {
+    "message": "IP reputace (kontrolujte přijaté titulky):"
+  },
+  "ui_150": {
+    "message": "invalidní"
+  },
+  "ui_151": {
+    "message": "VirusTotal (vyžaduje klíč VirusTotal API)"
+  },
+  "ui_152": {
+    "message": "AbuseIPDB (vyžaduje klíč AbuseIPDB API)"
+  },
+  "ui_153": {
+    "message": "IP pověst API klíč:"
+  },
+  "ui_154": {
+    "message": "Posílá veřejné adresy IP z přijatých adres e-mailu vybranému poskytovateli. vyžaduje externí souhlas analýzy a schválení skenování."
+  },
+  "ui_155": {
+    "message": "Povolení (domény oddělené od domén nebo e-mailové adresy):"
+  },
+  "ui_156": {
+    "message": "e.g. example.com, test@ example.com"
+  },
+  "ui_157": {
+    "message": "Důvěryhodné odesílatele vstupy potlačují místní odesílatel upozornění. neumožňují externí skenování."
+  },
+  "ui_158": {
+    "message": "Blokovní seznam (domény nebo e-mailové adresy oddělené od domén):"
+  },
+  "ui_159": {
+    "message": "Zadejte blokované domény nebo e-mailové adresy."
+  },
+  "ui_160": {
+    "message": "Vždy manuálně skenovat (bez automatických nahrávek)"
+  },
+  "ui_161": {
+    "message": "Zabraňuje automatickým externím skenováním.Explicitní manuální akce stále vyžadují souhlas a odpovídající úroveň soukromí."
+  },
+  "ui_162": {
+    "message": "Automaticky načítat čekající zprávy o odkazech"
+  },
+  "ui_163": {
+    "message": "Kontroly odkazů vyžadují souhlas, schválení skenování a odpovídající úroveň soukromí."
+  },
+  "ui_164": {
+    "message": "Podívejte se na odkazy před otevřením"
+  },
+  "ui_165": {
+    "message": "Přerušuje navigace, aby ukázala výsledek.Nezkontrolované odkazy a chyby jsou jasně identifikovány.Plná analýza URL vyžaduje maximální úroveň. Celé odkazy a přílohy vyžadují samostatné potvrzení."
+  },
+  "ui_166": {
+    "message": "Nezapomeňte uložit své nastavení."
+  },
+  "ui_167": {
+    "message": "Správa dat"
+  },
+  "ui_168": {
+    "message": "Jasné lokálně uložené výsledky a reputační cache."
+  },
+  "linkChecking": {
+    "message": "Zkontrolovat link…"
+  },
+  "linkWarning": {
+    "message": "Tento odkaz byl údajně podezřelý nebo škodlivý."
+  },
+  "linkUnknown": {
+    "message": "Tento odkaz nelze ověřit. otevírání může být rizikové."
+  },
+  "linkNoDetection": {
+    "message": "Žádná hrozba zjištěna poskytovatelem. to není záruka bezpečnosti."
+  },
+  "linkProceed": {
+    "message": "Otevřený link v každém případě"
+  },
+  "linkCancel": {
+    "message": "Zrušit"
+  },
+  "localMode": {
+    "message": "Lokální kontroly fungují bez klíčů API. Vnější skenování vyžaduje váš souhlas a povolení odesílání nebo zprávy."
+  },
+  "statusNormal": {
+    "message": "(Není žádná detekce)"
+  },
+  "statusSuspicious": {
+    "message": "a podezřelé)"
+  },
+  "statusCritical": {
+    "message": "a kritické)"
+  },
+  "noSubject": {
+    "message": "(v žádném případě ne)"
+  },
+  "noSender": {
+    "message": "(Neznámý odesílatel)"
+  },
+  "noId": {
+    "message": "(Nejsou k dispozici žádné ID)"
+  },
+  "unknownAttachment": {
+    "message": "neznámé"
+  },
+  "statusDangerous": {
+    "message": "a nebezpečné)"
+  },
+  "sizeLimit": {
+    "message": "Příslušenství překračuje místní limit velikosti 25 MIB a nebylo přečteno ani nahraveno."
+  },
+  "trustedAuthLabel": {
+    "message": "Spolehlivé ověřovací servery (comma-separated)"
+  },
+  "trustedAuthHelp": {
+    "message": "Pouze seznam adresátových poštovních serverů, které spravujete nebo výslovně důvěřujete. nezavedené zprávy o titulcích zůstávají neoznačeny."
+  },
+  "consentHelp": {
+    "message": "Bez souhlasu se nic neodesílá externě. Po udělení souhlasu se kontrolují jen výslovně povolené zprávy nebo odesílatelé. V přísném režimu se mohou odesílat otisky, domény a veřejné IP adresy. Vyvážený režim navíc umožňuje nahrát neznámé soubory a maximální režim navíc celé adresy URL. Vypnutím volby zastavíte nový přenos a zrušíte čekající požadavky. Již odeslaná data nelze vzít zpět. Celé odkazy a přílohy vyžadují samostatné potvrzení."
+  },
+  "visualImpersonation": {
+    "message": "Vizuální detekce: stránka zobrazuje $BRANDS$ (předpokládaný phishing).",
+    "placeholders": {
+      "brands": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedEmail": {
+    "message": "Odesílatel e-mail ( $P1$) je na seznamu bloků.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedDomain": {
+    "message": "Doména odesílatele ( $P1$) je na seznamu bloků ( $P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedEmail": {
+    "message": "Odesílatel e-mail ( $P1$) je na seznamu povolení.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedDomain": {
+    "message": "Doména odesílatele ( $P1$) je na seznamu povolení ( $P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanVisibility": {
+    "message": "urlscan.io předlohy jsou neoznámené, nejsou soukromé. kompletní URL může obsahovat osobní údaje nebo přístupové tokeny. Předložit pouze URLs je povoleno sdílet."
+  },
+  "notificationScanCount": {
+    "message": "Předložené skenování: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "gatewayRequestTimeout": {
+    "message": "Žádost poskytovatele byla zrušena nebo odložena."
+  },
+  "gatewayInvalidJson": {
+    "message": "Poskytovatel vrátil neznáma odpověď."
+  },
+  "gatewayNetworkError": {
+    "message": "Poskytovatele se nedalo dosáhnout."
+  },
+  "noMessageFound": {
+    "message": "Zobrazované zprávy nebyly nalezeny."
+  },
+  "providerNoDetection": {
+    "message": "Žádná hrozba zjištěna"
+  },
+  "providerMalicious": {
+    "message": "Škodlivé"
+  },
+  "providerSuspicious": {
+    "message": "Podezřelé"
+  },
+  "providerPending": {
+    "message": "Analýza pending"
+  },
+  "privacyLocalData": {
+    "message": "Thundy AV čte zobrazenou zprávu, její odesílatele, předmět, titulky, text a přílohy k provedení místních kontrol. Lokální kontroly fungují bez klíčů API. Neexistuje telemetry a neexistuje server analýzy vývojářů."
+  },
+  "privacyProviders": {
+    "message": "Autorizované externí požadavky jdou přímo na konfigurované poskytovatele: Hybrid Analysis pro archivní hashy a nahrávky, VirusTotal pro archivní hashy nebo reputaci IP, URLhaus pro domény, urlscan.io pro kompletní URLs a AbuseIPDB pro veřejné IP."
+  },
+  "privacyRetention": {
+    "message": "Nastavení, souhlas, povolení odesílatele a klíče API jsou uloženy ve vašem profilu Thunderbird. Klíče API nejsou tam šifrovány. Lokální skenovací záznamy mohou zahrnovat témata, adresy odesílatele, kompletní odkazy a metadata připojení. Cache uchovává až 1000 záznamů zpráv po dobu 30 dnů a je vyčisten na databázi startup. Výsledky pověsti v paměti uplynou po 15 minutách."
+  },
+  "privacyControl": {
+    "message": "Odstranit externí analýzu k zastavení nových žádostí a zrušení nadcházejících žádostí. již předané údaje nelze vzpomenout. Použijte Clear cache k odstranění uložených výsledků analýzy a reputačních cache. Individuální odesílatele povolení lze odstranit v nastaveních."
+  },
+  "privacyDetailed": {
+    "message": "Podrobná politika ochrany osobních údajů (anglicky/němčina)"
+  },
+  "senderAuthorizationsLabel": {
+    "message": "Autorizované odesílatele (jedna e-mailová adresa na linku)"
+  },
+  "senderAuthorizationsHelp": {
+    "message": "Tyto odesílatele mohou být automaticky skenovány, když je aktivována externí analýza. Odstranit adresu k zastavení automatických skenování budoucích zpráv. Tento seznam nepřekračuje úroveň soukromí nebo manuální režim."
+  },
+  "invalidSenderAddress": {
+    "message": "Zadejte ploché e-mailové adresy, jeden po řádku."
+  },
+  "popupSubtitle": {
+    "message": "Bezpečnostní přehled zprávy"
+  },
+  "popupDetails": {
+    "message": "Technické zprávy podrobnosti"
+  },
+  "popupLocalAssessment": {
+    "message": "Hodnocení místního rizika"
+  },
+  "popupLocalExplanation": {
+    "message": "Toto skóre není antivirový verdikt nebo záruka bezpečnosti."
+  },
+  "linkDialogTitle": {
+    "message": "Zkontrolujte před otevřením"
+  },
+  "linkDestination": {
+    "message": "Destinace webové stránky"
+  },
+  "linkUrlDetails": {
+    "message": "Zobrazit úplnou adresu link"
+  },
+  "linkOpenBrowser": {
+    "message": "Otevřít v prohlížeči"
+  },
+  "linkOpening": {
+    "message": "Otevření…"
+  },
+  "linkOpenFailed": {
+    "message": "Odkaz se nepodařilo otevřít. Zkuste to znovu nebo zkontrolujte nastavení výchozího prohlížeče."
+  },
+  "linkCheckLimited": {
+    "message": "Pouze dostupné výsledky skenování mohou být zobrazeny. chybějící kontroly neznamenají, že odkaz je bezpečný."
+  },
+  "auditTitle": {
+    "message": "Link rozhodnutí log"
+  },
+  "auditOpen": {
+    "message": "Přihlašovací link log"
+  },
+  "auditScope": {
+    "message": "Logs HTTP (S) kliky zablokovány ochranou odkazu. OPENED znamená, že Thunderbird přijal žádost o otevření bez hlásení chyby. To nepotvrzuje, že operační systém spustil prohlížeč nebo že web byl navštěvován."
+  },
+  "auditPrivacy": {
+    "message": "Lokálně uloženo po dobu až 30 dnů, 2 000 záznamů nebo 2 MiB (starší vstupy jsou odstraněny). Plný URLs může obsahovat osobní údaje nebo přístupové tokeny. Nic není nahráno automaticky. Lokální log lze změnit nebo odstranit uživateli profilu; to není tamper-proof centrální audit track. Lokální skóre používá kliknutý odkaz a zprávu kontext, ne poskytovatel skóre. Hodnocení důvodů mohou zahrnovat odesílatele nebo podrobnosti o doménu."
+  },
+  "auditSearch": {
+    "message": "URL, ID domény nebo události"
+  },
+  "auditOutcome": {
+    "message": "Rozhodnutí"
+  },
+  "auditAll": {
+    "message": "Všichni"
+  },
+  "auditOpened": {
+    "message": "Otevření požadováno"
+  },
+  "auditAborted": {
+    "message": "potraty"
+  },
+  "auditOpenError": {
+    "message": "Otevření selhalo"
+  },
+  "auditPending": {
+    "message": "Žádná dokončená rozhodnutí"
+  },
+  "auditMinScore": {
+    "message": "Minimální rozhodovací skóre"
+  },
+  "auditFrom": {
+    "message": "od"
+  },
+  "auditTo": {
+    "message": "na"
+  },
+  "auditRefresh": {
+    "message": "Odšťavení"
+  },
+  "auditJson": {
+    "message": "Vývoz JSON"
+  },
+  "auditCsv": {
+    "message": "Vývoz CSV"
+  },
+  "auditClear": {
+    "message": "Odstranit lokální log"
+  },
+  "auditExportHelp": {
+    "message": "Exporty zahrnují všechny filtrované řádky, a to nejen aktuální stránky. JSON obsahuje kontrolní číslo SHA-256 pro ověření; neprokazuje autentičnost. CSV neutralizuje vzorce šířkové listy. Exporty obsahují kompletní URLs : sdílejte pouze s autorizovanými recenzenty."
+  },
+  "auditTime": {
+    "message": "Klíč / čas rozhodnutí"
+  },
+  "auditLocalScore": {
+    "message": "Lokální skóre (link a poselství)"
+  },
+  "auditVerdict": {
+    "message": "Výsledek poskytovatele"
+  },
+  "auditAddress": {
+    "message": "URL a podrobnosti"
+  },
+  "auditPrevious": {
+    "message": "Předchozí"
+  },
+  "auditNext": {
+    "message": "Další"
+  },
+  "auditClearConfirm": {
+    "message": "Odstranit všechny místní záznamy souboru odkazů? exportujte požadované důkazy nejprve. výsledky skenování a nastavení jsou zachovány."
+  },
+  "auditFailure": {
+    "message": "Lokální záznam odkazů nelze číst ani uložit."
+  },
+  "auditUnavailable": {
+    "message": "Není k dispozici"
+  },
+  "auditScoreAtDecision": {
+    "message": "Hodnotit při rozhodování"
+  },
+  "auditRecords": {
+    "message": "Rekordy"
+  },
+  "auditDetails": {
+    "message": "Zobrazit URL a důkazy"
+  },
+  "auditEventId": {
+    "message": "Události ID"
+  },
+  "auditCancelReason": {
+    "message": "Zrušení důvodů"
+  },
+  "auditFinalResult": {
+    "message": "Poslední výsledky kontroly"
+  },
+  "auditProfile": {
+    "message": "Lokální profil ID"
+  },
+  "auditExported": {
+    "message": "Vývoz je zachráněn."
+  },
+  "auditRiskyOpened": {
+    "message": "Otevření požadované při vysokém riziku"
+  },
+  "auditExportFailed": {
+    "message": "Vývoz byl zrušen nebo selhal."
+  },
+  "profilesTitle": {
+    "message": "Volitelné profily podnikání"
+  },
+  "profilesIntro": {
+    "message": "Vyberte si společné systémy nezávisle nebo zrušte integrace. Tyto profily připravují konfiguraci; nepřipojí se k službě společnosti ani aktivují centrální přihlašování."
+  },
+  "profilesOpen": {
+    "message": "Výběr firemních profilů"
+  },
+  "profilesBundle": {
+    "message": "Doporučená kombinace"
+  },
+  "profilesLocal": {
+    "message": "místní příprava"
+  },
+  "profilesCustom": {
+    "message": "Custom výběr"
+  },
+  "profilesHosting": {
+    "message": "Hostování"
+  },
+  "profilesSso": {
+    "message": "Jednotlivý sign-on (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Řízení zařízení"
+  },
+  "profilesSiem": {
+    "message": "Bezpečnostní monitorování (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Ticketový systém"
+  },
+  "profilesRequirements": {
+    "message": "Potřebná konfigurace"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Koncové body a nastavení účtu jsou poskytovány během pozdějšího nastavení. jména níže identifikují požadované nastavení a tajné odkazy; zde nejsou zadávány žádné autentifikace."
+  },
+  "profilesPreview": {
+    "message": "Konfigurace návrhu"
+  },
+  "profilesPrivacy": {
+    "message": "Připojení zůstávají vypnuty. návrh neobsahuje klíče API, tokeny, kliknuté údaje URLs nebo zprávy."
+  },
+  "profilesSave": {
+    "message": "Shromažďujte výběr lokálně"
+  },
+  "profilesExport": {
+    "message": "Návrh konfigurace vývozu"
+  },
+  "profilesReset": {
+    "message": "Recenze výběru"
+  },
+  "profilesNone": {
+    "message": "invalidní / nezvolené"
+  },
+  "profilesSelfHosted": {
+    "message": "Samohostitelné / on-premises"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Pro tento výběr nejsou požadovány žádné vnější nastavení integrace."
+  },
+  "profilesSaved": {
+    "message": "Výběr byl zachráněn lokálně. připojení zůstává onemocněno."
+  },
+  "profilesExported": {
+    "message": "Konfigurační návrh byl exportován. nic nebylo aktivováno."
+  },
+  "profilesFailed": {
+    "message": "Výběr nemohl být naložen, uložen nebo vyvezen, nebo operace byla zrušena."
+  },
+  "wizardTitle": {
+    "message": "Nastavení Thundy AV"
+  },
+  "wizardLanguage": {
+    "message": "Jazyk průvodce"
+  },
+  "wizardLanguageNote": {
+    "message": "Tato volba platí pouze pro průvodce. Jazyk doplňku můžete změnit v nastavení."
+  },
+  "wizardWelcome": {
+    "message": "Vítejte"
+  },
+  "wizardProtection": {
+    "message": "Linková ochrana"
+  },
+  "wizardExternal": {
+    "message": "Opční analýza"
+  },
+  "wizardIntro": {
+    "message": "Začněte s místními kontrolami. Chcete-li zkontrolovat e-mail, použijte jeho banner Thundy AV nebo skenování akce. Můžete se později rozhodnout, zda nastavit analytické poskytovatele."
+  },
+  "wizardLocalNotice": {
+    "message": "Bez souhlasu s externí analýzou nejsou žádné údaje odeslány poskytovatelům analýzy.Tento kouzelník nikdy tento souhlas neposkytuje."
+  },
+  "wizardPrivacy": {
+    "message": "Informace o soukromí"
+  },
+  "wizardLinkChoice": {
+    "message": "Varujte před otevřením odkazů a zaznamenáváním rozhodnutí lokálně"
+  },
+  "wizardLinkExplanation": {
+    "message": "Dialog s odkazem zobrazuje cílovou a dostupnou hodnocení rizika.Otevření rukou odkaz na váš prohlížeč; neprokáže návštěvu webu."
+  },
+  "wizardAuditNotice": {
+    "message": "Lokální soubor odkazů může zahrnovat plný URLs a důvody hodnocení. drží až 30 dní, 2000 záznamů nebo 2 MiB. Uživatelé profilu si ho mohou přečíst, změnit nebo odstranit; není to chráněný korporátní audit."
+  },
+  "wizardExternalExplanation": {
+    "message": "Externí poskytovatelé jsou volitelné a mohou vyžadovat klíče API. V závislosti na vašem stupni soukromí, hashů, domén, veřejných IPs, souborů nebo plného URLs lze předat."
+  },
+  "wizardNextAction": {
+    "message": "Co byste chtěli dělat následující?"
+  },
+  "wizardKeepLocal": {
+    "message": "Konec místních kontrol"
+  },
+  "wizardKeepExisting": {
+    "message": "Udržujte stávající externí nastavení"
+  },
+  "wizardExistingExternal": {
+    "message": "Vnější analýza je již aktivována v tomto profilu. kouzelník nezmění souhlas. Použijte nastavení, aby ji deaktivovali nebo zkontrolovali povolení."
+  },
+  "wizardConfigure": {
+    "message": "Vnější analýza v nastavení"
+  },
+  "wizardNoConsent": {
+    "message": "Výběr této možnosti pouze otevírá nastavení. nic není nahrazeno a žádný souhlas není požadován tímto čarodějem."
+  },
+  "wizardBack": {
+    "message": "Zpět"
+  },
+  "wizardNext": {
+    "message": "Další"
+  },
+  "wizardFinish": {
+    "message": "Shromažďovat setup"
+  },
+  "wizardFinishConfigure": {
+    "message": "Ušetřete a otevřete nastavení"
+  },
+  "wizardSkip": {
+    "message": "Nyní ne"
+  },
+  "wizardDone": {
+    "message": "nastavení zachráněno"
+  },
+  "wizardDoneText": {
+    "message": "Vaše volba ochrany odkazu byla uložena lokálně. žádný klíč API, vnější souhlas nebo schválení odesílatele nebyly změněny."
+  },
+  "wizardSettings": {
+    "message": "Otevřené nastavení"
+  },
+  "wizardProfilesNotice": {
+    "message": "Profily podniků jsou volitelnými konfiguračními návrhy. Výběr je nezakládá firemní připojení."
+  },
+  "wizardDeferred": {
+    "message": "nastavení pozdní"
+  },
+  "wizardDeferredText": {
+    "message": "Není změněna žádná nastavení. Opět otevřete čaroděj z nastavení, když jste připraveni."
+  },
+  "wizardSettingsOpened": {
+    "message": "Nastavení otevřeno. nastavte poskytovatele a uložte tam svůj souhlas."
+  },
+  "wizardSettingsFailed": {
+    "message": "Nastavení nemohou být otevřeny. vaše nastavení je uloženo; použijte otevřené nastavení k odstoupení."
+  },
+  "wizardSaveFailed": {
+    "message": "Nastavení nelze zachránit. Vaše volby zůstávají zde; prosím, odstoupte."
+  },
+  "wizardLoadFailed": {
+    "message": "Nastavení nemohou být nahrány. nic nebylo uložené. Přihlaste tuto stránku k odeslání."
+  },
+  "wizardLanguageFailed": {
+    "message": "Jazyk nelze nahrát. předchozí jazyk zůstává vybrán."
+  },
+  "wizardReopen": {
+    "message": "Otevřený setup čaroděj"
+  },
+  "settingsAppearance": {
+    "message": "Vzhled"
+  },
+  "settingsPrivacy": {
+    "message": "Soukromí"
+  },
+  "settingsScanning": {
+    "message": "Ochrana"
+  },
+  "settingsProviders": {
+    "message": "Analytické služby"
+  },
+  "settingsSenders": {
+    "message": "Pravidla pro odesílatele"
+  },
+  "settingsData": {
+    "message": "Data a nástroje"
+  },
+  "settingsWorkspace": {
+    "message": "Váš pracovní prostor"
+  },
+  "settingsEyebrow": {
+    "message": "Udělejte to své"
+  },
+  "settingsSubtitle": {
+    "message": "Přizpůsobte si vzhled Thundy AV a ochranu své pošty."
+  },
+  "settingsLocalBadge": {
+    "message": "místní default"
+  },
+  "settingsLocalNote": {
+    "message": "Vaše preference. uloženo na tomto zařízení."
+  },
+  "settingsSkip": {
+    "message": "Skok do nastavení"
+  },
+  "settingsProviderGuide": {
+    "message": "O poskytovatelích a klíčích API"
+  },
+  "settingsWizardHelp": {
+    "message": "Přezkoumejte nastavení v každém čase."
+  },
+  "themeIntro": {
+    "message": "Umožňujte, aby se Thundy AV cítil jako váš. změny vzhledu jsou okamžitě uloženy přes doplněk."
+  },
+  "themeMode": {
+    "message": "Vzhled"
+  },
+  "themeSystem": {
+    "message": "Podle Thunderbirdu"
+  },
+  "themeLight": {
+    "message": "Světlý"
+  },
+  "themeDark": {
+    "message": "Tmavý"
+  },
+  "themeAccent": {
+    "message": "Akcentní barva"
+  },
+  "themeOcean": {
+    "message": "Oceán"
+  },
+  "themeViolet": {
+    "message": "Violetní"
+  },
+  "themeForest": {
+    "message": "lesy"
+  },
+  "themeAmber": {
+    "message": "Amberová"
+  },
+  "themeReady": {
+    "message": "Zobrazování se automaticky ukládá. Ostatní nastavení používají tlačítko Uložit."
+  },
+  "themeSaving": {
+    "message": "Úspora vzhledu…"
+  },
+  "themeSaved": {
+    "message": "Výstava byla zachráněna."
+  },
+  "themeLoadError": {
+    "message": "Výstup nelze nahrát. zkuste znovu otevřít nastavení."
+  },
+  "themeSaveError": {
+    "message": "Výhled se nedá ušetřit. Vyberte si volbu znovu, abyste odstoupili."
+  },
+  "themeRetry": {
+    "message": "Retry úsporný vzhled"
+  },
+  "themeDensity": {
+    "message": "Informační hustota"
+  },
+  "themeComfortable": {
+    "message": "Pohodlné"
+  },
+  "themeCompact": {
+    "message": "Kompaktní"
+  },
+  "themeDensityHelp": {
+    "message": "Přizpůsobte prostor v nastavení a místních nástrojů pro správu."
+  },
+  "profilesChanges": {
+    "message": "Změny ve srovnání se zachráněným výběrem"
+  },
+  "profilesDiscard": {
+    "message": "Vyhýbejte se neúspěšným změnám"
+  },
+  "profilesLoadRetry": {
+    "message": "Reload zachráněný výběr"
+  },
+  "profilesNotLoaded": {
+    "message": "Shromažďované výběr není nabitý"
+  },
+  "profilesUnsaved": {
+    "message": "Neaktivní změny · neaktivní návrh"
+  },
+  "profilesUnchanged": {
+    "message": "Záchranářský projekt - neaktivní návrh"
+  },
+  "profilesSaving": {
+    "message": "Úspora místního výběru…"
+  },
+  "settingsUnsaved": {
+    "message": "Nevýhodné změny"
+  },
+  "providerUnknown": {
+    "message": "Výsledek neznámý"
+  },
+  "auditVerdictAtDecision": {
+    "message": "Výsledek rozhodnutí"
+  },
+  "ui_169": {
+    "message": "Analýza protokolu: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "ID práce: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "ID předložení: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Přijatý protokol: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": "Výsledek je automaticky odhalit každou sekundu $P1$ (přijímá $P2$); dokončený analytický protokol se zde objeví bez nové žádosti, jakmile je uložen.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "Po restartování nebo ztrátě zpracování, to zůstává v očekávání; nepředpokládá se, že odkaz byl otevřen nebo zrušen."
+  },
+  "auditCancelUser": {
+    "message": "Zrušený uživatelem"
+  },
+  "auditCancelEscape": {
+    "message": "Zavřený únikem"
+  },
+  "auditCancelDestination": {
+    "message": "Destinace se mění"
+  },
+  "auditCancelContext": {
+    "message": "Závěrečný kontext uzavřen"
+  },
+  "auditCancelUnknown": {
+    "message": "Neznámý důvod zrušení"
+  },
+  "reportNotSaved": {
+    "message": "Zpráva je viditelná, ale nemohla být zachráněna lokálně. znovu otevřít k odchodu."
+  },
+  "checkOrigin_live": {
+    "message": "Současný výsledek poskytovatele"
+  },
+  "checkOrigin_stored": {
+    "message": "Uložené výsledky"
+  },
+  "checkOrigin_none": {
+    "message": "Žádné pozorování poskytovatele"
+  },
+  "checkOutcome_success": {
+    "message": "Žádost se podařilo"
+  },
+  "checkOutcome_failed": {
+    "message": "Žádost selhala"
+  },
+  "checkOutcome_disabled": {
+    "message": "Externí analýza se zhoršuje"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Chybí povolení hostitele"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Chybí klíčový dodavatel"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Žádná reference poskytovatele"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Žádná nová žádost"
+  },
+  "checkOutcome_no_result": {
+    "message": "Žádný užitečný nový výsledek"
+  },
+  "checkAttempted": {
+    "message": "Zkontrolujte pokus"
+  },
+  "checkObserved": {
+    "message": "Výsledek pozorován"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Důvody k rozhodnutí"
+  },
+  "auditReasonsLatest": {
+    "message": "Nejnovější dostupné důvody"
+  },
+  "auditReasonsMissing": {
+    "message": "V té době nebylo zaznamenáno"
+  },
+  "coverageSummary": {
+    "message": "Pokrývka – zjištěno: $1; způsobilé: $2; zpracováno: $3; selhalo: $4; překročeno: $5."
+  },
+  "supportTitle": {
+    "message": "Zpráva o místní podpoře"
+  },
+  "supportHelp": {
+    "message": "Předem zobrazte minimální diagnostickou zprávu, pak ji uložíte lokálně. nic není odesláno."
+  },
+  "supportPreview": {
+    "message": "Předpověď zprávy"
+  },
+  "supportConfiguration": {
+    "message": "Zahrnuje pevné nastavení (bez klíčů nebo odesílatelů)"
+  },
+  "supportSave": {
+    "message": "Shromažďujte zprávu lokálně"
+  },
+  "coverageAttachments": {
+    "message": "Příslušenství"
+  },
+  "coverageDomains": {
+    "message": "Unikátní domény"
+  },
+  "coverageBatch": {
+    "message": "Batch linky"
+  },
+  "coverageLimits": {
+    "message": "Limity na pas: 100 připojení, 25 MiB na připojení, 100 jedinečných domén, 20 souborů odkazů."
+  },
+  "localProfileTitle": {
+    "message": "Lokální profily"
+  },
+  "localProfileHelp": {
+    "message": "Vývoz zachráněný vzhled nebo místní nastavení ochrany odděleně. předvídatelné a potvrdit dovoz. Klíče, souhlas, povolení, důvěryhodné odesílatele a auditní historie jsou vyloučeny."
+  },
+  "localProfileExport": {
+    "message": "Vývozní vzhled"
+  },
+  "localProfileFile": {
+    "message": "Vyberte si profilový soubor ( JSON, až 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Profil JSON (nebo vložte zde)"
+  },
+  "localProfilePreview": {
+    "message": "Předpověď změn"
+  },
+  "localProfileApply": {
+    "message": "Změny zobrazované aplikace"
+  },
+  "localProfileDiscard": {
+    "message": "Nedostatek dovozu"
+  },
+  "localProfileInvalid": {
+    "message": "Invalidní profil, nepodporovaná verze nebo zakázané pole."
+  },
+  "localProfileChanged": {
+    "message": "Zobrazování se změnilo od předpovědi. předpověď znovu před aplikací."
+  },
+  "localProfileFailed": {
+    "message": "Profil nemohl být uložen. přečtěte si aktuální nastavení a odstoupit."
+  },
+  "localProfileApplied": {
+    "message": "Zobrazovací profil aplikován. ochrana a souhlas nezměněn."
+  },
+  "analysisTitle": {
+    "message": "Analýza zdrojů"
+  },
+  "analysisMixed": {
+    "message": "+ externí kontroly"
+  },
+  "analysisExternal": {
+    "message": "Vnější pozorování dostupné"
+  },
+  "analysisLocal": {
+    "message": "Lokální · žádné externí výsledky zaznamenané"
+  },
+  "analysisLocalChecked": {
+    "message": "Lokální zprávy / linkové heuristiky jsou dokončeny."
+  },
+  "analysisLocalPending": {
+    "message": "Lokální hodnocení zatím nebylo zaznamenáno."
+  },
+  "analysisUnknown": {
+    "message": "neznámé"
+  },
+  "analysisTimeUnknown": {
+    "message": "Čas nezaznamenaný"
+  },
+  "analysisObserved": {
+    "message": "Poslední použitelná odpověď"
+  },
+  "analysisFindingObserved": {
+    "message": "Hledání zaznamenané"
+  },
+  "analysisAttempted": {
+    "message": "Poslední pokus o žádost"
+  },
+  "analysisPartial": {
+    "message": "Některé žádosti selhaly; dostupné výsledky neobsahují každý položka."
+  },
+  "analysisOtherServices": {
+    "message": "Ostatní služby / neprověřené"
+  },
+  "analysisLimit": {
+    "message": "Lokální skóre není antivirový verdikt. žádosti a nahrávky nejsou dokončeny analýzy. uložené výsledky zachovávají svůj původní věk; chybějící záznamy neprokazují, že se žádné předchozí žádost neobjevila."
+  },
+  "analysisScope_hash": {
+    "message": "Údaje o hash reputaci"
+  },
+  "analysisScope_file": {
+    "message": "Podání souboru"
+  },
+  "analysisScope_url": {
+    "message": "URL analýza"
+  },
+  "analysisScope_domain": {
+    "message": "Domain Reputace"
+  },
+  "analysisScope_ip": {
+    "message": "Public IP pověst"
+  },
+  "analysisScope_report": {
+    "message": "Analýza zprávy"
+  },
+  "analysisState_running": {
+    "message": "Požádáno · dosud není dokončen výsledek"
+  },
+  "analysisState_checked": {
+    "message": "Výsledek přijatý"
+  },
+  "analysisState_received": {
+    "message": "Odpověď přijatá · rozsudek nedostupný"
+  },
+  "analysisState_submitted": {
+    "message": "Předložení přijaté · analýza nepotvrzená kompletní"
+  },
+  "analysisState_not_found": {
+    "message": "Žádný záznam poskytovatele nenalezl"
+  },
+  "analysisState_failed": {
+    "message": "Žádost selhala · žádný nový rozsudek"
+  },
+  "analysisState_incomplete": {
+    "message": "Neobsahuje dokončenou analýzu"
+  },
+  "analysisSource_remote": {
+    "message": "Externí služba kontaktovaná"
+  },
+  "analysisSource_cache": {
+    "message": "Memory cache · žádná nová žádost poskytovatele"
+  },
+  "analysisSource_stored": {
+    "message": "Zahrnuté externí pozorování"
+  },
+  "analysisSource_attempt": {
+    "message": "Žádost pokus · odpověď nepotvrzená"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Rozsudek nedostupný"
+  },
+  "analysisVerdict_none": {
+    "message": "Dostupné výsledky: žádná detekce (bez záruky bezpečnosti)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "K dispozici jsou i podezřelé ukazatele"
+  },
+  "analysisVerdict_malicious": {
+    "message": "K dispozici jsou informace, které zahrnují detekci hrozby"
+  },
+  "analysisReason_unconfigured": {
+    "message": "V současné době není konfigurován"
+  },
+  "analysisReason_disabled": {
+    "message": "Nové vnější požadavky jsou zrušeny"
+  },
+  "analysisReason_permission": {
+    "message": "Chybí povolení hostování pro nové žádosti"
+  },
+  "analysisReason_authorization": {
+    "message": "Žádné automatické povolení pro tuto zprávu / manuální režim"
+  },
+  "analysisReason_policy": {
+    "message": "Není povoleno stávající úrovní soukromí"
+  },
+  "analysisReason_on_action": {
+    "message": "Pouze po výslovném odkazu"
+  },
+  "analysisReason_unrecorded": {
+    "message": "Žádná kontrola zaznamenaná pro tuto zprávu"
+  },
+  "analysisUnavailable": {
+    "message": "Analýza zdrojů v současné době nedostupná"
+  },
+  "analysisModeUnknown": {
+    "message": "Analýza stavu zatím nezaznamenána"
+  },
+  "analysisModeRunning": {
+    "message": "Externí žádost běží · výsledek čeká"
+  },
+  "analysisModeSubmitted": {
+    "message": "Vnější předloženo · analýza ještě nedokončená"
+  },
+  "analysisModeIncomplete": {
+    "message": "Externí kontrola neúplná · dokončení nepotvrzeno"
+  },
+  "analysisModePartial": {
+    "message": "Zahraniční výsledky k dispozici · Některé žádosti selhaly"
+  },
+  "analysisModeFailed": {
+    "message": "Zvláštní žádost selhala · žádné použitelné výsledky nebyly zaznamenány"
+  },
+  "analysisModeResults": {
+    "message": "Externí odpovědi k dispozici · viz kontroly níže"
+  },
+  "analysisResourceMessage": {
+    "message": "Dopravní kontext / Reputace"
+  },
+  "analysisResourceAttachment": {
+    "message": "Připojení"
+  },
+  "analysisResourceLink": {
+    "message": "Odkaz"
+  },
+  "analysisResourceUnknown": {
+    "message": "Předchozí shrnutí · zdroj nezaznamenaný"
+  },
+  "analysisTruncated": {
+    "message": "Některé údaje o zdroji byly omezeny, protože místní limit zobrazení byl dosažen."
+  },
+  "analysisResources": {
+    "message": "Zdroje v této zprávě"
+  },
+  "analysisResourceLocal": {
+    "message": "Příslušenství uložené s poselstvím · žádné důkazy o antivirovém skenování"
+  },
+  "analysisResourceTarget": {
+    "message": "Připojené cíle · stahování vzdáleného obsahu není důkazem externí analýzy"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Pro tento zdroj není zaznamenán žádný externí kontroly"
+  },
+  "analysisContextChanged": {
+    "message": "Kontext zprávy se změnil. Zavřete a znovu otevřete pop-up před odesláním znovu."
+  },
+  "analysisLocalIncomplete": {
+    "message": "Lokální analýza je neúplná: některé obsah zprávy není k dispozici."
+  },
+  "analysisLocalUnavailable": {
+    "message": "Lokální analýza není k dispozici: zprávu nelze přečíst."
+  },
+  "analysisHistoryTitle": {
+    "message": "Skladované historie · sdružení nepotvrzeno"
+  },
+  "analysisHistoryWarning": {
+    "message": "Tyto historické záznamy mohou být součástí jiné zprávy se stejným Message-ID. Neukazují kontrolu této zprávy."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Nové zdroje pozorování nebylo možné zachránit. existující historie byla zachována."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "Aktualizace zprávy nelze uložit. předchozí protokoly byly zachovány."
+  },
+  "sourceExportOpen": {
+    "message": "Předběžná analýza zdrojové zprávy"
+  },
+  "sourceExportTitle": {
+    "message": "Analýza zdrojové zprávy"
+  },
+  "sourceExportIntro": {
+    "message": "Vytvořte místní snímek zaznamenaných kontrol. To neprovádí novou analýzu. Aktuální pozorování a ukládané historie s neprokázanou asociací jsou zachovány odděleně."
+  },
+  "sourceExportPrivacy": {
+    "message": "Zahrnuje služby, státy, rozsudky a přesné časy pozorování. Vylučuje URLs, názvy souborů, hashy, IPs, klíče, text zprávy a vnitřní identifikátory. Čísla zdrojů se vztahují pouze v rámci této zprávy. To není úplná historie nebo ověřený záznam. Nic se neposílá automaticky. Recenze před sdílením."
+  },
+  "sourceExportCancel": {
+    "message": "Předpověď Discard"
+  },
+  "sourceExportContentLabel": {
+    "message": "Předpověď zprávy ( JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "Kontext zprávy již není k dispozici. Opět otevřete zprávu z popup nástrojové řádky zprávy."
+  },
+  "sourceExportChanged": {
+    "message": "Změnil se zaznamenaný stav. Vytvořte nový přehled před ušetřením."
+  },
+  "sourceExportReady": {
+    "message": "Zkontrolujte předpověď před ušetřením nebo sdílením."
+  },
+  "sourceExportRequested": {
+    "message": "Zkontrolujte dokončení v Thunderbird stahování."
+  },
+  "sourceExportFailed": {
+    "message": "Zpráva nebyla zachráněna. Vytvořte nový předpověď, abyste zkusili znovu."
+  },
+  "analysisHistoryPages": {
+    "message": "Historické stránky"
+  },
+  "analysisHistoryEntries": {
+    "message": "Vstupy"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Podezřelé nebo škodlivé historické nálezy · sdružení nepotvrzeno"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Zobrazit první historické varování"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Nejsilnější aktuální nálezy"
+  },
+  "reportDisplayFailed": {
+    "message": "Složení zprávy nelze zobrazit; Další výsledky zůstávají k dispozici."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Některé údaje o zprávě mají nepodporovaný formát a nemohou být zobrazeny."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Některé uložené analytické údaje nelze přečíst, jiné výsledky zůstávají k dispozici."
+  },
+  "analysisModeResponses": {
+    "message": "Odpovědi přijaté · žádný posuzovatelný rozsudek k dispozici"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Odpovědi obdržené bez posouzeného rozsudku · Některé žádosti selhaly"
+  },
+  "analysisCurrentAvailability": {
+    "message": "Pro nové žádosti"
+  },
+  "reasonMaliciousIp": {
+    "message": "Škodlivá adresa serveru IP zjištěna ( $IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "Vnější indikátory hrozeb (URLhaus a IP Reputace)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus – Známé malware domény detekovány: $DOMAINS$",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "IP Reputace ( $PROVIDER$) – Podezřelé servery IPs: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "urlscan.io Výsledky:"
+  },
+  "urlscanStatus": {
+    "message": "Stav: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridReportLink": {
+    "message": "Otevřete kompletní zprávu o Hybrid Analysis"
+  },
+  "hybridProviderMessage": {
+    "message": "Poselství poskytovatele: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "Hybrid Analysis limit nebo kvóta byla dosažena. prosím zkuste znovu později."
+  },
+  "reasonArchivedMaliciousAttachment": {
+    "message": "Historické zjištění ( $OBSERVED$). $PROVIDER$ klasifikoval přílohu “ $NAME$ ” jako škodlivé.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonArchivedSuspiciousAttachment": {
+    "message": "Historické zjištění ( $OBSERVED$). $PROVIDER$ klasifikoval přílohu “ $NAME$ ” jako podezřelé.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonMaliciousAttachment": {
+    "message": "Příslušenství \" $NAME$ \" bylo klasifikováno jako škodlivé podle $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "Příslušenství \" $NAME$ \" bylo klasifikováno jako podezřelé $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanReportLink": {
+    "message": "Otevřete kompletní zprávu o urlscan.io"
+  },
+  "hybridLinkVerdictStatus": {
+    "message": "Hybrid Analysis: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonMaliciousLinkVerdict": {
+    "message": "Link \" $URL$\" byl klasifikován jako škodlivý podle $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousLinkVerdict": {
+    "message": "Link \" $URL$ \" byl klasifikován jako podezřelé $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanErrorDetails": {
+    "message": "Příčina: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "urlscan.io limit nebo kvóta byla dosažena. prosím zkuste znovu později."
+  },
+  "urlscanInvalidKey": {
+    "message": "Neplatný nebo neautorizovaný klíč urlscan.io API."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Výsledek nebyl připraven v okně průzkumu. přijaté skenování lze znovu zkontrolovat bez nové předložení."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Domain nemůže být vyřešen urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Element ještě není zaznamenán v Hybrid Analysis (není nalezena žádná předchozí analýza)."
+  },
+  "virustotalNotFound": {
+    "message": "Prvky nejsou dosud zaznamenány v databázi VirusTotal."
+  },
+  "virustotalRateLimited": {
+    "message": "VirusTotal limit nebo kvóta byla dosažena. prosím zkuste znovu později."
+  },
+  "virustotalInvalidKey": {
+    "message": "Neplatný nebo neautorizovaný klíč VirusTotal API."
+  },
+  "abuseipdbRateLimited": {
+    "message": "AbuseIPDB limit nebo kvóta byla dosažena. prosím zkuste znovu později."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Neplatný nebo neautorizovaný klíč AbuseIPDB API."
+  },
+  "urlhausRateLimited": {
+    "message": "URLhaus limit nebo kvóta byla dosažena. prosím zkuste znovu později."
+  },
+  "urlhausInvalidKey": {
+    "message": "Neplatný nebo neautorizovaný klíč URLhaus API."
+  },
+  "testApiKeyButton": {
+    "message": "Otestovat připojení"
+  },
+  "testApiKeyTesting": {
+    "message": "Testování spojení…"
+  },
+  "testApiKeyValid": {
+    "message": "Žádost byla přijata.Toto neukazuje práva na nahrávání nebo zbývající kvóty."
+  },
+  "testApiKeyInvalid": {
+    "message": "Připojení selhalo: Invalidní klíč API."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Závěrečný limit nebo kvóty jsou dosaženy. prosím zkuste znovu později."
+  },
+  "testApiKeyError": {
+    "message": "Test připojení selhal."
+  },
+  "testApiKeyEmpty": {
+    "message": "Prosím, zadejte klíč API nejprve."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "Povolení k připojení k hostitelské službě bylo odmítnuto."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Prosím, vyberte IP reputační poskytovatele nejprve."
+  },
+  "rateLimitWithWait": {
+    "message": "Zpět na $SECONDS$ vteřin.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Rychlostní limit dosáhl"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Invalidní klíč API"
+  },
+  "auditErrorCode": {
+    "message": "Chybový kód"
+  },
+  "auditErrorDetails": {
+    "message": "Chybové detaily"
+  },
+  "auditRetryAfter": {
+    "message": "Počkejte na čas"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ sekundy",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "securityTitle": {
+    "message": "Správa a ochrana odkazů"
+  },
+  "securityScope": {
+    "message": "Lokální k tomuto profilu Thunderbird. Nepovede ke změnám profilu, deaktivuje dodatek nebo otevírá kopované odkazy jinde."
+  },
+  "securityAdminPassword": {
+    "message": "Správce hesla (12+ znaků; nechat prázdný k uchování)"
+  },
+  "securityApprovalPassword": {
+    "message": "Oddělené heslo pro schválení odkazu (12+ znaků; nechat bílý k uchovávání)"
+  },
+  "securityThreshold": {
+    "message": "Požaduje schválení na rizikové skóre (0–100, včetně)"
+  },
+  "securityEnablePolicy": {
+    "message": "Poskytování povolené ochrany odkazů"
+  },
+  "securityUnknownApproval": {
+    "message": "Vyžaduje také schválení neúplných kontrol"
+  },
+  "securityUnlock": {
+    "message": "Odemknout nastavení"
+  },
+  "securitySave": {
+    "message": "Ušetřete nastavení ochrany"
+  },
+  "securityLock": {
+    "message": "Zámek nyní"
+  },
+  "securityDisable": {
+    "message": "Odstranění nastavení hesla"
+  },
+  "securityRecovery": {
+    "message": "Rekonstrukční kód"
+  },
+  "securityRecover": {
+    "message": "Obnovte heslo admin pomocí kódu"
+  },
+  "securityStopTransfers": {
+    "message": "Zastavte externí přenosy"
+  },
+  "securityLocked": {
+    "message": "Nastavení je zamčené. Odemkněte je heslem správce."
+  },
+  "securityUnlocked": {
+    "message": "Nastavení je odemknutá; po pěti minutách bez aktivity se zamkne."
+  },
+  "securityOptional": {
+    "message": "Ochrana hesla je volitelná a v současné době vypnutá. bez schválení hesla, chráněné odkazy zůstávají blokovány."
+  },
+  "securityError": {
+    "message": "Operace odmítnuta. zkontrolujte heslo, zasedání a vstup."
+  },
+  "securityWait": {
+    "message": "Přesně mnoho pokusů. počkejte před odchodem do důchodu."
+  },
+  "securityLength": {
+    "message": "Použijte alespoň dvanáct znaků a odlišné hesla."
+  },
+  "securityRecoverySave": {
+    "message": "Tento jednorázový kód pro obnovu se ukládá samostatně. nebude znovu zobrazován:"
+  },
+  "securitySaved": {
+    "message": "Ochranné prvky jsou zachráněny."
+  },
+  "securityDisableConfirm": {
+    "message": "Odstranit heslo nastavení? Ochrana odkazů zůstává konfigurována."
+  },
+  "securityStopped": {
+    "message": "Zahraniční přenosy byly zastaveny."
+  },
+  "securityApprovalTitle": {
+    "message": "Podpora potenciálně nebezpečného obsahu"
+  },
+  "securityConfirmDanger": {
+    "message": "Chci otevřít tento potenciálně nebezpečný obsah v každém případě."
+  },
+  "securityApproveOnce": {
+    "message": "Otevřete a schválte jednou"
+  },
+  "securityExpired": {
+    "message": "Přihláška uplynula nebo se změnil kontext. začít znovu z zprávy."
+  },
+  "securityOpened": {
+    "message": "Thunderbird přijala žádost o otevření."
+  },
+  "securityApprovalFailed": {
+    "message": "Otevření bylo zamítnuto. Zkontrolujte heslo, nebo pokud schválení vypršelo, začněte znovu ze zprávy."
+  },
+  "providerTestDisclosure": {
+    "message": "To odesílá vaše klíčové a pevné testovací údaje API vybranému poskytovateli, bez obsahu zprávy. Úspěšný čtenářský test ověřuje nahrávky nebo dostupnou kvótu."
+  },
+  "analysisSimple": {
+    "message": "přehled"
+  },
+  "analysisExpert": {
+    "message": "Technické detaily"
+  },
+  "analysisSimpleNone": {
+    "message": "Žádné podezřelé příznaky nebyly zjištěny"
+  },
+  "analysisSimpleCaution": {
+    "message": "Podezření"
+  },
+  "analysisSimpleDanger": {
+    "message": "škodlivé nálezy"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Neúplná kontrola"
+  },
+  "analysisScoreExplanation": {
+    "message": "Skóre rizika vychází z pravidel a nepředstavuje pravděpodobnost ani záruku bezpečnosti."
+  },
+  "analysisSimpleBasis": {
+    "message": "Služby s výsledky / nedostupné"
+  },
+  "analysisProviderSetup": {
+    "message": "Přístup poskytovatele a zveřejnění údajů"
+  },
+  "analysisProviderConfigured": {
+    "message": "Klíč je konfigurován; ukládání ho nezavádí skenování."
+  },
+  "analysisProviderNoKey": {
+    "message": "Žádný klíč není konfigurován"
+  },
+  "analysisDataHash": {
+    "message": "Odtisk prstů souboru ( SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Kompletní připojení"
+  },
+  "analysisDataUrl": {
+    "message": "Kompletní URL; může obsahovat důvěrné tokeny"
+  },
+  "analysisDataDomain": {
+    "message": "Linková doména"
+  },
+  "analysisDataIp": {
+    "message": "Public IP z textových titulků"
+  },
+  "analysisDataReport": {
+    "message": "Zpráva identifikace"
+  },
+  "analysisApprovalRequired": {
+    "message": "Další schválení je nutné; zrušit nebo požádat o správce."
+  },
+  "analysisContinueWarning": {
+    "message": "Zkontrolujte důvody před pokračováním. můžete zrušit."
+  },
+  "analysisConflict": {
+    "message": "Dodavatelé se nesouhlasí; o zjištěních se věnuje přednost."
+  },
+  "analysisExportSensitive": {
+    "message": "Přezkum před vývozem: technické údaje mohou identifikovat zdroje zprávy."
+  },
+  "scanActions": {
+    "message": "Vnější kontroly"
+  },
+  "scanStart": {
+    "message": "Zkontrolovat nyní"
+  },
+  "scanRepeat": {
+    "message": "Zkontrolovat znovu"
+  },
+  "scanRefresh": {
+    "message": "Obnovit výsledky"
+  },
+  "scanRunning": {
+    "message": "Vnější kontroly v pokroku"
+  },
+  "scanProgress": {
+    "message": "Kompletní zdroje"
+  },
+  "scanMigrationNotice": {
+    "message": "V nastavení vyberte režim automatického skenování. Do té doby platí předchozí odesílatel a manuální pravidla."
+  },
+  "scanState_idle": {
+    "message": "V tomto ohledu není žádná práce na skenování aktivní."
+  },
+  "scanState_queued": {
+    "message": "Zkontrolujte přijatý; počkejte na začátek"
+  },
+  "scanState_running": {
+    "message": "Vnější kontroly v pokroku"
+  },
+  "scanState_completed": {
+    "message": "Kontrola dokončena"
+  },
+  "scanState_pending": {
+    "message": "Poskytovatel stále zpracovává; aktualizuje výsledky"
+  },
+  "scanState_incomplete": {
+    "message": "Zkontrolujte neúplné; některé výsledky chybí"
+  },
+  "scanState_failed": {
+    "message": "Zkontrolujte neúspěch; zkuste znovu"
+  },
+  "scanState_blocked": {
+    "message": "Zvláštní kontroly nejsou zahájeny; viz požadavky níže"
+  },
+  "analysisReason_manual": {
+    "message": "Manuální režim"
+  },
+  "analysisReason_sender": {
+    "message": "Odesílatel není schválen"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Automatická analýza linků"
+  },
+  "analysisReason_no_resources": {
+    "message": "Není vhodných zdrojů"
+  },
+  "analysisReason_quota": {
+    "message": "Kvota dosáhla; čekat před odchodem"
+  },
+  "analysisReason_running": {
+    "message": "Poskytovatel zpracovává"
+  },
+  "analysisReason_provider_error": {
+    "message": "Žádost poskytovatele selhala"
+  },
+  "scanModeLabel": {
+    "message": "Automatické externí skenování"
+  },
+  "scanModeKeep": {
+    "message": "Udržujte předchozí nastavení (vyberte režim)"
+  },
+  "scanModeAll": {
+    "message": "Všechny otevřené zprávy"
+  },
+  "scanModeSenders": {
+    "message": "Pouze schválení odesílatelé"
+  },
+  "scanModeManual": {
+    "message": "Pouze ručně"
+  },
+  "scanModeHelp": {
+    "message": "Automatické kontroly odesílají pouze otisky, domény a veřejné IP adresy. Celé odkazy a přílohy vyžadují samostatné potvrzení. Neotevřené zprávy zůstávají místní."
+  },
+  "assessmentCompletion": {
+    "message": "Stát zpracování"
+  },
+  "assessmentCompletion_pending": {
+    "message": "Poskytovatel stále zpracovává"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Zpráva o odhalití kompletní"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "K dispozici není žádná závěrečná hodnocení"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Technické zpracování selhalo"
+  },
+  "assessmentConflict": {
+    "message": "Rozdílné částečné hodnocení; nejsilnější nález určuje akci."
+  },
+  "assessmentSignals": {
+    "message": "Hodnocení základů"
+  },
+  "assessmentJob": {
+    "message": "Poskytovatel práce ID"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Poskytovatel verdiktu"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Scanner nalezení"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Originální hrozbové skóre"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Originální multican výsledek"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Originální úroveň hrozeb"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Poskytovatele označení White"
+  },
+  "assessmentSignal_overall": {
+    "message": "Urlscan celkové hodnocení"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Hodnocení urlscan motorů"
+  },
+  "assessmentSignal_engines": {
+    "message": "Další motorové nálezy"
+  },
+  "assessmentSignal_brand": {
+    "message": "Značka označení; nezaznamenává riziko sám o sobě"
+  },
+  "assessmentSignal_report": {
+    "message": "Zpráva státu"
+  },
+  "assessmentOriginal": {
+    "message": "Originální rozhodnutí poskytovatele"
+  },
+  "hybridExpertTitle": {
+    "message": "API v2 informace"
+  },
+  "hybridExpertScope": {
+    "message": "Pouze skutečně obdržené pole jsou zobrazeny. Quick Scan neprokázá úplnou exekuci sandbox. Chybí data není negativní nález. URLs omítá autentifikace, dotazové řetězce a fragmenty; příkazové linky a surové zprávy nejsou zobrazeny. Otvírání těchto detailů neposkytuje žádost."
+  },
+  "hybridExpertMissing": {
+    "message": "Není uvedeno v této zprávě"
+  },
+  "hybridExpertYes": {
+    "message": "Ano"
+  },
+  "hybridExpertNo": {
+    "message": "Ne"
+  },
+  "hybridExpert_identity": {
+    "message": "Identifikace souborů a zdrojů"
+  },
+  "hybridExpert_assessment": {
+    "message": "Původní hodnocení a zpracování"
+  },
+  "hybridExpert_scanners": {
+    "message": "Scanner výsledky"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Individuální antivirové detekce"
+  },
+  "hybridExpert_reports": {
+    "message": "Referenční zprávy Sandbox"
+  },
+  "hybridExpert_counts": {
+    "message": "Zpráva o celkovém"
+  },
+  "hybridExpert_signatures": {
+    "message": "Podpisy chování"
+  },
+  "hybridExpert_mitre": {
+    "message": "Zpět na ATT&CK"
+  },
+  "hybridExpert_network": {
+    "message": "Síťové ukazatele"
+  },
+  "hybridExpert_processes": {
+    "message": "procesy"
+  },
+  "hybridExpert_extracted": {
+    "message": "Vybrané soubory"
+  },
+  "hybridExpert_certificates": {
+    "message": "Certifikáty"
+  },
+  "hybridExpertEmpty": {
+    "message": "Dostupné jako prázdný seznam; žádný záznam"
+  },
+  "securityPasswordHelp": {
+    "message": "Volitelná ochrana pro tento profil. Použijte různé hesla nejméně dvanácti znaků pro správu a schválení odkazů. Zanechte nové heslové pole prázdné, aby se uchovaly stávající hesla."
+  },
+  "securityAdminConfirm": {
+    "message": "Potvrzení nového hesla správce"
+  },
+  "securityApprovalConfirm": {
+    "message": "Potvrzení nového hesla pro schválení odkazu"
+  },
+  "securityRecoveryPassword": {
+    "message": "Nový správce hesla pro obnovu"
+  },
+  "securityApprovalConfigured": {
+    "message": "Heslo pro schválení odkazu je nastaveno; může být nahrazeno, ale nikdy se nezobrazuje."
+  },
+  "securityApprovalMissing": {
+    "message": "Žádné heslo pro schválení odkazu není nastaveno. odkazy vyžadující schválení hesla zůstávají blokovány."
+  },
+  "securityConfirmMismatch": {
+    "message": "Nové hesla a jejich potvrzení se neshodují."
+  },
+  "securityUnlockPassword": {
+    "message": "Aktuální heslo správce"
+  },
+  "displaySettingsTitle": {
+    "message": "Analýza displeje"
+  },
+  "displaySettingsHelp": {
+    "message": "Zobrazovací preference nezmění skenování, externí převody, skóre nebo ochranu odkazu.Můžete přejít mezi přehledem a expertním zobrazením při čtení výsledků."
+  },
+  "displayDefaultView": {
+    "message": "Podmínkou je zobrazení zprávy a pop-up"
+  },
+  "displayHybridDetails": {
+    "message": "Zobrazit další sekce Hybrid API"
+  },
+  "displaySave": {
+    "message": "Uložit zobrazení preferencí"
+  },
+  "displaySaved": {
+    "message": "Zobrazit preference zachráněné."
+  },
+  "urlscanDnsError": {
+    "message": "Poskytovatel nemohl vyřešit cílovou doménu."
+  },
+  "urlscanInvalidRequest": {
+    "message": "Poskytovatel odmítl neplatné parametry předložení."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "Poskytovatel odmítl předložení; odpověď neukazuje selhání DNS."
+  },
+  "analysisQuotaReset": {
+    "message": "Zpráva o restrukturalizaci kvót"
+  },
+  "analysisRetryAt": {
+    "message": "Nejstarší retrace"
+  },
+  "analysisLocalBackoff": {
+    "message": "Tento pokus byl odvolán lokálně; žádost o nové poskytovatele nebyla zaslána."
+  },
+  "scanState_deferred": {
+    "message": "Analýza odvrácena: všechny pozadí sloty jsou obsazeny. návrat po další analýzy dokončení."
+  },
+  "scanCoverage": {
+    "message": "Některé zdroje nebyly ověřeny."
+  },
+  "scanCoverageAttachments": {
+    "message": "Příslušenství připravené"
+  },
+  "scanCoverageLinks": {
+    "message": "Vybrané linky"
+  },
+  "scanCoverage_read_failed": {
+    "message": "Přílohu nelze číst ani hashovat."
+  },
+  "scanCoverage_size_limit": {
+    "message": "Příslušenství překračuje hranice skenování 25 MiB."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "Závěrečný limit skenování byl dosažen."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "Inventář příloh je neúplný."
+  },
+  "scanFailure_source_capacity": {
+    "message": "Zdroje historie je plná. Tento kontrolu se nezačalo; stávající záznamy byly zachovány."
+  },
+  "scanFailure_cancelled": {
+    "message": "Kontrola byla zrušená, nedochází k žádnému dokončenému výsledku"
+  },
+  "scanFailure_timeout": {
+    "message": "Výsledky zůstávají neúplné, výsledky zůstávají neúplné."
+  },
+  "scanFailure_scan_failed": {
+    "message": "Závěrečná kontrola se nedokázala dokončit, stávající záznamy byly zachovány."
+  },
+  "localProtectionProfileExport": {
+    "message": "Systém ochrany vývozu"
+  },
+  "localProfileYes": {
+    "message": "Ano"
+  },
+  "localProfileNo": {
+    "message": "Ne"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Starší ochranné profily nemůžou rozšířit automatický scanový rozsah nebo přejít na URL předložení."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "Stávající historie zdroje nelze číst a byla zachována nezměněná."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "Konflikt skladování zabránil rozšíření historie zdroje."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "Zdrojový archiv pro tuto zprávu dosáhl vstupního limitu."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "Zdrojový archiv pro tuto zprávu dosáhl hranice skladování."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "Přístup k místnímu ukládání selhal."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Dostupné výsledky • nedokumentace neúplná"
+  },
+  "apiDebugTitle": {
+    "message": "API režim odtoku"
+  },
+  "apiDebugHelp": {
+    "message": "Nová API se snaží lokálně diagnostikovat selhání. Umožňuje, reprodukuje selhání, pak předvídat nebo exportovat zprávu. Admin odblokování je nutné, když je nastaven heslo správce. Klíče, soukromé URLs, obsah zprávy a surové tělesa jsou omezeny; referenční ID jsou pseudonymizovány. Až 100 vstupů / 1 MiB je uchováno v paměti po dobu jedné hodiny a ztraceno při restartování."
+  },
+  "apiDebugEnable": {
+    "message": "API diagnostika"
+  },
+  "apiDebugSave": {
+    "message": "Sestavování Debug"
+  },
+  "apiDebugPreview": {
+    "message": "Předchozí Debug Report"
+  },
+  "apiDebugExport": {
+    "message": "Vývozní debug report"
+  },
+  "apiDebugClear": {
+    "message": "Čistá debugová zpráva"
+  },
+  "apiDebugSaved": {
+    "message": "Sestavování Debug zachráněno. předchozí diagnózy vyjasněny."
+  },
+  "apiDebugCleared": {
+    "message": "Debugová zpráva byla vyjasněna."
+  },
+  "apiDebugFailed": {
+    "message": "Debug operace selhala. odemknout správu a zkusit znovu."
+  },
+  "apiDebugFailureHint": {
+    "message": "Pro podrobnou zprávu o selhání, API režim odpadu v nastavení, reprodukovat kontrolu a exportovat zprávu o odpadu."
+  },
+  "urlscanResultGone": {
+    "message": "Tento výsledek byl odstraněn společností urlscan.io. Aktualizace ho nemůže obnovit; nová předložení vyžaduje explicitní skenování."
+  },
+  "apiDebugOpen": {
+    "message": "Otevřeno API Diagnostika"
+  },
+  "diagTitle": {
+    "message": "API diagnostika"
+  },
+  "diagHelp": {
+    "message": "Filtrované kontroly v místní paměti. klíče, soukromé URLs a surový obsah zůstávají skryty. úspěch HTTP není dokončený bezpečnostní rozsudek. Pouze kroky zaznamenané po aktivaci jsou k dispozici."
+  },
+  "diagOff": {
+    "message": "Debug režim je vypnut. aktivovat v nastavení."
+  },
+  "diagEmpty": {
+    "message": "Žádné rekordy nesouhlasí."
+  },
+  "diagPause": {
+    "message": "Pohled na pauzu"
+  },
+  "diagResume": {
+    "message": "Recenze pohledu"
+  },
+  "diagPaused": {
+    "message": "Zobrazení pozastaveno; nahrávání zůstává aktivní."
+  },
+  "diagActive": {
+    "message": "Aktivní nahrávání; osvěžování jednou za sekundu."
+  },
+  "diagProvider": {
+    "message": "Poskytovatel"
+  },
+  "diagState": {
+    "message": "Stát"
+  },
+  "diagPurpose": {
+    "message": "Typ operace"
+  },
+  "diagFrom": {
+    "message": "od"
+  },
+  "diagTo": {
+    "message": "na"
+  },
+  "diagAll": {
+    "message": "Všichni"
+  },
+  "diagRuns": {
+    "message": "Zkontrolujte toky"
+  },
+  "diagDetails": {
+    "message": "Vybrané údaje o toku"
+  },
+  "diagDropped": {
+    "message": "Ztrácené záznamy nebo kroky"
+  },
+  "diagNoHttp": {
+    "message": "Žádný HTTP volání zaznamenané pro tento tok."
+  },
+  "diagNotCaptured": {
+    "message": "Nepřijali"
+  },
+  "diagTimeline": {
+    "message": "Časová osa"
+  },
+  "diagRequest": {
+    "message": "Filtrovaná žádost"
+  },
+  "diagResponse": {
+    "message": "Doprava a filtrovaná reakce"
+  },
+  "diagReset": {
+    "message": "Reset filtrů"
+  },
+  "diagTruncated": {
+    "message": "Tento tok byl zkreslen kvůli hranicím zaznamenávání."
+  },
+  "diag_phase_precondition": {
+    "message": "Předpoklady"
+  },
+  "diag_phase_queue": {
+    "message": "Překvapení"
+  },
+  "diag_phase_attempt": {
+    "message": "Poslat pokus"
+  },
+  "diag_phase_response": {
+    "message": "HTTP odpověď / doprava dokončení"
+  },
+  "diag_phase_parse": {
+    "message": "JSON zpracování"
+  },
+  "diag_phase_assessment": {
+    "message": "Hodnocení"
+  },
+  "diag_phase_persistence": {
+    "message": "vytrvalost"
+  },
+  "diag_phase_cache": {
+    "message": "Cache úder"
+  },
+  "diag_phase_wait": {
+    "message": "Čekání"
+  },
+  "diag_phase_cancelled": {
+    "message": "Zrušený"
+  },
+  "diag_phase_expired": {
+    "message": "Záznam skončil bez potvrzeného dokončení"
+  },
+  "diag_purpose_automatic": {
+    "message": "Automatické kontroly"
+  },
+  "diag_purpose_manual": {
+    "message": "Manuální kontroly"
+  },
+  "diag_purpose_link": {
+    "message": "Linková kontrola"
+  },
+  "diag_purpose_key_test": {
+    "message": "Klíčová zkouška"
+  },
+  "diag_purpose_report": {
+    "message": "Žádost o zprávu"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analýza"
+  },
+  "diag_state_running": {
+    "message": "běhání"
+  },
+  "diag_state_complete": {
+    "message": "Operace skončila"
+  },
+  "diag_state_pending": {
+    "message": "Vzdálenost"
+  },
+  "diag_state_blocked": {
+    "message": "Nezačíná / blokuje"
+  },
+  "diag_state_incomplete": {
+    "message": "nedokonalé"
+  },
+  "diag_state_failed": {
+    "message": "selhání"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Dokončení nepotvrzeno"
+  },
+  "localScoreMessage": {
+    "message": "Lokální poselství skóre"
+  },
+  "localScoreLink": {
+    "message": "Lokální skóre pro tento odkaz v zprávě"
+  },
+  "localScoreNoIndicators": {
+    "message": "Žádné místní varovné indikátory nebyly nalezeny."
+  },
+  "localScoreIndicators": {
+    "message": "Lokální varovné ukazatele nalezeny. zkontrolujte důvody před otevřením."
+  },
+  "uploadSentLabel": {
+    "message": "Upload odeslaný"
+  },
+  "uploadSentUnassigned": {
+    "message": "Přihláška byla odeslána, ale její výsledek nemohl být přidělen k tomuto příloze."
+  },
+  "hybridReportTitle": {
+    "message": "Hybrid Analysis zpráva"
+  },
+  "hybridReportIntro": {
+    "message": "Přečtěte si pouze přehled získaných výsledků. otevření tohoto zprávy neposílá žádost poskytovatele."
+  },
+  "hybridReportOpen": {
+    "message": "Podívejte se na analýzu"
+  },
+  "hybridReportUnavailable": {
+    "message": "Zpráva není k dispozici. znovu ji otevřete z aktuální zprávy."
+  },
+  "hybridReportTechnical": {
+    "message": "Poskytovatel a kontaktní údaje"
+  },
+  "hybridReportExplanation": {
+    "message": "O této hodnocení"
+  },
+  "hybridReportSummary": {
+    "message": "Hodnocení a původ"
+  },
+  "hybridReportSnapshot": {
+    "message": "Skladovaný snímek zprávy; ne nový skenování"
+  },
+  "hybridReportScope": {
+    "message": "Výsledky poskytovatele a místní skóre jsou odděleny. chybějící pole nejsou negativními zjištěními. zobrazí se pouze dostupné, omezené údaje."
+  },
+  "hybridReportCopy": {
+    "message": "Kopírování"
+  },
+  "hybridReportCopied": {
+    "message": "Kopírovat jako text."
+  },
+  "hybridReportCopyFailed": {
+    "message": "Není možné kopírovat.Vybrat a kopírovat text ručně."
+  },
+  "hybridReportAvailableOnly": {
+    "message": "Vstup do dostupných dat"
+  },
+  "hybridReportNoMatches": {
+    "message": "V dostupných údajích nejsou žádné polí."
+  },
+  "hybridReportAvailability": {
+    "message": "Dostupnost a omezení"
+  },
+  "hybridReportRun": {
+    "message": "Analýza běhu"
+  },
+  "hybridReportSearch": {
+    "message": "Vyhledávání dostupných polí"
+  },
+  "hybridReportReady": {
+    "message": "Zpráva byla nahrána.Není zahájeno žádné nové skenování."
+  },
+  "hybridReportResource_name": {
+    "message": "Příslušenství název"
+  },
+  "hybridReportResource_url": {
+    "message": "Cílový limit URL"
+  },
+  "hybridReportResource_sha256": {
+    "message": "zdroj SHA-256"
+  },
+  "hybridField_type": {
+    "message": "Typ souboru"
+  },
+  "hybridField_type_short": {
+    "message": "Typ krátkého souboru"
+  },
+  "hybridField_size": {
+    "message": "Velikost v bytech"
+  },
+  "hybridField_last_file_name": {
+    "message": "Poslední název souboru"
+  },
+  "hybridField_submit_name": {
+    "message": "Název předložení"
+  },
+  "hybridField_url_analysis": {
+    "message": "URL analýza"
+  },
+  "hybridField_target_url": {
+    "message": "Poskytovatel cílový URL (může být zkráceno)"
+  },
+  "hybridField_id": {
+    "message": "ID odpovědi (typ neoznačený)"
+  },
+  "hybridField_job_id": {
+    "message": "Sandbox pracovní ID"
+  },
+  "hybridField_submission_id": {
+    "message": "Předložení ID"
+  },
+  "hybridField_state": {
+    "message": "Poskytovatel stát"
+  },
+  "hybridField_finished": {
+    "message": "dokončená"
+  },
+  "hybridField_verdict": {
+    "message": "Poskytovatel verdiktu"
+  },
+  "hybridField_threat_score": {
+    "message": "Hybrid Analysis Hrozba skóre"
+  },
+  "hybridField_threat_level": {
+    "message": "Úroveň hrozeb poskytovatele"
+  },
+  "hybridField_multiscan_result": {
+    "message": "Multiscan výsledek (výhody poskytovatele)"
+  },
+  "hybridField_av_detect": {
+    "message": "AV detekční hodnota (význam poskytovatele)"
+  },
+  "hybridField_whitelisted": {
+    "message": "Provozovatelé vstupu"
+  },
+  "hybridField_vx_family": {
+    "message": "Rodina malware"
+  },
+  "hybridField_classification_tags": {
+    "message": "Klasifikace tags"
+  },
+  "hybridField_tags": {
+    "message": "Štítky"
+  },
+  "hybridField_analysis_start_time": {
+    "message": "Analýza počáteční doby"
+  },
+  "hybridField_environment_id": {
+    "message": "Environmentální ID"
+  },
+  "hybridField_environment_description": {
+    "message": "Sandbox prostředí"
+  },
+  "hybridField_error_type": {
+    "message": "Typ chybového poskytovatele"
+  },
+  "hybridField_error_origin": {
+    "message": "Chytrý původ poskytovatele"
+  },
+  "hybridField_name": {
+    "message": "Název"
+  },
+  "hybridField_status": {
+    "message": "Stav"
+  },
+  "hybridField_progress": {
+    "message": "Vývoj (provozní hodnota poskytovatele)"
+  },
+  "hybridField_positives": {
+    "message": "Pozitivní detekce"
+  },
+  "hybridField_total": {
+    "message": "Celkové kontroly"
+  },
+  "hybridField_percent": {
+    "message": "Procento (provozní hodnota poskytovatele)"
+  },
+  "hybridField_scan_time": {
+    "message": "Doba trvání skenování (jednotka poskytovatele)"
+  },
+  "hybridField_scan_date": {
+    "message": "Datum skenování"
+  },
+  "hybridField_product": {
+    "message": "Skener produktu"
+  },
+  "hybridField_version": {
+    "message": "Skener verze"
+  },
+  "hybridField_update": {
+    "message": "Aktualizace skeneru"
+  },
+  "hybridField_total_network_connections": {
+    "message": "Síťové připojení"
+  },
+  "hybridField_total_processes": {
+    "message": "procesy"
+  },
+  "hybridField_total_signatures": {
+    "message": "Podpisy"
+  },
+  "hybridField_category": {
+    "message": "Kategorie"
+  },
+  "hybridField_attck_id": {
+    "message": "MITRE ATT&CK Technical ID"
+  },
+  "hybridField_tactic": {
+    "message": "MITRE ATT & CK taktika"
+  },
+  "hybridField_technique": {
+    "message": "MITRE ATT & CK technika"
+  },
+  "hybridField_description": {
+    "message": "Popis"
+  },
+  "hybridField_domains": {
+    "message": "Pozorované domény"
+  },
+  "hybridField_hosts": {
+    "message": "Pozorovaný hostitel"
+  },
+  "hybridField_compromised_hosts": {
+    "message": "Kompromisní hostitel (provozovatelská tvrzení)"
+  },
+  "hybridField_domain": {
+    "message": "Doména"
+  },
+  "hybridField_host": {
+    "message": "Hostitel"
+  },
+  "hybridField_ip": {
+    "message": "IP adresa"
+  },
+  "hybridField_port": {
+    "message": "Přístav"
+  },
+  "hybridField_protocol": {
+    "message": "Protokol"
+  },
+  "hybridField_country": {
+    "message": "Země"
+  },
+  "hybridField_asn": {
+    "message": "autonomní systém číslo"
+  },
+  "hybridField_uid": {
+    "message": "Proces UID"
+  },
+  "hybridField_process_id": {
+    "message": "Procesní ID (PID)"
+  },
+  "hybridField_parent_uid": {
+    "message": "Rodičovský proces UID"
+  },
+  "hybridField_file_path": {
+    "message": "File Cesta"
+  },
+  "hybridField_subject": {
+    "message": "Certifikát předmět"
+  },
+  "hybridField_issuer": {
+    "message": "Certifikát emitenta"
+  },
+  "hybridField_valid_from": {
+    "message": "platné od"
+  },
+  "hybridField_valid_until": {
+    "message": "platnost až do"
+  },
+  "hybridField_serial_number": {
+    "message": "Certifikát sériového čísla"
+  },
+  "hybridField_sha256": {
+    "message": "SHA-256"
+  },
+  "hybridField_sha1": {
+    "message": "SHA-1"
+  },
+  "hybridField_md5": {
+    "message": "MD5"
+  },
+  "hybridField_sha512": {
+    "message": "SHA-512"
+  },
+  "hybridField_imphash": {
+    "message": "Vývoj hash"
+  },
+  "hybridReportResource_quickScanId": {
+    "message": "Přihláška Quick-Scan ID"
+  },
+  "analysisLocalOnly": {
+    "message": "Zkontrolujte pouze lokálně"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "Služby s výsledky"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Služby čekají"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Služby s chybami"
+  },
+  "hybridReportSection": {
+    "message": "Sekce"
+  },
+  "hybridReportAllSections": {
+    "message": "Všechny sekce"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "zpracování kompletní"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "zpracování pending"
+  },
+  "hybridReportProcessing_failed": {
+    "message": "zpracování selhalo"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "Zpracování neznámého stavu"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Zpráva získaná"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Snapshot vytvořený"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Zadrženo Hybrid Analysis nalezení pro tento zdroj"
+  },
+  "hybridReportSaved": {
+    "message": "Zpověď Hybrid Analysis"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Kódování UTC"
+  },
+  "hybridReportWhy": {
+    "message": "Proč tato hodnocení?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Další hodnocení signálů"
+  },
+  "hybridReportCompare": {
+    "message": "Srovnání analýzy závodů"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Sekce s daty"
+  },
+  "hybridReportAssessment": {
+    "message": "Thundy hodnocení od Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Zdroj a časové štítky"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Vyhledávání dostupné · dokončení nepotvrzeno"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Otevřený hybridní report"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Zobrazit nalezení detailů"
+  },
+  "attachmentProtectionTitle": {
+    "message": "ochrana připojení"
+  },
+  "attachmentProtectionScope": {
+    "message": "Toto pravidlo se vztahuje při úsporách s Thundy. Thunderbird vlastní příkazy připojení zůstávají k dispozici."
+  },
+  "attachmentPolicyMode": {
+    "message": "Když se dosáhne hranice"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Hybrid Analysis hranici skóre"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Výsledky bez potvrzeného skóre"
+  },
+  "attachmentModeOff": {
+    "message": "Odstranit"
+  },
+  "attachmentModeWarn": {
+    "message": "Varujte"
+  },
+  "attachmentModeApproval": {
+    "message": "Vyžaduje schválení"
+  },
+  "attachmentModeBlock": {
+    "message": "bloky"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Uložit pomocí Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "Zachraňte připojení"
+  },
+  "attachmentCancelSave": {
+    "message": "Zrušit"
+  },
+  "attachmentThresholdReached": {
+    "message": "Hybridní skóre dosahuje nastaveného prahu."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis tento soubor klasifikoval jako škodlivý."
+  },
+  "attachmentUnknown": {
+    "message": "Neexistuje žádný potvrzený výsledek pro tento dodatek."
+  },
+  "attachmentBlocked": {
+    "message": "Ušetření s Thundy je blokováno."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Vložte heslo schválení, abyste tento soubor uložili."
+  },
+  "attachmentFailed": {
+    "message": "Nemohla jsem začít šetřit přílohu."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy nemohl přečíst tento přílohu."
+  },
+  "attachmentContextChanged": {
+    "message": "Změna zprávy nebo přílohy. vyberte přílohu znovu."
+  },
+  "attachmentRefresh": {
+    "message": "Znovu zkontrolujte zachráněné výsledky"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "Zachráněné nálezy jsou nezměněny."
+  },
+  "attachmentDecisionChanged": {
+    "message": "Výsledek nebo politika se změnila. přezkoumání aktualizovaného rozhodnutí."
+  },
+  "attachmentSaveRequested": {
+    "message": "Požadavek na záchranu začíná."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Zachránit zrušené"
+  },
+  "auditDecisionScore": {
+    "message": "Rozhodnutí skóre"
+  },
+  "linkHandoffPending": {
+    "message": "Přehrávač byl vyžádan. Thunderbird to zatím nepotvrdil."
+  },
+  "linkPreflightTimeout": {
+    "message": "Kontrola se nedokázala dokončit. uzavřete tento dialog a znovu vyberte odkaz."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Historické Hybrid Analysis nalezení"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Aktuální Hybrid Analysis nalezení"
+  },
+  "auditShare": {
+    "message": "Vývozní audit"
+  },
+  "auditFullNotice": {
+    "message": "Úplný audit obsahuje soukromé URLs a podrobnosti. sdílet je pouze s pověřenými příjemci."
+  },
+  "auditFullSave": {
+    "message": "Exportní audit"
+  },
+  "managedByCompany": {
+    "message": "Řízeno vaší organizací"
+  },
+  "managedLocal": {
+    "message": "Zdroj: tento profil Thunderbird"
+  },
+  "managedRevision": {
+    "message": "Politická verze"
+  },
+  "managedThreshold": {
+    "message": "Hranice"
+  },
+  "managedPolicyInvalid": {
+    "message": "Politika společnosti je neplatná. kontaktujte svůj IT tým."
+  },
+  "managedLinkBlocked": {
+    "message": "Vaše organizace blokovala tento odkaz."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Otevřít pomocí Thundy"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Otevřená připojení"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy ověřuje tento přílohu před jeho doručením na Thunderbird."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird přijal žádost o otevření přílohy."
+  },
+  "attachmentOpenFailed": {
+    "message": "Příslušenství nemohlo být otevřeno."
+  },
+  "reportingTitle": {
+    "message": "Bezpečnostní zprávy společnosti"
+  },
+  "reportingOff": {
+    "message": "Automatická zpráva je vypnutá."
+  },
+  "reportingNeedsConsent": {
+    "message": "Zpráva vyžaduje váš souhlas a odesílání tokenu."
+  },
+  "reportingNeedsPermission": {
+    "message": "Povolení k podávání zpráv chybí. umožní znovu podávat zprávy, aby ji obnovila."
+  },
+  "reportingReady": {
+    "message": "Vaše organizace může přijímat automatické zprávy."
+  },
+  "reportingQueued": {
+    "message": "Aktuální zprávy :"
+  },
+  "reportingMalicious": {
+    "message": "Škodlivé nálezy"
+  },
+  "reportingSuspicious": {
+    "message": "Škodlivé zjištění a hraniční porušení"
+  },
+  "reportingConsent": {
+    "message": "Souhlasím s odesláním ID události, času, akce, nalezení, rozhodnutí a verze politiky na adresu společnosti uvedenou výše."
+  },
+  "reportingConsentIndicators": {
+    "message": "Souhlasím s odesláním ID události, času, akce, nalezení, rozhodnutí, verze politiky a odkaz na hostné jméno nebo přílohu SHA-256 na adresu společnosti uvedenou výše."
+  },
+  "reportingToken": {
+    "message": "Odeslat token od vašeho IT týmu"
+  },
+  "reportingActivate": {
+    "message": "Změna nebo nahrazení tokenů"
+  },
+  "reportingRevoke": {
+    "message": "Zrušení souhlasu a jasné čekající zprávy"
+  },
+  "reportingSetupFailed": {
+    "message": "Zpravodajské předpisy nemohou být použity."
+  },
+  "reportingAuthentication": {
+    "message": "Server odmítl odesílat token."
+  },
+  "reportingRejected": {
+    "message": "Server odmítl zprávu."
+  },
+  "reportingStorage": {
+    "message": "Thundy nemohl číst ani psát reportážní řetězec."
+  },
+  "reportingFull": {
+    "message": "Závěs je plný, zprávy mohou být ztraceny."
+  },
+  "reportingExpired": {
+    "message": "Zpráva uplynula před doručením."
+  },
+  "reportingPrivacy": {
+    "message": "S odděleným souhlasem, Thundy posílá podrobnosti o kvalifikačních pokusů otevřít odkazy nebo otevřít nebo uložit přílohy na konfigurovanou adresu společnosti. zprávy obsahují ID události, čas, akce, nalezení, rozhodnutí a verze politiky, plus volitelný hostinský název nebo příloha SHA-256. Thundy čipy čekající zprávy lokálně po dobu až 24 hodin."
+  },
+  "reportingConsentDetails": {
+    "message": "Souhlasím rovněž s odesláním důvodu rozhodnutí, dostupných výsledků, přílohy jména, rozsudků poskytovatele a dostupných odkazů na zprávu."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Podrobné zprávy mohou zahrnovat přílohu jméno souboru a odkazy na zprávy poskytovatele."
+  },
+  "analysisRunningHeading": {
+    "message": "Probíhá kontrola"
+  },
+  "analysisLocalNoFinding": {
+    "message": "Místní kontrola nezjistila známky hrozby"
+  },
+  "analysisLinksGroup": {
+    "message": "Levice"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Příslušenství"
+  },
+  "protectionOpenAllowed": {
+    "message": "Otevření povoleno"
+  },
+  "protectionSaveAllowed": {
+    "message": "Uložení povoleno"
+  },
+  "protectionWarn": {
+    "message": "Varování"
+  },
+  "protectionApproval": {
+    "message": "Je vyžadováno schválení"
+  },
+  "protectionRequestApproval": {
+    "message": "Žádost o schválení"
+  },
+  "protectionBlocked": {
+    "message": "Zablokováno"
+  },
+  "protectionMalicious": {
+    "message": "Poskytovatel nahlásil škodlivý nález."
+  },
+  "protectionThreshold": {
+    "message": "Dosažen práh ochrany"
+  },
+  "protectionManagedThreshold": {
+    "message": "Dosažen firemní práh"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "Platné nastavení umožňují tuto akci."
+  },
+  "linkContextChanged": {
+    "message": "Odkaz nebo odkaz se během kontroly změnily."
+  },
+  "auditPolicyBlocked": {
+    "message": "Zablokováno zásadami"
+  },
+  "reportingLastReceipt": {
+    "message": "Poslední přijetí potvrzeno serverem"
+  },
+  "reportingOldestPending": {
+    "message": "Nejstarší zpráva"
+  },
+  "addonLanguage": {
+    "message": "Jazyk doplňku"
+  },
+  "addonLanguageSystem": {
+    "message": "Použít jazyk Thunderbirdu"
+  },
+  "addonLanguageSaved": {
+    "message": "Jazyk byl uložen. Chcete-li ho použít, znovu otevřete zobrazení Thundy."
+  },
+  "addonLanguageFailed": {
+    "message": "Jazyk se nepodařilo uložit."
+  },
+  "profilesOpenSource": {
+    "message": "Otevřený zdrojový kód"
+  },
+  "transferReview": {
+    "message": "Zkontrolovat před odesláním"
+  },
+  "transferSend": {
+    "message": "Odeslat poskytovateli"
+  },
+  "transferVisibility": {
+    "message": "Viditelnost: neveřejný seznam. Zprávu může otevřít každý, kdo zná odkaz."
+  },
+  "transferAccepted": {
+    "message": "Poskytovatel přijal požadavek. Zpráva ještě nemusí být hotová."
+  },
+  "transferFailed": {
+    "message": "Odeslání poskytovateli se nepodařilo dokončit."
+  },
+  "transferUsePopup": {
+    "message": "Otevřete panel Thundy a potvrďte odeslání konkrétního odkazu nebo přílohy."
+  },
+  "providerGrantAccess": {
+    "message": "Povolit přístup k této službě"
+  },
+  "sourceSessionOnly": {
+    "message": "Archiv zdrojů je plný. Aktuální přehled zdrojů je dostupný pouze v této relaci."
+  },
+  "analysisReason_transfer_approval": {
+    "message": "Celé odkazy a přílohy vyžadují samostatné potvrzení."
+  },
+  "analysisCompactDetails": {
+    "message": "Podrobnosti kontroly"
+  },
+  "riskScoreFormula": {
+    "message": "Místní skóre sčítá body a omezuje součet na 100. Výsledky poskytovatelů se hodnotí zvlášť."
+  },
+  "riskScoreNoPoints": {
+    "message": "Místní pravidla nepřidala žádné body."
+  },
+  "riskScoreTotal": {
+    "message": "Místní výpočet"
+  },
+  "riskLinkBrandRule": {
+    "message": "Alespoň jedna doména se podobá známé značce. Body se přičítají jednou."
+  },
+  "reportingConsentDetections": {
+    "message": "Hlášení může obsahovat názvy, kategorie, signatury a značky napodobované při phishingu."
+  },
+  "detectionKind_family": {
+    "message": "Rodina malwaru"
+  },
+  "detectionKind_category": {
+    "message": "Kategorie"
+  },
+  "detectionKind_brand": {
+    "message": "Napodobená značka"
+  },
+  "detectionKind_signature": {
+    "message": "Signatura výrobce"
+  },
+  "detectionCategory_fraudulent_shop": {
+    "message": "Podvodný obchod"
+  },
+  "detectionCategory_phishing_shop": {
+    "message": "Phishingový obchod"
+  },
+  "analysisDetectionGrouping": {
+    "message": "Seskupit zjištění"
+  },
+  "detectionCategory_malware": {
+    "message": "Malware"
+  },
+  "detectionCategory_virus": {
+    "message": "Virus"
+  },
+  "detectionCategory_trojan": {
+    "message": "Trojský kůň"
+  },
+  "detectionCategory_ransomware": {
+    "message": "Ransomware"
+  },
+  "detectionCategory_worm": {
+    "message": "Červ"
+  },
+  "detectionCategory_spyware": {
+    "message": "Spyware"
+  },
+  "detectionCategory_adware": {
+    "message": "Adware"
+  },
+  "detectionCategory_backdoor": {
+    "message": "Zadní vrátka"
+  },
+  "detectionCategory_downloader": {
+    "message": "Stahovač"
+  },
+  "detectionCategory_dropper": {
+    "message": "Dropper"
+  },
+  "detectionCategory_infostealer": {
+    "message": "Krádež dat"
+  },
+  "detectionCategory_rootkit": {
+    "message": "Rootkit"
+  },
+  "detectionCategory_phishing": {
+    "message": "Phishing"
+  },
+  "detectionCategory_scam": {
+    "message": "Podvod"
+  }
+}

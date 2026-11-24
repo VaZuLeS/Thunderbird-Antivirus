@@ -433,7 +433,7 @@ const ThundyAnalysis = (() => {
                 li.append(n('div', [...new Set(items.map(row => t('analysisState_' + row.state)))].join(' · '), 'service-status'));
                 li.append(n('div',[...new Set(items.map(row=>t('analysisSource_'+row.source)))].join(' · '),'service-origin muted'));
                 if (items.some(row => row.failures && row.responses)) li.append(n('div',t(items.some(row => ['none','suspicious','malicious'].includes(row.verdict)) ? 'analysisPartial' : 'analysisModeResponsesFailed'),'warning'));
-                if (['disabled','permission','authorization','policy','unconfigured'].includes(data.availability?.[provider])) li.append(n('div', t('analysisCurrentAvailability') + ': ' + t('analysisReason_' + data.availability[provider]), 'muted'));
+                if (['disabled','provider_disabled','permission','authorization','policy','unconfigured'].includes(data.availability?.[provider])) li.append(n('div', t('analysisCurrentAvailability') + ': ' + t('analysisReason_' + data.availability[provider]), 'muted'));
                 for (const row of items) {
                     const key = [provider,row.scope,row.resource || 'unknown'].join(':');
                     const warning = ['malicious','suspicious'].includes(row.verdict);
@@ -520,9 +520,49 @@ const ThundyAnalysis = (() => {
         const sortedRefs = refs.map(ref => ({
             ref, strength: (rowsByResource.get(ref) || []).reduce((maximum,row) => Math.max(maximum,rank(row)),0)
         })).sort((left,right) => right.strength - left.strength);
+        function detectionName(entry) {
+            return entry.kind === 'category' ? (labels['detectionCategory_'+entry.value] || entry.value.replaceAll('_',' ')) : entry.value;
+        }
+        function detectionGrouping(key) {
+            const kinds = ['family','category','brand','signature'];
+            const occurrences = Object.entries(data.resourceDetections || {}).filter(([ref])=>refs.includes(ref));
+            if (!occurrences.length) return null;
+            const group = details(key+':detection-groups',t('analysisDetectionGrouping'));
+            const control = document.createElement('select');
+            control.setAttribute('aria-label',t('analysisDetectionGrouping'));
+            control.dataset.focusKey = key+':detection-kind';
+            for (const kind of kinds) {
+                const option = n('option',t('detectionKind_'+kind));
+                option.value = kind;
+                control.append(option);
+            }
+            control.value = kinds.includes(host.dataset.detectionKind) ? host.dataset.detectionKind : 'family';
+            const list = n('ul','');
+            list.setAttribute('aria-live','polite');
+            const renderGroups = () => {
+                const groups = new Map();
+                for (const [resource,observations] of occurrences) {
+                    for (const {detections} of observations) for (const entry of detections) {
+                        if (entry.kind !== control.value) continue;
+                        const index = entry.value.toLowerCase();
+                        if (!groups.has(index)) groups.set(index,{name:detectionName(entry),resources:new Set()});
+                        groups.get(index).resources.add(resourceName({resource}));
+                    }
+                }
+                const rows = [...groups.values()].sort((a,b)=>b.resources.size-a.resources.size || a.name.localeCompare(b.name));
+                list.replaceChildren(...rows.map(row=>n('li',row.name+' · '+[...row.resources].join(', '))));
+                if (!rows.length) list.append(n('li',t('auditUnavailable')));
+            };
+            control.addEventListener('change',()=>{host.dataset.detectionKind=control.value;renderGroups();});
+            renderGroups();
+            group.append(control,list);
+            return group;
+        }
         function inventory(key, simple) {
             const section = details(key,t('analysisResources')+' · '+refs.length);
-            if (simple && !root.querySelector('[data-key="overview-resources"]')) section.open = true;
+            if (simple && !inline && !root.querySelector('[data-key="overview-resources"]')) section.open = true;
+            const groupsByDetection = detectionGrouping(key);
+            if (groupsByDetection) section.append(groupsByDetection);
             const groups = {link:n('ul',''),attachment:n('ul','')};
             for (const {ref:resource} of sortedRefs.slice(0,500)) {
                 const item = n('li','');
@@ -549,6 +589,12 @@ const ThundyAnalysis = (() => {
                     else if (observed.some(row => row.completion === 'unknown' || row.state === 'incomplete')) parts.push(t('analysisSimpleIncomplete'));
                     item.append(n('div',parts.join(' · '),rank(first) >= 2 ? 'warning' : ''));
                 }
+                for (const reported of data.resourceDetections?.[resource] || []) {
+                    for (const kind of ['family','category','brand','signature']) {
+                        const values = reported.detections.filter(entry=>entry.kind===kind).map(detectionName);
+                        if (values.length) item.append(n('div',[brands[reported.provider],t('detectionKind_'+kind),values.join(', ')].join(' · '),'muted'));
+                    }
+                }
                 const comparableFindings = findings.filter(comparable);
                 const positive = comparableFindings.filter(row => rank(row) >= 2);
                 if (findings.some(row => row.conflicts?.includes('mixed_verdicts')) ||
@@ -559,6 +605,28 @@ const ThundyAnalysis = (() => {
                 if (hasReport(resource)) item.append(reportAction(resource,simple,key+':'));
                 const urlscanReport = data.urlscanReports?.[resource];
                 if (!attachment && urlscanReport) item.append(reportAction(resource,simple,key+':',urlscanReport));
+                if (!inline && typeof ThundyAnalysis !== 'undefined') {
+                    for (const provider of data.transferProviders?.[attachment ? 'attachment' : 'link'] || []) {
+                        if (!['hybridanalysis','urlscan'].includes(provider)) continue;
+                        const button = n('button',t('transferReview')+' · '+brands[provider]);
+                        const status = n('span','');
+                        button.type = 'button';
+                        button.dataset.focusKey = key+':transfer:'+provider+':'+resource;
+                        status.setAttribute('role','status');
+                        button.addEventListener('click',async () => {
+                            if (button.disabled) return;
+                            button.disabled = true;
+                            status.textContent = '';
+                            try {
+                                const result = await ThundyAnalysis.confirmTransfer({provider,resourceRef:resource,messageId:data.messageId,contextToken:data.contextToken},t);
+                                if (result?.status === 'success') status.textContent = t('transferAccepted');
+                                else if (result?.status !== 'cancelled') status.textContent = ThundyAnalysis.transferError(result,t);
+                            } catch (_) { status.textContent = t('transferFailed'); }
+                            finally {button.disabled = false;if (button.isConnected) button.focus();}
+                        });
+                        item.append(button,status);
+                    }
+                }
                 if (data.attachmentActions && attachment) {
                     const status = n('span','');
                     status.setAttribute('role','status');
@@ -671,8 +739,21 @@ const ThundyAnalysis = (() => {
             uncertain ? 'analysisSimpleIncomplete' : data.sourcePersistenceFailed || data.reportArchiveBlocked ?
                 'analysisSimpleDocumentationIncomplete' : 'analysisLocalNoFinding';
         const summaryCard = n('div','','card finding-card');
-        summaryCard.append(n('h2',t(title),strongest === 'malicious' || title === 'analysisSimpleCaution' ? 'warning' : ''),
-            n('p',localScoreText,'local-score'));
+        const breakdown = details('local-score-breakdown',localScoreText);
+        breakdown.querySelector('summary').className = 'local-score';
+        breakdown.append(n('p',t('riskScoreFormula'),'muted'));
+        const contributions = Array.isArray(data.local?.localContributions) ? data.local.localContributions : [];
+        if (contributions.length) {
+            const list = n('ul','');
+            for (const entry of contributions.slice(0,20)) {
+                if (Number.isSafeInteger(entry?.points) && typeof entry.label === 'string') list.append(n('li','+'+entry.points+' · '+entry.label));
+            }
+            if (list.children.length) breakdown.append(list);
+        } else breakdown.append(n('p',t(Number.isFinite(data.local?.localRawScore) ? 'riskScoreNoPoints' : 'auditUnavailable')));
+        if (Number.isFinite(data.local?.localRawScore) && localScoreValid) {
+            breakdown.append(n('p',t('riskScoreTotal')+' · min('+data.local.localRawScore+', 100) = '+heuristicScore));
+        }
+        summaryCard.append(n('h2',t(title),strongest === 'malicious' || title === 'analysisSimpleCaution' ? 'warning' : ''),breakdown);
         if (archivedReasons.length && localScoreValid && Number.isFinite(data.local?.score)) {
             summaryCard.append(n('p',t('auditDecisionScore')+' · '+data.local.score+' / 100'));
         }
@@ -756,10 +837,12 @@ const ThundyAnalysis = (() => {
         applyView();
         style.textContent+='[hidden]{display:none!important}.scan-actions{font:14px/1.5 system-ui;color:var(--text-color,#192b40);background:var(--card-bg,#fff);overflow-wrap:anywhere;padding:12px;border:1px solid var(--card-border,#cbd5e1);border-radius:10px;margin-bottom:12px}.scan-actions button{margin:4px;max-width:100%;white-space:normal;overflow-wrap:anywhere}';
         const actions=n('section','','scan-actions');actions.setAttribute('aria-label',t('scanActions'));
+        if (data.sourceSessionOnly) actions.append(n('p',t('sourceSessionOnly'),'warning'));
         if(data.scanJob){
             const job=data.scanJob;const needsRefresh=job.pending||job.state==='pending';const state=n('p',t('scanState_'+(job.state||'idle')));state.setAttribute('role','status');actions.append(state);
             if(job.total)actions.append(n('p',t('scanProgress')+': '+job.completed+' / '+job.total));
             if(['source_capacity','cancelled','timeout','scan_failed'].includes(job.reason))actions.append(n('p',t('scanFailure_'+job.reason),'warning'));
+            if(job.reason === 'storage_failed') actions.append(n('p',t('analysisPersistence_storage_failed'),'warning'));
             const coverage=job.coverage;
             if(coverage?.incomplete===true){
                 const details=n('div','','warning');details.append(n('p',t('scanCoverage')));
@@ -801,7 +884,18 @@ const ThundyAnalysis = (() => {
             }
             if(data.sourcePersistenceFailed)overview.append(n('p',persistenceMessage,'warning'));
             if(data.reportArchiveBlocked)overview.append(n('p',t('analysisReportArchiveBlocked'),'warning'));
-            root.replaceChildren(style,palette,live,summaryCard,toolbar,card,overview);
+            const scanState = data.scanJob?.state;
+            const hasStatus = ['queued','running','pending','incomplete','failed','deferred'].includes(scanState);
+            const summaryStatus = hasStatus ? t('scanState_'+scanState) : data.sourcePersistenceFailed ? t('scanState_failed') : '';
+            const disclosure = details('inline-inspection',[t('analysisCompactDetails'),summaryStatus].filter(Boolean).join(' · '));
+            disclosure.className = 'inline-inspection';
+            const secondary = n('div','','inspection-summary');
+            secondary.append(...Array.from(summaryCard.children).slice(2));
+            disclosure.append(secondary,toolbar,card,overview);
+            summaryCard.append(disclosure);
+            style.textContent += '.inline-inspection>summary,.finding-card>.local-score-breakdown>summary{font-weight:650}.inline-inspection[open]>summary{margin-bottom:6px}.inline-inspection>.card{margin-bottom:6px}.finding-card>.local-score-breakdown{margin-block:2px}';
+            breakdown.className = 'local-score-breakdown';
+            root.replaceChildren(style,palette,live,summaryCard);
         } else root.replaceChildren(style,palette,live,summaryCard,switcher,...(data.scanJob?[actions]:[]),card,overview);
         if (inline) document.__thundyMessageAppearance?.(palette);
         if (wasPresent && changed) live.textContent = [t(title),announcement].join(' · ');
@@ -814,7 +908,8 @@ const ThundyAnalysis = (() => {
                 return !disclosure || node.tagName === 'SUMMARY' && disclosure === node.parentElement &&
                     !disclosure.parentElement?.closest('details:not([open])');
             });
-            const fallback = focused.startsWith('history-') ? root.querySelector('[data-key="unbound-history"] summary') : switcher;
+            const fallback = focused.startsWith('history-') && !inline ? root.querySelector('[data-key="unbound-history"] summary') :
+                inline ? root.querySelector('[data-key="inline-inspection"] > summary') : switcher;
             (target || fallback)?.focus({preventScroll:true});
         }
         return host;
@@ -829,8 +924,62 @@ const ThundyAnalysis = (() => {
     }
     function labels(get) {
         const keys = ['providerMalicious','providerSuspicious','providerNoDetection','providerUnknown','urlscanReportLink','analysisRunningHeading','analysisLocalNoFinding','analysisLinksGroup','analysisAttachmentsGroup','auditUnavailable','auditDecisionScore','attachmentSaveWithThundy','attachmentSaveRequested','attachmentOpenWithThundy','attachmentOpenRequested','attachmentOpenFailed','attachmentFailed','attachmentReadFailed','attachmentContextChanged','analysisOverviewOpenReport','analysisOverviewOpenFinding','analysisLocalOnly','analysisProviderFindingsCount','analysisProviderPendingCount','analysisProviderErrorsCount','hybridReportOpen','hybridReportUnavailable','hybridReportTechnical','hybridReportExplanation','localScoreMessage','apiDebugOpen','apiDebugFailureHint',...['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes','storage_failed'].map(reason=>'analysisPersistence_'+reason),'analysisQuotaReset','analysisRetryAt','analysisLocalBackoff','hybridExpertEmpty','hybridExpertTitle','hybridExpertScope','hybridExpertMissing','hybridExpertYes','hybridExpertNo','hybridExpert_identity','hybridExpert_assessment','hybridExpert_scanners','hybridExpert_antivirus','hybridExpert_reports','hybridExpert_counts','hybridExpert_signatures','hybridExpert_mitre','hybridExpert_network','hybridExpert_processes','hybridExpert_extracted','hybridExpert_certificates','assessmentCompletion','assessmentCompletion_pending','assessmentCompletion_complete','assessmentCompletion_unknown','assessmentCompletion_failed','assessmentConflict','assessmentSignals','assessmentJob',...['verdict','scanner','threat_score','multiscan_result','threat_level','whitelist','overall','urlscan','engines','brand','report'].map(c=>'assessmentSignal_'+c),'scanCoverage','scanCoverageAttachments','scanCoverageLinks','scanCoverage_read_failed','scanCoverage_size_limit','scanCoverage_resource_limit','scanCoverage_inventory_incomplete','scanFailure_source_capacity','scanFailure_cancelled','scanFailure_timeout','scanFailure_scan_failed','scanActions','scanStart','scanRepeat','scanRefresh','scanRunning','scanProgress','scanMigrationNotice','scanState_idle','scanState_queued','scanState_running','scanState_completed','scanState_pending','scanState_incomplete','scanState_failed','scanState_blocked','scanState_deferred','bannerOpenOptions','auditLocalScore','analysisProviderConfigured','analysisProviderNoKey','analysisSimple','analysisExpert','analysisSimpleDocumentationIncomplete','analysisSimpleNone','analysisSimpleCaution','analysisSimpleDanger','analysisSimpleIncomplete','analysisSimpleBasis','analysisScoreExplanation','analysisApprovalRequired','analysisContinueWarning','analysisConflict','analysisExportSensitive','analysisModeResponses','analysisModeResponsesFailed','analysisCurrentAvailability','analysisStoredDataIncomplete','analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
-        for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded','manual','sender','links_disabled','no_resources','quota','running','provider_error']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
+        keys.push('transferReview','transferAccepted','transferFailed','transferSend','transferVisibility','sourceSessionOnly','linkCancel','uploadSentUnassigned','errorHostPermissionMissing','analysisContextChanged','scanCoverage_size_limit');
+        keys.push('analysisCompactDetails','analysisDetectionGrouping','riskScoreFormula','riskScoreNoPoints','riskScoreTotal',
+            ...['family','category','brand','signature'].map(kind => 'detectionKind_'+kind),
+            ...['malware','virus','trojan','ransomware','worm','spyware','adware','backdoor','downloader','dropper','infostealer','rootkit','phishing','scam','fraudulent_shop','phishing_shop'].map(category=>'detectionCategory_'+category));
+        for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','provider_disabled','permission','authorization','policy','on_action','unrecorded','manual','sender','links_disabled','transfer_approval','no_resources','quota','running','provider_error']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
         return Object.fromEntries(keys.map(key => [key, get(key)]));
     }
-    return { refreshStored, providers, scopes, create, spec, response, resources, legacy, history, render, cacheTime, labels, withCache, bind, validResource, rowKey };
+    function transferError(result, text) {
+        if (result?.uploadSent) return text('uploadSentUnassigned');
+        const labels = {HOST_PERMISSION_MISSING:'errorHostPermissionMissing', MESSAGE_CONTEXT_CHANGED:'analysisContextChanged',RESOURCE_MISMATCH:'scanCoverage_size_limit'};
+        return text(labels[result?.code] || 'transferFailed');
+    }
+    async function confirmTransfer(request, text = key => ThundyI18n.get(key)) {
+        if (document.querySelector('.transfer-confirmation[open]')) return {status:'cancelled'};
+        const prepared = await browser.runtime.sendMessage({...request, action:'prepareProviderTransfer'});
+        if (!prepared?.success) return prepared;
+        const approved = !document.querySelector('.transfer-confirmation[open]') && await new Promise(resolve => {
+            const dialog = document.createElement('dialog');
+            dialog.className = 'transfer-confirmation';
+            const heading = document.createElement('h2');
+            heading.id = 'thundy-transfer-confirmation';
+            heading.textContent = text('transferReview');
+            dialog.setAttribute('aria-labelledby',heading.id);
+            const provider = document.createElement('p');
+            provider.textContent = prepared.provider;
+            const target = document.createElement('p');
+            target.dir = 'auto';
+            target.textContent = String(prepared.target).replace(/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/g,
+                character => '\\u'+character.charCodeAt(0).toString(16).padStart(4,'0'));
+            const button = (label, answer) => {
+                const control = document.createElement('button');
+                control.type = 'button';
+                control.textContent = text(label);
+                control.addEventListener('click',() => dialog.close(answer));
+                return control;
+            };
+            const cancel = button('linkCancel','cancel');
+            dialog.addEventListener('close',() => {
+                const accepted = dialog.returnValue === 'send';
+                dialog.remove();
+                resolve(accepted);
+            },{once:true});
+            dialog.append(heading,provider,target);
+            if (prepared.visibility === 'unlisted') {
+                const visibility = document.createElement('p');
+                visibility.textContent = text('transferVisibility');
+                dialog.append(visibility);
+            }
+            dialog.append(cancel,button('transferSend','send'));
+            document.body.append(dialog);
+            dialog.showModal();
+            cancel.focus();
+        });
+        if (approved) return browser.runtime.sendMessage({action:'submitProviderTransfer',id:prepared.id});
+        await browser.runtime.sendMessage({action:'cancelProviderTransfer',id:prepared.id}).catch(() => {});
+        return {status:'cancelled'};
+    }
+    return { refreshStored, providers, scopes, create, spec, response, resources, legacy, history, render, cacheTime, labels, withCache, bind, validResource, rowKey, confirmTransfer,transferError };
 })();

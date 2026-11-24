@@ -1,0 +1,3590 @@
+{
+  "protectionSeverity_low": { "message": "Zems risks" },
+  "protectionSeverity_unknown": { "message": "Nezināms risks" },
+  "protectionSeverity_caution": { "message": "Paaugstināts risks" },
+  "protectionSeverity_high": { "message": "Augsts risks" },
+  "protectionSeverity_critical": { "message": "Kritisks risks" },
+  "linkScanSummary": { "message": "URL pārbaužu rezultāti" },
+  "linkScansPending": { "message": "URL pārbaudes vēl turpinās." },
+  "linkNoScanResults": { "message": "URL pārbaužu rezultāti nav pieejami." },
+  "protectionCategoryUnavailable": { "message": "Pakalpojuma sniedzējs nenorādīja apdraudējuma kategoriju." },
+  "linkWaitForResults": { "message": "Gaidīt notiekošo URL pārbaužu rezultātus" },
+  "linkAutoOpenBelow": { "message": "Atvērt uzreiz, ja vērtējums ir zemāks par šo" },
+  "linkOpeningOptionsHelp": { "message": "Atstājiet vērtējumu tukšu, lai vienmēr rādītu saites dialogu." },
+  "linkAuditRetentionTitle": { "message": "Saišu žurnāla glabāšana" },
+  "linkAuditLimit": { "message": "Maksimālais ierakstu skaits (tukšs = neierobežots)" },
+  "linkAuditDays": { "message": "Glabāšanas dienas (tukšs = neierobežots)" },
+  "protectionManagedColors": { "message": "Riska līmeņu krāsas nosaka jūsu organizācija." },
+  "linkOpenedAutomatically": { "message": "Atvērts automātiski" },
+  "providerSwitchHelp": {
+    "message": "Ieslēdziet vai izslēdziet katru pakalpojumu atsevišķi un saglabājiet iestatījumus. Apturot pakalpojumu, saglabātās atslēgas un atradumi tiek paturēti."
+  },
+  "providerKeyLink": {
+    "message": "Iegūt API atslēgu"
+  },
+  "providerDocsLink": {
+    "message": "API dokumentācija"
+  },
+  "providerApiKeyLabel": {
+    "message": "API atslēga"
+  },
+  "providerUse": {
+    "message": "Izmantot šo pakalpojumu"
+  },
+  "providerVirusUse": {
+    "message": "Izmantojiet VirusTotal failu pārbaudes"
+  },
+  "providerHybridStrength": {
+    "message": "Atrod esošus ziņojumus pēc zināmām failu jaucējvērtībām. Ja augšupielāde ir atļauta, Falcon Sandbox var analizēt faila darbību izpildes laikā."
+  },
+  "providerHybridSetup": {
+    "message": "Izveidojiet kontu, tad atveriet profilu → API atslēgu, lai izveidotu atslēgu."
+  },
+  "providerUrlhausStrength": {
+    "message": "Pārbauda saites hosts pret ziņoto avotu malware."
+  },
+  "providerUrlhausSetup": {
+    "message": "Iepazīstieties ar abuse.ch un iegūstiet Auth-Key no jūsu konta."
+  },
+  "providerUrlscanStrength": {
+    "message": "Pārbauda pilnu URLs un rediģē uz fishinga pazīmēm. Thundy to izmanto uz Maksimālo privātuma līmeņa."
+  },
+  "providerUrlscanSetup": {
+    "message": "Izvēlieties Setting & API → Jauns API atslēga."
+  },
+  "providerVirusTotalStrength": {
+    "message": "Izskata faila SHA-256 hash un rāda rezultātus no vairākiem skenēšanas motoriem."
+  },
+  "providerVirusTotalSetup": {
+    "message": "Iepazīstieties ar VirusTotal un kopējiet atslēgu no profila API atslēgas lapas."
+  },
+  "providerIpTitle": {
+    "message": "IP adrešu reputācija"
+  },
+  "providerIpUse": {
+    "message": "Pārbaudiet IP atzinumu"
+  },
+  "providerIpChoose": {
+    "message": "IP Reputācijas nodrošinātājs"
+  },
+  "providerIpKeyNotice": {
+    "message": "Ievadiet izvēlētā pakalpojuma sniedzēja atslēgu. Apturot IP pārbaudes, izvēlētais sniedzējs un atslēga tiek paturēti."
+  },
+  "providerIpGuide": {
+    "message": "Izvēlieties un izveidojiet IP reputacijas piegādātāja"
+  },
+  "providerVirusIpStrength": {
+    "message": "Pārbauda publiskās IP pret VirusTotal detekcijas motoriem un kopienas vērtējumiem."
+  },
+  "providerAbuseStrength": {
+    "message": "Izmanto kopienas ziņojumus, lai identificētu publiskās IP, kas saistītas ar spamu, skenēšanu vai citu ļaunprātīgu izmantošanu."
+  },
+  "providerAbuseSetup": {
+    "message": "Izveidojiet AbuseIPDB kontu un radīt vai kopēt atslēgu no API tabulas uz dashboarda."
+  },
+  "providerIpVirusKey": {
+    "message": "VirusTotal API atslēga IP reputacijai"
+  },
+  "providerIpAbuseKey": {
+    "message": "AbuseIPDB API atslēga"
+  },
+  "providerTestDisabled": {
+    "message": "Pirms atslēgas pārbaudes ieslēdziet pakalpojumu un saglabājiet iestatījumus."
+  },
+  "analysisReason_provider_disabled": {
+    "message": "Šis piegādātājs ir pārtraukts iestatījumos."
+  },
+  "extensionName": {
+    "message": "Thundy AV – e-pasta pārbaude Thunderbird vajadzībām"
+  },
+  "extensionDescription": {
+    "message": "Opcionāls, opt-in skanner e-pasta pielikumiem un saites. nekas neatstāj datoru bez jūsu izskaidro piekrišanas."
+  },
+  "actionTitle": {
+    "message": "Thundy AV – šā ziņojuma statusa skenēšana"
+  },
+  "bannerScanOnce": {
+    "message": "Skanēt šo ziņojumu vienu"
+  },
+  "bannerScanSender": {
+    "message": "Vienmēr skenējiet šo sūtītāju"
+  },
+  "bannerTitleOptIn": {
+    "message": "Thundy AV : Šo ziņojumu nav ievietots reālā laika skenēšana."
+  },
+  "bannerNoteOptIn": {
+    "message": "Skanēšana pārsūta datus ārējām analīzes dienestiem, bet tikai tad, ja to aktivizējat papildinājuma iestatījumos un tikai pēc tam, kad esat devis savu piekrišanu."
+  },
+  "bannerScanRunning": {
+    "message": "Skanēšana…"
+  },
+  "bannerScanDone": {
+    "message": "Atbilde uz jautājumiem – skatīt analīzes avotus"
+  },
+  "bannerScanFailed": {
+    "message": "Skābekļa neveiksme"
+  },
+  "bannerPermissionDenied": {
+    "message": "Nepieprasītā viesabonēšanas atļauja tika noraidīta"
+  },
+  "bannerConsentMissing": {
+    "message": "Jauni ārējie pieprasījumi ir atslēgti. agrāk glabātie ziņojumi joprojām var tikt rādīti."
+  },
+  "bannerThreatTitle": {
+    "message": "Thundy AV brīdinājuma"
+  },
+  "bannerThreatScore": {
+    "message": "Riska rādītājs: $SCORE$ no 100",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerSenderOptIn": {
+    "message": "Šis sūtītājs tiek automātiski skenēts."
+  },
+  "notificationScanStarted": {
+    "message": "Skanēšana sākta: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "Skanēšana ir iesniegta ar panākumiem. darba ID: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanError": {
+    "message": "Skāpju kļūda: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Thundy AV skenētājs"
+  },
+  "notificationTitleError": {
+    "message": "Thundy AV skenēšanas kļūda"
+  },
+  "bannerAuthPass": {
+    "message": "Uzticami servera ziņojumi SPF / DKIM/ DMARC ir pabeigti"
+  },
+  "bannerOpenOptions": {
+    "message": "Atvērtas opcijas"
+  },
+  "menuScanLink": {
+    "message": "Skanēšana saites ar Thundy AV"
+  },
+  "menuScanMessageLinks": {
+    "message": "Skanēt visus šo ziņojumu saites"
+  },
+  "notificationNoLinks": {
+    "message": "Šajā ziņojumā nav atradis saites."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "Mājas lapas atļauja analīzes dienai ir pretrunā. lūdzu, piešķīriet to papildinošajās opcijās."
+  },
+  "errorHostPermissionMissing": {
+    "message": "Mājas lapas atļauja analīzes dienai ir pretrunā. lūdzu, piešķirjiet to papildinošajās opcijās."
+  },
+  "errorTierUploadBlocked": {
+    "message": "Uzlādēt pielikumus ir izslēgts privātuma līmenī \"Stiprs\". pāriet uz \"Balanced\" vai \"Maximum\" papildinājuma opcijās."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "URLs iesniegšana ir atļauta tikai privātuma līmenī \"Maximum\"."
+  },
+  "notificationInjectionFailed": {
+    "message": "Banner nevar tikt ievietots ziņojuma izskata. lūdzu, ziņojiet par to ar savu Thunderbird versiju."
+  },
+  "bannerTierBlocked": {
+    "message": "Šo pasākumu neļauj pašreizējais privātuma līmenis. skatīt papildinājuma opcijas."
+  },
+  "ui_001": {
+    "message": "Apsveriet :"
+  },
+  "ui_002": {
+    "message": "Nav Hybrid Analysis API atslēga ir iestatīta. Jūs varat lietot vietējos pārbaudījumus vai iestatīt piegādātāja iestatījumos."
+  },
+  "ui_003": {
+    "message": "Atvērtas iestatījumi"
+  },
+  "ui_004": {
+    "message": "Izvēlieties e-pasta adresi, lai to pārbaudītu."
+  },
+  "ui_005": {
+    "message": "Lādēšanas analīzes rezultāti…"
+  },
+  "ui_006": {
+    "message": "Ārējā analīze ir izslēgta: ne hashes, faili vai saites tiek nosūtīti uz analīzes dienestiem."
+  },
+  "ui_007": {
+    "message": "Šai ziņai nav pieejami neierobežoti pielikumi vai saites skenēšanas rezultāti."
+  },
+  "ui_008": {
+    "message": "Šai e-pasta adresei nav pieejamu analīzes rezultātu."
+  },
+  "ui_009": {
+    "message": "Neapšaubāma kļūda, lādējot analīzes rezultātus."
+  },
+  "ui_010": {
+    "message": "statuss ir:"
+  },
+  "ui_011": {
+    "message": "Analīze joprojām ir pabeigta, lūdzu, mēģiniet vēlāk."
+  },
+  "ui_012": {
+    "message": "SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_013": {
+    "message": "Iznīcēja draudi:"
+  },
+  "ui_014": {
+    "message": "Par spriedumu:"
+  },
+  "ui_015": {
+    "message": "Ģimenes malware:"
+  },
+  "ui_016": {
+    "message": "Multi skenēšanas rezultāts: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_017": {
+    "message": "Papildu dati:"
+  },
+  "ui_018": {
+    "message": "Analīze sākta: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_019": {
+    "message": "$P1$ un ZXQ",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_020": {
+    "message": "VirusTotal rezultāti:"
+  },
+  "ui_021": {
+    "message": "$P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_022": {
+    "message": "Neapmeklēts: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_023": {
+    "message": "Iespējams: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_024": {
+    "message": "Bez kaitējuma: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_025": {
+    "message": "Skābeklis: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_026": {
+    "message": "Statuss: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_027": {
+    "message": "Antivīrusu rezultāti:"
+  },
+  "ui_028": {
+    "message": "A: $P1$ Par spriedumu: $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_029": {
+    "message": "Nav pieejami skenēšanas rezultāti."
+  },
+  "ui_030": {
+    "message": "SHA-256 hash: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_031": {
+    "message": "Pēdējais faila nosaukums: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_032": {
+    "message": "Izmēri: $P1$ bitu",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_033": {
+    "message": "Tīmekļa vietne: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_034": {
+    "message": "Atkal skenēšana"
+  },
+  "ui_035": {
+    "message": "Sanitize un lejupielādēt (vietējais)"
+  },
+  "ui_036": {
+    "message": "Pārbaudīts punkts: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_037": {
+    "message": "Vietējais rezultāts: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_038": {
+    "message": "SHA-256 : $P1$ – ārējā analīze ir neieslēgta.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_039": {
+    "message": "Nav ārējās izskata, jo ārējā analīze ir neiespējama."
+  },
+  "ui_040": {
+    "message": "Ārējās analīzes trūkums"
+  },
+  "ui_041": {
+    "message": "Skanēšana ir…"
+  },
+  "ui_042": {
+    "message": "Uzlādēt failu jaunai skenēšanai…"
+  },
+  "ui_043": {
+    "message": "Skanēšana iesniegta. lejupielādēt rezultātus…"
+  },
+  "ui_044": {
+    "message": "Veiksmīgs"
+  },
+  "ui_045": {
+    "message": "Skanēšana neveiksmīgi:"
+  },
+  "ui_046": {
+    "message": "Nezināma kļūda"
+  },
+  "ui_047": {
+    "message": "Mēģiniet vēlreiz"
+  },
+  "ui_048": {
+    "message": "Komunikatūras kļūda:"
+  },
+  "ui_049": {
+    "message": "Sanitācija…"
+  },
+  "ui_050": {
+    "message": "HTML sanitācija vietēji…"
+  },
+  "ui_051": {
+    "message": "Lejupielāde ir sākusies."
+  },
+  "ui_052": {
+    "message": "Sanitāra"
+  },
+  "ui_053": {
+    "message": "Lejupielādēt neveiksmīgi:"
+  },
+  "ui_054": {
+    "message": "API kļūda: $P1$ par elementu $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_055": {
+    "message": "(API atslēga var būt neesoša vai trūkst.)"
+  },
+  "ui_056": {
+    "message": "Tīkla kļūda: $P1$ par elementu $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_057": {
+    "message": "Sūtīt URL…"
+  },
+  "ui_058": {
+    "message": "Sūtīt URL uz Hybrid Analysis…"
+  },
+  "ui_059": {
+    "message": "Skanēšana iesniegta. uzlādes rezultāti…"
+  },
+  "ui_060": {
+    "message": "Uzsākšana neveicās:"
+  },
+  "ui_061": {
+    "message": "URL: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_062": {
+    "message": "Šis URL tika atklāts e-pasta adresē. lai pasargātu jūsu privātumu, tas bija"
+  },
+  "ui_063": {
+    "message": "Neatkarīgi no automātisko"
+  },
+  "ui_064": {
+    "message": "Skatiet URL pašlaik"
+  },
+  "ui_065": {
+    "message": "Uzlādēt…"
+  },
+  "ui_066": {
+    "message": "Sūtīt failu uz Hybrid Analysis…"
+  },
+  "ui_067": {
+    "message": "Uzlādēt pabeigti. uzlādēšanas rezultāti…"
+  },
+  "ui_068": {
+    "message": "Skanēt failu pašlaik (laistīt)"
+  },
+  "ui_069": {
+    "message": "Attiecības: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_070": {
+    "message": "Nav ārēju ziņojumu, kas pieejams šim failom. lai pasargātu jūsu privātumu, tas bija"
+  },
+  "ui_071": {
+    "message": "Automātiskās lejupielādes ir izslēgtas; privātuma līmenis joprojām attiecas uz manuāliem skenējumiem."
+  },
+  "ui_072": {
+    "message": "Saistības drošība paliek pieejama kopā ar automātisku skenēšanu."
+  },
+  "ui_073": {
+    "message": "Ietaupīt…"
+  },
+  "ui_074": {
+    "message": "Iestatījumi ir glābti."
+  },
+  "ui_075": {
+    "message": "Saglabāt"
+  },
+  "ui_076": {
+    "message": "Datu nosūtīšana nav atļauta, nekas netiks nosūtīts."
+  },
+  "ui_077": {
+    "message": "Viesnīcas, kas nav pieejamas:"
+  },
+  "ui_078": {
+    "message": "Šo piegādātāja pārbaudes nav pieejamas bez atļaujas."
+  },
+  "ui_079": {
+    "message": "Nevarēja ietaupīt iestatījumus."
+  },
+  "ui_080": {
+    "message": "Izslēdzat cache? tas noņem visus vietēji glabātos analīzes rezultātus."
+  },
+  "ui_081": {
+    "message": "Tīrīšana…"
+  },
+  "ui_082": {
+    "message": "Cache ir atvērtas."
+  },
+  "ui_083": {
+    "message": "Datubāze vēl nav, vai arī tā jau ir tukša."
+  },
+  "ui_084": {
+    "message": "Es nevarēju izslēgt cāci."
+  },
+  "ui_085": {
+    "message": "Skaidrs cāchi"
+  },
+  "ui_086": {
+    "message": "API atslēga ir pazuduša."
+  },
+  "ui_087": {
+    "message": "SPF pārbaude neveiksmīgi (spoļošana ir iespējams)."
+  },
+  "ui_088": {
+    "message": "DKIM paraksts ir neesošs (spofting iespējams)."
+  },
+  "ui_089": {
+    "message": "DMARC pārbaude neveiksmīgi (spoļošana ir iespējams)."
+  },
+  "ui_090": {
+    "message": "URLhaus uzskaita domēnu ( $P1$) kā kaitīgu.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_091": {
+    "message": "Atbildēt uz domēnu ($P1$2) atšķiras no sūtītāja domēna ($P2$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_092": {
+    "message": "Iespējams kompromiss ar biznesa e-pasta adresi: pirmais kontakts ar šo sūtītāju un ārkārtas atslēgvārdi ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_093": {
+    "message": "Ārkārtas atslēgas vārdi ir atklāti ( $P1$). Pārbaudiet šo pieprasījumu rūpīgi.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_094": {
+    "message": "Šī ir jūsu pirmā saziņa ar šo sūtītāju."
+  },
+  "ui_095": {
+    "message": "Sender domēns ( $P1$) ir līdzīgs pazīstamajam zīmolam $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_096": {
+    "message": "Saites domēns ( $P1$) ir līdzīgs pazīstamajam zīmolam $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_097": {
+    "message": "Neviens no saites teksta punktā uz sūtītāja domēnu ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_098": {
+    "message": "tīrs"
+  },
+  "ui_099": {
+    "message": "URL skenēšana neveicās:"
+  },
+  "ui_100": {
+    "message": "Varēja sākt urlscan.io skenēšanu:"
+  },
+  "ui_101": {
+    "message": "urlscan.io neatgriežas skenēšanas ID."
+  },
+  "ui_102": {
+    "message": "urlscan.io identificēja URL kā kaitīgu."
+  },
+  "ui_103": {
+    "message": "Vizuālā detekcija: lapa impersonalizē"
+  },
+  "ui_104": {
+    "message": "(Pirmsākuma laikā tiek uzskatīts par phishingu)"
+  },
+  "ui_105": {
+    "message": "Es nevarēju saņemt urlscan.io rezultātus:"
+  },
+  "ui_106": {
+    "message": "Thundy AV – E-pasta skenētājs"
+  },
+  "ui_107": {
+    "message": "Skatīt visus Hybrid Analysis iesniegumus"
+  },
+  "ui_108": {
+    "message": "Skatīt visus Hybrid Analysis iesniegumus (atveras jauns tabs)"
+  },
+  "ui_109": {
+    "message": "Tātad tēma:"
+  },
+  "ui_110": {
+    "message": "no :"
+  },
+  "ui_111": {
+    "message": "Sūtījumu ID:"
+  },
+  "ui_112": {
+    "message": "Thundy AV iestatījumi"
+  },
+  "ui_113": {
+    "message": "Hybrid Analysis ir malware analīzes dienests. Jūs varat iesniegt failus statiskai un dinamiskai analīzei."
+  },
+  "ui_114": {
+    "message": "Hybrid Analysis izmanto CrowdStrike Falcon Sandbox, lai izmeklētu nezināmas draudi."
+  },
+  "ui_115": {
+    "message": "Pakalpojuma nodrošinātāja konti un apkalpošanas nosacījumi attiecas uz ārējo analīzi. vietējie pārbaudījumi neprasa kontu."
+  },
+  "ui_116": {
+    "message": "Thundy AV iestatījumi"
+  },
+  "ui_117": {
+    "message": "Kas ir Hybrid Analysis?"
+  },
+  "ui_118": {
+    "message": "Ārējās failu analīzes nolūkos iegūt API atslēgu no"
+  },
+  "ui_119": {
+    "message": "Pēc parakstīšanās, doties uz savu profilu un meklēt API KEY sadaļu."
+  },
+  "ui_120": {
+    "message": "Ievadiet API atslēgu šeit. vietējie pārbaudījumi darbojas bez tā."
+  },
+  "ui_121": {
+    "message": "API atslēga uzstādīšana"
+  },
+  "ui_122": {
+    "message": "hybrid-analysis.com"
+  },
+  "ui_123": {
+    "message": "hybrid-analysis.com (atver jaunas lapas)"
+  },
+  "ui_124": {
+    "message": "Atļaut ārēju analīzi (sūtīt datus ārējiem pakalpojumu sniedzējiem)"
+  },
+  "ui_125": {
+    "message": "Bez šīs piekrišanas,"
+  },
+  "ui_126": {
+    "message": "hashes, faili, saites vai IP adreses nosūta ārējām dienām. pēc piekrišanas, pilnvaroti skeneri var nosūtīt pielikumu un saukt datus uz Hybrid Analysis, VirusTotal, urlscan.io, URLhaus vai AbuseIPDBAtkarībā no privātuma līmeņa. atslēdziet šo opciju, lai atsauktu piekrišanu:"
+  },
+  "ui_127": {
+    "message": "Nē"
+  },
+  "ui_128": {
+    "message": "Privātuma politika"
+  },
+  "ui_129": {
+    "message": "Privātuma politika (atver jaunā tabulā)"
+  },
+  "ui_130": {
+    "message": "Hybrid Analysis API atslēga (atvēlams):"
+  },
+  "ui_131": {
+    "message": "Sīkāka info123456…"
+  },
+  "ui_132": {
+    "message": "URLhaus API atslēga (atvēlams domēna reputacija):"
+  },
+  "ui_133": {
+    "message": "Jūs varat iegūt API atslēgu"
+  },
+  "ui_134": {
+    "message": "."
+  },
+  "ui_135": {
+    "message": "urlhaus.abuse.ch"
+  },
+  "ui_136": {
+    "message": "urlhaus.abuse.ch (atver jaunas lapas)"
+  },
+  "ui_137": {
+    "message": "urlscan.io API atslēga (izvēlams URL analīze):"
+  },
+  "ui_138": {
+    "message": "Jūs varat iegūt API atslēgu"
+  },
+  "ui_139": {
+    "message": "urlscan.io"
+  },
+  "ui_140": {
+    "message": "urlscan.io (atver jaunas lapas)"
+  },
+  "ui_141": {
+    "message": "VirusTotal API atslēga (atbilstoša faila reputacija):"
+  },
+  "ui_142": {
+    "message": "virustotal.com"
+  },
+  "ui_143": {
+    "message": "virustotal.com (atver jaunas lapas)"
+  },
+  "ui_144": {
+    "message": "Privātuma līmenis:"
+  },
+  "ui_145": {
+    "message": "Striktas (default: tikai hashes un domēni, nav lejupielādēt)"
+  },
+  "ui_146": {
+    "message": "Balansēts (uzlādēt nezināmas failus, nav pilna URLs)"
+  },
+  "ui_147": {
+    "message": "Maksimālais analīze (uzlādēt nezināmas failus un pabeigt URLs)"
+  },
+  "ui_148": {
+    "message": "Apjoms, ko dati nosūta analīzes nodrošinātājiem, ir piemērojams tikai tad, ja ir atļauts ārējais analīzes."
+  },
+  "ui_149": {
+    "message": "IP reputacija (pārbaudiet saņemtās nosaukuma nosaukumus):"
+  },
+  "ui_150": {
+    "message": "Disabled Disabled Disabilitātes"
+  },
+  "ui_151": {
+    "message": "VirusTotal (piemēro VirusTotal API atslēgu)"
+  },
+  "ui_152": {
+    "message": "AbuseIPDB (tās prasīs AbuseIPDB API atslēgu)"
+  },
+  "ui_153": {
+    "message": "IP atzinums API slānis:"
+  },
+  "ui_154": {
+    "message": "Sūta publiskos IP adreses no e-pasta saņemtajām adresēm atlasītajam piegādātājs."
+  },
+  "ui_155": {
+    "message": "Atļauju saraksti (comma atdalītās domēnas vai e-pasta adreses):"
+  },
+  "ui_156": {
+    "message": "example.com, test@ example.com"
+  },
+  "ui_157": {
+    "message": "Uzticami sūtītāji iesniedz vietējos sūtītāja brīdinājumus, tie neļauj ārējos skenējumus."
+  },
+  "ui_158": {
+    "message": "Blokklista (comma atdalītas domēnas vai e-pasta adreses):"
+  },
+  "ui_159": {
+    "message": "Ievadiet bloķētus domēnus vai e-pasta adreses."
+  },
+  "ui_160": {
+    "message": "Vienmēr skenēt manuāli (ne automātiski uzklausīt)"
+  },
+  "ui_161": {
+    "message": "Aizkavē automātiskās ārējās skenēšanas. izskaidroti manuālie pasākumi joprojām prasa piekrišanu un attiecīgo privātuma līmeni."
+  },
+  "ui_162": {
+    "message": "Automātiski atjaunināt gaidošos saišu ziņojumus"
+  },
+  "ui_163": {
+    "message": "Saites pārbaudes prasa piekrišanu, skenēšanas atļauju un attiecīgo privātuma līmeni."
+  },
+  "ui_164": {
+    "message": "Pārbaudiet saites pirms to atvēršanas"
+  },
+  "ui_165": {
+    "message": "Nav pārbaudītās saites un kļūdas ir acīmredzami identificētas.Pilna URL analīze prasa Maksimālo līmeņa. Pilnām saitēm un pielikumiem nepieciešams atsevišķs apstiprinājums."
+  },
+  "ui_166": {
+    "message": "Atcerieties, lai glabātu jūsu iestatījumus."
+  },
+  "ui_167": {
+    "message": "Datu pārvaldība"
+  },
+  "ui_168": {
+    "message": "Skaidri vietēji glabāti rezultāti un reputacijas cache."
+  },
+  "linkChecking": {
+    "message": "Pārbaudes saites…"
+  },
+  "linkWarning": {
+    "message": "Šis saite tika ziņots kā aizdomīgs vai ļaundabīgs."
+  },
+  "linkUnknown": {
+    "message": "Šis saite nevarēja pārbaudīt. atvērt to var būt riskanti."
+  },
+  "linkNoDetection": {
+    "message": "Nav apdraudējumu, ko atklāj piegādātājs. tas nav drošības garantija."
+  },
+  "linkProceed": {
+    "message": "Atvērts saite jebkādā ziņā"
+  },
+  "linkCancel": {
+    "message": "Atcelt"
+  },
+  "localMode": {
+    "message": "Vietējie pārbaudījumi darbojas bez API atslēgām. ārējie skenējumi prasa jūsu piekrišanu un ziņojumu vai sūtītāja atļauju."
+  },
+  "statusNormal": {
+    "message": "(Nekas nav atklāts)"
+  },
+  "statusSuspicious": {
+    "message": "(Saprotams ir"
+  },
+  "statusCritical": {
+    "message": "(Kritiskā ziņa"
+  },
+  "noSubject": {
+    "message": "(Nav nekādas priekšmetu)"
+  },
+  "noSender": {
+    "message": "(Nepazīstams nosūtītājs)"
+  },
+  "noId": {
+    "message": "(Nav ID un nav)"
+  },
+  "unknownAttachment": {
+    "message": "Nezināma"
+  },
+  "statusDangerous": {
+    "message": "(Bīstama ir tāda"
+  },
+  "sizeLimit": {
+    "message": "Pielikums pārsniedz vietējo 25 MB lieluma robežu un nav lasīts vai lejupielādēts."
+  },
+  "trustedAuthLabel": {
+    "message": "Uzticami autentiskuma serveri (comma-izdalīti)"
+  },
+  "trustedAuthHelp": {
+    "message": "Tikai uzskaitīt saņēmēja e-pasta serverus, kurus jūs administrējat vai izskaidrojami uzticaties."
+  },
+  "consentHelp": {
+    "message": "Bez piekrišanas ārējiem pakalpojumiem dati netiek nosūtīti. Pēc piekrišanas saņemšanas pārbauda tikai nepārprotami apstiprinātus ziņojumus vai sūtītājus. Stingrajā līmenī var nosūtīt jaucējvērtības, domēnus un publiskas IP adreses. Līdzsvarotais līmenis ļauj arī augšupielādēt nezināmus failus, bet maksimālais līmenis – nosūtīt arī pilnas URL adreses. Izslēdziet šo izvēli, lai apturētu jaunu pārsūtīšanu un atceltu gaidošos pieprasījumus. Jau nosūtītos datus atsaukt nevar. Pilnām saitēm un pielikumiem nepieciešams atsevišķs apstiprinājums."
+  },
+  "visualImpersonation": {
+    "message": "Vizuālā atklāšana: lapa izpaužas $BRANDS$ (apšaubāmais phishings).",
+    "placeholders": {
+      "brands": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedEmail": {
+    "message": "Sūtītāja e-pasts ( $P1$) ir uz bloku sarakstam.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedDomain": {
+    "message": "Izvēlēties mājas lapu ($P1$) ir uz bloka listi ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedEmail": {
+    "message": "Sūtītāja e-pasts ( $P1$) ir atļaujas sarakstā.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedDomain": {
+    "message": "Izvēlēties mājas lapu ($P1$(Tas ir uzskaitīts uz atļaujas ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanVisibility": {
+    "message": "urlscan.io iesniegumi ir neizskaitīti, ne privāti. Pilns URL var būt personas dati vai piekļuves tokenus. iesniedz tikai URLs jūs esat atļauts dalīties."
+  },
+  "notificationScanCount": {
+    "message": "Skanēšana: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "gatewayRequestTimeout": {
+    "message": "Pakalpojuma nodrošinātājs ir atcelts vai izbeigts."
+  },
+  "gatewayInvalidJson": {
+    "message": "Pārdevējs atgriezās neatklātajā atbildē."
+  },
+  "gatewayNetworkError": {
+    "message": "Pārdevējam nevarēja piekļūt."
+  },
+  "noMessageFound": {
+    "message": "Nav atklāta norādes vēstule."
+  },
+  "providerNoDetection": {
+    "message": "Nav atklāta draudi"
+  },
+  "providerMalicious": {
+    "message": "Ļaunprātīgs"
+  },
+  "providerSuspicious": {
+    "message": "Aizdomīgs"
+  },
+  "providerPending": {
+    "message": "Analīze uzspīd"
+  },
+  "privacyLocalData": {
+    "message": "Thundy AV lasīs redzamo ziņojumu, tā sūtītāju, priekšmetu, virsrakstu, teksta un pielikumu, lai veiktu vietējos pārbaudījumus. vietējie pārbaudījumi darbojas bez API atslēgām."
+  },
+  "privacyProviders": {
+    "message": "Autorizētās ārējās pieprasījumi iet tiešā virzienā uz konfigūrutiem piegādātājiem: Hybrid Analysis uz failu hashes un uzkraušanas, VirusTotal ar failu hashes vai IP Atzinība , URLhaus par domēniem, urlscan.io Par pilnīgi URLs un AbuseIPDB Public IPs. hashes var identificēt zināmas failus. piegādātāja nosacījumi un privātuma politika attiecas; iesniegtie dati var būt kopīgi piegādātājs."
+  },
+  "privacyRetention": {
+    "message": "Iestatījumi, piekrišana, sūtītāja atļaujas un API atslēgas tiek glabātas jūsu Thunderbird profilu. API slāņi nav šifrēti tur. Vietējie skenēšanas ieraksti var ietvert tēmas, sūtītāju adreses, pilnus saites un pielikumu metadatus. Kāze glabā līdz 1000 ziņojumu ierakstus 30 dienas un tiek attīrīta datu bāzes starta. Atmiņas atmiņas rezultāti beidzas pēc 15 minūtēm."
+  },
+  "privacyControl": {
+    "message": "Izslēdziet ārējo analīzi, lai apturētu jaunas pieprasījumus un atceltos pieprasījumos. jau nosūtītos datus nevar atgūt. Izmantojiet tīru cache, lai dzēstu glabāto analīzes rezultātus un reputacijas cache. Attiecības par individuālu sūtītāju var tikt noņemtas iestatījumos."
+  },
+  "privacyDetailed": {
+    "message": "Detalizēta privātuma politika (angļu / vācu)"
+  },
+  "senderAuthorizationsLabel": {
+    "message": "Autorizēti nosūtītāji (viena e-pasta adreses uz līniju)"
+  },
+  "senderAuthorizationsHelp": {
+    "message": "Šie sūtītāji var automātiski skenēt, kad ir ievietots ārējais analīze. noņemt adresi, lai apturētu automātisko skenēšanu nākotnes ziņojumiem. Šis saraksti nepārsniedz privātuma līmeņa vai manuālo režīmu."
+  },
+  "invalidSenderAddress": {
+    "message": "Ievadiet plašu e-pasta adreses, vienu līniju."
+  },
+  "popupSubtitle": {
+    "message": "Saziņas drošības pārskats"
+  },
+  "popupDetails": {
+    "message": "Tehnisko ziņojumu detaļas"
+  },
+  "popupLocalAssessment": {
+    "message": "Vietējā riska vērtēšana"
+  },
+  "popupLocalExplanation": {
+    "message": "Šī vērtība nav antivīrusu spriedums vai drošības garantija."
+  },
+  "linkDialogTitle": {
+    "message": "Pārbaudiet pirms atvēršanas"
+  },
+  "linkDestination": {
+    "message": "Destinācijas tīmekļa vietne"
+  },
+  "linkUrlDetails": {
+    "message": "Ievēro pilnu saites adresi"
+  },
+  "linkOpenBrowser": {
+    "message": "Atvērt pārlūkā"
+  },
+  "linkOpening": {
+    "message": "Atvēršana…"
+  },
+  "linkOpenFailed": {
+    "message": "Saiti neizdevās atvērt. Mēģiniet vēlreiz vai pārbaudiet noklusējuma pārlūka iestatījumus."
+  },
+  "linkCheckLimited": {
+    "message": "Tikai pieejami skenēšanas rezultāti var tikt rādīti. trūkst pārbaudes nenozīmē, ka saite ir droša."
+  },
+  "auditTitle": {
+    "message": "Līks lēmumu log"
+  },
+  "auditOpen": {
+    "message": "Pārskats par log"
+  },
+  "auditScope": {
+    "message": "Logs HTTP (S) klikšķi tiek aizturēti ar saites drošību. OPENED nozīmē, ka Thunderbird pieņēma atvēršanas pieprasījumu, nepaziņojot kļūdu. Tas netiek apliecināts, ka operētājsistēma ir uzsākusi pārlūkprogrammu vai ka vietne ir apmeklēta."
+  },
+  "auditPrivacy": {
+    "message": "Lokāli uzglabāts līdz 30 dienām, 2000 ieraksti vai 2 MiB (vecākie ieraksti tiek noņemti). Pilns URLs var būt personas dati vai piekļuves tokenus. Nekas nav automātiski lejupielādēts. Lokālo logs var mainīt vai dzēst profila lietotāji; tas nav tamper-proof centrālā revīzijas ceļa. Lokālais rādītājs izmanto klikšķinātās saites un ziņojumu konteksta, ne piegādātāja rādītāja. Rādītāja iemesli var ietvert sūtītāju vai domēna detaļas."
+  },
+  "auditSearch": {
+    "message": "URL, domēna vai pasākuma ID"
+  },
+  "auditOutcome": {
+    "message": "Lēmums"
+  },
+  "auditAll": {
+    "message": "Visiem"
+  },
+  "auditOpened": {
+    "message": "Atvēršana pieprasīta"
+  },
+  "auditAborted": {
+    "message": "Aborts"
+  },
+  "auditOpenError": {
+    "message": "Atvēršana neveic"
+  },
+  "auditPending": {
+    "message": "Nav beigušas lēmuma"
+  },
+  "auditMinScore": {
+    "message": "Minimalizētā lēmuma vērtība"
+  },
+  "auditFrom": {
+    "message": "no"
+  },
+  "auditTo": {
+    "message": "T"
+  },
+  "auditRefresh": {
+    "message": "Atjaunojam"
+  },
+  "auditJson": {
+    "message": "Izveidojiet JSON"
+  },
+  "auditCsv": {
+    "message": "Izveidojiet CSV"
+  },
+  "auditClear": {
+    "message": "Izslēgt vietējo log"
+  },
+  "auditExportHelp": {
+    "message": "Eksports ietver visas filtrētās rindas, ne tikai pašreizējo lapu. JSON ietver SHA-256 pārbaudes summu verifikācijai; tas nepārbaudīs autentiskumu. CSV neitralizē šķērsgrāmatas formulas. Eksports ietilpst pilnu URLs : dalīties tikai ar pilnvarotajiem pārskatiem."
+  },
+  "auditTime": {
+    "message": "Klīnikas / lēmuma laika"
+  },
+  "auditLocalScore": {
+    "message": "Vietējais rezultāts (link un ziņojums)"
+  },
+  "auditVerdict": {
+    "message": "Pakalpojuma rezultāti"
+  },
+  "auditAddress": {
+    "message": "URL un detaļas"
+  },
+  "auditPrevious": {
+    "message": "Iešajā"
+  },
+  "auditNext": {
+    "message": "Tālāk"
+  },
+  "auditClearConfirm": {
+    "message": "Izdzēš visus vietējos saites logus? eksporta prasītos pierādījumus vispirms. skenēšanas rezultāti un iestatījumi tiek glabāti."
+  },
+  "auditFailure": {
+    "message": "Vietējā saites logs nevarēja izlasīt vai glabāt."
+  },
+  "auditUnavailable": {
+    "message": "Nav pieejams"
+  },
+  "auditScoreAtDecision": {
+    "message": "Lēmuma rezultāti"
+  },
+  "auditRecords": {
+    "message": "Rekords"
+  },
+  "auditDetails": {
+    "message": "Rādīt URL un pierādījumus"
+  },
+  "auditEventId": {
+    "message": "Iespējas ID"
+  },
+  "auditCancelReason": {
+    "message": "Atcelšanas iemesls"
+  },
+  "auditFinalResult": {
+    "message": "Pēdējais pārbaudes rezultāts"
+  },
+  "auditProfile": {
+    "message": "Vietējais profila ID"
+  },
+  "auditExported": {
+    "message": "Eksports ir glābts."
+  },
+  "auditRiskyOpened": {
+    "message": "Atvēršana pieprasīta ar augstu risku"
+  },
+  "auditExportFailed": {
+    "message": "Eksports ir neveiksmīgs vai ir atcelts."
+  },
+  "profilesTitle": {
+    "message": "Opcionālie uzņēmuma profili"
+  },
+  "profilesIntro": {
+    "message": "Izvēlieties kopīgus datus neatkarīgi vai atstāj integrācijas neaktivizētas. Šie profili sagatavo konfigūciju; tie nav saistīti ar uzņēmuma dienestu vai aktivizē centrālo ierakstu."
+  },
+  "profilesOpen": {
+    "message": "Izvēlieties uzņēmuma profilu"
+  },
+  "profilesBundle": {
+    "message": "Ieteicamā kombinācija"
+  },
+  "profilesLocal": {
+    "message": "Vietējā sagatavošana"
+  },
+  "profilesCustom": {
+    "message": "Kustīgs izvēle"
+  },
+  "profilesHosting": {
+    "message": "Viesošana"
+  },
+  "profilesSso": {
+    "message": "Vienotā sign-on (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Ierīces vadība"
+  },
+  "profilesSiem": {
+    "message": "Drošības uzraudzība (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Biļešu sistēma"
+  },
+  "profilesRequirements": {
+    "message": "Nepilnīga konfigūracija"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Nobeiguma punkti un konta iestatījumi tiek piegādāti vēlākos iestatījumos. zemāk minētie nosaukumi identificē nepieciešamās iestatījumus un slepenas atsauces; šeit nav ievadīts nekustamā īpašuma."
+  },
+  "profilesPreview": {
+    "message": "Konfigurācijas projekts"
+  },
+  "profilesPrivacy": {
+    "message": "Saites paliek neaktivizētas. projekts nesatur API atslēgas, tokenus, klikšķināt URLs vai ziņojuma datus."
+  },
+  "profilesSave": {
+    "message": "Iegūstiet izvēli vietēji"
+  },
+  "profilesExport": {
+    "message": "Eksporta konfigūracijas projekts"
+  },
+  "profilesReset": {
+    "message": "Atjaunināt izvēli"
+  },
+  "profilesNone": {
+    "message": "Iespējams, ka nav / nav izvēlētas"
+  },
+  "profilesSelfHosted": {
+    "message": "Pašmāju / uz vietas"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Šai izvēlei nav nepieciešamas ārējās integrācijas iestatījumi."
+  },
+  "profilesSaved": {
+    "message": "Izvēle glabāta vietēji. saites paliek neuzstādītas."
+  },
+  "profilesExported": {
+    "message": "Konfigurācijas projekts eksporta. nekas nav aktivizēts."
+  },
+  "profilesFailed": {
+    "message": "Izvēle nevarēja tikt uzkrāta, glabāta vai eksporta, vai operācija tika atcelta."
+  },
+  "wizardTitle": {
+    "message": "Iestatīt Thundy AV"
+  },
+  "wizardLanguage": {
+    "message": "Vedņa valoda"
+  },
+  "wizardLanguageNote": {
+    "message": "Izvēle attiecas tikai uz vedni. Papildinājuma valodu var mainīt iestatījumos."
+  },
+  "wizardWelcome": {
+    "message": "Sveicam"
+  },
+  "wizardProtection": {
+    "message": "Linkas drošība"
+  },
+  "wizardExternal": {
+    "message": "Opcionālā analīze"
+  },
+  "wizardIntro": {
+    "message": "Sāciet ar vietējiem pārbaudījumiem. Lai pārbaudītu e-pasta adresi, izmantojiet tās Thundy AV baneru vai skenēšanas darbību. Jūs vēlāk varēsiet nolemt, vai iestatīt analīzes nodrošinātājus."
+  },
+  "wizardLocalNotice": {
+    "message": "Bez piekrišanas ārējai analīzei, dati netiek nosūtīti analīzes nodrošinātājiem."
+  },
+  "wizardPrivacy": {
+    "message": "Privātuma informatīvais"
+  },
+  "wizardLinkChoice": {
+    "message": "Ievērojiet pirms saites atvēršanas un ierakstiet lēmumus vietēji"
+  },
+  "wizardLinkExplanation": {
+    "message": "Saites dialogu rāda galamērķi un pieejamo riska izvērtējumu. atverot rokas saites uz jūsu pārlūkprogrammu; tas nepārprot tīmekļa vietnes apmeklēšanu."
+  },
+  "wizardAuditNotice": {
+    "message": "Vietējā saites logs var ietvert pilnu URLs un vērtēšanas iemeslus. tas glabā līdz 30 dienām, 2000 ierakstus vai 2 MiB. Profila lietotāji var lasīt, mainīt vai dzēst to; tas nav aizstāvēts uzņēmuma revīzija."
+  },
+  "wizardExternalExplanation": {
+    "message": "Ārējie piegādātāji ir opcionāli un var prasīt API atslēgas. Atkarībā no jūsu privātuma līmeņa, hashes, domēniem, publiskajiem IP, failiem vai pilnajiem URLs var tikt nosūtīti."
+  },
+  "wizardNextAction": {
+    "message": "Ko vēlētos darīt nākamajā?"
+  },
+  "wizardKeepLocal": {
+    "message": "Pabeigts ar vietējiem pārbaudījumiem"
+  },
+  "wizardKeepExisting": {
+    "message": "Ievērojiet esošos ārējos iestatījumus"
+  },
+  "wizardExistingExternal": {
+    "message": "Ārējā analīze jau ir ieviesta šajā profils. bruņinieks nemainās šo piekrišanu. izmantojiet iestatījumus, lai to neuzslēgtu vai pārskatītu atļaujas."
+  },
+  "wizardConfigure": {
+    "message": "Iestatīt ārējo analīzi iestatījumos"
+  },
+  "wizardNoConsent": {
+    "message": "Izvēloties šo opciju, atveras tikai iestatījumi. nekas nav uzklausīts un šai burvībai nav pieprasīta atļauja."
+  },
+  "wizardBack": {
+    "message": "Atpakaļ"
+  },
+  "wizardNext": {
+    "message": "Tālāk"
+  },
+  "wizardFinish": {
+    "message": "Iegūstiet uzstādīšanu"
+  },
+  "wizardFinishConfigure": {
+    "message": "Iestatījumi iestatījumi un atvērumi"
+  },
+  "wizardSkip": {
+    "message": "Ne jau"
+  },
+  "wizardDone": {
+    "message": "Iestatījums glābts"
+  },
+  "wizardDoneText": {
+    "message": "Jūsu saites-aizsargāšanas izvēle tika glabāta vietēji. nav mainīts API atslēga, ārēja piekrišana vai sūtītāja piekrišana."
+  },
+  "wizardSettings": {
+    "message": "Atvērtas iestatījumi"
+  },
+  "wizardProfilesNotice": {
+    "message": "Uzņēmuma profili ir opcionālie konfigūracijas plāni. to izvēle neaktivizē uzņēmuma saikni."
+  },
+  "wizardDeferred": {
+    "message": "Iestatīšana aizkavēta"
+  },
+  "wizardDeferredText": {
+    "message": "Neviens iestatījums nav mainījies. atkārtoti atvērt bruņurgu no iestatījumiem, kad esat gatavs."
+  },
+  "wizardSettingsOpened": {
+    "message": "Iestatījumi atvērti. iestatīt piegādātājiem un glabāt savu piekrišanu tur."
+  },
+  "wizardSettingsFailed": {
+    "message": "Iestatījumi nevar atvērt. jūsu iestatījums tiek glabāts; izmantojiet Atvērtās iestatījumus, lai atbrīvotos."
+  },
+  "wizardSaveFailed": {
+    "message": "Iestatījums nevarēja tikt glabāts. jūsu izvēles paliek šeit; lūdzu, atkāpties."
+  },
+  "wizardLoadFailed": {
+    "message": "Iestatījumi nevar tikt uzlādēti. nekas nav glabāts. pārsūtīt šo lapu atpakaļ."
+  },
+  "wizardLanguageFailed": {
+    "message": "Valoda nevar tikt uzlādēta.Pirmā valoda paliek atlasīta."
+  },
+  "wizardReopen": {
+    "message": "Atvērts setup čarodejnieks"
+  },
+  "settingsAppearance": {
+    "message": "Izskats"
+  },
+  "settingsPrivacy": {
+    "message": "Privātums"
+  },
+  "settingsScanning": {
+    "message": "Aizsardzība"
+  },
+  "settingsProviders": {
+    "message": "Analīzes pakalpojumi"
+  },
+  "settingsSenders": {
+    "message": "Sūtītāju kārtulas"
+  },
+  "settingsData": {
+    "message": "Dati un rīki"
+  },
+  "settingsWorkspace": {
+    "message": "Jūsu darba telpa"
+  },
+  "settingsEyebrow": {
+    "message": "Izveidojiet to jūsu"
+  },
+  "settingsSubtitle": {
+    "message": "Pielāgojiet Thundy AV izskatu un sava e-pasta aizsardzību."
+  },
+  "settingsLocalBadge": {
+    "message": "Vietējā par default"
+  },
+  "settingsLocalNote": {
+    "message": "Jūsu preferences. uzglabāts šajā ierīcē."
+  },
+  "settingsSkip": {
+    "message": "Skāriet uz iestatījumiem"
+  },
+  "settingsProviderGuide": {
+    "message": "Par piegādātājiem un API atslēgas"
+  },
+  "settingsWizardHelp": {
+    "message": "Pārskatiet vadīto iestatījumu jebkādā laikā."
+  },
+  "themeIntro": {
+    "message": "Lūdzu, ņemiet Thundy AV justies kā jūsu. Izskata izmaiņas tiek glabātas uzreiz visā papildinātājs."
+  },
+  "themeMode": {
+    "message": "Izskats"
+  },
+  "themeSystem": {
+    "message": "Izmantot Thunderbird motīvu"
+  },
+  "themeLight": {
+    "message": "Gaišs"
+  },
+  "themeDark": {
+    "message": "Tumšs"
+  },
+  "themeAccent": {
+    "message": "Accent krāsas"
+  },
+  "themeOcean": {
+    "message": "okeāns"
+  },
+  "themeViolet": {
+    "message": "Violetā"
+  },
+  "themeForest": {
+    "message": "mežs"
+  },
+  "themeAmber": {
+    "message": "Dzintara"
+  },
+  "themeReady": {
+    "message": "Izskats tiek glabāts automātiski. citos iestatījumos izmanto glabāšanas pogu."
+  },
+  "themeSaving": {
+    "message": "Iegūto izskatu…"
+  },
+  "themeSaved": {
+    "message": "Izskats ir glābts."
+  },
+  "themeLoadError": {
+    "message": "Izskats nevar tikt uzlādēts. mēģiniet atvērt iestatījumus."
+  },
+  "themeSaveError": {
+    "message": "Izskats nevarēja tikt glabāts. izvēlieties vēlreiz, lai atkāptu."
+  },
+  "themeRetry": {
+    "message": "Atgriešanās ietaupītā izskats"
+  },
+  "themeDensity": {
+    "message": "Informācijas blīvums"
+  },
+  "themeComfortable": {
+    "message": "Ērti"
+  },
+  "themeCompact": {
+    "message": "Kompaktā"
+  },
+  "themeDensityHelp": {
+    "message": "Iestatījumos un vietējos administratora rīkus pielāgot telpu."
+  },
+  "profilesChanges": {
+    "message": "Izmaiņas, kas saistītas ar glābto izvēli"
+  },
+  "profilesDiscard": {
+    "message": "Izvairieties no neapdzīvotajiem pārmaiņām"
+  },
+  "profilesLoadRetry": {
+    "message": "Reload Savu izvēli"
+  },
+  "profilesNotLoaded": {
+    "message": "Iegūtā izvēle nav uzkrāta"
+  },
+  "profilesUnsaved": {
+    "message": "Nepārspējamas izmaiņas · neaktīvs projekts"
+  },
+  "profilesUnchanged": {
+    "message": "Ieguvusi izvēle · neaktīvs projekts"
+  },
+  "profilesSaving": {
+    "message": "Ieguldīt vietējo izvēli…"
+  },
+  "settingsUnsaved": {
+    "message": "Nepārspīlētie mainījumi"
+  },
+  "providerUnknown": {
+    "message": "rezultāts nezināms"
+  },
+  "auditVerdictAtDecision": {
+    "message": "Rezultatīvais lēmums"
+  },
+  "ui_169": {
+    "message": "Analīzes prototips: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "Darba ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "Ievadiet: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Atgūtā protocola: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": "Analīze joprojām darbojas (IN_PROGRESS). rezultāts tiek automātiski atgūts ik pēc $P1$ sekundes (attempt $P2$); beidzies analīzes protocols šeit tiek atklāts bez jaunas pieprasījuma, kad tas ir glabāts.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "Pēc atkārtota uzsākšanas vai procesu zaudēšanas tas paliek gaidāms; neuzskatiet, ka saite ir atvērta vai atcelta."
+  },
+  "auditCancelUser": {
+    "message": "Atcelt lietotāja"
+  },
+  "auditCancelEscape": {
+    "message": "Aizvērts ar bēgšanu"
+  },
+  "auditCancelDestination": {
+    "message": "Destinācija mainījusies"
+  },
+  "auditCancelContext": {
+    "message": "Saraksts slēgts"
+  },
+  "auditCancelUnknown": {
+    "message": "Neatklāšanas iemesls"
+  },
+  "reportNotSaved": {
+    "message": "Ziņojums ir redzams, bet to nevarēja glābt vietēji. atkārtoti atvērt, lai atgrieztu."
+  },
+  "checkOrigin_live": {
+    "message": "Pašreizējais piegādātājs"
+  },
+  "checkOrigin_stored": {
+    "message": "Iegūtais rezultāts"
+  },
+  "checkOrigin_none": {
+    "message": "Neviens piegādātāja novērojums"
+  },
+  "checkOutcome_success": {
+    "message": "Pieprasījums ir panākts"
+  },
+  "checkOutcome_failed": {
+    "message": "Pieprasījums neveic"
+  },
+  "checkOutcome_disabled": {
+    "message": "Ārējais analīze ir novērsta"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Mājas lapas atļauja trūkst"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Klavieru piegādātājs trūkst"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Nav sniegtā atsauce"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Nav jaunas pieprasījuma"
+  },
+  "checkOutcome_no_result": {
+    "message": "Nav lietojamu jauno rezultātu"
+  },
+  "checkAttempted": {
+    "message": "Pārbaudiet mēģināt"
+  },
+  "checkObserved": {
+    "message": "Pamatnoteikumi novēroti"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Lēmuma iemesli"
+  },
+  "auditReasonsLatest": {
+    "message": "Jaunākie pieejamie iemesli"
+  },
+  "auditReasonsMissing": {
+    "message": "Tajā laikā nav ierakstīts"
+  },
+  "coverageSummary": {
+    "message": "Apkopojums - atklāts: $1• piešķirtas: $2· pārstrādāts : $3• neveiksmīgi: $4Izveidots : $5Izceltās preces ir nevērtētas."
+  },
+  "supportTitle": {
+    "message": "Vietējā palīdzības ziņojums"
+  },
+  "supportHelp": {
+    "message": "Nosakiet minimālu diagnostisko ziņojumu, tad glabājiet to vietēji. nekas nav nosūtīts."
+  },
+  "supportPreview": {
+    "message": "PrevPredzīmju ziņojums"
+  },
+  "supportConfiguration": {
+    "message": "Iekļauj sausas iestatījumus (neatkarīgi no atslēgvārdiem vai sūtītāju sarakstus)"
+  },
+  "supportSave": {
+    "message": "Iegūstiet ziņojumu vietēji"
+  },
+  "coverageAttachments": {
+    "message": "Attiecības"
+  },
+  "coverageDomains": {
+    "message": "Unikālie domēni"
+  },
+  "coverageBatch": {
+    "message": "Batch kreisās"
+  },
+  "coverageLimits": {
+    "message": "Limits par pastu: 100 pielikumi, 25 MiB par pielikumu, 100 unikālie domēni, 20 pacēluma saites."
+  },
+  "localProfileTitle": {
+    "message": "Vietējie profili"
+  },
+  "localProfileHelp": {
+    "message": "Eksportēšana glabāta izskats vai vietējās drošības iestatījumi atšķirīgi. Preview un confirm imports. Atslēgas, piekrišana, atļaujas, uzticami nosūtītāji un revīzijas vēsture ir izslēgti."
+  },
+  "localProfileExport": {
+    "message": "Eksporta izskats"
+  },
+  "localProfileFile": {
+    "message": "Izvēlieties profila failu ( JSON, līdz 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "JSON profils (vai šeit)"
+  },
+  "localProfilePreview": {
+    "message": "Izmaiņas priekšroka"
+  },
+  "localProfileApply": {
+    "message": "Izveidotie izmaiņas"
+  },
+  "localProfileDiscard": {
+    "message": "Iekārta aizkavēta"
+  },
+  "localProfileInvalid": {
+    "message": "Neesoša profila, nepieņemta versija vai aizliegti lauki."
+  },
+  "localProfileChanged": {
+    "message": "Izskats mainījās kopš priekšskata. priekšskats vēlreiz pirms lietojuma."
+  },
+  "localProfileFailed": {
+    "message": "Profils nevarēja glabāt. pārskatiet pašreizējās iestatījumus un atgriezieties."
+  },
+  "localProfileApplied": {
+    "message": "Izskats profils piemērots. Aizsardzības un piekrišana nemainīga."
+  },
+  "analysisTitle": {
+    "message": "Analīzes avoti"
+  },
+  "analysisMixed": {
+    "message": "Vietējie + ārējie pārbaudījumi"
+  },
+  "analysisExternal": {
+    "message": "Ārējās novērojumi pieejami"
+  },
+  "analysisLocal": {
+    "message": "Vietējie · Nav ārējo rezultātu ierakstīts"
+  },
+  "analysisLocalChecked": {
+    "message": "Vietējā ziņojuma/link heuristika ir pabeigta."
+  },
+  "analysisLocalPending": {
+    "message": "Vietējā vērtība vēl nav ierakstīta."
+  },
+  "analysisUnknown": {
+    "message": "Nezināma"
+  },
+  "analysisTimeUnknown": {
+    "message": "Laiks nav ierakstīts"
+  },
+  "analysisObserved": {
+    "message": "Pēdējais lietojamais atbildes"
+  },
+  "analysisFindingObserved": {
+    "message": "Atradīšanās ierakstīta"
+  },
+  "analysisAttempted": {
+    "message": "Pēdējais pieprasījums mēģina"
+  },
+  "analysisPartial": {
+    "message": "Daži pieprasījumi neveicās; pieejamie secījumi neattiecas uz katru elementu."
+  },
+  "analysisOtherServices": {
+    "message": "Citi dienesti / nav pārbaudīti"
+  },
+  "analysisLimit": {
+    "message": "Vietējais rādītājs nav antivīrusu spriedums. pieprasījumi un lejupielādes nav pabeigti analīzes. glabātie rezultāti turpinās savu sākotnējo vecumu; trūkst ieraksti nepārprot, ka nav bijis agrāk pieprasījums."
+  },
+  "analysisScope_hash": {
+    "message": "Failu hash atzinums"
+  },
+  "analysisScope_file": {
+    "message": "Failu iesniegšana"
+  },
+  "analysisScope_url": {
+    "message": "URL analīze"
+  },
+  "analysisScope_domain": {
+    "message": "Domēna atzinums"
+  },
+  "analysisScope_ip": {
+    "message": "Public IP atzinums"
+  },
+  "analysisScope_report": {
+    "message": "Analīzes ziņojums"
+  },
+  "analysisState_running": {
+    "message": "Pieprasīts · vēl nav beidzies rezultāts"
+  },
+  "analysisState_checked": {
+    "message": "Rezultatīvais saņemts"
+  },
+  "analysisState_received": {
+    "message": "Atbildes saņemts · spriedums nav pieejams"
+  },
+  "analysisState_submitted": {
+    "message": "Iesniegums ir pieņēmts · analīze nav pilnībā apliecināta"
+  },
+  "analysisState_not_found": {
+    "message": "Nav atklāts piegādātāja ieraksts"
+  },
+  "analysisState_failed": {
+    "message": "Prasība neveicās · nav jaunas sprieduma"
+  },
+  "analysisState_incomplete": {
+    "message": "Nav veikta analīze"
+  },
+  "analysisSource_remote": {
+    "message": "Ārējās dienesta kontaktā"
+  },
+  "analysisSource_cache": {
+    "message": "Mēness cache · nav jaunas piegādātāja pieprasījumu"
+  },
+  "analysisSource_stored": {
+    "message": "Iegūtais ārējais novērojums"
+  },
+  "analysisSource_attempt": {
+    "message": "Pieprasījums mēģina · atbildes nav atzītas"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Tiesas spriedums nav pieejams"
+  },
+  "analysisVerdict_none": {
+    "message": "Pieejamas atlases: nav atklāšanas (bez drošības garantijas)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "Ieguvumi ietver aizdomīgus rādītājus"
+  },
+  "analysisVerdict_malicious": {
+    "message": "Ieguvumi ietver draudiem atklāšanu"
+  },
+  "analysisReason_unconfigured": {
+    "message": "Pašlaik nav izveidots"
+  },
+  "analysisReason_disabled": {
+    "message": "Jaunas ārējās pieprasījuma novēršana"
+  },
+  "analysisReason_permission": {
+    "message": "Mājas lapas atļauja trūkst jauniem pieprasījumiem"
+  },
+  "analysisReason_authorization": {
+    "message": "Nav automātiskas atļaujas šim ziņojumam / manuālajam režīmam"
+  },
+  "analysisReason_policy": {
+    "message": "Nav atļauts pašreizējā privātuma līmenī"
+  },
+  "analysisReason_on_action": {
+    "message": "Runās tikai pēc izteikta saites darbība"
+  },
+  "analysisReason_unrecorded": {
+    "message": "Nav pārbaudīts ierakstīts par šo ziņojumu"
+  },
+  "analysisUnavailable": {
+    "message": "Analīzes avoti pašlaik nav pieejami"
+  },
+  "analysisModeUnknown": {
+    "message": "Analīzes statuss vēl nav ierakstīts"
+  },
+  "analysisModeRunning": {
+    "message": "Ārējais pieprasījums darbojas · rezultāts gaidāms"
+  },
+  "analysisModeSubmitted": {
+    "message": "Iesniegts ārēji · analīze vēl nav pabeigta"
+  },
+  "analysisModeIncomplete": {
+    "message": "Ārējais pārbaude nepilnīgs · pabeigšana nav apliecināta"
+  },
+  "analysisModePartial": {
+    "message": "Ārējie rezultāti pieejami · Daži pieprasījumi neveic"
+  },
+  "analysisModeFailed": {
+    "message": "Ārējais pieprasījums neveiksmīgs · nav lietojamu rezultātu"
+  },
+  "analysisModeResults": {
+    "message": "Ārējās atbildes pieejamas · skatīt pārbaudes zemāk"
+  },
+  "analysisResourceMessage": {
+    "message": "Paziņojuma konteksts / transporta reputacija"
+  },
+  "analysisResourceAttachment": {
+    "message": "Attiecības"
+  },
+  "analysisResourceLink": {
+    "message": "Saite"
+  },
+  "analysisResourceUnknown": {
+    "message": "Iešējais kopsavilkums · Resurs nav ierakstīts"
+  },
+  "analysisTruncated": {
+    "message": "Daži resursu dati tika izslēgti, jo tika sasniegts vietējais izskata limits."
+  },
+  "analysisResources": {
+    "message": "Iedzīvotāju iezīmes šajā ziņā"
+  },
+  "analysisResourceLocal": {
+    "message": "Attiecības, kas glabātas ar ziņojumu · nav antivīrusu skenēšanas pierādījumu"
+  },
+  "analysisResourceTarget": {
+    "message": "Saistīta mērķa · lejupielādēt attālinātu satura nav ārējās analīzes pierādījums"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Nav ārēju pārbaudi, kas ierakstīta šim resursam"
+  },
+  "analysisContextChanged": {
+    "message": "Paziņojuma konteksts mainījies. aizver un atver atkārtoti popup pirms iesniegšanas vēlreiz."
+  },
+  "analysisLocalIncomplete": {
+    "message": "Vietējā analīze ir nepilnīga: daži ziņojuma saturs nav pieejams."
+  },
+  "analysisLocalUnavailable": {
+    "message": "Vietējā analīze nav pieejama: ziņojumu nevarēja lasīt."
+  },
+  "analysisHistoryTitle": {
+    "message": "Iekšējā vēsture · asociācija nepārbaudīta"
+  },
+  "analysisHistoryWarning": {
+    "message": "Šie vēsturiskie ieraksti var piederēt citai ziņai ar to pašu Message-ID. Tie nepārliecina šo ziņu pārbaudi."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Jaunas avotu novērojumi nevarēja glābt. pastāvošo vēsturi tika glabāti."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "Ziņojuma atjaunināšanās nevarēja tikt glabāta. agrākie procesi tika glabāti."
+  },
+  "sourceExportOpen": {
+    "message": "Analīzes avots ziņojums"
+  },
+  "sourceExportTitle": {
+    "message": "Analīzes avots"
+  },
+  "sourceExportIntro": {
+    "message": "Izveidojiet ierakstīto pārbaudes vietējo attēlu. tas neizraisa jauno analīzi. pašreizējās novērošanas un glabāto vēsturi ar nepārbaudītu asociāciju tiek glabāti atdalīti."
+  },
+  "sourceExportPrivacy": {
+    "message": "Iekļauj dienesti, statusu, spriedumus un precīzu novērošanas laiku. Izslēdz URLs, filanames, hashes, IPs, atslēgas, ziņojuma teksta un iekšējos identificatorus. Resursu numuri attiecas tikai šajā ziņojumā. Tas nav pilns vēsture vai autentisks ieraksts. Nekas nav nosūtīts automātiski. Pārskats pirms dalīšanās."
+  },
+  "sourceExportCancel": {
+    "message": "Diskardas priekšlikums"
+  },
+  "sourceExportContentLabel": {
+    "message": "Ziņojuma priekšskats ( JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "Ziņojuma konteksts nav pieejams. atkārtoti atvērt ziņojumu no tā ziņojuma rīku lapas popup."
+  },
+  "sourceExportChanged": {
+    "message": "Iegūtā stāvoklis mainījies. radīt jauno priekšskatu pirms ietaupījuma."
+  },
+  "sourceExportReady": {
+    "message": "Pārbaudiet priekšskatu pirms ietaupījuma vai dalīšanās."
+  },
+  "sourceExportRequested": {
+    "message": "Iegādājieties, lai pārbaudītu pabeigšanu Thunderbird lejupielādē."
+  },
+  "sourceExportFailed": {
+    "message": "Ziņojums nav glabāts. izveidojiet jauno priekšskatu, lai mēģinātu vēlreiz."
+  },
+  "analysisHistoryPages": {
+    "message": "Vēstures lapas"
+  },
+  "analysisHistoryEntries": {
+    "message": "Ieeja"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Iespējams vai ļaundabīgs vēsturisks atklājums · asociācija nepārbaudīta"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Pirmā vēsturiskā brīdinājuma izrakstīšana"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Izrādīt spēcīgāko aktuālo atklājumu"
+  },
+  "reportDisplayFailed": {
+    "message": "Neuzglabāts ziņojums nevar tikt rādīts. citi rezultāti paliek pieejami."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Daži ziņojuma dati ir nepieņemts formāts un nevarēja tikt rādīti."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Daži glabāti analīzes dati nevarēja lasīt; citi rezultāti paliek pieejami."
+  },
+  "analysisModeResponses": {
+    "message": "Atbildes saņemtas · Nav pieejamas vērtējamas spriedums"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Atbildes saņemtas bez vērtējamas sprieduma · daži lūgumi neveicās"
+  },
+  "analysisCurrentAvailability": {
+    "message": "Jauni pieprasījumi"
+  },
+  "reasonMaliciousIp": {
+    "message": "IP servera kaitīga adreses atklāta ( $IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "Ārējo draudi rādītāji ( URLhaus un IP Reputācija)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus – Zināmas malware domēnes atklātas: $DOMAINS$",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "IP Reputācija ( $PROVIDER$) – Iespējams servera IP: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "urlscan.io rezultāti:"
+  },
+  "urlscanStatus": {
+    "message": "Statuss: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridReportLink": {
+    "message": "Atvērts pilns ziņojums par Hybrid Analysis"
+  },
+  "hybridProviderMessage": {
+    "message": "Pakalpojuma nodrošinātājs: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "Hybrid Analysis likmes robeža vai kvotas ir sasniegti. lūdzu, mēģiniet vēlāk."
+  },
+  "reasonArchivedMaliciousAttachment": {
+    "message": "Vēsturiskā vēsture ($OBSERVED$). $PROVIDER$ Klasificēta piezīme »$NAME$“Tāpat kā ļaunprātīgi.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonArchivedSuspiciousAttachment": {
+    "message": "Vēsturiskā vēsture ($OBSERVED$). $PROVIDER$ Klasificēta piezīme »$NAME$“Tā kā aizdomīgi.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonMaliciousAttachment": {
+    "message": "Attiecība \" $NAME$ \" tika klasificēta kā kaitīga $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "Attiecības \" $NAME$ \" tika klasificēts kā aizdomīgs $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanReportLink": {
+    "message": "Atvērts pilns ziņojums par urlscan.io"
+  },
+  "hybridLinkVerdictStatus": {
+    "message": "Hybrid Analysis: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonMaliciousLinkVerdict": {
+    "message": "Saite \" $URL$ \" tika klasificēta kā kaitīga $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousLinkVerdict": {
+    "message": "Saite \" $URL$ \" tika klasificēta kā aizdomīga $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanErrorDetails": {
+    "message": "Iemesls: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "urlscan.io likmes robeža vai kvotas ir sasniegti. lūdzu, mēģiniet vēlāk."
+  },
+  "urlscanInvalidKey": {
+    "message": "Neatļauts vai neuzticams urlscan.io API atslēga."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Rezultatus nevarēja pārbaudīt aptaujas logā.Pieņemto skenēšanu var pārbaudīt vēlreiz bez jaunas iesniegšanas."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Domēnu nevarēja atrisināt ar urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Hybrid Analysis (neiropātiskā analīze nav atklāta)"
+  },
+  "virustotalNotFound": {
+    "message": "Elements vēl nav ierakstīts VirusTotal datu bāzē."
+  },
+  "virustotalRateLimited": {
+    "message": "VirusTotal likmes robeža vai kvotas ir sasniegti. lūdzu, mēģiniet vēlāk."
+  },
+  "virustotalInvalidKey": {
+    "message": "Neatļauts vai neuzticams VirusTotal API atslēga."
+  },
+  "abuseipdbRateLimited": {
+    "message": "AbuseIPDB likmes robeža vai kvotas ir sasniegti. lūdzu, mēģiniet vēlāk."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Neatļauts vai neuzticams AbuseIPDB API atslēga."
+  },
+  "urlhausRateLimited": {
+    "message": "URLhaus likmes robeža vai kvotas ir sasniegti. lūdzu, mēģiniet vēlāk."
+  },
+  "urlhausInvalidKey": {
+    "message": "Neatļauts vai neuzticams URLhaus API atslēga."
+  },
+  "testApiKeyButton": {
+    "message": "Pārbaudīt savienojumu"
+  },
+  "testApiKeyTesting": {
+    "message": "Testēšanas saikne…"
+  },
+  "testApiKeyValid": {
+    "message": "Pieteikums ir pieņēmts. tas nepārliecina lejupielādes tiesību vai atlikušās kvotas."
+  },
+  "testApiKeyInvalid": {
+    "message": "Saistība nav spēkā: Invalid API atslēga."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Rata robeža vai kvotas sasniegts. lūdzu, mēģiniet vēlāk."
+  },
+  "testApiKeyError": {
+    "message": "Saistības tests neveicās."
+  },
+  "testApiKeyEmpty": {
+    "message": "Lūdzu, ievadiet API atslēgu vispirms."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "Atļauja sazināties ar servisu hosts tika noraidīts."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Lūdzu, vispirms izvēlieties IP atzinuma nodrošinātāju."
+  },
+  "rateLimitWithWait": {
+    "message": "Rate limit vai kvotas sasniegts. lūdzu, mēģiniet vēlreiz $SECONDS$ sekundēs.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Rīta robeža sasniedzama"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Invalīds API atslēga"
+  },
+  "auditErrorCode": {
+    "message": "kļūdas kods"
+  },
+  "auditErrorDetails": {
+    "message": "kļūdas detaļas"
+  },
+  "auditRetryAfter": {
+    "message": "Gaida laiku"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ sekundes",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "securityTitle": {
+    "message": "Pārvaldība un saites drošība"
+  },
+  "securityScope": {
+    "message": "Vietējie uz šo Thunderbird profilu. neļauj profilā izmaiņas, izslēdzot papildināt vai atverot kopētus saites citur."
+  },
+  "securityAdminPassword": {
+    "message": "administratora paroli (12+ rakstzīmes; atstāt brīvu, lai to glabātu)"
+  },
+  "securityApprovalPassword": {
+    "message": "Atšķirīgs saites atļaujas paroli (12+ rakstzīmes; atstāt brīvu, lai turētu)"
+  },
+  "securityThreshold": {
+    "message": "Prasība par atļauju piešķirt riska rādītāju (0–100, iekļaujoši)"
+  },
+  "securityEnablePolicy": {
+    "message": "Iespējams nodrošināt saites drošību"
+  },
+  "securityUnknownApproval": {
+    "message": "Nepabeigti pārbaudījumi arī pieprasa atļauju"
+  },
+  "securityUnlock": {
+    "message": "Atslēgšanas iestatījumi"
+  },
+  "securitySave": {
+    "message": "Aizsargāt drošības iestatījumus"
+  },
+  "securityLock": {
+    "message": "Lock jau"
+  },
+  "securityDisable": {
+    "message": "Izņemt iestatījumu paroli"
+  },
+  "securityRecovery": {
+    "message": "Atjaunošanas koda"
+  },
+  "securityRecover": {
+    "message": "Atjaunināt administratora paroli, izmantojiet kodu"
+  },
+  "securityStopTransfers": {
+    "message": "Aizkavē ārējos pārvades"
+  },
+  "securityLocked": {
+    "message": "Iestatījumi ir bloķēti. Lai tos atbloķētu, ievadiet administratora paroli."
+  },
+  "securityUnlocked": {
+    "message": "Iestatījumi ir atslēgti; aizslēgts pēc piecām minūtēm bez aktivitātes."
+  },
+  "securityOptional": {
+    "message": "Paroles drošība ir opcionāla un pašlaik ir atslēgta. bez piekrišanas paroles, aizliegti saites paliek bloķētas."
+  },
+  "securityError": {
+    "message": "Pārbaudiet savu paroli, sesiju un ievadi."
+  },
+  "securityWait": {
+    "message": "Pārāk daudz mēģinājumiem. gaidiet pirms atgriešanās."
+  },
+  "securityLength": {
+    "message": "Izmantojiet 12 rakstzīmes un atšķirīgus paroles."
+  },
+  "securityRecoverySave": {
+    "message": "Iegūstiet šo vienreizējo atgūšanas kodu atšķirīgi. tas nebūs redzams vēlreiz:"
+  },
+  "securitySaved": {
+    "message": "Aizsardzības pasākumi ir glābti."
+  },
+  "securityDisableConfirm": {
+    "message": "Izņemt iestatījumu paroli? saites drošība paliek iestatīta."
+  },
+  "securityStopped": {
+    "message": "Ārējās pārvades ir pārtrauktas."
+  },
+  "securityApprovalTitle": {
+    "message": "Iespējams, ka ir bīstami saturs"
+  },
+  "securityConfirmDanger": {
+    "message": "Es gribētu atvērt šo potenciāli bīstamo satura jebkādā ziņā."
+  },
+  "securityApproveOnce": {
+    "message": "Atbalsts un atvēršana vienreiz"
+  },
+  "securityExpired": {
+    "message": "Atļauja beidzas vai konteksta mainīšanās. sākt no jaunā vēstule."
+  },
+  "securityOpened": {
+    "message": "Thunderbird pieņēma atvēršanas pieprasījumu."
+  },
+  "securityApprovalFailed": {
+    "message": "Atvēršana atteikta. Pārbaudiet paroli vai, ja apstiprinājuma termiņš beidzies, sāciet no ziņojuma vēlreiz."
+  },
+  "providerTestDisclosure": {
+    "message": "Tas nosūta jūsu API atslēgvārdu un fiksētu testu datus atlasītajam piegādātājs bez ziņojuma satura. sekmīgs lasījuma tests nepārbaudīs lejupielādes vai pieejamo kvotu."
+  },
+  "analysisSimple": {
+    "message": "Pārskats"
+  },
+  "analysisExpert": {
+    "message": "Tehniski detalizēti"
+  },
+  "analysisSimpleNone": {
+    "message": "Nav atklāti neiespējami pazīmes"
+  },
+  "analysisSimpleCaution": {
+    "message": "aizdomas"
+  },
+  "analysisSimpleDanger": {
+    "message": "Ļaunprātīga atradība"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Nepilnīga pārbaude"
+  },
+  "analysisScoreExplanation": {
+    "message": "Riska vērtējums ir balstīts uz kārtulām un nenorāda varbūtību vai drošības garantiju."
+  },
+  "analysisSimpleBasis": {
+    "message": "Pakalpojumi ar atradumiem / nepieejami"
+  },
+  "analysisProviderSetup": {
+    "message": "Pakalpojuma nodrošinātājs un datu atklāšana"
+  },
+  "analysisProviderConfigured": {
+    "message": "Atslēga ir konfigūriēta; glabājot to, nav sākts skenēšana."
+  },
+  "analysisProviderNoKey": {
+    "message": "Nav konfigūru"
+  },
+  "analysisDataHash": {
+    "message": "Sīkdatņu pirkstu nospiedums (SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Pilnīga piesaiste"
+  },
+  "analysisDataUrl": {
+    "message": "Kompletā URL; var būt konfidenciālie tokenus"
+  },
+  "analysisDataDomain": {
+    "message": "Link domēna"
+  },
+  "analysisDataIp": {
+    "message": "Public IP no ziņojumu nosaukumiem"
+  },
+  "analysisDataReport": {
+    "message": "Ziņojums identificē"
+  },
+  "analysisApprovalRequired": {
+    "message": "Papildu atļauja ir nepieciešama; atcelt vai pieprasīt administratoru."
+  },
+  "analysisContinueWarning": {
+    "message": "Pārbaudiet iemeslus pirms turpināt. jūs varat anulēt."
+  },
+  "analysisConflict": {
+    "message": "Pārdevēji nesaskaņojas; par secinājumiem prioritāte."
+  },
+  "analysisExportSensitive": {
+    "message": "Pārskats pirms eksporta: tehniskie dati var identificēt ziņojuma resursus."
+  },
+  "scanActions": {
+    "message": "Ārējās pārbaudes"
+  },
+  "scanStart": {
+    "message": "Pārbaudīt tagad"
+  },
+  "scanRepeat": {
+    "message": "Pārbaudīt vēlreiz"
+  },
+  "scanRefresh": {
+    "message": "Atsvaidzināt rezultātus"
+  },
+  "scanRunning": {
+    "message": "Ārējais pārbaudījums progresa gaitā"
+  },
+  "scanProgress": {
+    "message": "Pilnīgi iegūtie resursu"
+  },
+  "scanMigrationNotice": {
+    "message": "Izvēlieties automātiskās skenēšanas režīmu iestatījumos. līdz tam piemēro agrākos sūtītājus un manuālus noteikumus."
+  },
+  "scanState_idle": {
+    "message": "Šādā ziņā neviens skenēšanas darījums nav aktīvs."
+  },
+  "scanState_queued": {
+    "message": "Pārbaudiet, kas ir pieņēmuši; gaida, lai sāktu"
+  },
+  "scanState_running": {
+    "message": "Ārējais pārbaudījums progresa gaitā"
+  },
+  "scanState_completed": {
+    "message": "Pārbaude pabeigta"
+  },
+  "scanState_pending": {
+    "message": "Pakalpojuma nodrošinātājs joprojām tiek pārstrādāts; atjaunina rezultātus"
+  },
+  "scanState_incomplete": {
+    "message": "Pārbaudiet nepilnību; daži rezultāti ir trūkst"
+  },
+  "scanState_failed": {
+    "message": "Pārbaudiet neveiksmi; mēģiniet vēlreiz"
+  },
+  "scanState_blocked": {
+    "message": "Nav sākta ārējā pārbaude; skatīt prasības zemāk"
+  },
+  "analysisReason_manual": {
+    "message": "Manuālais režīms"
+  },
+  "analysisReason_sender": {
+    "message": "Pārsūtītājs nav pieņēmis"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Automātiskā saites analīze"
+  },
+  "analysisReason_no_resources": {
+    "message": "Nekas neatbilst resursus"
+  },
+  "analysisReason_quota": {
+    "message": "Kvotas sasniegts; gaidīt pirms atgriešanās"
+  },
+  "analysisReason_running": {
+    "message": "Pārdevējam ir jāapstrādā"
+  },
+  "analysisReason_provider_error": {
+    "message": "Pārdevējam pieprasījums neizdevās"
+  },
+  "scanModeLabel": {
+    "message": "Automātiskie ārējie skenēšanas"
+  },
+  "scanModeKeep": {
+    "message": "Ievērojiet savu iestatījumu (izvēlies režīmu)"
+  },
+  "scanModeAll": {
+    "message": "Visi atvērtie ziņojumi"
+  },
+  "scanModeSenders": {
+    "message": "Tikai apstiprināti sūtītāji"
+  },
+  "scanModeManual": {
+    "message": "Tikai manuāli"
+  },
+  "scanModeHelp": {
+    "message": "Automātiskās pārbaudes nosūta tikai jaucējvērtības, domēnus un publiskas IP adreses. Pilnas saites un pielikumus apstiprina atsevišķi. Neatvērtie ziņojumi paliek lokāli."
+  },
+  "assessmentCompletion": {
+    "message": "Pārstrādes statuss"
+  },
+  "assessmentCompletion_pending": {
+    "message": "Pārdevējs joprojām tiek pārstrādāts"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Atjaunošanas ziņojums ir pilnīgs"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "Nav pieejamas galīgas vērtēšanas"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Tehniskā pārbaude neveiksmīga"
+  },
+  "assessmentConflict": {
+    "message": "Dažādas daļējas vērtības; spēcīgākais atklājums nosaka rīcību."
+  },
+  "assessmentSignals": {
+    "message": "Pamatvērtējuma pamats"
+  },
+  "assessmentJob": {
+    "message": "Darba devējs ID"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Pārdevēja spriedums"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Scanner atklāšana"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Sākotnējais draudiem"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Sākotnējais multiscan rezultāts"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Sākotnējais draudi"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Pakalpojuma nodrošinātājs WhiteList indikators"
+  },
+  "assessmentSignal_overall": {
+    "message": "Urlscan kopējais vērtējums"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Urlscan motora vērtējums"
+  },
+  "assessmentSignal_engines": {
+    "message": "Citi motora atradumi"
+  },
+  "assessmentSignal_brand": {
+    "message": "Zīmola indikators; pats par sevi nerada risku"
+  },
+  "assessmentSignal_report": {
+    "message": "Ziņojums valsts"
+  },
+  "assessmentOriginal": {
+    "message": "Sākotnējais tiesnesis"
+  },
+  "hybridExpertTitle": {
+    "message": "API v2 ziņojuma detaļas"
+  },
+  "hybridExpertScope": {
+    "message": "Tikai faktiski saņemtie lauki tiek rādīti. Ātra skenēšana nepārprot pilnu smilšu lauka izpildi. Nepastāvētie dati nav negatīvs atklājums. URLs izslēdz uzticamības, meklēšanas līnijas un fragmenti; komandas līnijas vai izejvielas ziņojumi netiek rādīti; Atverot šos datus, nav pieprasījumu."
+  },
+  "hybridExpertMissing": {
+    "message": "Nav iekļauts šajā ziņojumā"
+  },
+  "hybridExpertYes": {
+    "message": "Jā"
+  },
+  "hybridExpertNo": {
+    "message": "Nē"
+  },
+  "hybridExpert_identity": {
+    "message": "Failu un resursu identitāte"
+  },
+  "hybridExpert_assessment": {
+    "message": "Sākotnējā vērtēšana un pārstrāde"
+  },
+  "hybridExpert_scanners": {
+    "message": "Scanner rezultāti"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Attiecīgi antivīrusu atklājumi"
+  },
+  "hybridExpert_reports": {
+    "message": "Atsauces sandbox ziņojumi"
+  },
+  "hybridExpert_counts": {
+    "message": "Ievērojams kopējais"
+  },
+  "hybridExpert_signatures": {
+    "message": "Uzvedības paraksts"
+  },
+  "hybridExpert_mitre": {
+    "message": "Mīlestība un CK"
+  },
+  "hybridExpert_network": {
+    "message": "Tīkla rādītāji"
+  },
+  "hybridExpert_processes": {
+    "message": "procesus"
+  },
+  "hybridExpert_extracted": {
+    "message": "Izņemti faili"
+  },
+  "hybridExpert_certificates": {
+    "message": "Sertifikāti"
+  },
+  "hybridExpertEmpty": {
+    "message": "Iesniegts kā tukšs saraksts; nav ziņots par"
+  },
+  "securityPasswordHelp": {
+    "message": "Šim profilam ir atlasīta drošība. Administrācijas un saites atļaujas nolūkos izmantojiet dažādas atslēgas ar minimāli divpadsmit rakstzīmēm. Atstājiet jaunus paroles laukumus tukšus, lai turētu esošos paroles. Atbrīvojiet atkārtotas atgūšanas kodu atšķirīgi."
+  },
+  "securityAdminConfirm": {
+    "message": "Pārliecinieties par administratora paroli"
+  },
+  "securityApprovalConfirm": {
+    "message": "Pārliecinieties par jauno saiti parakstīšanu"
+  },
+  "securityRecoveryPassword": {
+    "message": "Jauns administratora paroli atgūšanai"
+  },
+  "securityApprovalConfigured": {
+    "message": "Saite atļaujas paroli ir iestatīta; to var aizstāt, bet to nevar redzēt."
+  },
+  "securityApprovalMissing": {
+    "message": "Nav izveidota saites piekrišanas paroli. saites, kurām nepieciešama paroles piekrišana, paliek bloķētas."
+  },
+  "securityConfirmMismatch": {
+    "message": "Jaunie paroli un to apliecības neatbilst."
+  },
+  "securityUnlockPassword": {
+    "message": "Pašreizējais administratora paroli"
+  },
+  "displaySettingsTitle": {
+    "message": "Analīzes rādītāji"
+  },
+  "displaySettingsHelp": {
+    "message": "Izskata iestatījumi nesamazina skenēšanu, ārējos pārsūtījumus, rezultātus vai saites drošību. Jūs joprojām varat pāriet starp pārskatu un eksperta skatījumu, lasot rezultātus."
+  },
+  "displayDefaultView": {
+    "message": "Parastais redzējums ziņojumam un popup"
+  },
+  "displayHybridDetails": {
+    "message": "Ievērojiet papildu HYBRID API ziņojuma sadaļas"
+  },
+  "displaySave": {
+    "message": "Izglītības programmas preferences"
+  },
+  "displaySaved": {
+    "message": "Izrāde preferences glabāta."
+  },
+  "urlscanDnsError": {
+    "message": "Pārdevējs nevarēja izšķirt mērķa domēnu."
+  },
+  "urlscanInvalidRequest": {
+    "message": "Pārdevējs noraidīja neesošas iesniegšanas parametrus."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "Pārdevējs noraidīja iesniegumu; atbildes nav DNS neveiksmes."
+  },
+  "analysisQuotaReset": {
+    "message": "Atsauksmes par kvotu atkārtoti"
+  },
+  "analysisRetryAt": {
+    "message": "Agrākie atgriešanās"
+  },
+  "analysisLocalBackoff": {
+    "message": "Šis mēģinājums tika izlaists vietēji; nav nosūtīts jauns piegādātāja pieprasījums."
+  },
+  "scanState_deferred": {
+    "message": "Analīze ir atlaista: visi fonu slots ir aizņemti. atgriešanās pēc vēl viena analīzes beigas."
+  },
+  "scanCoverage": {
+    "message": "Daži no tām nav pārbaudīti."
+  },
+  "scanCoverageAttachments": {
+    "message": "Attiecības sagatavotas"
+  },
+  "scanCoverageLinks": {
+    "message": "Izvēlētie saites"
+  },
+  "scanCoverage_read_failed": {
+    "message": "Pielikumu nevar lasīt vai hashēt."
+  },
+  "scanCoverage_size_limit": {
+    "message": "Vienā pielikumā pārsniedz 25 MiB skenēšanas robežu."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "Skanēšanas resursu robeža ir sasniegta."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "Iekārtas inventaris ir nepilnīgs."
+  },
+  "scanFailure_source_capacity": {
+    "message": "Šīs pārbaudes nav sāktas; pastāvošie ieraksti tika glabāti."
+  },
+  "scanFailure_cancelled": {
+    "message": "Pārbaude tika atcelta.Nav beidzies rezultāts."
+  },
+  "scanFailure_timeout": {
+    "message": "Pārbaude ir pabeigta, rezultāti paliek nepilnīgi."
+  },
+  "scanFailure_scan_failed": {
+    "message": "Pārbaude nevarēja beigt. pastāvošie ieraksti tika glabāti."
+  },
+  "localProtectionProfileExport": {
+    "message": "Eksporta drošības noteikumi"
+  },
+  "localProfileYes": {
+    "message": "Jā"
+  },
+  "localProfileNo": {
+    "message": "Nē"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Vecāki drošības profili nevar paplašināt automatizētās skenēšanas apjomu vai pārslēgt URL iesniegumu."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "Pastāvīgo avotu vēsturi nevar lasīt un ir glabāts nemainīgi."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "Uzglabāšanas konflikts novērš avota vēstures pagarināšanos."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "Šīs ziņojuma avots ir sasniedzis savu ieejas robežu."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "Šīs ziņojuma avots ir sasniedzis savu glabāšanas robežu."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "Iekšējā uzglabāšanas sistēma nav pieejama."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Iespējamas atradumi • nepilnīga dokumentacija"
+  },
+  "apiDebugTitle": {
+    "message": "API debūžas režīms"
+  },
+  "apiDebugHelp": {
+    "message": "Iegūto jauno API mēģina lokāli diagnozi neveiksmes. Iegūstiet, atkārtojiet neveiksmi, tad pārskatiet vai eksportuet ziņojumu. administratora atslēgu ir nepieciešama, kad tiek iestatīts administratora paroli. atslēgas, privātās URLs, ziņojuma saturs un izejvielas tiek aizmirsti; atsauces ID ir pseudo-nimizētas. līdz 100 ieejas / 1 MiB tiek glabāti atmiņā vienu stundu un zaudēti atkārtoti. atslēga izslēdz ziņojumu. nav papildu servisu pieprasījumu."
+  },
+  "apiDebugEnable": {
+    "message": "API diagnoze"
+  },
+  "apiDebugSave": {
+    "message": "Aizsargāt debug"
+  },
+  "apiDebugPreview": {
+    "message": "Ieejas debug ziņojums"
+  },
+  "apiDebugExport": {
+    "message": "Eksporta debug ziņojums"
+  },
+  "apiDebugClear": {
+    "message": "Skaidrs debug ziņojums"
+  },
+  "apiDebugSaved": {
+    "message": "Debug iestatījums glābts.Pirmās diagnozes izslēgts."
+  },
+  "apiDebugCleared": {
+    "message": "Debug ziņojums ir izskaidrots."
+  },
+  "apiDebugFailed": {
+    "message": "Debug operācija neveicās. atslēgties administratīvajā un mēģiniet vēlreiz."
+  },
+  "apiDebugFailureHint": {
+    "message": "Detalizēta neveiksmes ziņojuma saņemšanai iestatījumos var atļaut API devu režīmu, atkārtoti pārbaudīt un eksportu no devu ziņojuma."
+  },
+  "urlscanResultGone": {
+    "message": "Šis rezultāts tika dzēsts ar urlscan.io. atjauninājuma nevar atjaunināt; jauna iesniegšana prasa explicit skanēšanu."
+  },
+  "apiDebugOpen": {
+    "message": "Atvērtā API diagnoze"
+  },
+  "diagTitle": {
+    "message": "API diagnoze"
+  },
+  "diagHelp": {
+    "message": "Filtrēti pārbaudes vietējā atmiņā. atslēgas, privātais URLs un izejvielas paliek slēptas. HTTP panākumi nav pabeigts drošības spriedums. pieejami tikai posmi, kas ierakstīti pēc aktivizācijas."
+  },
+  "diagOff": {
+    "message": "Debug režīms ir izslēgts. to var iestatīt."
+  },
+  "diagEmpty": {
+    "message": "Nav ierakstu, kas atšķiras."
+  },
+  "diagPause": {
+    "message": "Pārtraukuma skatījums"
+  },
+  "diagResume": {
+    "message": "Reizēm skatījums"
+  },
+  "diagPaused": {
+    "message": "Skatīt pārtraukts; ieraksts paliek aktīvs."
+  },
+  "diagActive": {
+    "message": "Atsauksmes aktīvi; atdzesē vienu reizes sekundē."
+  },
+  "diagProvider": {
+    "message": "Pakalpojumu nodrošinātājs"
+  },
+  "diagState": {
+    "message": "valsts"
+  },
+  "diagPurpose": {
+    "message": "Operācijas veids"
+  },
+  "diagFrom": {
+    "message": "no"
+  },
+  "diagTo": {
+    "message": "T"
+  },
+  "diagAll": {
+    "message": "Visiem"
+  },
+  "diagRuns": {
+    "message": "Pārbaudies plūsmas"
+  },
+  "diagDetails": {
+    "message": "Izvēlētie plūsmas dati"
+  },
+  "diagDropped": {
+    "message": "Izlaistu ierakstu vai soļu"
+  },
+  "diagNoHttp": {
+    "message": "Nav HTTP zvanu ierakstīts par šo plūsmu."
+  },
+  "diagNotCaptured": {
+    "message": "Neapņēmis"
+  },
+  "diagTimeline": {
+    "message": "Tīmekļa"
+  },
+  "diagRequest": {
+    "message": "Filtrēta pieprasījums"
+  },
+  "diagResponse": {
+    "message": "Transports un filtrēta reakcija"
+  },
+  "diagReset": {
+    "message": "Atjaunojiet filtru"
+  },
+  "diagTruncated": {
+    "message": "Šis plūsma tika izkropļota, jo ieraksta robežas."
+  },
+  "diag_phase_precondition": {
+    "message": "Priekšnoteikumi"
+  },
+  "diag_phase_queue": {
+    "message": "Kūkas"
+  },
+  "diag_phase_attempt": {
+    "message": "Sūtīt mēģinājuma"
+  },
+  "diag_phase_response": {
+    "message": "HTTP atbildes / transporta pabeigšana"
+  },
+  "diag_phase_parse": {
+    "message": "JSON pārstrāde"
+  },
+  "diag_phase_assessment": {
+    "message": "vērtējums"
+  },
+  "diag_phase_persistence": {
+    "message": "izturība"
+  },
+  "diag_phase_cache": {
+    "message": "Cache uzbrukums"
+  },
+  "diag_phase_wait": {
+    "message": "Gaidām"
+  },
+  "diag_phase_cancelled": {
+    "message": "Atcelt"
+  },
+  "diag_phase_expired": {
+    "message": "ieraksts beidzas bez apliecinājuma"
+  },
+  "diag_purpose_automatic": {
+    "message": "Automātiskā pārbaude"
+  },
+  "diag_purpose_manual": {
+    "message": "Manual pārbaude"
+  },
+  "diag_purpose_link": {
+    "message": "Link pārbaude"
+  },
+  "diag_purpose_key_test": {
+    "message": "Meklēšanas atslēga"
+  },
+  "diag_purpose_report": {
+    "message": "Ziņojuma pieprasījums"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analīze"
+  },
+  "diag_state_running": {
+    "message": "Runāšana"
+  },
+  "diag_state_complete": {
+    "message": "Operācija beidzies"
+  },
+  "diag_state_pending": {
+    "message": "Pēkšņi"
+  },
+  "diag_state_blocked": {
+    "message": "Neizveidota / bloķēta"
+  },
+  "diag_state_incomplete": {
+    "message": "Nepilnība"
+  },
+  "diag_state_failed": {
+    "message": "neveiksmīgs"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Nepabeigta pilnveide"
+  },
+  "localScoreMessage": {
+    "message": "Vietējā ziņojuma vērtība"
+  },
+  "localScoreLink": {
+    "message": "Vietējais rādītājs šai saitei ziņojumā"
+  },
+  "localScoreNoIndicators": {
+    "message": "Vietējie brīdinājuma rādītāji nav atklāti."
+  },
+  "localScoreIndicators": {
+    "message": "Iekšējās brīdinājuma rādītāji ir atklāti. pārskatiet iemeslus pirms atvēršanas."
+  },
+  "uploadSentLabel": {
+    "message": "Uzlādēt sūtīt"
+  },
+  "uploadSentUnassigned": {
+    "message": "Uzlādē tika nosūtīts, bet tā rezultāts nevarēja tikt piešķirts šim pielikumam."
+  },
+  "hybridReportTitle": {
+    "message": "Hybrid Analysis ziņojums"
+  },
+  "hybridReportIntro": {
+    "message": "Lasīt tikai saņemto rezultātu skatījums. atverot šo ziņojumu, piegādātāja pieprasījums netiek nosūtīts."
+  },
+  "hybridReportOpen": {
+    "message": "Skatīt analīzes ziņojumu"
+  },
+  "hybridReportUnavailable": {
+    "message": "Atsauksmes nav pieejamas. atkārtoti atvērt no pašreizējā ziņojuma."
+  },
+  "hybridReportTechnical": {
+    "message": "Pakalpojuma nodrošinātājs un saites dati"
+  },
+  "hybridReportExplanation": {
+    "message": "Par šo vērtējumu"
+  },
+  "hybridReportSummary": {
+    "message": "Izvērtējums un izcelsme"
+  },
+  "hybridReportSnapshot": {
+    "message": "Iegūtā ziņojuma snapshot; ne jauns skenējums"
+  },
+  "hybridReportScope": {
+    "message": "Pakalpojuma nodrošinātājs rezultāti un vietējais rādītājs ir atdalīti. trūkstošie lauki nav negatīvi secījumi. tiek rādīti tikai pieejami, saistoši dati."
+  },
+  "hybridReportCopy": {
+    "message": "Kopijas"
+  },
+  "hybridReportCopied": {
+    "message": "Kopēts kā teksts."
+  },
+  "hybridReportCopyFailed": {
+    "message": "Neieslēdzas: izvēlieties un kopējiet tekstu manuāli."
+  },
+  "hybridReportAvailableOnly": {
+    "message": "Robežu pieejamie dati"
+  },
+  "hybridReportNoMatches": {
+    "message": "Nav saderīgu lauku pieejamajos datos."
+  },
+  "hybridReportAvailability": {
+    "message": "pieejamība un ierobežošana"
+  },
+  "hybridReportRun": {
+    "message": "Analīze run"
+  },
+  "hybridReportSearch": {
+    "message": "Meklēt pieejamos laukumus"
+  },
+  "hybridReportReady": {
+    "message": "Ziņojums ir uzlādēts. nav sākts jauns skenējums."
+  },
+  "hybridReportResource_name": {
+    "message": "Attiecības nosaukums"
+  },
+  "hybridReportResource_url": {
+    "message": "Iekšējā mērķa URL"
+  },
+  "hybridReportResource_sha256": {
+    "message": "Izdevums SHA-256"
+  },
+  "hybridField_type": {
+    "message": "Failu veids"
+  },
+  "hybridField_type_short": {
+    "message": "Īss faila veids"
+  },
+  "hybridField_size": {
+    "message": "Lielums bytos"
+  },
+  "hybridField_last_file_name": {
+    "message": "Pēdējais faila nosaukums"
+  },
+  "hybridField_submit_name": {
+    "message": "iesnieguma nosaukums"
+  },
+  "hybridField_url_analysis": {
+    "message": "URL analīze"
+  },
+  "hybridField_target_url": {
+    "message": "Pakalpojuma nodrošinātājs mērķis URL (var būt saīsināts)"
+  },
+  "hybridField_id": {
+    "message": "Atbildes ID (neparedzēts veids)"
+  },
+  "hybridField_job_id": {
+    "message": "Sandbox darba ID"
+  },
+  "hybridField_submission_id": {
+    "message": "Ievadiet ID"
+  },
+  "hybridField_state": {
+    "message": "Pakalpojuma valsts"
+  },
+  "hybridField_finished": {
+    "message": "Beidzot"
+  },
+  "hybridField_verdict": {
+    "message": "Pārdevēja spriedums"
+  },
+  "hybridField_threat_score": {
+    "message": "Hybrid Analysis draudiem"
+  },
+  "hybridField_threat_level": {
+    "message": "Iespēja nodrošināt apdraudējumu līmenis"
+  },
+  "hybridField_multiscan_result": {
+    "message": "Multiskan rezultāts (piegādātāja vērtība)"
+  },
+  "hybridField_av_detect": {
+    "message": "AV atklāšanas vērtība (piegādātāja vērtība)"
+  },
+  "hybridField_whitelisted": {
+    "message": "Iekārta piegādātājs White"
+  },
+  "hybridField_vx_family": {
+    "message": "Maldīnu ģimene"
+  },
+  "hybridField_classification_tags": {
+    "message": "Klasifikācijas tags"
+  },
+  "hybridField_tags": {
+    "message": "Birkas"
+  },
+  "hybridField_analysis_start_time": {
+    "message": "Analīzes sākuma laikposms"
+  },
+  "hybridField_environment_id": {
+    "message": "Vides ID"
+  },
+  "hybridField_environment_description": {
+    "message": "Sandbox vide"
+  },
+  "hybridField_error_type": {
+    "message": "Pārdevēja kļūda veids"
+  },
+  "hybridField_error_origin": {
+    "message": "Iekārta kļūda"
+  },
+  "hybridField_name": {
+    "message": "Nosaukums"
+  },
+  "hybridField_status": {
+    "message": "statuss"
+  },
+  "hybridField_progress": {
+    "message": "Piegāde (Provider Value)"
+  },
+  "hybridField_positives": {
+    "message": "Pozitīvas atklājumi"
+  },
+  "hybridField_total": {
+    "message": "Kopējais pārbaudes"
+  },
+  "hybridField_percent": {
+    "message": "Procentuālā vērtība (providora vērtība)"
+  },
+  "hybridField_scan_time": {
+    "message": "Skanēšanas ilgums (piegādātāja vienība)"
+  },
+  "hybridField_scan_date": {
+    "message": "Skanēšanas datums"
+  },
+  "hybridField_product": {
+    "message": "Produkts Scanner"
+  },
+  "hybridField_version": {
+    "message": "Scanner versija"
+  },
+  "hybridField_update": {
+    "message": "Scanner atjaunināšanās"
+  },
+  "hybridField_total_network_connections": {
+    "message": "Tīkla saites"
+  },
+  "hybridField_total_processes": {
+    "message": "procesus"
+  },
+  "hybridField_total_signatures": {
+    "message": "Parakstu"
+  },
+  "hybridField_category": {
+    "message": "Kategorija"
+  },
+  "hybridField_attck_id": {
+    "message": "MITRE ATT&CK tehniskā ID"
+  },
+  "hybridField_tactic": {
+    "message": "MITRE ATT&CK taktika"
+  },
+  "hybridField_technique": {
+    "message": "MITRE ATT&CK tehnika"
+  },
+  "hybridField_description": {
+    "message": "Apraksts"
+  },
+  "hybridField_domains": {
+    "message": "Iespējams domēns"
+  },
+  "hybridField_hosts": {
+    "message": "Iespējams, ka viesmīlnieks"
+  },
+  "hybridField_compromised_hosts": {
+    "message": "Kompromisa hosts (piegādātāja prasība)"
+  },
+  "hybridField_domain": {
+    "message": "Domēna"
+  },
+  "hybridField_host": {
+    "message": "Viesnīcas"
+  },
+  "hybridField_ip": {
+    "message": "IP adreses"
+  },
+  "hybridField_port": {
+    "message": "Ports"
+  },
+  "hybridField_protocol": {
+    "message": "Protokolā"
+  },
+  "hybridField_country": {
+    "message": "valsts"
+  },
+  "hybridField_asn": {
+    "message": "Autonomā sistēma"
+  },
+  "hybridField_uid": {
+    "message": "Procedūra UID"
+  },
+  "hybridField_process_id": {
+    "message": "Pārbaudes ID (PID)"
+  },
+  "hybridField_parent_uid": {
+    "message": "Vecāku process UID"
+  },
+  "hybridField_file_path": {
+    "message": "Failu ceļš"
+  },
+  "hybridField_subject": {
+    "message": "Sertifikāta priekšmets"
+  },
+  "hybridField_issuer": {
+    "message": "Sertifikāta emitents"
+  },
+  "hybridField_valid_from": {
+    "message": "Valda no"
+  },
+  "hybridField_valid_until": {
+    "message": "Līdz brīdim, kad"
+  },
+  "hybridField_serial_number": {
+    "message": "Serijas serijas numuri"
+  },
+  "hybridField_sha256": {
+    "message": "SHA-256"
+  },
+  "hybridField_sha1": {
+    "message": "SHA-1"
+  },
+  "hybridField_md5": {
+    "message": "MD5"
+  },
+  "hybridField_sha512": {
+    "message": "SHA-512"
+  },
+  "hybridField_imphash": {
+    "message": "Ieguvumi hash"
+  },
+  "hybridReportResource_quickScanId": {
+    "message": "Ražots ātrs skenēšanas ID"
+  },
+  "analysisLocalOnly": {
+    "message": "Pārbaudīts tikai vietēji"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "Pakalpojumi ar rezultātiem"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Pakalpojumi aizvien"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Pakalpojumi ar kļūdām"
+  },
+  "hybridReportSection": {
+    "message": "Sekcija"
+  },
+  "hybridReportAllSections": {
+    "message": "Visi sadaļi"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "Pārstrāde pilnībā"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "Pārstrāde pending"
+  },
+  "hybridReportProcessing_failed": {
+    "message": "Pārstrāde neveiksmīgi"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "Pārstrāde neatklāta statusa"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Atsauksmes saņemts"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Snapshot izveidota"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Ieguvusi Hybrid Analysis atrašanās vietas šai resursu"
+  },
+  "hybridReportSaved": {
+    "message": "Savu Hybrid Analysis ziņojumu"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Apkopo UTC"
+  },
+  "hybridReportWhy": {
+    "message": "Kāpēc šī vērtēšana?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Citi vērtēšanas signāli"
+  },
+  "hybridReportCompare": {
+    "message": "Analīzes runs"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Sekcijas ar datiem"
+  },
+  "hybridReportAssessment": {
+    "message": "Thundy vērtējums no Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Avots un laika rādītāji"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Atrodiet pieejamu · pabeigšana nepārbaudīta"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Atvērts hibrīds"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Rādīt meklēt detaļas"
+  },
+  "attachmentProtectionTitle": {
+    "message": "Aizsardzības piesaiste"
+  },
+  "attachmentProtectionScope": {
+    "message": "Šī noteikums attiecas, ja ietaupīt ar Thundy. Thunderbird 's pašu pielikuma komandas paliek pieejamas."
+  },
+  "attachmentPolicyMode": {
+    "message": "Kad sasniedzamās robežvērtības"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Hybrid Analysis rezultātu robežvērtība"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Attiecības bez apliecinātu rezultātu"
+  },
+  "attachmentModeOff": {
+    "message": "Izslēgšana"
+  },
+  "attachmentModeWarn": {
+    "message": "Apsveriet"
+  },
+  "attachmentModeApproval": {
+    "message": "Prasība pēc piekrišanas"
+  },
+  "attachmentModeBlock": {
+    "message": "Bloks"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Saglabāt ar Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "Ieguldījums glābšana"
+  },
+  "attachmentCancelSave": {
+    "message": "Atcelt"
+  },
+  "attachmentThresholdReached": {
+    "message": "Hybrid punkts sasniedz noteikto robežu."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis klasificēja šo failu kā kaitīgu."
+  },
+  "attachmentUnknown": {
+    "message": "Nav neviena apliecinājuma par šo pielikumu."
+  },
+  "attachmentBlocked": {
+    "message": "Ieguldījums ar Thundy ir bloķēts."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Ievadiet piekrišanas paroli, lai glabātu šo failu."
+  },
+  "attachmentFailed": {
+    "message": "Jūs nevarat sākt ietaupīt piederumu."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy nevarēja izlasīt šo pielikumu."
+  },
+  "attachmentContextChanged": {
+    "message": "Paziņojums vai pielikums mainījies. atkārtoti izvēlieties pielikumu."
+  },
+  "attachmentRefresh": {
+    "message": "Pārbaudiet atkārtoti glābto rezultātu"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "Iegūtais atklājums ir nemainīgs."
+  },
+  "attachmentDecisionChanged": {
+    "message": "rezultāts vai politika mainījās. pārskatiet atjauninātu lēmumu."
+  },
+  "attachmentSaveRequested": {
+    "message": "Sagaidāms, ka sāka glābt pieprasījumu."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Iegūstiet atcelto"
+  },
+  "auditDecisionScore": {
+    "message": "Lēmuma rezultāti"
+  },
+  "linkHandoffPending": {
+    "message": "Tīmekļa pārlūkprogrammas atlaišana tika pieprasīta. Thunderbird to vēl nav apliecinājis."
+  },
+  "linkPreflightTimeout": {
+    "message": "Pārbaude nevarēja tikt pabeigta. aizveriet šo dialogu un vēlreiz izvēlieties saiti."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Vēsturiskā Hybrid Analysis atklāšana"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Aktuāls Hybrid Analysis atklājums"
+  },
+  "auditShare": {
+    "message": "Eksporta pārbaude"
+  },
+  "auditFullNotice": {
+    "message": "Pilnīga revīzija ietver privātās URLs un detaļas. dalīties ar to tikai ar pilnvarotajiem saņēmējiem."
+  },
+  "auditFullSave": {
+    "message": "Eksporta pilnīga revīzija"
+  },
+  "managedByCompany": {
+    "message": "Vadīts jūsu organizācijā"
+  },
+  "managedLocal": {
+    "message": "Izeja: šis Thunderbird profils"
+  },
+  "managedRevision": {
+    "message": "Politiskā versija"
+  },
+  "managedThreshold": {
+    "message": "robežas"
+  },
+  "managedPolicyInvalid": {
+    "message": "Uzņēmuma politika ir neesoša. sazinieties ar savu IT komandu."
+  },
+  "managedLinkBlocked": {
+    "message": "Jūsu organizācija bloķēja šo saiti."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Atvērt ar Thundy"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Atvērta piezīme"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy pārbauda šo pielikumu pirms to nosūtīt Thunderbird."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird pieņēma pieprasījumu atvērt pielikumu."
+  },
+  "attachmentOpenFailed": {
+    "message": "Iekārtu nevarēja atvērt."
+  },
+  "reportingTitle": {
+    "message": "Uzņēmuma drošības ziņojumi"
+  },
+  "reportingOff": {
+    "message": "Automātiskā ziņošana ir izslēgta."
+  },
+  "reportingNeedsConsent": {
+    "message": "Attiecībā uz ziņošanu ir nepieciešama jūsu piekrišana un nosūtīt token."
+  },
+  "reportingNeedsPermission": {
+    "message": "Attiecības atļauja ir pazudušas. atļauja atkārtoti ziņot, lai to atjaunotu."
+  },
+  "reportingReady": {
+    "message": "Jūsu organizācija var saņemt automātiskas ziņojumus."
+  },
+  "reportingQueued": {
+    "message": "Ilgstoši ziņojumi:"
+  },
+  "reportingMalicious": {
+    "message": "Ļaundabīgi atklājumi"
+  },
+  "reportingSuspicious": {
+    "message": "Nelielais atklājums un robežvērtības pārkāpumi"
+  },
+  "reportingConsent": {
+    "message": "Es piekrītu nosūtīt pasākuma ID, laiku, rīcību, atrašanās vietas, lēmumu un politikas versiju uz uzņēmuma adresi, kas ir minēta."
+  },
+  "reportingConsentIndicators": {
+    "message": "Es piekrītu nosūtīt pasākuma ID, laiku, rīcību, atrašanu, lēmumu, politikas versiju un saiti uz uzņēmuma adresi SHA-256."
+  },
+  "reportingToken": {
+    "message": "Sūtīt tokenus no jūsu IT komandas"
+  },
+  "reportingActivate": {
+    "message": "Iespējams ziņot vai aizstāt tokenus"
+  },
+  "reportingRevoke": {
+    "message": "Atteikšanās no piekrišanas un nepārprotami gaidāmi ziņojumi"
+  },
+  "reportingSetupFailed": {
+    "message": "Ziņojumu noteikumus nevarēja piemērot."
+  },
+  "reportingAuthentication": {
+    "message": "Serveris noraidīja sūtījuma tokenus."
+  },
+  "reportingRejected": {
+    "message": "Serveris noraidīja ziņojumu."
+  },
+  "reportingStorage": {
+    "message": "Thundy nevarēja lasīt vai rakstīt ziņošanas rindu."
+  },
+  "reportingFull": {
+    "message": "Pilsēta ir pilna, ziņojumi var tikt zaudēti."
+  },
+  "reportingExpired": {
+    "message": "Ziņojums beidzas pirms piegādes."
+  },
+  "reportingPrivacy": {
+    "message": "Ar atšķirīgu piekrišanu Thundy nosūta detalizētus kvantitatīvus centienus atvērt saites vai atvērt vai glabāt pielikumus uz konfigūruoto uzņēmuma adresi. Ziņojumi ietver pasākuma ID, laiku, rīcību, atrašanu, lēmumu un politikas versiju, kā arī opcionālu hostname vai pielikumu SHA-256. Thundy izliekas, lai ierakstītu ziņojumus vietēji līdz 24 stundām."
+  },
+  "reportingConsentDetails": {
+    "message": "Es arī piekrītu nosūtīt lēmuma pamatojumu, pieejamos rezultātus, pielikuma failu nosaukumu, piegādātāja spriedumus un pieejamās ziņojuma atsauces."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Detalizēti ziņojumi var ietvert pielikuma faila nosaukumu un saites uz piegādātāja ziņojumiem."
+  },
+  "analysisRunningHeading": {
+    "message": "Notiek pārbaude"
+  },
+  "analysisLocalNoFinding": {
+    "message": "Vietējā pārbaudē draudu pazīmes netika atrastas"
+  },
+  "analysisLinksGroup": {
+    "message": "kreisās"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Attiecības"
+  },
+  "protectionOpenAllowed": {
+    "message": "Atvēršana atļauta"
+  },
+  "protectionSaveAllowed": {
+    "message": "Saglabāšana atļauta"
+  },
+  "protectionWarn": {
+    "message": "Brīdinājums"
+  },
+  "protectionApproval": {
+    "message": "Nepieciešams apstiprinājums"
+  },
+  "protectionRequestApproval": {
+    "message": "Pieprasījums par atļauju"
+  },
+  "protectionBlocked": {
+    "message": "Bloķēts"
+  },
+  "protectionMalicious": {
+    "message": "Pakalpojuma sniedzējs ziņoja par ļaunprātīgu atradumu."
+  },
+  "protectionThreshold": {
+    "message": "Sasniegts aizsardzības slieksnis"
+  },
+  "protectionManagedThreshold": {
+    "message": "Sasniegts uzņēmuma noteiktais slieksnis"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "Piemērojamie iestatījumi ļauj šo rīcību."
+  },
+  "linkContextChanged": {
+    "message": "Saite vai ziņa pārmaiņas pārbaudes laikā."
+  },
+  "auditPolicyBlocked": {
+    "message": "Bloķēts saskaņā ar politiku"
+  },
+  "reportingLastReceipt": {
+    "message": "Pēdējais saņemšanas apjoms, ko apliecina serveris"
+  },
+  "reportingOldestPending": {
+    "message": "Vecākais gaidāmais ziņojums"
+  },
+  "addonLanguage": {
+    "message": "Papildinājuma valoda"
+  },
+  "addonLanguageSystem": {
+    "message": "Izmantot Thunderbird valodu"
+  },
+  "addonLanguageSaved": {
+    "message": "Valoda saglabāta. Lai to lietotu, vēlreiz atveriet Thundy skatus."
+  },
+  "addonLanguageFailed": {
+    "message": "Valodu neizdevās saglabāt."
+  },
+  "profilesOpenSource": {
+    "message": "Atvērtais pirmkods"
+  },
+  "transferReview": {
+    "message": "Pārskatīt ārējo nosūtīšanu"
+  },
+  "transferSend": {
+    "message": "Nosūtīt pakalpojuma sniedzējam"
+  },
+  "transferVisibility": {
+    "message": "Redzamība: nav sarakstā. Ziņojumu var atvērt ikviens, kam ir tā saite."
+  },
+  "transferAccepted": {
+    "message": "Pakalpojuma sniedzējs pieņēma pieprasījumu. Ziņojums vēl var tikt gatavots."
+  },
+  "transferFailed": {
+    "message": "Neizdevās pabeigt nosūtīšanu pakalpojuma sniedzējam."
+  },
+  "transferUsePopup": {
+    "message": "Atveriet Thundy paneli, lai pārskatītu un apstiprinātu konkrētu saiti vai pielikumu."
+  },
+  "providerGrantAccess": {
+    "message": "Atļaut piekļuvi šim pakalpojumam"
+  },
+  "sourceSessionOnly": {
+    "message": "Avotu arhīvs ir pilns. Pašreizējais avotu skats pieejams tikai šajā sesijā."
+  },
+  "analysisReason_transfer_approval": {
+    "message": "Pilnām saitēm un pielikumiem nepieciešams atsevišķs apstiprinājums."
+  },
+  "analysisCompactDetails": {
+    "message": "Pārbaudes informācija"
+  },
+  "riskScoreFormula": {
+    "message": "Vietējais vērtējums saskaita punktus līdz 100. Pakalpojumu sniedzēju atradnes vērtē atsevišķi."
+  },
+  "riskScoreNoPoints": {
+    "message": "Vietējie noteikumi punktus nepievienoja."
+  },
+  "riskScoreTotal": {
+    "message": "Vietējais aprēķins"
+  },
+  "riskLinkBrandRule": {
+    "message": "Vismaz viens domēns līdzinās zināmam zīmolam. Punktus pieskaita vienreiz."
+  },
+  "reportingConsentDetections": {
+    "message": "Ziņojumos var būt nosaukumi, kategorijas, signatūras un atdarināti zīmoli."
+  },
+  "detectionKind_family": {
+    "message": "Ļaunprogrammatūras saime"
+  },
+  "detectionKind_category": {
+    "message": "Kategorija"
+  },
+  "detectionKind_brand": {
+    "message": "Atdarināts zīmols"
+  },
+  "detectionKind_signature": {
+    "message": "Ražotāja signatūra"
+  },
+  "detectionCategory_fraudulent_shop": {
+    "message": "Krāpniecisks veikals"
+  },
+  "detectionCategory_phishing_shop": {
+    "message": "Pikšķerēšanas veikals"
+  },
+  "analysisDetectionGrouping": {
+    "message": "Grupēt konstatējumus"
+  },
+  "detectionCategory_malware": {
+    "message": "Ļaunprogrammatūra"
+  },
+  "detectionCategory_virus": {
+    "message": "Vīruss"
+  },
+  "detectionCategory_trojan": {
+    "message": "Trojas zirgs"
+  },
+  "detectionCategory_ransomware": {
+    "message": "Izspiedējprogrammatūra"
+  },
+  "detectionCategory_worm": {
+    "message": "Tārps"
+  },
+  "detectionCategory_spyware": {
+    "message": "Spiegprogrammatūra"
+  },
+  "detectionCategory_adware": {
+    "message": "Reklāmprogrammatūra"
+  },
+  "detectionCategory_backdoor": {
+    "message": "Aizmugures piekļuve"
+  },
+  "detectionCategory_downloader": {
+    "message": "Lejupielādētājs"
+  },
+  "detectionCategory_dropper": {
+    "message": "Dropper"
+  },
+  "detectionCategory_infostealer": {
+    "message": "Datu zaglis"
+  },
+  "detectionCategory_rootkit": {
+    "message": "Rootkit"
+  },
+  "detectionCategory_phishing": {
+    "message": "Pikšķerēšana"
+  },
+  "detectionCategory_scam": {
+    "message": "Krāpšana"
+  }
+}

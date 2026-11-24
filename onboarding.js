@@ -1,7 +1,7 @@
 "use strict";
 document.addEventListener("DOMContentLoaded", async () => {
-  const $ = (id) => document.getElementById(id),
-    languages = ["en", "de", "fr", "es", "it", "pl"];
+  const $ = (id) => document.getElementById(id);
+  ThundyI18n.addLanguageOptions($("language"));
   let step = 0,
     busy = false,
     ready = false,
@@ -149,8 +149,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     ]);
     $("linkProtection").checked = stored.timeOfClickProtection !== false;
     externalEnabled = stored.externalAnalysisConsent === true;
-    let uiLanguage = browser.i18n.getUILanguage().toLowerCase().split("-")[0];
-    if (!languages.includes(uiLanguage)) uiLanguage = "en";
+    await ThundyI18n.ready;
+    const uiLanguage = ThundyI18n.language();
     language = uiLanguage;
     $("language").value = uiLanguage;
     await loadLanguage(uiLanguage);

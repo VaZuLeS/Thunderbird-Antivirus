@@ -38,7 +38,7 @@ async function bindMessageAppearance(tabId) {
 
 async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null) {
     const policy = typeof ThundySecurity !== 'undefined' && (await ThundySecurity.effective()).policy;
-    const forced = policy?.enabled === true;
+    const forced = policy?.enabled === true || Number.isInteger(policy?.autoOpenBelow);
     if (!timeOfClickProtection && !forced) return;
     const labels = { scoreLabel:msg('localScoreLink'), localIncomplete:msg('analysisLocalIncomplete'), localNone:msg('localScoreNoIndicators'), localIndicators:msg('localScoreIndicators'), simple:msg('analysisSimple'), expert:msg('analysisExpert'), approvalMissing:msg('securityApprovalMissing'), approvalExpired:msg('securityExpired'), explanation:msg('analysisScoreExplanation'), incomplete:msg('analysisSimpleIncomplete'), danger:msg('analysisSimpleDanger'), caution:msg('analysisSimpleCaution'), waiting: msg('linkChecking'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel'), title: msg('linkDialogTitle'), destination: msg('linkDestination'), details: msg('linkUrlDetails'), open: msg('linkOpenBrowser'), opening: msg('linkOpening'), failed: msg('linkOpenFailed'), limited: msg('linkCheckLimited'), score: msg('auditLocalScore'), unavailable: msg('auditUnavailable'), decisionScore:msg('auditDecisionScore'), handoffPending:msg('linkHandoffPending'), preflightTimeout:msg('linkPreflightTimeout'), auditFailed: msg('auditFailure'), origins: { live: msg('checkOrigin_live'), stored: msg('checkOrigin_stored'), none: msg('checkOrigin_none') }, outcomes: {incomplete:msg('analysisSimpleIncomplete'), rate_limited:msg('checkOutcome_rate_limited'), invalid_key:msg('checkOutcome_invalid_key'),success: msg('checkOutcome_success'), failed: msg('checkOutcome_failed'), disabled: msg('checkOutcome_disabled'), permission_denied: msg('checkOutcome_permission_denied'), missing_key: msg('checkOutcome_missing_key'), missing_reference: msg('checkOutcome_missing_reference'), not_requested: msg('checkOutcome_not_requested'), no_result: msg('checkOutcome_no_result')}, observed: msg('checkObserved'), attempted: msg('checkAttempted') };
     const theme = typeof ThundyTheme !== 'undefined' ? await ThundyTheme.snapshot() : null;
@@ -49,8 +49,26 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
         incomplete:msg('analysisSimpleIncomplete'),context_changed:msg('linkContextChanged'),
         policy_invalid:msg('managedPolicyInvalid')};
     labels.requestApproval = msg('protectionRequestApproval');
+    const translate = (keys,prefix='')=>Object.fromEntries(keys.map(key=>[key,msg(prefix+key)]));
+    labels.risk = translate(['low','unknown','caution','high','critical'],'protectionSeverity_');
+    labels.completion = {...translate(['pending','complete','unknown','failed'],'assessmentCompletion_'),incomplete:labels.incomplete};
+    labels.findings = {malicious:msg('providerMalicious'),suspicious:msg('providerSuspicious'),
+        no_detection:msg('providerNoDetection'),none:msg('providerNoDetection'),unknown:msg('providerUnknown')};
+    labels.kinds = translate(['family','category','brand','signature'],'detectionKind_');
+    labels.categories = translate(['fraudulent_shop','phishing_shop','malware','virus','trojan','ransomware','worm','spyware',
+        'adware','backdoor','downloader','dropper','infostealer','rootkit','phishing','scam'],'detectionCategory_');
+    labels.sections = translate(['identity','assessment','scanners','antivirus','reports','counts','signatures','mitre',
+        'network','processes','extracted','certificates'],'hybridExpert_');
+    labels.signals = translate(['verdict','scanner','threat_score','multiscan_result','threat_level','whitelist','overall',
+        'urlscan','engines','brand','report'],'assessmentSignal_');
+    Object.assign(labels,{scanSummary:msg('linkScanSummary'),scansPending:msg('linkScansPending'),noScans:msg('linkNoScanResults'),
+        categoryMissing:msg('protectionCategoryUnavailable'),archive:msg('attachmentArchivedFinding'),report:msg('analysisOverviewOpenReport'),
+        conflict:msg('assessmentConflict'),reference:msg('assessmentJob'),technical:msg('hybridReportTechnical'),truncated:msg('analysisTruncated'),
+        signalTitle:msg('assessmentSignals'),scoreFormula:msg('riskScoreFormula'),scoreTotal:msg('riskScoreTotal'),
+        noPoints:msg('riskScoreNoPoints'),automatic:Number.isInteger(policy?.autoOpenBelow)});
     await injectIntoMessageDisplay(tabId, function(labels, displayedId, theme, forced) {
         document.__thundyLinkMessageId = displayedId;
+        document.__thundyAutomaticLinkOpening = labels.automatic;
         document.documentElement.dataset.thundyForcedProtection = forced ? 'true' : 'false';
         if (document.documentElement.dataset.thundyClickProtection) return;
         document.documentElement.dataset.thundyClickProtection = 'true';
@@ -90,13 +108,26 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                 details { border:1px solid var(--card-border,#cbd5e1);border-radius:8px;padding:10px 12px;margin-bottom:18px; } summary { cursor:pointer; } code { display:block;font-size:12px;overflow-wrap:anywhere;white-space:pre-wrap;margin-top:10px;user-select:text; }
                 .result { padding:14px;border-radius:10px;background:var(--accent-soft,#eff6ff);border-left:4px solid var(--link-color,#0369a1);margin:0 0 12px; }
                 .danger { background:var(--alert-error-bg,#fff1f2);border-color:var(--color-danger,#be123c);color:var(--color-danger,#881337); } .unknown { background:var(--warning-bg,#fff7ed);border-color:var(--color-warning,#92510d);color:var(--color-warning,#92510d); }
+                .result[data-severity] { color:var(--text-color,#17243a);border-color:var(--risk-accent);background:color-mix(in srgb,var(--risk-accent) var(--risk-tint,12%),var(--card-bg,#fff)); }
+                .result[data-severity=low] { --risk-tint:8%; }
+                .result[data-severity=high] { --risk-tint:17%; }
+                .result[data-severity=critical] { --risk-tint:22%; }
+                .risk { display:block;font-size:12px;margin-top:3px; }
+                .scan-summary { margin:0 0 16px; overflow-wrap:anywhere; }
+                .scan-summary h3 { font-size:14px;margin:0; }
+                .scan-summary p,.scan-summary ul { margin:6px 0; }
+                .scan-detail { margin-block:8px; overflow-wrap:anywhere; }
                 .note { color:var(--text-muted,#475569);font-size:12px;margin:12px 0; } ul { padding-left:20px;overflow-wrap:anywhere; }
                 .error { color:var(--color-danger,#be123c);background:var(--alert-error-bg,#fff1f2);padding:8px;margin:12px 0; } .error:empty { display:none; }
                 footer { display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:20px; }
                 button { font:600 14px/1.4 system-ui,sans-serif;border:1px solid var(--input-border,#94a3b8);border-radius:8px;padding:10px 16px;min-height:var(--control-size,44px);cursor:pointer;background:var(--card-bg,#fff);color:var(--text-color,#17243a);max-width:100%;overflow-wrap:anywhere; }
                 .primary { background:var(--btn-primary-bg,#075985);color:var(--btn-primary-text,#fff); } .warning { background:var(--btn-danger-bg,#9f1239); }
                 button:focus-visible,summary:focus-visible { outline:3px solid var(--link-color,#0369a1);outline-offset:3px; } button:disabled { opacity:.6;cursor:wait; }
-                @media (forced-colors:active) { .dialog,button { border-color:ButtonText; } button:focus-visible,summary:focus-visible { outline-color:Highlight; } }
+                @media (forced-colors:active) {
+                    .dialog,button { border-color:ButtonText; }
+                    .result[data-severity] { border-color:CanvasText; }
+                    button:focus,summary:focus { outline:3px solid CanvasText; outline-offset:3px; }
+                }
 
             `;
             const card = document.createElement('section'); card.className = 'dialog thundy-surface'; card.tabIndex = -1;
@@ -136,6 +167,9 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             document.defaultView.addEventListener('pagehide', onPageHide);
 
             cancel.addEventListener('click', () => close('cancel')); footer.appendChild(cancel);
+            const deferDialog = document.__thundyAutomaticLinkOpening && event.type !== 'contextmenu';
+            if (deferDialog) panel.style.setProperty('display','none','important');
+            const showDialog = () => { panel.style.setProperty('display','flex','important'); cancel.focus(); };
             card.append(decisionStatus, label, host, details, score, reasons, note, error, footer); root.append(themeStyle, style, card); document.body.appendChild(panel);
             // Refresh without delaying security UI if the background is unavailable.
             if (document.__thundyMessageAppearance) document.__thundyMessageAppearance(themeStyle);
@@ -147,14 +181,15 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             root.addEventListener('keydown', event => {
                 if (event.key === 'Escape') { event.preventDefault(); close('escape'); }
                 if (event.key === 'Tab') {
-                    const controls = Array.from(root.querySelectorAll('button:not(:disabled),summary'));
+                    const controls = Array.from(root.querySelectorAll('button:not(:disabled),summary')).filter(node=>node.getClientRects().length);
+                    if (!controls.length) return;
                     const index = controls.indexOf(root.activeElement);
                     event.preventDefault();
                     const next = index < 0 ? (event.shiftKey ? controls.length - 1 : 0) : (index + (event.shiftKey ? controls.length - 1 : 1)) % controls.length;
                     controls[next].focus();
                 }
             });
-            cancel.focus();
+            if (!deferDialog) cancel.focus();
             if (event.type === 'contextmenu') {
                 text.textContent = labels.open;
                 const openIntent = document.createElement('button');
@@ -176,14 +211,29 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             catch (e) { result = { status: 'ERROR' }; }
             if (!panel.isConnected) return;
             if (!link.isConnected || link.href !== url) { close('destination_changed'); return; }
+            let automaticResult;
+            if (deferDialog && result?.autoOpen) {
+                opening = true;
+                try {
+                    automaticResult = await browser.runtime.sendMessage({action:'openCheckedLink',url,messageId,interactionId,automatic:true});
+                    if (automaticResult?.success) { close('opened'); return; }
+                } catch (_) { /* show the regular dialog on failure */ }
+                opening = false;
+                if (!panel.isConnected) return;
+                if (automaticResult?.code === 'LINK_HANDOFF_PENDING') {
+                    awaitingHandoff = true;
+                    error.textContent = labels.handoffPending;
+                }
+            }
+            if (deferDialog) showDialog();
             const malicious = ['MALICIOUS','MALICIOUS_VISUAL'].includes(result?.status);
             const dangerous = malicious || result?.status === 'SUSPICIOUS';
             const noDetection = result?.status === 'CLEAN' && result.check?.outcome === 'success';
-            const clean = noDetection && result.check.origin === 'live';
+            const clean = noDetection;
             const local=result?.local||{score:result?.score,state:'unknown',reasons:[]};
             const validScore=typeof local.score==='number'&&Number.isFinite(local.score)&&local.score>=0&&local.score<=100&&local.state!=='failed';
             const uncertain = !clean || !validScore || local.state !== 'checked';
-            const protection = result?.protection;
+            const protection = automaticResult?.protection || result?.protection;
             const mode = protection?.mode || (protection?.required ? 'approval' : dangerous || uncertain || local.score >= 25 ? 'warn' : 'allow');
             function showDecision(mode, rules) {
                 const reason = rules?.reason;
@@ -203,10 +253,77 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                 }
                 text.className = 'result ' + (mode === 'block' || malicious ? 'danger' : mode !== 'allow' ? 'unknown' : '');
                 text.textContent = labels.decisions[mode] || labels.decisions.warn;
+                const risk = rules?.presentation || result?.presentation;
+                if (Object.hasOwn(labels.risk,risk?.severity) && /^#[a-f0-9]{6}$/i.test(risk.color)) {
+                    text.dataset.severity = risk.severity;
+                    text.style.setProperty('--risk-accent',risk.color);
+                    const caption = document.createElement('span');
+                    caption.className = 'risk';
+                    caption.textContent = labels.risk[risk.severity];
+                    text.append(' ',caption);
+                }
                 cause.textContent = why;
                 cause.hidden = !why;
             }
             showDecision(mode,protection);
+            const scans = Array.isArray(result?.scans) ? result.scans : [];
+            const providerNames = {hybridanalysis:'Hybrid Analysis',urlscan:'urlscan.io'};
+            const html = (tag,value) => {const node = document.createElement(tag);node.textContent=value;return node;};
+            const findings = (rows,kinds) => kinds.flatMap(kind=>{
+                const values = [...new Set(rows.flatMap(row=>(row.detections || []).filter(entry=>entry.kind===kind)
+                    .map(entry=>kind==='category' ? labels.categories[entry.value] || entry.value : entry.value)))];
+                return values.length ? [labels.kinds[kind]+' · '+values.join(', ')] : [];
+            });
+            const summaryBox = document.createElement('section');
+            summaryBox.className = 'scan-summary';
+            summaryBox.append(html('h3',labels.scanSummary));
+            if (result?.pending) summaryBox.append(html('p',labels.scansPending));
+            if (!scans.length) summaryBox.append(html('p',labels.noScans));
+            const findingsList = document.createElement('ul');
+            const scanLine = scan=>[providerNames[scan.provider],labels.findings[scan.verdict] || labels.findings.unknown,
+                labels.completion[scan.completion] || labels.incomplete,labels.outcomes[scan.check?.outcome]].filter(Boolean).join(' · ');
+            for (const scan of scans) findingsList.append(html('li',scanLine(scan)));
+            for (const item of findings(scans,['category','brand','family'])) findingsList.append(html('li',item));
+            if (dangerous && !findings(scans,['category']).length) findingsList.append(html('li',labels.categoryMissing));
+            if (findingsList.childElementCount) summaryBox.append(findingsList);
+            card.insertBefore(summaryBox,score);
+            for (const scan of scans) {
+                const section = document.createElement('details');
+                section.className = 'scan-detail';
+                section.dataset.expert = 'true';
+                section.hidden = true;
+                section.append(html('summary',scanLine(scan)));
+                if (scan.reference) section.append(html('p',labels.reference+' · '+scan.reference));
+                const provenance = scan.source==='archive' ? labels.archive : labels.origins[scan.source];
+                if (provenance) section.append(html('p',[provenance,Number.isFinite(scan.observedAt) ?
+                    new Date(scan.observedAt).toLocaleString() : labels.unavailable].join(' · ')));
+                for (const item of findings([scan],['category','brand','family','signature'])) section.append(html('p',item));
+                if (scan.conflicts?.length) section.append(html('p',labels.conflict));
+                if (scan.signals?.length) {
+                    const group = document.createElement('details');
+                    group.append(html('summary',labels.signalTitle));
+                    for (const item of scan.signals) group.append(html('p',[labels.signals[item.code] || item.code,
+                        labels.findings[item.verdict],item.total != null ? item.value+' / '+item.total : item.value].filter(v=>v!=null).join(' · ')));
+                    section.append(group);
+                }
+                for (const item of scan.details?.sections || []) {
+                    const group = document.createElement('details');
+                    group.append(html('summary',labels.sections[item.id] || labels.technical));
+                    for (const row of item.rows) group.append(html('p',row.map(field=>field.key+' · '+field.value).join(' | ')));
+                    section.append(group);
+                }
+                if (scan.details?.truncated) section.append(html('p',labels.truncated));
+                if (scan.report) {
+                    const button = html('button',labels.report);
+                    button.type = 'button';
+                    button.addEventListener('click',async()=>{
+                        const reply = await browser.runtime.sendMessage({action:'openAuditedScanReport',url,messageId,interactionId,provider:scan.provider}).catch(()=>null);
+                        if (!reply?.success) error.textContent = labels.failed;
+                    });
+                    section.append(button);
+                }
+                card.insertBefore(section,score);
+            }
             score.textContent=labels.scoreLabel+': '+(validScore?local.score+' / 100':labels.unavailable);
             if(validScore&&local.state==='incomplete'){const limited=document.createElement('p');limited.className='note';limited.textContent=labels.localIncomplete;card.insertBefore(limited,note);}
             const displayedReasons=[...(Array.isArray(local.reasons)?local.reasons.map(text=>({text,source:'local'})):[]),...[...new Set([...(local.providerReasons||[]),...(Array.isArray(result?.reasons)?result.reasons:[])])].map(text=>({text,source:'provider'}))];
@@ -226,6 +343,19 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                 decision.textContent=labels.decisionScore+' · '+local.decisionScore+' / 100';
                 card.insertBefore(decision,note);
             }
+            if (validScore && Number.isFinite(local.localRawScore)) {
+                const breakdown = document.createElement('details');
+                breakdown.dataset.expert = 'true';
+                breakdown.hidden = true;
+                breakdown.append(html('summary',labels.scoreLabel),html('p',labels.scoreFormula));
+                const points = document.createElement('ul');
+                for (const entry of local.localContributions || []) {
+                    if (Number.isSafeInteger(entry.points)) points.append(html('li','+'+entry.points+' · '+entry.label));
+                }
+                breakdown.append(points.childElementCount ? points : html('p',labels.noPoints),
+                    html('p',labels.scoreTotal+' · min('+local.localRawScore+', 100) = '+local.score));
+                card.insertBefore(breakdown,note);
+            }
             if(result?.check?.outcome && result.check.outcome!=='success') {
                 const pending=document.createElement('p');pending.className='note';
                 pending.textContent=labels.outcomes[result.check.outcome]||labels.incomplete;
@@ -238,9 +368,9 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                 card.insertBefore(provenance, note);
             }
             if (result && result.auditSaved === false) { const auditNotice = document.createElement('p'); auditNotice.className = 'error'; auditNotice.textContent = labels.auditFailed; card.insertBefore(auditNotice, footer); }
-            const explanation=document.createElement('p');explanation.textContent=labels.explanation;card.insertBefore(explanation,footer);
-            const view=document.createElement('button');view.type='button';view.textContent=labels.expert;let expert=false;view.addEventListener('click',()=>{expert=!expert;view.textContent=expert?labels.simple:labels.expert;for(const node of root.querySelectorAll('[data-expert]'))node.hidden=!expert;});card.append(view);
-            if (mode === 'block') return;
+            const explanation=document.createElement('p');explanation.textContent=labels.explanation;explanation.dataset.expert='true';explanation.hidden=true;card.insertBefore(explanation,footer);
+            const view=document.createElement('button');view.type='button';view.textContent=labels.expert;view.setAttribute('aria-expanded','false');let expert=false;view.addEventListener('click',()=>{expert=!expert;view.textContent=expert?labels.simple:labels.expert;view.setAttribute('aria-expanded',String(expert));for(const node of root.querySelectorAll('[data-expert]'))node.hidden=!expert;});card.append(view);
+            if (mode === 'block' || awaitingHandoff) return;
             const proceed = document.createElement('button'); proceed.type = 'button'; proceed.className = 'primary' + (dangerous ? ' warning' : '');
             const buttonLabel = mode === 'approval' ? labels.requestApproval : mode === 'allow' ? labels.open : labels.proceed;
             proceed.textContent = buttonLabel;

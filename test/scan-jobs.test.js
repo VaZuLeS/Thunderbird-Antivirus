@@ -29,15 +29,16 @@ test('automatic freshness expires after fifteen minutes, pending and partial rem
 });
 function runtime(overrides={}){
  const settings={scanMode:'allDisplayed',autoScanLinks:true,externalAnalysisConsent:true,privacyTier:'max',apikey:'synthetic-ha',urlscanApikey:'synthetic-us',...overrides};
- const stored={},calls=[],events=[];let permission=true;
+ const url = 'https://example.invalid/target';
+ const stored={fixture:{links:[{url,state:'UPLOADED',hybrid_quick_scan_id:'hybrid-job',urlscan:{status:'SUBMITTED',uuid:'urlscan-job'}}]}},calls=[],events=[];let permission=true;
  const message={id:1,author:'sender@example.invalid',headerMessageId:'fixture'},full={parts:[{body:'https://example.invalid/target'}],headers:{}};
  const context={model:{data:{schemaVersion:1,rows:[]}},tabs:new Set([7]),snapshotId:'context',schedule(){},flush:async()=>{},forLinks:async()=>({event:e=>events.push(e)}),forAttachment:()=>({event:e=>events.push(e)})};
  const b={storage:{local:{get:async keys=>Object.fromEntries((typeof keys==='string'?[keys]:keys).map(k=>[k,settings[k]]))}},messages:{listAttachments:async()=>[],getAttachmentFile:async()=>new Blob(['file'])},tabs:{query:async()=>[{id:7}]}};
  const c=vm.createContext({browser:b,crypto:webcrypto,TextEncoder,URL,URLSearchParams,AbortController,Blob,setTimeout,clearTimeout,console,
  extractEmailAddress:x=>x,extractPublicIPs:()=>[],hasHostPermissionFor:async()=>permission,loadSettings:async()=>{},readFullForAnalysis:async()=>full,extractTextFromParts:parts=>parts[0].body,extractUrls:text=>[text],filterUrls:x=>x,
  resolveMessageStorageKey:m=>m.headerMessageId,getAnalysisRuntimeId:()=> 'test-runtime',getMessageAnalysisContext:async()=>context,getSharedDB:async()=>({}),getFromStore:async(db,store,key)=>structuredClone(stored[key]),updateStore:async(db,store,key,edit)=>{stored[key]=edit(structuredClone(stored[key]));},
- apiGateway:{fetchWithTimeout:async(url,options)=>{calls.push({url,method:options.method});return {status:200,json:async()=>({id:'hybrid-job',verdict:'clean'})};},pause:async()=>{}},getHybridAnalysisOptions:(method,body)=>({method,body}),quickScanReport:x=>x,extractHybridVerdictFromOverview:x=>x?.verdict,
- checkUrlscanIo:async(url,key,ctx)=>{calls.push({url,provider:'urlscan',submit:true});await ctx.submitted('urlscan-job');return {uuid:'urlscan-job',status:'CLEAN',assessment:{assessmentVersion:1,completion:'complete',signals:[{code:'overall',verdict:'none'}]}};},pollUrlscanIoResult:async uuid=>{calls.push({uuid,refresh:true});return {status:'CLEAN',assessment:{assessmentVersion:1,completion:'complete',signals:[{code:'overall',verdict:'none'}]}};},
+ apiGateway:{fetchWithTimeout:async(url,options)=>{calls.push({url,method:options.method});return {status:200,json:async()=>({id:'hybrid-job',finished:true,verdict:'clean'})};},pause:async()=>{}},getHybridAnalysisOptions:(method,body)=>({method,body}),quickScanReport:x=>x,extractHybridVerdictFromOverview:x=>x?.verdict,
+ checkUrlscanIo:async(url,key,ctx)=>{calls.push({url,provider:'urlscan',submit:true});await ctx.submitted('urlscan-job');return {uuid:'urlscan-job',status:'CLEAN',assessment:{assessmentVersion:1,completion:'complete',signals:[{code:'overall',verdict:'none'}]}};},pollUrlscanIoResult:async uuid=>{calls.push({uuid,refresh:true,provider:'urlscan'});return {status:'CLEAN',assessment:{assessmentVersion:1,completion:'complete',signals:[{code:'overall',verdict:'none'}]}};},
  indexedDB_save_links_to_db:async()=>{},collectThreatEvaluationOptions:async()=>({}),calculateThreatScore:()=>({score:0}),localContentCoverage:()=>({state:'checked'}),recordLocalCoverage:()=>{},injectThreatBanner:async()=>{},getFirstDisplayedMessage:async()=>message,
  injectIntoMessageDisplay:async()=>{},processAttachments:async()=>{},injectTimeOfClickProtection:async()=>{},evaluateAndInjectThreats:async()=>{},vtCache:new Map(),urlhausCache:new Map(),ipReputationCache:new Map(),mayTransmitExternally:()=>settings.externalAnalysisConsent,
  });
@@ -73,24 +74,55 @@ test('resource limits report omitted counts without preparing or submitting exce
  f.c.browser.messages.listAttachments=async()=>Array.from({length:101},(_,i)=>({partName:String(i),name:'fixture',size:4}));
  f.c.browser.messages.getAttachmentFile=async()=>{reads++;return new Blob(['file']);};f.c.get_sha256_hash=async()=> 'a'.repeat(64);
  f.c.extractUrls=()=>Array.from({length:101},(_,i)=>`https://example.invalid/${i}`);
+ f.stored.fixture.links=f.c.extractUrls().map((url,i)=>({url,urlscan:{status:'SUBMITTED',uuid:'job-'+i}}));
  await f.s.request({messageId:1,contextToken:'context'},{tab:{id:7}});await f.s.settled(1);
  const job=f.s.get(1);assert.equal(job.state,'incomplete');assert.equal(reads,100);
  assert.equal(job.coverage.attachments.omitted,1);assert.equal(job.coverage.attachments.prepared,100);assert.equal(job.coverage.urls.omitted,1);
- assert.equal(f.calls.filter(x=>x.submit).length,100);
+ assert.equal(f.calls.filter(x=>x.refresh).length,100);assert.equal(f.calls.filter(x=>x.submit).length,0);
 });
-test('full source archives explain refusal and preserve prior revisions without provider work',async()=>{
+test('full source archives preserve prior revisions while reports are refreshed',async()=>{
  const f=runtime({scanMode:'manual',apikey:''});f.context.model.data.rows=[{state:'checked',verdict:'none'}];
  const snapshots=Object.fromEntries(Array.from({length:64},(_,i)=>[String(i),{savedAt:i,snapshot:{rows:[]}}]));
- f.stored.fixture={analysisSourceSnapshots:structuredClone(snapshots)};
+ f.stored.fixture.analysisSourceSnapshots=structuredClone(snapshots);
  await f.s.request({messageId:1,contextToken:'context'},{tab:{id:7}});await f.s.settled(1);
- assert.equal(f.s.get(1).reason,'source_capacity');assert.equal(f.s.get(1).state,'failed');assert.equal(f.calls.length,0);
- assert.deepEqual(f.stored.fixture.analysisSourceSnapshots,snapshots);assert.equal(f.context.model.data.rows.length,1);
+ assert.equal(f.s.get(1).state,'completed');assert.equal(f.calls.length,1);
+ assert.deepEqual(f.stored.fixture.analysisSourceSnapshots,snapshots);assert.equal(f.context.sourceSessionOnly,true);
 });
-for(const [title,keys,count] of [['Hybrid only',{urlscanApikey:''},1],['urlscan only',{apikey:''},1],['both',{},2]])test('opening a message starts '+title+' without a link click',async()=>{
- const f=runtime(keys);await f.s.display({id:7},f.message);await f.s.settled(1);assert.equal(f.s.get(1).state,'completed');
- assert.equal(f.calls.filter(x=>x.submit||x.method==='POST').length,count);
- assert.equal(f.c.readOccurrenceMetadata(f.stored.fixture,'test-runtime',1).scanJobMeta.state,'completed');
- const before=f.calls.length;await f.s.display({id:8},f.message);assert.equal(f.calls.length,before);
+test('opening or checking a message never submits new URLs',async()=>{
+ const f=runtime();f.stored.fixture.links=[];
+ await f.s.display({id:7},f.message);await f.s.settled(1);
+ assert.equal(f.calls.length,0);
+ assert.equal(f.s.get(1).providers.urlscan.checks[0].reason,'transfer_approval');
+ await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);
+ assert.equal(f.calls.length,0);
+ assert.equal(f.s.get(1).providers.hybridanalysis.checks.find(check=>check.kind==='url').reason,'transfer_approval');
+});
+test('finished polling for an earlier urlscan job cannot replace a new approved reference',async()=>{
+ const f=runtime({apikey:''}),poll=f.c.pollUrlscanIoResult;
+ f.c.pollUrlscanIoResult=async(...args)=>{
+  f.stored.fixture.links[0].urlscan={uuid:'newly-approved',status:'SUBMITTED'};
+  return poll(...args);
+ };
+ await f.s.request({messageId:1,contextToken:'context'},{tab:{id:7}});await f.s.settled(1);
+ assert.equal(f.calls[0].uuid,'urlscan-job');
+ assert.deepEqual(f.stored.fixture.links[0].urlscan,{uuid:'newly-approved',status:'SUBMITTED'});
+});
+test('source storage failure does not start provider requests',async()=>{
+ const f=runtime({apikey:''});f.c.updateStore=async()=>{throw Error('Quotas exhausted');};
+ await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);
+ assert.equal(f.s.get(1).reason,'storage_failed');assert.equal(f.calls.length,0);
+});
+test('storage failure after an accepted report read remains distinct from source archive capacity',async()=>{
+ const f=runtime({apikey:''});
+ const save=f.c.updateStore;
+ f.c.updateStore=async(...args)=>{
+  if(f.calls.length)throw new DOMException('Synthetic write failure','QuotaExceededError');
+  return save(...args);
+ };
+ await f.s.request({messageId:1,contextToken:'context'},{tab:{id:7}});await f.s.settled(1);
+ assert.equal(f.calls.length,1);
+ assert.equal(f.s.get(1).state,'incomplete');assert.equal(f.s.get(1).reason,'storage_failed');
+ assert.equal(f.context.sourceSessionOnly,false);
 });
 for(const [reason,settings] of [['manual',{scanMode:'manual'}],['sender',{scanMode:'approvedSenders'}],['disabled',{externalAnalysisConsent:false}],['policy',{privacyTier:'strict'}],['links_disabled',{autoScanLinks:false}]])test('start requirements: '+reason,async()=>{
  const f=runtime(settings);await f.s.display({id:7},f.message);await f.s.settled(1);assert.equal(f.calls.length,0);
@@ -112,19 +144,35 @@ test('one provider fails while the other persists its result; refresh reuses a p
 test('legacy settings preserve sender scope and manual flag; provider capability registry supplies the plan',async()=>{
  const f=runtime({scanMode:undefined,alwaysManual:true});assert.equal(f.s.mode(f.settings),'manual');f.settings.alwaysManual=false;assert.equal(f.s.mode(f.settings),'approvedSenders');
  const plan=await f.s.plan(f.settings,f.message,[],['https://example.invalid']);assert.equal(plan.urlscan.checks[0].reason,'sender');
- f.settings.scanningEnabledSenders=[f.message.author];assert.equal((await f.s.plan(f.settings,f.message,[],['https://example.invalid'])).urlscan.checks[0].reason,null);
+ f.settings.scanningEnabledSenders=[f.message.author];assert.equal((await f.s.plan(f.settings,f.message,[],['https://example.invalid'])).urlscan.checks[0].reason,'transfer_approval');
 });
 
-test('urlscan submissions are serialized across resources',async()=>{
- const f=runtime({apikey:''});f.c.extractUrls=()=>['https://example.invalid/1','https://example.invalid/2'];let active=0,maximum=0;
- f.c.checkUrlscanIo=async(url,key,ctx)=>{maximum=Math.max(maximum,++active);await ctx.submitted('job-'+url.at(-1));await tick();active--;return {status:'CLEAN',uuid:'job-'+url.at(-1)};};
- await f.s.display({id:7},f.message);await f.s.settled(1);assert.equal(maximum,1);assert.equal(f.stored.fixture.links.length,2);assert.equal(f.s.get(1).state,'completed');
+test('paused providers are excluded from scans while configured keys and unrelated checks remain available', async () => {
+ const f = runtime({disabledProviders: ['hybridanalysis'], ipReputationEnabled: false,
+     ipReputationProvider: 'virustotal', ipReputationApiKey: 'test-ip-key', virustotalApikey: 'test-file-key'});
+ f.c.extractPublicIPs = () => ['1.1.1.1'];
+ const plan = await f.s.plan(f.settings, f.message, [{partName: '1.2'}], ['https://example.invalid']);
+ assert.equal(plan.hybridanalysis.configured, true);
+ assert.ok(plan.hybridanalysis.checks.every(check => check.reason === 'provider_disabled'));
+ assert.equal(plan.virustotal.checks.find(check => check.kind === 'ip').reason, 'provider_disabled');
+ assert.equal(plan.virustotal.checks.find(check => check.kind === 'hash').reason, null);
+ await f.s.display({id: 7}, f.message);
+ await f.s.settled(1);
+ assert.equal(f.calls.length, 1);
+ assert.equal(f.calls[0].provider, 'urlscan');
+
+ f.settings.ipReputationEnabled = true;
+ f.settings.disabledProviders.push('virustotal');
+ const ipOnlyPlan = await f.s.plan(f.settings, f.message, [{partName: '1.2'}], ['https://example.invalid']);
+ assert.equal(ipOnlyPlan.virustotal.checks.find(check => check.kind === 'ip').reason, null);
+ assert.equal(ipOnlyPlan.virustotal.checks.find(check => check.kind === 'hash').reason, 'provider_disabled');
 });
+
 test('accepted identifier survives a lost poll response and background restart in manual mode',async()=>{
- const f=runtime({apikey:''});f.c.checkUrlscanIo=async(url,key,ctx)=>{await ctx.submitted('accepted-before-loss');return {status:'ERROR',errorCode:'fetch_failed'};};
- await f.s.display({id:7},f.message);await f.s.settled(1);assert.equal(f.stored.fixture.links[0].urlscan.uuid,'accepted-before-loss');assert.equal(f.s.get(1).state,'incomplete');
+ const f=runtime({apikey:''});f.c.pollUrlscanIoResult=async()=>({status:'ERROR',errorCode:'fetch_failed'});
+ await f.s.display({id:7},f.message);await f.s.settled(1);assert.equal(f.stored.fixture.links[0].urlscan.uuid,'urlscan-job');assert.equal(f.s.get(1).state,'incomplete');
  const restarted=runtime({apikey:'',scanMode:'manual'});Object.assign(restarted.stored,structuredClone(f.stored));await restarted.s.display({id:7},restarted.message);assert.equal(restarted.calls.length,0);assert.equal(restarted.s.get(1).state,'incomplete');
- await restarted.s.request({messageId:1,operation:'refresh'},{});await restarted.s.settled(1);assert.ok(restarted.calls.some(x=>x.uuid==='accepted-before-loss'&&x.refresh));assert.equal(restarted.calls.filter(x=>x.submit).length,0);
+ await restarted.s.request({messageId:1,operation:'refresh'},{});await restarted.s.settled(1);assert.ok(restarted.calls.some(x=>x.uuid==='urlscan-job'&&x.refresh));assert.equal(restarted.calls.filter(x=>x.submit).length,0);
 });
 
 test('cache deletion cancels work without repopulating records and permits a fresh job',async()=>{
@@ -154,9 +202,9 @@ test('Hybrid polling keeps a partial malicious finding, finishes on terminal unk
  f.c.Date=class extends Date{static now(){return clock;}};f.c.apiGateway.pause=async ms=>{clock+=ms;};
  f.c.apiGateway.fetchWithTimeout=async(url,options)=>{f.calls.push({url,method:options.method});return {status:200,json:async()=>options.method==='POST'?{id:'known-job',finished:false}:++gets===1?{id:'known-job',finished:false,verdict:'clean',scanners:[{status:'malicious'},{status:'in-progress'}]}:{id:'known-job',finished:true,verdict:'unknown'}};};
  await f.s.display({id:7},f.message);await f.s.settled(1);assert.equal(f.s.get(1).state,'completed');assert.equal(f.stored.fixture.links[0].assessment.verdict,'malicious');assert.equal(f.stored.fixture.links[0].assessment.completion,'complete');assert.equal(f.stored.fixture.links[0].report.verdict,'unknown');assert.equal(f.stored.fixture.links[0].hybrid_verdict.status,'MALICIOUS');
- const before=gets;f.events.length=0;await f.s.request({messageId:1,operation:'refresh'},{});await f.s.settled(1);assert.ok(gets>before);assert.ok(f.events.some(e=>e.phase==='cache'&&e.provider==='hybridanalysis'&&e.verdict==='malicious'));assert.equal(f.calls.filter(c=>c.method==='POST').length,1);assert.equal(f.stored.fixture.links[0].assessment.verdict,'malicious');
+ const before=gets;f.events.length=0;await f.s.request({messageId:1,operation:'refresh'},{});await f.s.settled(1);assert.ok(gets>before);assert.ok(f.events.some(e=>e.phase==='cache'&&e.provider==='hybridanalysis'&&e.verdict==='malicious'));assert.equal(f.calls.filter(c=>c.method==='POST').length,0);assert.equal(f.stored.fixture.links[0].assessment.verdict,'malicious');
  const restarted=runtime({urlscanApikey:''});Object.assign(restarted.stored,structuredClone(f.stored));restarted.c.apiGateway.fetchWithTimeout=f.c.apiGateway.fetchWithTimeout;
- await restarted.s.request({messageId:1,operation:'refresh'},{});await restarted.s.settled(1);assert.equal(restarted.stored.fixture.links[0].assessment.verdict,'malicious');assert.equal(f.calls.filter(c=>c.method==='POST').length,1);
+ await restarted.s.request({messageId:1,operation:'refresh'},{});await restarted.s.settled(1);assert.equal(restarted.stored.fixture.links[0].assessment.verdict,'malicious');assert.equal(f.calls.filter(c=>c.method==='POST').length,0);
 });
 
 test('capacity defers before preparation, preserves 200 active jobs and allows retry after completion (AVN-019)',async()=>{
@@ -218,6 +266,7 @@ test('later resources retain an earlier provider failure in the final summary',a
 
 test('Hybrid quick-scan retrieval uses response id when submission and job references differ',async()=>{
  const f=runtime({urlscanApikey:''}),sha='ab'.repeat(32);
+ Object.assign(f.stored.fixture.links[0],{hybrid_sha256:sha,hybrid_quick_scan_id:'quick-reference',hybrid_submission_id:'submission-reference',hybrid_job_id:'sandbox-reference'});
  f.c.apiGateway.fetchWithTimeout=async(url,options)=>{
   f.calls.push({url,method:options.method});
   if(options.method==='POST')return {status:200,json:async()=>({id:'quick-reference',submission_id:'submission-reference',job_id:'sandbox-reference',sha256:sha,finished:false})};
@@ -243,34 +292,35 @@ function urlscanRuntime(){
 }
 test('fresh urlscan waits thirty seconds and retrieves a later result using only its accepted UUID',async()=>{
  const f=urlscanRuntime();const requests=[];
+ f.c.setTimeout=(fn,ms)=>{f.c.apiGateway.pause(ms).then(fn);return 0;};
  f.c.apiGateway.fetchWithTimeout=async(url,options)=>{requests.push({url,method:options.method,at:f.now()-1000000});return {ok:true,status:options.method==='POST'||f.now()>=1045000?200:404,json:async()=>options.method==='POST'?{uuid:'accepted-job'}:{task:{uuid:'accepted-job'},verdicts:{overall:{malicious:false}}}};};
- await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);
+ const result = await f.c.checkUrlscanIo('https://example.invalid/target','synthetic');
  assert.equal(requests[1].at,30000);assert.ok(requests.at(-1).at>=45000);assert.equal(requests.filter(r=>r.method==='POST').length,1);
- assert.ok(requests.filter(r=>r.method==='GET').every(r=>r.url.endsWith('/accepted-job/')));assert.equal(f.s.get(1).state,'completed');
+ assert.ok(requests.filter(r=>r.method==='GET').every(r=>r.url.endsWith('/accepted-job/')));assert.equal(result.status,'CLEAN');
 });
 test('unfinished HTTP 200 stays pending until a final result and retains earlier malicious evidence',async()=>{
- const f=urlscanRuntime();let gets=0;
+ const f=urlscanRuntime(); f.stored.fixture.links[0].urlscan.uuid='partial-job';let gets=0;
  f.c.apiGateway.fetchWithTimeout=async(url,options)=>({ok:true,status:200,json:async()=>options.method==='POST'?{uuid:'partial-job'}:{task:{uuid:'partial-job'},finished:++gets>1,verdicts:{overall:{malicious:gets===1}}}});
  await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);
  assert.equal(gets,2);const saved=f.stored.fixture.links[0].urlscan;
  assert.equal(saved.assessment.verdict,'malicious');assert.equal(saved.assessment.completion,'complete');assert.equal(saved.status,'MALICIOUS');assert.equal(f.s.get(1).pending,false);
 });
 test('unfinished HTTP 200 times out with its partial findings and remains resumable without a POST',async()=>{
- const f=urlscanRuntime();const requests=[];
+ const f=urlscanRuntime(); f.stored.fixture.links[0].urlscan.uuid='pending-job';const requests=[];
  f.c.apiGateway.fetchWithTimeout=async(url,options)=>{requests.push(options.method);return {ok:true,status:200,json:async()=>options.method==='POST'?{uuid:'pending-job'}:{task:{uuid:'pending-job'},finished:false,verdicts:{overall:{malicious:true}}}};};
  await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);
  assert.equal(f.s.get(1).state,'pending');assert.equal(f.s.get(1).assessmentIncomplete,true);
  assert.equal(f.stored.fixture.links[0].urlscan.assessment.verdict,'malicious');assert.equal(f.stored.fixture.links[0].urlscan.status,'TIMEOUT');assert.ok(f.now()<=1090000);
- await f.s.request({messageId:1,operation:'refresh'},{tab:{id:7}});await f.s.settled(1);assert.equal(requests.filter(x=>x==='POST').length,1);
+ await f.s.request({messageId:1,operation:'refresh'},{tab:{id:7}});await f.s.settled(1);assert.equal(requests.filter(x=>x==='POST').length,0);
 });
-test('deleted urlscan result is terminal, preserves its UUID and only an explicit new scan submits again',async()=>{
- const f=urlscanRuntime();const requests=[];
+test('deleted urlscan result is terminal and an ordinary recheck does not resubmit it',async()=>{
+ const f=urlscanRuntime(); f.stored.fixture.links[0].urlscan.uuid='deleted-job';const requests=[];
  f.c.apiGateway.fetchWithTimeout=async(url,options)=>{requests.push(options.method);return {ok:options.method==='POST',status:options.method==='POST'?200:410,json:async()=>({uuid:'deleted-job'})};};
  await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);
  const saved=f.stored.fixture.links[0].urlscan;assert.equal(saved.errorCode,'result_gone');assert.equal(saved.terminal,true);assert.equal(saved.uuid,'deleted-job');assert.equal(f.s.get(1).pending,false);
  await f.s.request({messageId:1,operation:'refresh'},{tab:{id:7}});await f.s.settled(1);
- await f.s.display({id:7},f.message);await f.s.settled(1);assert.deepEqual(requests,['POST','GET']);assert.equal(f.s.get(1).providers.urlscan.error,'result_gone');
- await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);assert.equal(requests.filter(x=>x==='POST').length,2);
+ await f.s.display({id:7},f.message);await f.s.settled(1);assert.deepEqual(requests,['GET']);assert.equal(f.s.get(1).providers.urlscan.error,'result_gone');
+ await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);assert.equal(requests.filter(x=>x==='POST').length,0);
 });
 for(const stage of ['file','hash'])test('timed out '+stage+' preparation cannot mutate a later context binding',async()=>{
  const f=runtime({apikey:'',urlscanApikey:'',scanMode:'manual'});let now=1000000,release;const timers=[];
@@ -291,7 +341,7 @@ test('invalidation rejects an outstanding attachment preparation immediately and
  release(new Blob(['late']));for(let i=0;i<8;i++)await tick();assert.equal(bindings.length,0);assert.equal(f.calls.length,0);assert.equal(f.s.get(1),null);
 });
 for(const failure of [410,429,'network'])test('urlscan retains an observed partial finding after '+failure,async()=>{
- const f=urlscanRuntime();let gets=0;
+ const f=urlscanRuntime(); f.stored.fixture.links[0].urlscan.uuid='retained-job';let gets=0;
  f.c.apiGateway.fetchWithTimeout=async(url,options)=>{
   if(options.method==='POST')return {ok:true,status:200,json:async()=>({uuid:'retained-job'})};
   gets++;if(gets===1)return {status:200,json:async()=>({task:{uuid:'retained-job'},finished:false,verdicts:{overall:{malicious:true}}})};

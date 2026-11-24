@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.26.3 — 2026-11-24
+
+- Add configurable severity colors, pending URL scan summaries, detailed provider evidence, optional direct opening and adjustable link audit retention.
+- Require individual approval before sending a full URL or attachment. Preserve existing consent when saving ordinary settings, and continue scanning when the source archive is full.
+- Allow independent provider activation, explain API key setup, and support all 24 official EU languages.
+- Include named threat detections in opt-in incident reports. Improve the Python receiver's SMTP retry, status and manual recovery.
+
 ## 1.26.2 — 2026-11-23
 
 - Managed Thunderbird policies for separate link and attachment thresholds, protected opening and saving, and optional HTTPS incident reporting.

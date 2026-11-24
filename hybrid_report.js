@@ -409,4 +409,8 @@ const ThundyHybridReport = (() => {
     }
     return {project,broker,mount};
 })();
-if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded',()=>{if(document.getElementById('hybridReportContent'))ThundyHybridReport.mount(browser,document,location);},{once:true});
+if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', async () => {
+    if (!document.getElementById('hybridReportContent')) return;
+    if (ThundyI18n.ready) await ThundyI18n.ready;
+    ThundyHybridReport.mount(browser, document, location);
+}, {once: true});

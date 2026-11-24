@@ -1,0 +1,3590 @@
+{
+  "protectionSeverity_low": { "message": "Lav risiko" },
+  "protectionSeverity_unknown": { "message": "Ukendt risiko" },
+  "protectionSeverity_caution": { "message": "Forhøjet risiko" },
+  "protectionSeverity_high": { "message": "Høj risiko" },
+  "protectionSeverity_critical": { "message": "Kritisk risiko" },
+  "linkScanSummary": { "message": "Resultater af URL-scanninger" },
+  "linkScansPending": { "message": "URL-scanningerne kører stadig." },
+  "linkNoScanResults": { "message": "Ingen resultater af URL-scanninger er tilgængelige." },
+  "protectionCategoryUnavailable": { "message": "Udbyderen angav ingen trusselskategori." },
+  "linkWaitForResults": { "message": "Vent på igangværende URL-scanninger" },
+  "linkAutoOpenBelow": { "message": "Åbn direkte under denne score" },
+  "linkOpeningOptionsHelp": { "message": "Lad feltet være tomt for altid at vise linkdialogen." },
+  "linkAuditRetentionTitle": { "message": "Opbevaring af linkloggen" },
+  "linkAuditLimit": { "message": "Maks. antal poster (tomt = ubegrænset)" },
+  "linkAuditDays": { "message": "Opbevaring i dage (tomt = ubegrænset)" },
+  "protectionManagedColors": { "message": "Din organisation vælger farverne for risikoniveauerne." },
+  "linkOpenedAutomatically": { "message": "Åbnet automatisk" },
+  "providerSwitchHelp": {
+    "message": "Slå de enkelte tjenester til eller fra, og gem indstillingerne. Gemte nøgler og fund bevares, når en tjeneste sættes på pause."
+  },
+  "providerKeyLink": {
+    "message": "Få en API nøgle"
+  },
+  "providerDocsLink": {
+    "message": "API dokumentation"
+  },
+  "providerApiKeyLabel": {
+    "message": "API-nøgle"
+  },
+  "providerUse": {
+    "message": "Brug denne tjeneste"
+  },
+  "providerVirusUse": {
+    "message": "Brug VirusTotal til filkontrol"
+  },
+  "providerHybridStrength": {
+    "message": "Finder eksisterende rapporter ved hjælp af kendte filhashes. Med tilladte uploads kan Falcon Sandbox analysere filens adfærd, når den køres."
+  },
+  "providerHybridSetup": {
+    "message": "Skab en konto og åbn Profile → API Key for at oprette en nøgle."
+  },
+  "providerUrlhausStrength": {
+    "message": "Kontroller linkhosts mod rapporterede kilder af malware."
+  },
+  "providerUrlhausSetup": {
+    "message": "Tilmeld dig abuse.ch og få en Auth-Key fra din konto."
+  },
+  "providerUrlscanStrength": {
+    "message": "URLs undersøger fuldt og omdirigerer for tegn på phishing. Thundy bruger det på den maksimale privatlivsniveau."
+  },
+  "providerUrlscanSetup": {
+    "message": "Skab en konto og vælg Settings & API → Ny API nøgle."
+  },
+  "providerVirusTotalStrength": {
+    "message": "Se op på en fil SHA-256 hash og viser resultater fra flere scanningmotorer."
+  },
+  "providerVirusTotalSetup": {
+    "message": "Tilmeld dig VirusTotal og kopier nøglen fra profilens API Key-side."
+  },
+  "providerIpTitle": {
+    "message": "IP-omdømme"
+  },
+  "providerIpUse": {
+    "message": "Tjek IP omdømme"
+  },
+  "providerIpChoose": {
+    "message": "IP omdømmeudbyder"
+  },
+  "providerIpKeyNotice": {
+    "message": "Indtast en nøgle fra den valgte udbyder. Hvis du sætter IP-kontrol på pause, bevares både udbydervalget og nøglen."
+  },
+  "providerIpGuide": {
+    "message": "Vælg og indstille en IP-præsentant"
+  },
+  "providerVirusIpStrength": {
+    "message": "Tjekker offentlige IP'er mod VirusTotal 's opdagelsesmotorer og community ratings."
+  },
+  "providerAbuseStrength": {
+    "message": "Brug fællesskabsrapporter til at identificere offentlige IP'er forbundet med spam, scanning eller andre misbrug."
+  },
+  "providerAbuseSetup": {
+    "message": "Skab et AbuseIPDB-konto og generer eller kopierer en nøgle fra taben API i dashboardet."
+  },
+  "providerIpVirusKey": {
+    "message": "VirusTotal API nøgle til IP omdømme"
+  },
+  "providerIpAbuseKey": {
+    "message": "AbuseIPDB API nøgle"
+  },
+  "providerTestDisabled": {
+    "message": "Slå tjenesten til, og gem indstillingerne, inden du tester nøglen."
+  },
+  "analysisReason_provider_disabled": {
+    "message": "Denne udbyder er stoppet i indstillinger."
+  },
+  "extensionName": {
+    "message": "Thundy AV – E-mailscanner til Thunderbird"
+  },
+  "extensionDescription": {
+    "message": "Optionel opt-in scanner til e-mail vedhæftninger og links. intet forlader din computer uden dit udtrykkelige samtykke."
+  },
+  "actionTitle": {
+    "message": "Thundy AV – skanne status for denne besked"
+  },
+  "bannerScanOnce": {
+    "message": "Scan denne besked en gang"
+  },
+  "bannerScanSender": {
+    "message": "Skan altid denne sender"
+  },
+  "bannerTitleOptIn": {
+    "message": "Thundy AV : Scan i realtid er ikke aktiveret for denne besked."
+  },
+  "bannerNoteOptIn": {
+    "message": "Scanning overfører data til eksterne analyseydelser, men kun hvis du aktiverer det i add-on indstillingerne og kun efter at du har givet dit samtykke."
+  },
+  "bannerScanRunning": {
+    "message": "Skanning…"
+  },
+  "bannerScanDone": {
+    "message": "Forespørgsler er afsluttet - se analyskilder"
+  },
+  "bannerScanFailed": {
+    "message": "Skanning mislykkes"
+  },
+  "bannerPermissionDenied": {
+    "message": "Anmodet opholdstilladelse blev nægtet"
+  },
+  "bannerConsentMissing": {
+    "message": "Nye eksterne anmodninger er disaktiveret. tidligere lagrede rapporter kan stadig vises."
+  },
+  "bannerThreatTitle": {
+    "message": "Thundy AV advarsel"
+  },
+  "bannerThreatScore": {
+    "message": "Risk score: $SCORE$ af 100",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerSenderOptIn": {
+    "message": "Denne sender er nu automatisk scannet."
+  },
+  "notificationScanStarted": {
+    "message": "Scan starter for: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "Scan indsendt med succes. Job ID: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanError": {
+    "message": "Skanning fejl: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Thundy AV Skærm"
+  },
+  "notificationTitleError": {
+    "message": "Thundy AV Scanner fejl"
+  },
+  "bannerAuthPass": {
+    "message": "Tillid server rapporter SPF / DKIM / DMARC passeret"
+  },
+  "bannerOpenOptions": {
+    "message": "Åbne muligheder"
+  },
+  "menuScanLink": {
+    "message": "Scan link med Thundy AV"
+  },
+  "menuScanMessageLinks": {
+    "message": "Scan alle links til denne besked"
+  },
+  "notificationNoLinks": {
+    "message": "Der er ingen links i denne besked."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "Hosting tilladelse for analyselementet er savnet. Vælg det i add-on mulighederne."
+  },
+  "errorHostPermissionMissing": {
+    "message": "Host tilladelse til analyselementet er savnet. Være velkommen til at give det i add-on mulighederne."
+  },
+  "errorTierUploadBlocked": {
+    "message": "Uploading af vedhæftninger er deaktiveret i privatlivslinjen \"Strict\".Switch til \"Balanced\" eller \"Maximum\" i add-on mulighederne."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "Indsendelse af URLs er kun tilladt i privatlivslinjen \"Maximum\"."
+  },
+  "notificationInjectionFailed": {
+    "message": "Banner kan ikke indsættes i meddelelsesvisningen. bedes du rapportere dette med din Thunderbird version."
+  },
+  "bannerTierBlocked": {
+    "message": "Denne handling er ikke tilladt af den nuværende privatlivslinje. se add-on muligheder."
+  },
+  "ui_001": {
+    "message": "Advarsel om:"
+  },
+  "ui_002": {
+    "message": "Ingen Hybrid Analysis API nøgle er konfigureret. Du kan bruge lokale kontroller eller konfigurere en leverandør i indstillinger."
+  },
+  "ui_003": {
+    "message": "Åbne indstillinger"
+  },
+  "ui_004": {
+    "message": "Vælg en e-mail for at kontrollere den."
+  },
+  "ui_005": {
+    "message": "Lading analyse resultater…"
+  },
+  "ui_006": {
+    "message": "Eksterne analyser er deaktiveret: Ingen hash, filer eller links sendes til analyseydelser."
+  },
+  "ui_007": {
+    "message": "Der er ingen gemt vedhæftede filer eller link scan resultater til rådighed for denne besked."
+  },
+  "ui_008": {
+    "message": "Der er ingen analyser til rådighed for denne e-mail."
+  },
+  "ui_009": {
+    "message": "Uventede fejl under loading analyse resultater."
+  },
+  "ui_010": {
+    "message": "Status af:"
+  },
+  "ui_011": {
+    "message": "Analysen er i gang, så prøv igen senere."
+  },
+  "ui_012": {
+    "message": "SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_013": {
+    "message": "Trusler med score:"
+  },
+  "ui_014": {
+    "message": "Døden er:"
+  },
+  "ui_015": {
+    "message": "Malware familie:"
+  },
+  "ui_016": {
+    "message": "Multidiskan resultat: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_017": {
+    "message": "Yderligere oplysninger:"
+  },
+  "ui_018": {
+    "message": "Analysen startede: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_019": {
+    "message": "Tagg: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_020": {
+    "message": "VirusTotal resultater:"
+  },
+  "ui_021": {
+    "message": "Skadelig: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_022": {
+    "message": "Undetekteret: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_023": {
+    "message": "Mistanke: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_024": {
+    "message": "Skadelig: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_025": {
+    "message": "Skærm: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_026": {
+    "message": "Status: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_027": {
+    "message": "Antivirus resultater:"
+  },
+  "ui_028": {
+    "message": "AV: $P1$ – dom: $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_029": {
+    "message": "Der er ingen scanner resultater til rådighed."
+  },
+  "ui_030": {
+    "message": "SHA-256 hash: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_031": {
+    "message": "Sidste filnavne: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_032": {
+    "message": "Størrelse: $P1$ byte",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_033": {
+    "message": "Typ: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_034": {
+    "message": "Scan igen"
+  },
+  "ui_035": {
+    "message": "Sanitize og download (lokalt)"
+  },
+  "ui_036": {
+    "message": "Tjekket produkt: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_037": {
+    "message": "Lokalt resultat: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_038": {
+    "message": "SHA-256 : $P1$ – ekstern analyse er inaktiv.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_039": {
+    "message": "Ingen ekstern lookup, fordi den eksterne analyse er disabled."
+  },
+  "ui_040": {
+    "message": "Udvendig analyse-besvær"
+  },
+  "ui_041": {
+    "message": "Indsendelse af skan…"
+  },
+  "ui_042": {
+    "message": "Download filer til en ny scan…"
+  },
+  "ui_043": {
+    "message": "Scan indsendt. opladning af resultater…"
+  },
+  "ui_044": {
+    "message": "Succesfuld"
+  },
+  "ui_045": {
+    "message": "Scan er mislykkede:"
+  },
+  "ui_046": {
+    "message": "ukendte fejl"
+  },
+  "ui_047": {
+    "message": "Prøv igen"
+  },
+  "ui_048": {
+    "message": "Kommunikationsfejl:"
+  },
+  "ui_049": {
+    "message": "Sanitiserer…"
+  },
+  "ui_050": {
+    "message": "Html-sanitiseringen lokalt…"
+  },
+  "ui_051": {
+    "message": "Download er begyndt."
+  },
+  "ui_052": {
+    "message": "Sanitiseret"
+  },
+  "ui_053": {
+    "message": "Download er mislykkede:"
+  },
+  "ui_054": {
+    "message": "API fejl: $P1$ for elementet $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_055": {
+    "message": "(API-nøglen kan være ugyldig eller savnet.)"
+  },
+  "ui_056": {
+    "message": "Netværksfejl: $P1$ for elementet $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_057": {
+    "message": "Indsendelse URL…"
+  },
+  "ui_058": {
+    "message": "Send URL til Hybrid Analysis…"
+  },
+  "ui_059": {
+    "message": "Scan indsendt. opladningsresultater…"
+  },
+  "ui_060": {
+    "message": "Upload er mislykkede:"
+  },
+  "ui_061": {
+    "message": "URL: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_062": {
+    "message": "Dette URL blev fundet i e-mailen. for at beskytte dit privatliv, det var"
+  },
+  "ui_063": {
+    "message": "Ikke automatisk opladt"
+  },
+  "ui_064": {
+    "message": "Skanne URL nu"
+  },
+  "ui_065": {
+    "message": "Opladning…"
+  },
+  "ui_066": {
+    "message": "Send filen til Hybrid Analysis…"
+  },
+  "ui_067": {
+    "message": "Opladning er afsluttet. opladningsresultater…"
+  },
+  "ui_068": {
+    "message": "Skaner filen nu (opladning)"
+  },
+  "ui_069": {
+    "message": "Tilføjelse: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_070": {
+    "message": "Der er ingen ekstern rapport til rådighed for denne fil. For at beskytte dit privatliv, det var"
+  },
+  "ui_071": {
+    "message": "Automatiske opladninger er deaktiveret; privatlivslinjen gælder stadig for manuelle scanninger."
+  },
+  "ui_072": {
+    "message": "Link beskyttelse forbliver tilgængelig sammen med automatisk scanning."
+  },
+  "ui_073": {
+    "message": "Sparer…"
+  },
+  "ui_074": {
+    "message": "Indstillinger er reddet."
+  },
+  "ui_075": {
+    "message": "Gem"
+  },
+  "ui_076": {
+    "message": "Tilladelse til at overføre data er ikke givet. intet vil blive sendt."
+  },
+  "ui_077": {
+    "message": "Der er ikke udstedt tilladelse til:"
+  },
+  "ui_078": {
+    "message": "Tjekker for disse udbydere er ikke tilgængelige uden tilladelse."
+  },
+  "ui_079": {
+    "message": "Kan ikke spare indstillinger."
+  },
+  "ui_080": {
+    "message": "Det fjerner alle lokalt lagrede analyser."
+  },
+  "ui_081": {
+    "message": "Rydder…"
+  },
+  "ui_082": {
+    "message": "Cache er klar."
+  },
+  "ui_083": {
+    "message": "Der er endnu ingen database, eller den er allerede tom."
+  },
+  "ui_084": {
+    "message": "Jeg kunne ikke klare cache."
+  },
+  "ui_085": {
+    "message": "Klar cache"
+  },
+  "ui_086": {
+    "message": "API nøgle mangler."
+  },
+  "ui_087": {
+    "message": "SPF check mislykkes (mulige spoofing)."
+  },
+  "ui_088": {
+    "message": "DKIM underskrift er ugyldig (mulig spoofing)."
+  },
+  "ui_089": {
+    "message": "DMARC check mislykkes (mulige spoofing)."
+  },
+  "ui_090": {
+    "message": "URLhaus fortegner domænen ( $P1$) som ondsindet.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_091": {
+    "message": "Reply-To domæne ( $P1$) adskiller sig fra sender domæne ( $P2$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_092": {
+    "message": "Mulig forretningsmæssig e-mail kompromis: Første kontakt med denne sender og nødsøgningskrav fundet ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_093": {
+    "message": "Nødvendige nøgleord fundet ( $P1$). Se denne anmodning omhyggeligt.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_094": {
+    "message": "Dette er din første kommunikation med denne sender."
+  },
+  "ui_095": {
+    "message": "Senderdomænen ( $P1$) ligner det kendte mærke $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_096": {
+    "message": "Link domænen ( $P1$) ligner det kendte mærke $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_097": {
+    "message": "Ingen af de links i tekstpunktet til afsenderen domæne ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_098": {
+    "message": "Kærlig"
+  },
+  "ui_099": {
+    "message": "URL skanning fejlede:"
+  },
+  "ui_100": {
+    "message": "Kan ikke starte urlscan.io scanning:"
+  },
+  "ui_101": {
+    "message": "urlscan.io returnerede ikke en scan-ID."
+  },
+  "ui_102": {
+    "message": "urlscan.io identificerede URL som ondsindet."
+  },
+  "ui_103": {
+    "message": "Visuel opdagelse: siden impersonaterer"
+  },
+  "ui_104": {
+    "message": "(Det er en forudsætning for phishing)"
+  },
+  "ui_105": {
+    "message": "Jeg kunne ikke hente urlscan.io resultater:"
+  },
+  "ui_106": {
+    "message": "Thundy AV – E-mail scanner"
+  },
+  "ui_107": {
+    "message": "Se alle Hybrid Analysis indsendelser"
+  },
+  "ui_108": {
+    "message": "Se alle Hybrid Analysis indlæg (åbner en ny tab)"
+  },
+  "ui_109": {
+    "message": "Subjektet er:"
+  },
+  "ui_110": {
+    "message": "Fra:"
+  },
+  "ui_111": {
+    "message": "Meddelelse ID:"
+  },
+  "ui_112": {
+    "message": "Thundy AV indstillinger"
+  },
+  "ui_113": {
+    "message": "Hybrid Analysis er en malware analyse service. Du kan sende filer til statisk og dynamisk analyse."
+  },
+  "ui_114": {
+    "message": "Hybrid Analysis bruger CrowdStrike Falcon Sandbox til at undersøge ukendte trusler."
+  },
+  "ui_115": {
+    "message": "Leverandørkonti og servicevilkår gælder for ekstern analyse. Lokale kontroller kræver ikke en konto."
+  },
+  "ui_116": {
+    "message": "Thundy AV indstillinger"
+  },
+  "ui_117": {
+    "message": "Hvad er Hybrid Analysis?"
+  },
+  "ui_118": {
+    "message": "For ekstern filanalyse, få en API nøgle fra"
+  },
+  "ui_119": {
+    "message": "Efter at have logget ind, gå til din profil og finde sektionen API KEY."
+  },
+  "ui_120": {
+    "message": "Pas den API-nøgle her. Lokale kontroller fungerer uden det."
+  },
+  "ui_121": {
+    "message": "API nøgleindstilling"
+  },
+  "ui_122": {
+    "message": "hybrid-analysis.com"
+  },
+  "ui_123": {
+    "message": "hybrid-analysis.com (åbner en ny tab)"
+  },
+  "ui_124": {
+    "message": "Tillad ekstern analyse (send data til tredjepartsudbydere)"
+  },
+  "ui_125": {
+    "message": "Uden denne tilladelse,"
+  },
+  "ui_126": {
+    "message": "hashes, filer, links eller IP adresser sendes til eksterne tjenester. Efter samtykke kan autoriserede scans sende vedhæftede og link data til Hybrid Analysis, VirusTotal, urlscan.io, URLhaus eller AbuseIPDB, afhængigt af privatlivets niveau. Slå denne mulighed fra for at tilbagekalde samtykke. detaljer:"
+  },
+  "ui_127": {
+    "message": "ikke"
+  },
+  "ui_128": {
+    "message": "Privatlivspolitikken"
+  },
+  "ui_129": {
+    "message": "Privatlivspolitik (åbner en ny tab)"
+  },
+  "ui_130": {
+    "message": "Hybrid Analysis API nøgle (valglig):"
+  },
+  "ui_131": {
+    "message": "For eksempel abcdef123456…"
+  },
+  "ui_132": {
+    "message": "URLhaus API nøgle (optional domænen omdømme):"
+  },
+  "ui_133": {
+    "message": "Du kan få en API nøgle på"
+  },
+  "ui_134": {
+    "message": "."
+  },
+  "ui_135": {
+    "message": "urlhaus.abuse.ch"
+  },
+  "ui_136": {
+    "message": "urlhaus.abuse.ch (åbner en ny tab)"
+  },
+  "ui_137": {
+    "message": "urlscan.io API nøgle (optional URL analyse):"
+  },
+  "ui_138": {
+    "message": "Du kan få en API nøgle på"
+  },
+  "ui_139": {
+    "message": "urlscan.io"
+  },
+  "ui_140": {
+    "message": "urlscan.io (åbner en ny tab)"
+  },
+  "ui_141": {
+    "message": "VirusTotal API nøgle (optional filer omdømme):"
+  },
+  "ui_142": {
+    "message": "virustotal.com"
+  },
+  "ui_143": {
+    "message": "virustotal.com (åbner en ny tab)"
+  },
+  "ui_144": {
+    "message": "Privatlivets niveau:"
+  },
+  "ui_145": {
+    "message": "Strengt (default: hashes og domæner kun, ingen upload)"
+  },
+  "ui_146": {
+    "message": "Balanceret (oplad ukendte filer, ingen komplet URLs)"
+  },
+  "ui_147": {
+    "message": "Maksimal analyse (oplad ukendte filer og udfylde URLs)"
+  },
+  "ui_148": {
+    "message": "Begrænser de data, der sendes til analyseleverandører. Det gælder kun, når ekstern analyse er aktiveret."
+  },
+  "ui_149": {
+    "message": "IP omdømme (check modtagne overskrifter):"
+  },
+  "ui_150": {
+    "message": "Handicap"
+  },
+  "ui_151": {
+    "message": "VirusTotal (kræver en VirusTotal API nøgle)"
+  },
+  "ui_152": {
+    "message": "AbuseIPDB (kræver en AbuseIPDB API nøgle)"
+  },
+  "ui_153": {
+    "message": "IP omdømme API nøgle:"
+  },
+  "ui_154": {
+    "message": "Send offentlige IP-adresser fra e-mailens modtagne adresser til den valgte udbyder. kræver ekstern analyse samtykke og en skanningstilladelse."
+  },
+  "ui_155": {
+    "message": "Tilladelseliste (comma-afskilte domæner eller e-mailadresser):"
+  },
+  "ui_156": {
+    "message": "e.g. example.com, test@ example.com"
+  },
+  "ui_157": {
+    "message": "Tillidede senderindtægter undertrykker lokale senders advarsler. De tillader ikke eksterne scanninger."
+  },
+  "ui_158": {
+    "message": "Blocklist (comma-afskilte domæner eller e-mailadresser):"
+  },
+  "ui_159": {
+    "message": "Indtast blokerede domæner eller e-mailadresser."
+  },
+  "ui_160": {
+    "message": "Altid scanne manuelt (ikke automatisk oplader)"
+  },
+  "ui_161": {
+    "message": "Forhindrer automatisk eksterne scanninger. eksplicite manuelle handlinger kræver stadig samtykke og den relevante privatlivsgrad."
+  },
+  "ui_162": {
+    "message": "Hent ventende linkrapporter automatisk"
+  },
+  "ui_163": {
+    "message": "Linkchecks kræver samtykke, en scanautorisation og den relevante privatlivsgrad."
+  },
+  "ui_164": {
+    "message": "Tjek linkene, før du åbner dem"
+  },
+  "ui_165": {
+    "message": "Navigeringen stopper for at vise resultatet.Uchekede links og fejl er klart identificeret.Full URL analyse kræver den maksimale niveau. Fuldstændige links og vedhæftede filer kræver særskilt bekræftelse."
+  },
+  "ui_166": {
+    "message": "Husk at gemme dine indstillinger."
+  },
+  "ui_167": {
+    "message": "Dataforvaltning"
+  },
+  "ui_168": {
+    "message": "Klart lokalt lagrede resultater og omdømme cacher."
+  },
+  "linkChecking": {
+    "message": "Tjekke link…"
+  },
+  "linkWarning": {
+    "message": "Denne link blev rapporteret som mistænkelig eller ondsindet."
+  },
+  "linkUnknown": {
+    "message": "Denne link kunne ikke kontrolleres. åbning det kan være farligt."
+  },
+  "linkNoDetection": {
+    "message": "Ingen trusler opdaget af leverandøren. Dette er ikke en garanti for sikkerhed."
+  },
+  "linkProceed": {
+    "message": "Åbent link i hvert fald"
+  },
+  "linkCancel": {
+    "message": "Annuller"
+  },
+  "localMode": {
+    "message": "Lokale kontroller fungerer uden API-nøgler. eksterne scanninger kræver dit samtykke og en meddelelse eller afsenders tilladelse."
+  },
+  "statusNormal": {
+    "message": "(Ingen opdagelse af det)"
+  },
+  "statusSuspicious": {
+    "message": "( Det er mistænkt)"
+  },
+  "statusCritical": {
+    "message": "( Det kritiske)"
+  },
+  "noSubject": {
+    "message": "(Ingen emne af det)"
+  },
+  "noSender": {
+    "message": "(Ukendt tilgænger)"
+  },
+  "noId": {
+    "message": "(Ingen af dem)"
+  },
+  "unknownAttachment": {
+    "message": "ukendt"
+  },
+  "statusDangerous": {
+    "message": "( Det er farligt"
+  },
+  "sizeLimit": {
+    "message": "Tilføjelsen overstiger den lokale størrelsegrænse på 25 MiB og blev ikke læst eller lastet op."
+  },
+  "trustedAuthLabel": {
+    "message": "Tillid til autentiserings servere (comma-separated)"
+  },
+  "trustedAuthHelp": {
+    "message": "Kun liste modtagermailservere, du administrerer eller eksplicit tillid. Unconfigured header rapporter forbliver uanmeldte."
+  },
+  "consentHelp": {
+    "message": "Uden samtykke sendes intet eksternt. Når du har givet samtykke, kontrolleres kun udtrykkeligt godkendte meddelelser eller afsendere. På det strenge niveau kan hashes, domæner og offentlige IP-adresser sendes. Det balancerede niveau tillader også upload af ukendte filer, og det maksimale tillader desuden fulde URL’er. Slå indstillingen fra for at stoppe nye overførsler og annullere ventende anmodninger. Data, der allerede er sendt, kan ikke trækkes tilbage. Fuldstændige links og vedhæftede filer kræver særskilt bekræftelse."
+  },
+  "visualImpersonation": {
+    "message": "Visuel opdagelse: Sideen impersonerer $BRANDS$ (forudsigelig phishing).",
+    "placeholders": {
+      "brands": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedEmail": {
+    "message": "Sender email ( $P1$) er på blokklisten.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedDomain": {
+    "message": "Sender domæne ( $P1$) er på blokklisten ( $P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedEmail": {
+    "message": "Sender e-mail ( $P1$) er på tilladelselistet.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedDomain": {
+    "message": "Senderdomænen ( $P1$) er på tilladelselisten ( $P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanVisibility": {
+    "message": "urlscan.io indsendelser er ikke opført, ikke private. En komplet URL kan indeholde personlige data eller adgang tokens. Indsend kun URLs du er tilladt at dele."
+  },
+  "notificationScanCount": {
+    "message": "Indsendte scanninger: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "gatewayRequestTimeout": {
+    "message": "Leverandørens anmodning er blevet annulleret eller afbrudt."
+  },
+  "gatewayInvalidJson": {
+    "message": "Udbyderen tilbagevendte et uforlæsbart svar."
+  },
+  "gatewayNetworkError": {
+    "message": "Leverandøren kunne ikke nås."
+  },
+  "noMessageFound": {
+    "message": "Der er ikke fundet besked."
+  },
+  "providerNoDetection": {
+    "message": "Ingen trusler opdaget"
+  },
+  "providerMalicious": {
+    "message": "Skadelig"
+  },
+  "providerSuspicious": {
+    "message": "Mistænkelig"
+  },
+  "providerPending": {
+    "message": "Analysen hænger"
+  },
+  "privacyLocalData": {
+    "message": "Thundy AV læser den vist besked, dens sender, emne, overskrifter, tekst og vedhæftninger til at udføre lokale kontroller. Lokale kontroller fungerer uden API nøgler. Der er ingen telemetri og ingen udvikler analyse server."
+  },
+  "privacyProviders": {
+    "message": "Autoriserede eksterne anmodninger går direkte til konfigurerede leverandører: Hybrid Analysis for fil hash og upload, VirusTotal for fil hash eller IP omdømme, URLhaus for domæner, urlscan.io for komplet URLs og AbuseIPDB for offentlige IPs. Hashes kan identificere kendte filer."
+  },
+  "privacyRetention": {
+    "message": "Indstillinger, samtykke, afsendelsesautoriseringer og API nøgler er gemt i din Thunderbird profil. API nøgler er ikke krypteret der. Lokale scan optegnelser kan omfatte emner, afsendelsesadresser, komplette links og vedhæftede metadata. Cache beholder op til 1000 meddelelsesoptegnelser i 30 dage og rengøres på database startups. In-memory reputation resultater udløber efter 15 minutter."
+  },
+  "privacyControl": {
+    "message": "Afaktiver ekstern analyse for at stoppe nye anmodninger og annullere ventende anmodninger. allerede overførte data kan ikke genoptages. Brug Clear cache til at slette lagrede analysesultater og omdømme cache. Individ sender tilladelser kan fjernes i indstillinger."
+  },
+  "privacyDetailed": {
+    "message": "Detaljeret privatlivspolitik (Engelsk/Tysk)"
+  },
+  "senderAuthorizationsLabel": {
+    "message": "Autoriserede sendere (en e-mailadresse pr. linje)"
+  },
+  "senderAuthorizationsHelp": {
+    "message": "Disse afsendere kan scannes automatisk, når ekstern analyse er aktiveret. fjern en adresse for at stoppe automatiske skanninger for fremtidige meddelelser. Denne liste overskrider ikke privatlivets niveau eller manuelle tilstand."
+  },
+  "invalidSenderAddress": {
+    "message": "Indtast direkte e-mailadresser, én pr. linje."
+  },
+  "popupSubtitle": {
+    "message": "Meddelelse sikkerhed oversigt"
+  },
+  "popupDetails": {
+    "message": "Teknisk besked detaljer"
+  },
+  "popupLocalAssessment": {
+    "message": "Lokalt risikovurdering"
+  },
+  "popupLocalExplanation": {
+    "message": "Dette score er ikke en antivirus-døm eller en sikkerhedsgaranti."
+  },
+  "linkDialogTitle": {
+    "message": "Tjek før åbning"
+  },
+  "linkDestination": {
+    "message": "Destinations hjemmeside"
+  },
+  "linkUrlDetails": {
+    "message": "Se hele linkadressen"
+  },
+  "linkOpenBrowser": {
+    "message": "Åbn i browser"
+  },
+  "linkOpening": {
+    "message": "Åbning…"
+  },
+  "linkOpenFailed": {
+    "message": "Linket kunne ikke åbnes. Prøv igen, eller kontrollér indstillingerne for din standardbrowser."
+  },
+  "linkCheckLimited": {
+    "message": "Kun tilgængelige scan resultater kan vises. manglende kontroller betyder ikke, at en link er sikker."
+  },
+  "auditTitle": {
+    "message": "Link til beslutning"
+  },
+  "auditOpen": {
+    "message": "Læs link log"
+  },
+  "auditScope": {
+    "message": "Logs HTTP (S) clicks intercepted af link beskyttelse. OPENED betyder, at Thunderbird accepterede åbning anmodningen uden at melde en fejl. Dette bekræfter ikke, at operativsystemet startede en browser eller at webstedet blev besøgt."
+  },
+  "auditPrivacy": {
+    "message": "Lokalt opbevaret i op til 30 dage, 2.000 records eller 2 MiB (de ældste indtægter fjernes). Full URLs kan indeholde personoplysninger eller adgang tokens. Ingenting lades op automatisk. Den lokale log kan ændres eller slettes af profilen brugere; det er ikke en tamper-proof central auditsspor. Den lokale score bruger den klikkede link og besked kontekst, ikke en leverandør score. Bedømmelsesgrunde kan omfatte sender eller domænen detaljer."
+  },
+  "auditSearch": {
+    "message": "URL, domæne eller event ID"
+  },
+  "auditOutcome": {
+    "message": "Beslutning"
+  },
+  "auditAll": {
+    "message": "Alle"
+  },
+  "auditOpened": {
+    "message": "Åbning anmodet"
+  },
+  "auditAborted": {
+    "message": "Abortet"
+  },
+  "auditOpenError": {
+    "message": "Åbning mislykkes"
+  },
+  "auditPending": {
+    "message": "Ingen afsluttende beslutning"
+  },
+  "auditMinScore": {
+    "message": "Minimum beslutningsresultat"
+  },
+  "auditFrom": {
+    "message": "Fra"
+  },
+  "auditTo": {
+    "message": "til"
+  },
+  "auditRefresh": {
+    "message": "Frysning"
+  },
+  "auditJson": {
+    "message": "Eksport JSON"
+  },
+  "auditCsv": {
+    "message": "Eksport af CSV"
+  },
+  "auditClear": {
+    "message": "Fjern lokal log"
+  },
+  "auditExportHelp": {
+    "message": "Eksport inkluderer alle filtrerede rader, ikke kun den aktuelle side. JSON indeholder en SHA-256 checkum for verifikation; det beviser ikke autentisitet. CSV neutraliserer spreadsheet formler. Export indeholder komplet URLs : dele kun med autoriserede revisorer."
+  },
+  "auditTime": {
+    "message": "Klik / beslutningstid"
+  },
+  "auditLocalScore": {
+    "message": "Lokalt score (link og besked)"
+  },
+  "auditVerdict": {
+    "message": "Leverandørresultater"
+  },
+  "auditAddress": {
+    "message": "URL og detaljer"
+  },
+  "auditPrevious": {
+    "message": "Tidligere"
+  },
+  "auditNext": {
+    "message": "Næste"
+  },
+  "auditClearConfirm": {
+    "message": "Fjern alle lokale link log indtægter? Eksport kræver bevis først. Scan resultater og indstillinger bevares."
+  },
+  "auditFailure": {
+    "message": "Den lokale link log kunne ikke læses eller gemmes."
+  },
+  "auditUnavailable": {
+    "message": "Ikke tilgængelig"
+  },
+  "auditScoreAtDecision": {
+    "message": "Score på beslutning"
+  },
+  "auditRecords": {
+    "message": "Rekord"
+  },
+  "auditDetails": {
+    "message": "Se URL og beviser"
+  },
+  "auditEventId": {
+    "message": "Event ID"
+  },
+  "auditCancelReason": {
+    "message": "Cancellation årsag"
+  },
+  "auditFinalResult": {
+    "message": "Sidste kontrolresultater"
+  },
+  "auditProfile": {
+    "message": "Lokalt profil ID"
+  },
+  "auditExported": {
+    "message": "Eksporten blev reddet."
+  },
+  "auditRiskyOpened": {
+    "message": "Åbning anmodet ved høj risiko"
+  },
+  "auditExportFailed": {
+    "message": "Eksporten er mislykkede eller annulleret."
+  },
+  "profilesTitle": {
+    "message": "Optionelle virksomhedsprofiler"
+  },
+  "profilesIntro": {
+    "message": "Vælg almindelige systemer uafhængigt eller forlad integrationer disaktiveret. Disse profiler forbereder konfiguration; de forbindes ikke til en virksomhedstjeneste eller aktiverer central logging."
+  },
+  "profilesOpen": {
+    "message": "Vælg virksomhedsprofiler"
+  },
+  "profilesBundle": {
+    "message": "Den foreslåede kombination"
+  },
+  "profilesLocal": {
+    "message": "Lokalt forberedelse"
+  },
+  "profilesCustom": {
+    "message": "Tilpasset udvalg"
+  },
+  "profilesHosting": {
+    "message": "Hosting"
+  },
+  "profilesSso": {
+    "message": "Den ene sign-on (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Enhedsstyring"
+  },
+  "profilesSiem": {
+    "message": "Sikkerhedsovervågning (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Billetordninger"
+  },
+  "profilesRequirements": {
+    "message": "Nødvendig konfiguration"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Endpoint og kontoindstillinger leveres under senere indstillinger. navne nedenfor identificerer de nødvendige indstillinger og hemmelige referencer; skriv ingen bekræftelser her."
+  },
+  "profilesPreview": {
+    "message": "Konfigurationsprojekt"
+  },
+  "profilesPrivacy": {
+    "message": "Forbindelser forbliver deaktiverede. udkastet indeholder ingen API nøgler, tokens, klikkede URLs eller meddelelsesdata. Centrale data er planlagt med domæne-kun redigering."
+  },
+  "profilesSave": {
+    "message": "Beskyttelse lokalt"
+  },
+  "profilesExport": {
+    "message": "Eksportkonfigurationsprojekt"
+  },
+  "profilesReset": {
+    "message": "Reset udvælgelse"
+  },
+  "profilesNone": {
+    "message": "Udvalgt / ikke udvalgt"
+  },
+  "profilesSelfHosted": {
+    "message": "Selvhostede / på-præmisser"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Der er ingen ekstern integration indstillinger, der kræves for dette udvalg."
+  },
+  "profilesSaved": {
+    "message": "Valget er sparet lokalt.Kontakterne forbliver ugyldige."
+  },
+  "profilesExported": {
+    "message": "Konfigurationsprojekt eksporteret. intet blev aktiveret."
+  },
+  "profilesFailed": {
+    "message": "Valget kunne ikke lastes, gemmes eller eksporteres, eller operationen blev annulleret."
+  },
+  "wizardTitle": {
+    "message": "Konfigurer Thundy AV"
+  },
+  "wizardLanguage": {
+    "message": "Guidens sprog"
+  },
+  "wizardLanguageNote": {
+    "message": "Valget gælder kun guiden. Tilføjelsens sprog kan ændres i indstillingerne."
+  },
+  "wizardWelcome": {
+    "message": "Velkommen til"
+  },
+  "wizardProtection": {
+    "message": "Link beskyttelse"
+  },
+  "wizardExternal": {
+    "message": "Optionel analyse"
+  },
+  "wizardIntro": {
+    "message": "Start med lokale kontroller. For at inspicere en e-mail, brug dens Thundy AV banner eller scan handling. Du kan senere beslutte om du skal konfigurere analyseudbydere."
+  },
+  "wizardLocalNotice": {
+    "message": "Uden samtykke til ekstern analyse sendes ingen data til analyseleverandører. denne troldmanden giver aldrig den samtykke."
+  },
+  "wizardPrivacy": {
+    "message": "Personlige oplysninger"
+  },
+  "wizardLinkChoice": {
+    "message": "Advarsel, før du åbner links og registrerer beslutninger lokalt"
+  },
+  "wizardLinkExplanation": {
+    "message": "Link dialogen viser destination og tilgængelig risikovurdering. Åbning hænderne linket til din browser; det beviser ikke et besøg på hjemmesiden."
+  },
+  "wizardAuditNotice": {
+    "message": "Den lokale link log kan omfatte fulde URLs og vurderingsgrunde. Det holder op til 30 dage, 2.000 indtægter eller 2 MiB. Profile brugere kan læse, ændre eller slette det; det er ikke en beskyttet corporate audit."
+  },
+  "wizardExternalExplanation": {
+    "message": "Eksterne udbydere er valgfrie og kan kræve API-nøgler. Afhængigt af din privatlivslinje, hasher, domæner, offentlige IP'er, filer eller fuld URLs kan overføres."
+  },
+  "wizardNextAction": {
+    "message": "Hvad vil du gerne gøre næste?"
+  },
+  "wizardKeepLocal": {
+    "message": "Slutter med lokale kontroller"
+  },
+  "wizardKeepExisting": {
+    "message": "Hold eksisterende eksterne indstillinger"
+  },
+  "wizardExistingExternal": {
+    "message": "Den eksterne analyse er allerede aktiveret i denne profil. The wizard ændrer ikke den samtykke. Brug indstillinger for at deaktivere det eller gennemgå tilladelser."
+  },
+  "wizardConfigure": {
+    "message": "Konfigurer ekstern analyse i indstillinger"
+  },
+  "wizardNoConsent": {
+    "message": "Valg af dette alternativ åbner kun indstillinger. intet er opført og ingen tilladelse er anmodet om af denne troldmanden."
+  },
+  "wizardBack": {
+    "message": "Tilbage"
+  },
+  "wizardNext": {
+    "message": "Næste"
+  },
+  "wizardFinish": {
+    "message": "Beskyttelse af setup"
+  },
+  "wizardFinishConfigure": {
+    "message": "Spare og åbne indstillinger"
+  },
+  "wizardSkip": {
+    "message": "Ikke nu"
+  },
+  "wizardDone": {
+    "message": "Opstilling reddet"
+  },
+  "wizardDoneText": {
+    "message": "Din link-beskyttelsesvalg blev gemt lokalt. Ingen API nøgle, ekstern samtykke eller afsenders godkendelse blev ændret. Du kan genoprette trollet fra indstillingerne."
+  },
+  "wizardSettings": {
+    "message": "Åbne indstillinger"
+  },
+  "wizardProfilesNotice": {
+    "message": "Virksomhedsprofiler er valgfrie konfigurationsdesign. at vælge dem aktiverer ikke en virksomhedskontakt."
+  },
+  "wizardDeferred": {
+    "message": "Installeret er forsinket"
+  },
+  "wizardDeferredText": {
+    "message": "Ingen indstillinger blev ændret. Åbne trollet fra indstillingerne, når du er klar."
+  },
+  "wizardSettingsOpened": {
+    "message": "Konfigurer leverandører og gem dit samtykke der."
+  },
+  "wizardSettingsFailed": {
+    "message": "Indstillinger kan ikke åbnes. din indstilling er gemt; brug Open-indstillinger til at tilbagetrække."
+  },
+  "wizardSaveFailed": {
+    "message": "Indstillingen kunne ikke blive sparet. dine valg forbliver her; venligst tilbagetrække."
+  },
+  "wizardLoadFailed": {
+    "message": "Indstillinger kan ikke lades op. Ingenting blev sparet. Reload denne side til tilbagekaldelse."
+  },
+  "wizardLanguageFailed": {
+    "message": "Sproget kan ikke lades op. Det foregående sprog forbliver valgt."
+  },
+  "wizardReopen": {
+    "message": "Åbent setup magi"
+  },
+  "settingsAppearance": {
+    "message": "Udseende"
+  },
+  "settingsPrivacy": {
+    "message": "Privatliv"
+  },
+  "settingsScanning": {
+    "message": "Beskyttelse"
+  },
+  "settingsProviders": {
+    "message": "Analysetjenester"
+  },
+  "settingsSenders": {
+    "message": "Afsenderregler"
+  },
+  "settingsData": {
+    "message": "Data og værktøjer"
+  },
+  "settingsWorkspace": {
+    "message": "Din arbejdsplads"
+  },
+  "settingsEyebrow": {
+    "message": "Gør det dit"
+  },
+  "settingsSubtitle": {
+    "message": "Tilpas Thundy AV’s udseende og beskyttelsen af din e-mail."
+  },
+  "settingsLocalBadge": {
+    "message": "Lokalt ved default"
+  },
+  "settingsLocalNote": {
+    "message": "Dine præferencer. opbevaret på denne enhed."
+  },
+  "settingsSkip": {
+    "message": "Skift til indstillinger"
+  },
+  "settingsProviderGuide": {
+    "message": "Om leverandører og API nøgler"
+  },
+  "settingsWizardHelp": {
+    "message": "Gennemgå den vejledte indstilling til enhver tid."
+  },
+  "themeIntro": {
+    "message": "Gør Thundy AV føle sig som din. Udseende ændringer gemmes umiddelbart over add-on."
+  },
+  "themeMode": {
+    "message": "Udseende"
+  },
+  "themeSystem": {
+    "message": "Følg Thunderbirds tema"
+  },
+  "themeLight": {
+    "message": "Lyst"
+  },
+  "themeDark": {
+    "message": "Mørkt"
+  },
+  "themeAccent": {
+    "message": "Accent farve"
+  },
+  "themeOcean": {
+    "message": "Havet"
+  },
+  "themeViolet": {
+    "message": "Violet"
+  },
+  "themeForest": {
+    "message": "Skoven"
+  },
+  "themeAmber": {
+    "message": "Ravgul"
+  },
+  "themeReady": {
+    "message": "Udseende spares automatisk. Andre indstillinger bruger knappen Save."
+  },
+  "themeSaving": {
+    "message": "Sparer udseende…"
+  },
+  "themeSaved": {
+    "message": "Udseendet blev reddet."
+  },
+  "themeLoadError": {
+    "message": "Udseende kan ikke lades op. Prøv at genoprette indstillingerne."
+  },
+  "themeSaveError": {
+    "message": "Udseende kan ikke spares. Vælg din valg igen for at tilbagetrække."
+  },
+  "themeRetry": {
+    "message": "Returbesparende udseende"
+  },
+  "themeDensity": {
+    "message": "Informationsdensitet"
+  },
+  "themeComfortable": {
+    "message": "Komfortable"
+  },
+  "themeCompact": {
+    "message": "Kompakt"
+  },
+  "themeDensityHelp": {
+    "message": "Tilpasning af rum i indstillinger og lokale administrationsværktøjer."
+  },
+  "profilesChanges": {
+    "message": "Ændringer i forhold til reddet udvælgelse"
+  },
+  "profilesDiscard": {
+    "message": "Undgå ubesvarede ændringer"
+  },
+  "profilesLoadRetry": {
+    "message": "Reload Saved Selektion"
+  },
+  "profilesNotLoaded": {
+    "message": "Beskyttelse ikke opladt"
+  },
+  "profilesUnsaved": {
+    "message": "Udviklede ændringer · Inaktivt udkast"
+  },
+  "profilesUnchanged": {
+    "message": "Beskyttelse · Inaktiv udkast"
+  },
+  "profilesSaving": {
+    "message": "Beskyttelse af lokal udvælgelse…"
+  },
+  "settingsUnsaved": {
+    "message": "Uforsikrede ændringer"
+  },
+  "providerUnknown": {
+    "message": "Resultat ukendt"
+  },
+  "auditVerdictAtDecision": {
+    "message": "Resultat ved beslutning"
+  },
+  "ui_169": {
+    "message": "Analyseprotokoll: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "Job ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "IndsendelsesID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protokol modtaget: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": "Analysen er stadig i gang (IN_PROGRESS). Resultatet tilbagekaldes automatisk hver $P1$ sekunder (attempt $P2$); den færdige analyseprotokoll vises her uden en ny anmodning, når det er lagret.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "Efter en genstart eller tab af processen, dette forbliver ventet; indsæt ikke, at linket er åbnet eller annulleret."
+  },
+  "auditCancelUser": {
+    "message": "Annulleret af brugeren"
+  },
+  "auditCancelEscape": {
+    "message": "Slukket med flugt"
+  },
+  "auditCancelDestination": {
+    "message": "Destination ændret"
+  },
+  "auditCancelContext": {
+    "message": "Meddelelse kontekst lukket"
+  },
+  "auditCancelUnknown": {
+    "message": "ukendte årsager til annullering"
+  },
+  "reportNotSaved": {
+    "message": "Rapporten er synlig, men kunne ikke reddes lokalt. genoprette det til tilbagetrækning."
+  },
+  "checkOrigin_live": {
+    "message": "Aktuel udbyder resultat"
+  },
+  "checkOrigin_stored": {
+    "message": "Opbevaret resultat"
+  },
+  "checkOrigin_none": {
+    "message": "Ingen udbyder observation"
+  },
+  "checkOutcome_success": {
+    "message": "Anmodningen lykkedes"
+  },
+  "checkOutcome_failed": {
+    "message": "Anmodningen mislykkes"
+  },
+  "checkOutcome_disabled": {
+    "message": "Udvendig analyse af handicap"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Gæstetilladelse mangler"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Nyhedsløsning forsvinder"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Ingen leverandør reference"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Ingen ny anmodning"
+  },
+  "checkOutcome_no_result": {
+    "message": "Ingen nyt anvendelig resultat"
+  },
+  "checkAttempted": {
+    "message": "Tjek forsøg"
+  },
+  "checkObserved": {
+    "message": "Resultater observeret"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Grunde til beslutningen"
+  },
+  "auditReasonsLatest": {
+    "message": "Seneste tilgængelige grunde"
+  },
+  "auditReasonsMissing": {
+    "message": "Ikke registreret på det tidspunkt"
+  },
+  "coverageSummary": {
+    "message": "Coverage - opdaget: $1; kvalificeret: $2; behandlet: $3; mislykkede: $4; skiftet: $5."
+  },
+  "supportTitle": {
+    "message": "Lokalt støtterapport"
+  },
+  "supportHelp": {
+    "message": "Forudse en minimal diagnostisk rapport, så gem den lokalt. intet sendes. Checksums autentiserer ikke dens kilde."
+  },
+  "supportPreview": {
+    "message": "Forhåndsrapport"
+  },
+  "supportConfiguration": {
+    "message": "Inkluderer skarpe indstillinger (ikke nøgler eller sendelister)"
+  },
+  "supportSave": {
+    "message": "Beskytt rapport lokalt"
+  },
+  "coverageAttachments": {
+    "message": "Tilføjelser"
+  },
+  "coverageDomains": {
+    "message": "Unikke domæner"
+  },
+  "coverageBatch": {
+    "message": "Samlet linkkontrol"
+  },
+  "coverageLimits": {
+    "message": "Grænser per pass: 100 tilbehør, 25 MiB per tilbehør, 100 unikke domæner, 20 pakke links."
+  },
+  "localProfileTitle": {
+    "message": "Lokale profiler"
+  },
+  "localProfileHelp": {
+    "message": "Eksport sparede udseende eller lokale beskyttelsesindstillinger separat. forhåndsvisning og bekræftelse af importen. nøgler, samtykke, tilladelser, pålidelige sendere og revisionshistorie er udelukket."
+  },
+  "localProfileExport": {
+    "message": "Eksport udseende"
+  },
+  "localProfileFile": {
+    "message": "Vælg en profilfil ( JSON, op til 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Profil JSON (eller pas her)"
+  },
+  "localProfilePreview": {
+    "message": "Forudsigelse for ændringer"
+  },
+  "localProfileApply": {
+    "message": "Anvendelse af vist ændringer"
+  },
+  "localProfileDiscard": {
+    "message": "Uden import"
+  },
+  "localProfileInvalid": {
+    "message": "Invalid profil, ustøttet version eller forbudte felter. intet blev anvendt."
+  },
+  "localProfileChanged": {
+    "message": "Udseende ændret siden forudsigelse. forudsigelse igen før ansøgning."
+  },
+  "localProfileFailed": {
+    "message": "Profilen kunne ikke gemmes. overvej de nuværende indstillinger og tilbagetrækning."
+  },
+  "localProfileApplied": {
+    "message": "Udseende profil anvendt. beskyttelse og samtykke uændret."
+  },
+  "analysisTitle": {
+    "message": "Analyse kilder"
+  },
+  "analysisMixed": {
+    "message": "Lokale + eksterne kontroller"
+  },
+  "analysisExternal": {
+    "message": "Udvendige observationer til rådighed"
+  },
+  "analysisLocal": {
+    "message": "Lokale · Ingen eksterne resultater registreret"
+  },
+  "analysisLocalChecked": {
+    "message": "Lokalt meddelelse/link heuristik er afsluttet."
+  },
+  "analysisLocalPending": {
+    "message": "Lokale vurderinger er endnu ikke registreret."
+  },
+  "analysisUnknown": {
+    "message": "ukendt"
+  },
+  "analysisTimeUnknown": {
+    "message": "Tid ikke registreret"
+  },
+  "analysisObserved": {
+    "message": "Sidste brugbare svar"
+  },
+  "analysisFindingObserved": {
+    "message": "Find registreret"
+  },
+  "analysisAttempted": {
+    "message": "Sidste anmodning forsøg"
+  },
+  "analysisPartial": {
+    "message": "Nogle anmodninger mislykkes; de tilgængelige resultater dækker ikke alle elementer."
+  },
+  "analysisOtherServices": {
+    "message": "Andre tjenester / ikke kontrolleret"
+  },
+  "analysisLimit": {
+    "message": "En lokal score er ikke en antivirus dom. Forespørgsler og uploader er ikke færdige analyser. Opbevarede resultater holder deres oprindelige alder; manglende poster viser ikke, at der ikke var tidligere forespørgsel."
+  },
+  "analysisScope_hash": {
+    "message": "Fil hash omdømme"
+  },
+  "analysisScope_file": {
+    "message": "Filer indgivelse"
+  },
+  "analysisScope_url": {
+    "message": "URL analyse"
+  },
+  "analysisScope_domain": {
+    "message": "Domain omdømme"
+  },
+  "analysisScope_ip": {
+    "message": "Offentlige IP omdømme"
+  },
+  "analysisScope_report": {
+    "message": "Analyserapport"
+  },
+  "analysisState_running": {
+    "message": "Efterspurgte · Ikke færdig endnu"
+  },
+  "analysisState_checked": {
+    "message": "Resultater modtaget"
+  },
+  "analysisState_received": {
+    "message": "Svar modtaget · dom ikke tilgængelig"
+  },
+  "analysisState_submitted": {
+    "message": "Anmeldelse godkendt · analyse ikke bekræftet komplet"
+  },
+  "analysisState_not_found": {
+    "message": "Ingen leverandør rekord fundet"
+  },
+  "analysisState_failed": {
+    "message": "Forespørgsel mislykkes · Ingen ny dom"
+  },
+  "analysisState_incomplete": {
+    "message": "Ingen gennemførte analyser registreret"
+  },
+  "analysisSource_remote": {
+    "message": "Udvendig service kontakt"
+  },
+  "analysisSource_cache": {
+    "message": "Memory cache · ingen ny udbyderforespørgsel"
+  },
+  "analysisSource_stored": {
+    "message": "Opbevaret ekstern observation"
+  },
+  "analysisSource_attempt": {
+    "message": "Forespørgsel forsøg · svar ikke bekræftet"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Utilgængelig dom"
+  },
+  "analysisVerdict_none": {
+    "message": "Tilgængelige resultater: Ingen opdagelse (ikke sikkerhedsgaranti)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "Tilgængelige resultater omfatter mistænkelige indikatorer"
+  },
+  "analysisVerdict_malicious": {
+    "message": "Tilgængelige resultater omfatter en trusseldetektion"
+  },
+  "analysisReason_unconfigured": {
+    "message": "Foreløbig ikke konfigureret"
+  },
+  "analysisReason_disabled": {
+    "message": "Nye eksterne anmodninger er ude af stand"
+  },
+  "analysisReason_permission": {
+    "message": "Manglende tilladelse til nye anmodninger"
+  },
+  "analysisReason_authorization": {
+    "message": "Ingen automatisk tilladelse til denne besked / manuel modus"
+  },
+  "analysisReason_policy": {
+    "message": "Ikke tilladt af det nuværende privatliv"
+  },
+  "analysisReason_on_action": {
+    "message": "Går kun efter en udtrykkelig link handling"
+  },
+  "analysisReason_unrecorded": {
+    "message": "Der er ingen check-in for denne besked"
+  },
+  "analysisUnavailable": {
+    "message": "Analyse kilder for øjeblikket ikke tilgængelige"
+  },
+  "analysisModeUnknown": {
+    "message": "Analysestatus er endnu ikke registreret"
+  },
+  "analysisModeRunning": {
+    "message": "Udvendig forespørgsel løber · resultat ventet"
+  },
+  "analysisModeSubmitted": {
+    "message": "Udgivet eksternt · analyse endnu ikke afsluttet"
+  },
+  "analysisModeIncomplete": {
+    "message": "Udvendig check ufuldstændig · fuldbyrdelse ikke bekræftet"
+  },
+  "analysisModePartial": {
+    "message": "Eksterne resultater tilgængelige · Nogle anmodninger mislykkes"
+  },
+  "analysisModeFailed": {
+    "message": "Udvendig forespørgsel mislykkes · ingen anvendelig resultat registreret"
+  },
+  "analysisModeResults": {
+    "message": "Eksterne svar tilgængelige · se kontroller nedenfor"
+  },
+  "analysisResourceMessage": {
+    "message": "Meddelelse kontekst / transport omdømme"
+  },
+  "analysisResourceAttachment": {
+    "message": "Tilføjelse"
+  },
+  "analysisResourceLink": {
+    "message": "Link"
+  },
+  "analysisResourceUnknown": {
+    "message": "Tidligere sammendrag · ressource ikke registreret"
+  },
+  "analysisTruncated": {
+    "message": "Nogle ressourceoplysninger blev bortset, fordi den lokale displaygrænse er nået."
+  },
+  "analysisResources": {
+    "message": "Ressourcer i denne besked"
+  },
+  "analysisResourceLocal": {
+    "message": "Tilslutninger gemt med meddelelsen · ikke bevis på en antivirusskanning"
+  },
+  "analysisResourceTarget": {
+    "message": "Linkede destination · Lading af fjernt indhold er ikke bevis for en ekstern analyse"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Der er ingen ekstern kontrol registreret for denne ressource"
+  },
+  "analysisContextChanged": {
+    "message": "Konteksten for budskabet ændrede sig. Slå ned og åbne popupen igen, før du indsender det igen."
+  },
+  "analysisLocalIncomplete": {
+    "message": "Lokal analyse er ufuldstændig: visse meddelelsesindhold er utilgængeligt."
+  },
+  "analysisLocalUnavailable": {
+    "message": "Den lokale analyse er ikke tilgængelig: meddelelsen kunne ikke læses."
+  },
+  "analysisHistoryTitle": {
+    "message": "Historien er opbevaret · forening ikke bekræftet"
+  },
+  "analysisHistoryWarning": {
+    "message": "Disse historiske optegnelser kan tilhøre en anden besked med den samme Message-ID. De bekræfter ikke en kontrol af denne besked."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Ny kilde observationer kunne ikke blive reddet. eksisterende historie blev bevaret."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "En rapportopdatering kunne ikke gemmes. Tidligere protokoller blev bevaret."
+  },
+  "sourceExportOpen": {
+    "message": "Forhåndsrapport for analyse kilder"
+  },
+  "sourceExportTitle": {
+    "message": "Analyse kilderapport"
+  },
+  "sourceExportIntro": {
+    "message": "Skab et lokalt snapshot af de registrerede kontroller. Dette kører ikke en ny analyse. Aktuelle observationer og lagrede historie med ukonfirmeret association holdes adskilt."
+  },
+  "sourceExportPrivacy": {
+    "message": "Inkluderer tjenester, stater, dommer og nøjagtige observationstider. Undgå URLs, filename, hasher, IP'er, nøgler, meddelelsestekst og interne identifikatorer. Ressourcenummer gælder kun inden for denne rapport. Dette er ikke en komplet historie eller et autentiseret rekord. Ingenting sendes automatisk. Oversigt før deling."
+  },
+  "sourceExportCancel": {
+    "message": "Forudsigelse af Discard"
+  },
+  "sourceExportContentLabel": {
+    "message": "Forudsigelse af rapport ( JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "Budskabet er ikke længere tilgængeligt. genoptage rapporten fra budskabsværktøjskortet popup."
+  },
+  "sourceExportChanged": {
+    "message": "Den registrerede tilstand ændret. Skab en ny forudsigelse, før du sparer."
+  },
+  "sourceExportReady": {
+    "message": "Se forudsigelsen, før du sparer eller deler den."
+  },
+  "sourceExportRequested": {
+    "message": "Save requested. Check completion i Thunderbird downloads."
+  },
+  "sourceExportFailed": {
+    "message": "Rapporten blev ikke reddet. skab en ny forudsigelse for at prøve igen."
+  },
+  "analysisHistoryPages": {
+    "message": "Historiske sider"
+  },
+  "analysisHistoryEntries": {
+    "message": "Indtægter"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Misforstået eller ondsindet historisk opdagelse · association unconfirmed"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Vis den første historiske advarsel"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Se den stærkeste nuværende opdagelse"
+  },
+  "reportDisplayFailed": {
+    "message": "En lagret rapport kunne ikke vises. Andre resultater forbliver tilgængelige."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Nogle rapporteringsdetaljer har et ikke-støttet format og kunne ikke vises."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Nogle lagrede analysedata kunne ikke læses. andre resultater forbliver tilgængelige."
+  },
+  "analysisModeResponses": {
+    "message": "Svar modtaget · Ingen vurderbar dom er tilgængelig"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Svar modtaget uden en bedømmelig dom · Nogle anmodninger mislykkes"
+  },
+  "analysisCurrentAvailability": {
+    "message": "For nye anmodninger"
+  },
+  "reasonMaliciousIp": {
+    "message": "Skadelig server IP adresse opdaget ( $IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "Udvendige trusselindikatorer ( URLhaus & IP Reputation)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus – Kendte malware domæner opdaget: $DOMAINS$",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "IP Reputation ( $PROVIDER$) – Mistanke om server IPs: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "urlscan.io Resultater:"
+  },
+  "urlscanStatus": {
+    "message": "Status: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridReportLink": {
+    "message": "Læs mere om Hybrid Analysis"
+  },
+  "hybridProviderMessage": {
+    "message": "Leverandør meddelelse: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "Hybrid Analysis rentegrænsen eller kvoten er nået. bedes du prøve igen senere."
+  },
+  "reasonArchivedMaliciousAttachment": {
+    "message": "Historisk opdagelse ( $OBSERVED$). $PROVIDER$ klassificeret tilbehør “ $NAME$ ” som ondsindet.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonArchivedSuspiciousAttachment": {
+    "message": "Historisk opdagelse ( $OBSERVED$). $PROVIDER$ klassificeret tilbehør “ $NAME$ ” som mistænkelig.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonMaliciousAttachment": {
+    "message": "Attachment \" $NAME$ \" blev klassificeret som skadelig af $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "Attachment \" $NAME$ \" blev klassificeret som mistænkelig af $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanReportLink": {
+    "message": "Læs mere om urlscan.io"
+  },
+  "hybridLinkVerdictStatus": {
+    "message": "Hybrid Analysis: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonMaliciousLinkVerdict": {
+    "message": "Link \" $URL$\" blev klassificeret som ondsindet af $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousLinkVerdict": {
+    "message": "Link \" $URL$\" blev klassificeret som mistænkelig af $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanErrorDetails": {
+    "message": "Udtryk: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "urlscan.io rentegrænse eller kvote er nået. prøv igen senere."
+  },
+  "urlscanInvalidKey": {
+    "message": "Invalid eller uautoriseret urlscan.io API nøgle."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Resultatet var ikke klar inden for spørgeskemaet. den accepterede scan kan kontrolleres igen uden en ny indgivelse."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Domain kan ikke løses af urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Element ikke endnu registreret i Hybrid Analysis (ikke tidligere analyse fundet)."
+  },
+  "virustotalNotFound": {
+    "message": "Elementen er endnu ikke registreret i VirusTotal database."
+  },
+  "virustotalRateLimited": {
+    "message": "VirusTotal rentegrænse eller kvote er nået. prøv igen senere."
+  },
+  "virustotalInvalidKey": {
+    "message": "Invalid eller uautoriseret VirusTotal API nøgle."
+  },
+  "abuseipdbRateLimited": {
+    "message": "AbuseIPDB rentegrænse eller kvote er nået. prøv igen senere."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Invalid eller uautoriseret AbuseIPDB API nøgle."
+  },
+  "urlhausRateLimited": {
+    "message": "URLhaus rentegrænse eller kvote er nået. prøv igen senere."
+  },
+  "urlhausInvalidKey": {
+    "message": "Invalid eller uautoriseret URLhaus API nøgle."
+  },
+  "testApiKeyButton": {
+    "message": "Test forbindelsen"
+  },
+  "testApiKeyTesting": {
+    "message": "Test af forbindelse…"
+  },
+  "testApiKeyValid": {
+    "message": "Forespørgslen er accepteret. Dette bekræfter ikke opladningsrettigheder eller resterende kvote."
+  },
+  "testApiKeyInvalid": {
+    "message": "Forbindelse fejler: Invalid API nøgle."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Rentegrænsen eller kvoten er nået. prøv igen senere."
+  },
+  "testApiKeyError": {
+    "message": "Forbindelsesprøven mislykkes."
+  },
+  "testApiKeyEmpty": {
+    "message": "Vælg en API nøgle først."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "Tilladelse til at oprette forbindelse til servicehost blev nægtet."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Vælg venligst en IP reputationsudbyder først."
+  },
+  "rateLimitWithWait": {
+    "message": "Rate limit eller kvot er nået. prøv igen i $SECONDS$ sekunder.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Rategrænsen er nået"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Invalid API nøgle"
+  },
+  "auditErrorCode": {
+    "message": "Fejlskode"
+  },
+  "auditErrorDetails": {
+    "message": "Fejl detaljer"
+  },
+  "auditRetryAfter": {
+    "message": "Vent tid"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ sekunder",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "securityTitle": {
+    "message": "Administration og link beskyttelse"
+  },
+  "securityScope": {
+    "message": "Lokalt til denne Thunderbird profil. Forhindrer ikke profilændringer, deaktivering af add-on eller åbning kopierede links andre steder."
+  },
+  "securityAdminPassword": {
+    "message": "Administratorens adgangskode (12+ tegn; lad være hvid for at holde)"
+  },
+  "securityApprovalPassword": {
+    "message": "Separeret link godkendelse adgangskode (12+ tegn; lad være hvid for at holde)"
+  },
+  "securityThreshold": {
+    "message": "Krav på godkendelse ved risiko score (0-100 inkl.)"
+  },
+  "securityEnablePolicy": {
+    "message": "Gør det muligt at beskytte linket"
+  },
+  "securityUnknownApproval": {
+    "message": "Det kræver også godkendelse for ufuldstændige kontroller"
+  },
+  "securityUnlock": {
+    "message": "Unlock indstillinger"
+  },
+  "securitySave": {
+    "message": "Beskyttelse af beskyttelsesindstillinger"
+  },
+  "securityLock": {
+    "message": "Lås nu"
+  },
+  "securityDisable": {
+    "message": "Fjern adgangskode til indstillinger"
+  },
+  "securityRecovery": {
+    "message": "Genopretningskode"
+  },
+  "securityRecover": {
+    "message": "Gennemføre admin password ved hjælp af kode"
+  },
+  "securityStopTransfers": {
+    "message": "Stop med eksterne overførsler"
+  },
+  "securityLocked": {
+    "message": "Indstillingerne er låst. Indtast administratoradgangskoden for at låse op."
+  },
+  "securityUnlocked": {
+    "message": "Indstillingerne er lukket; lås efter fem minutter uden aktivitet."
+  },
+  "securityOptional": {
+    "message": "Passwordbeskyttelse er valgfri og i øjeblikket slukket. uden en godkendelsespassord forbliver beskyttede links blokeret."
+  },
+  "securityError": {
+    "message": "Operation afvises. tjek din adgangskode, session og input."
+  },
+  "securityWait": {
+    "message": "For mange forsøg. vent før du går i pension."
+  },
+  "securityLength": {
+    "message": "Brug mindst 12 tegn og forskellige adgangskoder."
+  },
+  "securityRecoverySave": {
+    "message": "Save denne en-time genopretningskode separat. Det vil ikke vises igen:"
+  },
+  "securitySaved": {
+    "message": "Beskyttelsesindstillinger er reddet."
+  },
+  "securityDisableConfirm": {
+    "message": "Fjern adgangskoden for indstillingerne?Link beskyttelse er konfigureret."
+  },
+  "securityStopped": {
+    "message": "Udenrigsoverførslen er stoppet."
+  },
+  "securityApprovalTitle": {
+    "message": "Godkend potentielt farligt indhold"
+  },
+  "securityConfirmDanger": {
+    "message": "Jeg vil gerne åbne dette potentielt farlige indhold alligevel."
+  },
+  "securityApproveOnce": {
+    "message": "Godkend og åbne én gang"
+  },
+  "securityExpired": {
+    "message": "Godkendelse er udløbet eller konteksten ændret. start igen fra meddelelsen."
+  },
+  "securityOpened": {
+    "message": "Thunderbird accepterede åbningsanmodningen."
+  },
+  "securityApprovalFailed": {
+    "message": "Åbning blev afvist. Kontrollér adgangskoden, eller start godkendelsen igen fra meddelelsen, hvis den er udløbet."
+  },
+  "providerTestDisclosure": {
+    "message": "Dette sender dine API nøgle- og fast testdata til den valgte udbyder, uden meddelelsesindhold. En vellykket læsningstest verifierer ikke uploader eller tilgængelige kvoter."
+  },
+  "analysisSimple": {
+    "message": "Oversigt"
+  },
+  "analysisExpert": {
+    "message": "Tekniske detaljer"
+  },
+  "analysisSimpleNone": {
+    "message": "Ingen mistænkelige tegn er opdaget"
+  },
+  "analysisSimpleCaution": {
+    "message": "Mistanke om"
+  },
+  "analysisSimpleDanger": {
+    "message": "Skadelig opdagelse"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Ufuldstændig kontrol"
+  },
+  "analysisScoreExplanation": {
+    "message": "Risikoscoren beregnes efter regler og er hverken en sandsynlighed eller en sikkerhedsgaranti."
+  },
+  "analysisSimpleBasis": {
+    "message": "Tjenester med resultater / utilgængelige"
+  },
+  "analysisProviderSetup": {
+    "message": "Udbyderens adgang og dataudlysning"
+  },
+  "analysisProviderConfigured": {
+    "message": "Nøgle konfigureret; ved at opbevare det starter ikke en skanning."
+  },
+  "analysisProviderNoKey": {
+    "message": "Ingen nøgle konfigureret"
+  },
+  "analysisDataHash": {
+    "message": "Fingerprint af filen ( SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Komplet tilslutning"
+  },
+  "analysisDataUrl": {
+    "message": "Komplet URL; kan indeholde fortrolige tokener"
+  },
+  "analysisDataDomain": {
+    "message": "Link til domænen"
+  },
+  "analysisDataIp": {
+    "message": "Public IP fra meddelelseshøder"
+  },
+  "analysisDataReport": {
+    "message": "Rapporten identificerer"
+  },
+  "analysisApprovalRequired": {
+    "message": "Der kræves yderligere godkendelse; annuller eller anmoder en administrator."
+  },
+  "analysisContinueWarning": {
+    "message": "Se årsagerne, før du fortsætter. kan du annullere."
+  },
+  "analysisConflict": {
+    "message": "Leverandørerne er uenige; resultaterne tager prioritet."
+  },
+  "analysisExportSensitive": {
+    "message": "Oversigt før eksport: tekniske detaljer kan identificere beskedressourcer."
+  },
+  "scanActions": {
+    "message": "Eksterne kontroller"
+  },
+  "scanStart": {
+    "message": "Kontrollér nu"
+  },
+  "scanRepeat": {
+    "message": "Kontrollér igen"
+  },
+  "scanRefresh": {
+    "message": "Opdater resultater"
+  },
+  "scanRunning": {
+    "message": "Udvendig kontrol i fremskridt"
+  },
+  "scanProgress": {
+    "message": "Kompletterede ressourcer"
+  },
+  "scanMigrationNotice": {
+    "message": "Vælg en automatisk skanningsløsning i indstillingerne. Indtil da gælder de foregående sender- og manuelle regler."
+  },
+  "scanState_idle": {
+    "message": "Der er ingen scanjob aktiv i dette synspunkt."
+  },
+  "scanState_queued": {
+    "message": "Check accepteret; vent til at starte"
+  },
+  "scanState_running": {
+    "message": "Udvendig kontrol i fremskridt"
+  },
+  "scanState_completed": {
+    "message": "Tjek afslutter"
+  },
+  "scanState_pending": {
+    "message": "Leverandøren er stadig i processen; opdaterer resultaterne"
+  },
+  "scanState_incomplete": {
+    "message": "Undersøgelse er ufuldstændig; nogle resultater mangler"
+  },
+  "scanState_failed": {
+    "message": "Tjek fejl; prøv igen"
+  },
+  "scanState_blocked": {
+    "message": "Ingen ekstern kontrol er startet; se kravene nedenfor"
+  },
+  "analysisReason_manual": {
+    "message": "Manuel mode"
+  },
+  "analysisReason_sender": {
+    "message": "Sender ikke godkendt"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Automatisk link analyse af"
+  },
+  "analysisReason_no_resources": {
+    "message": "Ingen matchende ressourcer"
+  },
+  "analysisReason_quota": {
+    "message": "Kvote er nået; vent før tilbagetrækning"
+  },
+  "analysisReason_running": {
+    "message": "Leverandøren behandler"
+  },
+  "analysisReason_provider_error": {
+    "message": "Leverandørens anmodning mislykkes"
+  },
+  "scanModeLabel": {
+    "message": "Automatisk ekstern skanning"
+  },
+  "scanModeKeep": {
+    "message": "Hold den forrige indstilling (valg en mode)"
+  },
+  "scanModeAll": {
+    "message": "Alle åbnede meddelelser"
+  },
+  "scanModeSenders": {
+    "message": "Kun godkendte afsendere"
+  },
+  "scanModeManual": {
+    "message": "Kun manuelt"
+  },
+  "scanModeHelp": {
+    "message": "Automatiske kontroller sender kun hashes, domæner og offentlige IP-adresser. Fuldstændige links og filer skal godkendes enkeltvis. Uåbnede meddelelser forbliver lokale."
+  },
+  "assessmentCompletion": {
+    "message": "Behandlingsstatus"
+  },
+  "assessmentCompletion_pending": {
+    "message": "Leverandøren behandler stadig"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Rapporten om tilbagekaldelse er fuldstændig"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "Ingen endelige vurderinger til rådighed"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Teknisk behandling fejlede"
+  },
+  "assessmentConflict": {
+    "message": "Forskellige partielle evalueringer; den stærkeste opdagelse bestemmer handlingen."
+  },
+  "assessmentSignals": {
+    "message": "Bedømmelsesgrundlaget"
+  },
+  "assessmentJob": {
+    "message": "Jobudbyder ID"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Udbyderens dom"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Scanner finder"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Originalt trussel score"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Multifunktionsresultater"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Den oprindelige trussel"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Udbyderens hvidløgsindikation"
+  },
+  "assessmentSignal_overall": {
+    "message": "urlscan overordnede vurdering"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Urlscan-motoren vurderes"
+  },
+  "assessmentSignal_engines": {
+    "message": "Andre motorer"
+  },
+  "assessmentSignal_brand": {
+    "message": "Markedsindikation: Det bestemmer ikke risikoen selv"
+  },
+  "assessmentSignal_report": {
+    "message": "Rapport til staten"
+  },
+  "assessmentOriginal": {
+    "message": "Oprindelig udbyder dom"
+  },
+  "hybridExpertTitle": {
+    "message": "API v2 rapport detaljer"
+  },
+  "hybridExpertScope": {
+    "message": "Kun de faktiske felter, der er modtaget, vises. En Quick Scan viser ikke en fuld sandboks udførelse. Mistede data er ikke et negativt opdagelse. URLs glemmer akkrediteringer, spørgeskort og fragmenter; kommandelinjer og rårapporter vises ikke. Åbning af disse detaljer sender ingen anmodning."
+  },
+  "hybridExpertMissing": {
+    "message": "Ikke leveret i denne rapport"
+  },
+  "hybridExpertYes": {
+    "message": "Ja ja"
+  },
+  "hybridExpertNo": {
+    "message": "Ikke"
+  },
+  "hybridExpert_identity": {
+    "message": "Filer og ressourceidentitet"
+  },
+  "hybridExpert_assessment": {
+    "message": "Oprindelig evaluering og behandling"
+  },
+  "hybridExpert_scanners": {
+    "message": "Scanner resultater"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Individuelle antivirusdetektioner"
+  },
+  "hybridExpert_reports": {
+    "message": "Reference Sandbox rapporter"
+  },
+  "hybridExpert_counts": {
+    "message": "Rapporterede totaler"
+  },
+  "hybridExpert_signatures": {
+    "message": "Adfærdsmæssige underskrifter"
+  },
+  "hybridExpert_mitre": {
+    "message": "Søg efter AT&CK"
+  },
+  "hybridExpert_network": {
+    "message": "Netværksindikatorer"
+  },
+  "hybridExpert_processes": {
+    "message": "Processer"
+  },
+  "hybridExpert_extracted": {
+    "message": "Udvundet filer"
+  },
+  "hybridExpert_certificates": {
+    "message": "Sertifikater"
+  },
+  "hybridExpertEmpty": {
+    "message": "Leveret som en tom liste; ingen indtægter rapporteret"
+  },
+  "securityPasswordHelp": {
+    "message": "Optionel beskyttelse for denne profil. Brug forskellige adgangskoder på mindst tolv tegn til administration og link godkendelse. Lad nye adgangskodefelter tomme for at holde eksisterende adgangskoder. Spare den én gang genopretning kode adskilt."
+  },
+  "securityAdminConfirm": {
+    "message": "Bekræft nye administratorpassager"
+  },
+  "securityApprovalConfirm": {
+    "message": "Bekræft ny link godkendelse adgangskode"
+  },
+  "securityRecoveryPassword": {
+    "message": "Ny administrator adgangskode til genopretning"
+  },
+  "securityApprovalConfigured": {
+    "message": "En link godkendelse adgangskode er konfigureret; den kan erstattes, men aldrig vises."
+  },
+  "securityApprovalMissing": {
+    "message": "Ingen link godkendelse adgangskode er konfigureret. links, der kræver password godkendelse forbliver blokeret."
+  },
+  "securityConfirmMismatch": {
+    "message": "De nye adgangskoder og deres bekræftelser passer ikke."
+  },
+  "securityUnlockPassword": {
+    "message": "Den nuværende administratorens adgangskode"
+  },
+  "displaySettingsTitle": {
+    "message": "Analyse af display"
+  },
+  "displaySettingsHelp": {
+    "message": "Visningsindstillinger ændrer ikke scanninger, eksterne overførsler, score eller linkbeskyttelse. Du kan stadig skifte mellem oversigt og ekspertvisning mens du læser resultaterne."
+  },
+  "displayDefaultView": {
+    "message": "Standardvisning for besked og popup"
+  },
+  "displayHybridDetails": {
+    "message": "Se de yderligere hybrid API rapport sektioner"
+  },
+  "displaySave": {
+    "message": "Beskyttelse af display præferencer"
+  },
+  "displaySaved": {
+    "message": "Visning præferencer er reddet."
+  },
+  "urlscanDnsError": {
+    "message": "Leverandøren kunne ikke løse måldomænet."
+  },
+  "urlscanInvalidRequest": {
+    "message": "Udbyderen afviste ulovlige indgivelsesparametrer."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "Leverandøren afviste indgivelsen; svaret konstaterer ikke en DNS-fejl."
+  },
+  "analysisQuotaReset": {
+    "message": "Gennemsnitskvote genoprettelse"
+  },
+  "analysisRetryAt": {
+    "message": "Tidligere returer"
+  },
+  "analysisLocalBackoff": {
+    "message": "Denne forsøg blev afvist lokalt; ingen ny udbyderforespørgsel blev sendt."
+  },
+  "scanState_deferred": {
+    "message": "Analysen er afvist: Alle baggrundslots er besat. tilbagetrækning efter en anden analyse afsluttes."
+  },
+  "scanCoverage": {
+    "message": "Nogle ressourcer er ikke blevet kontrolleret."
+  },
+  "scanCoverageAttachments": {
+    "message": "Tilbehør forberedt"
+  },
+  "scanCoverageLinks": {
+    "message": "Vælg links"
+  },
+  "scanCoverage_read_failed": {
+    "message": "Et tilbehør kan ikke læses eller hashes."
+  },
+  "scanCoverage_size_limit": {
+    "message": "En tilbehør overstiger 25 MiB scangrænsen."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "Skanningsgrænsen er nået."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "Inventoren er ufuldstændig."
+  },
+  "scanFailure_source_capacity": {
+    "message": "Denne kontrol startede ikke; eksisterende optegnelser blev bevaret."
+  },
+  "scanFailure_cancelled": {
+    "message": "Tjekket er blevet annulleret. ingen afsluttet resultat er implikeret."
+  },
+  "scanFailure_timeout": {
+    "message": "Tiden er afsluttet, resultaterne forbliver ufuldstændige."
+  },
+  "scanFailure_scan_failed": {
+    "message": "Det var ikke muligt at afslutte checken, og der blev opbevaret de eksisterende rekorder."
+  },
+  "localProtectionProfileExport": {
+    "message": "Eksportbeskyttelsessystemer"
+  },
+  "localProfileYes": {
+    "message": "Ja ja"
+  },
+  "localProfileNo": {
+    "message": "Ikke"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Ældre beskyttelsesprofiler kan ikke udvide den automatiske scanområde eller slå på URL-indgivelsen."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "Den eksisterende kildehistorie kan ikke læses og blev bevaret uændret."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "En lagringskonflikt forhindrede, at kildehistorien blev udvidet."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "Kildearkivet for denne besked har nået sin indgangsgrænse."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "Arkiveret for denne besked har nået sin lagringsgrænse."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "Tilgængeligheden af lokal opbevaring er mislykkede."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Findelser tilgængelige • dokumentation ufuldstændig"
+  },
+  "apiDebugTitle": {
+    "message": "API Debug mode"
+  },
+  "apiDebugHelp": {
+    "message": "Få ny API forsøger lokalt at diagnosticere fejl. Tillad, reproducere fejlen, derefter forudse eller eksportere rapporten. Admin unlock er nødvendig, når en admin password er indstillet. Nøgler, private URLs, meddelelsesindhold og rå organer er glemt; reference ID'er er pseudonymiseret. Op til 100 indtægter / 1 MiB holdes i hukommelsen i en time og tabt ved genstart. Unlock clears rapporten. Ingen yderligere serviceforespørgsel er gjort."
+  },
+  "apiDebugEnable": {
+    "message": "Mulighed for API diagnose"
+  },
+  "apiDebugSave": {
+    "message": "Beskyttelse af debug"
+  },
+  "apiDebugPreview": {
+    "message": "Forhåndsrapport Debug"
+  },
+  "apiDebugExport": {
+    "message": "Eksport af debug"
+  },
+  "apiDebugClear": {
+    "message": "En klar debugrapport"
+  },
+  "apiDebugSaved": {
+    "message": "Debug setup reddet. Tidligere diagnoser klaret."
+  },
+  "apiDebugCleared": {
+    "message": "Debug-rapporten er klar."
+  },
+  "apiDebugFailed": {
+    "message": "Debug-operationen er mislykkede. Unlock administration og prøv igen."
+  },
+  "apiDebugFailureHint": {
+    "message": "For en detaljeret fejlrapportering aktiverer du API-drabmodus i indstillinger, reproducerer check og eksporterer drabrapporten."
+  },
+  "urlscanResultGone": {
+    "message": "Dette resultat blev slettet af urlscan.io. Opdatering kan ikke genoprette det; en ny indsendelse kræver en udtrykkelig skanning."
+  },
+  "apiDebugOpen": {
+    "message": "Udviklingen af API"
+  },
+  "diagTitle": {
+    "message": "API diagnose"
+  },
+  "diagHelp": {
+    "message": "Filtrerede kontroller i lokal hukommelse. nøgler, private URLs og råindhold forbliver skjult. succesen af HTTP er ikke en fuldstændig sikkerhedsbeslutning. Kun trin registreret efter aktivering er tilgængelige."
+  },
+  "diagOff": {
+    "message": "Debug-modus er slået ud. Det aktiveres i indstillinger."
+  },
+  "diagEmpty": {
+    "message": "Ingen matchende rekord."
+  },
+  "diagPause": {
+    "message": "Pause udseende"
+  },
+  "diagResume": {
+    "message": "Resumé synspunkt"
+  },
+  "diagPaused": {
+    "message": "Se pause; optagelsen er aktiv."
+  },
+  "diagActive": {
+    "message": "Optagelse aktiv; forfrisning en gang pr. sekund."
+  },
+  "diagProvider": {
+    "message": "Leverandør"
+  },
+  "diagState": {
+    "message": "Staten"
+  },
+  "diagPurpose": {
+    "message": "Funktionstype"
+  },
+  "diagFrom": {
+    "message": "Fra"
+  },
+  "diagTo": {
+    "message": "til"
+  },
+  "diagAll": {
+    "message": "Alle"
+  },
+  "diagRuns": {
+    "message": "Tjek fløjet"
+  },
+  "diagDetails": {
+    "message": "Vælg flow detaljer"
+  },
+  "diagDropped": {
+    "message": "Droped rekord eller trin"
+  },
+  "diagNoHttp": {
+    "message": "Der er ingen HTTP opkald registreret for denne flow."
+  },
+  "diagNotCaptured": {
+    "message": "Ikke fanget"
+  },
+  "diagTimeline": {
+    "message": "Tidslinje"
+  },
+  "diagRequest": {
+    "message": "Filtreret anmodning"
+  },
+  "diagResponse": {
+    "message": "Transport og filtreret respons"
+  },
+  "diagReset": {
+    "message": "Fjern filtre"
+  },
+  "diagTruncated": {
+    "message": "Denne strøm blev trunket på grund af rekordgrænser."
+  },
+  "diag_phase_precondition": {
+    "message": "Forudsætninger"
+  },
+  "diag_phase_queue": {
+    "message": "Køge"
+  },
+  "diag_phase_attempt": {
+    "message": "Send forsøg"
+  },
+  "diag_phase_response": {
+    "message": "HTTP svar / transport færdiggørelse"
+  },
+  "diag_phase_parse": {
+    "message": "JSON forarbejdning"
+  },
+  "diag_phase_assessment": {
+    "message": "Evaluering"
+  },
+  "diag_phase_persistence": {
+    "message": "Persistens"
+  },
+  "diag_phase_cache": {
+    "message": "Cache Hits"
+  },
+  "diag_phase_wait": {
+    "message": "Ventet på"
+  },
+  "diag_phase_cancelled": {
+    "message": "aflyst"
+  },
+  "diag_phase_expired": {
+    "message": "Optagelse udløber uden bekræftede afslutninger"
+  },
+  "diag_purpose_automatic": {
+    "message": "Automatisk check"
+  },
+  "diag_purpose_manual": {
+    "message": "Manuel kontrol"
+  },
+  "diag_purpose_link": {
+    "message": "Link til check"
+  },
+  "diag_purpose_key_test": {
+    "message": "Nøgleprøver"
+  },
+  "diag_purpose_report": {
+    "message": "Rapport forespørgsel"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analyse"
+  },
+  "diag_state_running": {
+    "message": "løb"
+  },
+  "diag_state_complete": {
+    "message": "Operationen er afsluttet"
+  },
+  "diag_state_pending": {
+    "message": "Længe"
+  },
+  "diag_state_blocked": {
+    "message": "Ikke startet / blokeret"
+  },
+  "diag_state_incomplete": {
+    "message": "Ukomplet"
+  },
+  "diag_state_failed": {
+    "message": "mislykkede"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Komplettering ikke bekræftet"
+  },
+  "localScoreMessage": {
+    "message": "Lokalt besked score"
+  },
+  "localScoreLink": {
+    "message": "Lokale score for denne link i meddelelsen"
+  },
+  "localScoreNoIndicators": {
+    "message": "Der er ingen lokale advarselsindikatorer fundet."
+  },
+  "localScoreIndicators": {
+    "message": "Lokale advarselsindikatorer er fundet. se årsagerne før åbning."
+  },
+  "uploadSentLabel": {
+    "message": "Upload sendte"
+  },
+  "uploadSentUnassigned": {
+    "message": "Upload blev sendt, men resultatet kunne ikke tildeles denne vedhæftning. Nær og genoptage popupen før indsendelse igen."
+  },
+  "hybridReportTitle": {
+    "message": "Hybrid Analysis rapport"
+  },
+  "hybridReportIntro": {
+    "message": "Læs-only visning af modtagne resultater. Åbningen af denne rapport sender ingen leverandørforespørgsel."
+  },
+  "hybridReportOpen": {
+    "message": "Se analyserapporten"
+  },
+  "hybridReportUnavailable": {
+    "message": "Rapporten er ikke tilgængelig. genoptage den fra det nuværende budskab."
+  },
+  "hybridReportTechnical": {
+    "message": "Leverandør og tilknytningsdetaljer"
+  },
+  "hybridReportExplanation": {
+    "message": "Om denne vurdering"
+  },
+  "hybridReportSummary": {
+    "message": "Bedømmelse og oprindelse"
+  },
+  "hybridReportSnapshot": {
+    "message": "Snapshot af rapporter, ikke en ny scan"
+  },
+  "hybridReportScope": {
+    "message": "Leverandørresultater og den lokale score er adskilt. savnede felter er ikke negative resultater. Kun tilgængelige, begrænsede data vises."
+  },
+  "hybridReportCopy": {
+    "message": "Kopiering"
+  },
+  "hybridReportCopied": {
+    "message": "Kopieret som tekst."
+  },
+  "hybridReportCopyFailed": {
+    "message": "Du kan ikke kopiere.Vælg og kopier tekst manuelt."
+  },
+  "hybridReportAvailableOnly": {
+    "message": "Råder i tilgængelige data"
+  },
+  "hybridReportNoMatches": {
+    "message": "Ingen matchende felter i de tilgængelige data."
+  },
+  "hybridReportAvailability": {
+    "message": "Tilgængelighed og begrænsninger"
+  },
+  "hybridReportRun": {
+    "message": "Analyse af Run"
+  },
+  "hybridReportSearch": {
+    "message": "Find tilgængelige felter"
+  },
+  "hybridReportReady": {
+    "message": "Rapporten er opladt. ingen ny scan er startet."
+  },
+  "hybridReportResource_name": {
+    "message": "Tilføjelsesnavnet"
+  },
+  "hybridReportResource_url": {
+    "message": "Bæredygtige mål URL"
+  },
+  "hybridReportResource_sha256": {
+    "message": "Udstyr SHA-256"
+  },
+  "hybridField_type": {
+    "message": "Filtype"
+  },
+  "hybridField_type_short": {
+    "message": "Kort filtype"
+  },
+  "hybridField_size": {
+    "message": "Størrelse i byte"
+  },
+  "hybridField_last_file_name": {
+    "message": "Sidste filnavne"
+  },
+  "hybridField_submit_name": {
+    "message": "Indsendelse navn"
+  },
+  "hybridField_url_analysis": {
+    "message": "URL analyse"
+  },
+  "hybridField_target_url": {
+    "message": "Leverandør mål URL (kan være forkortet)"
+  },
+  "hybridField_id": {
+    "message": "Svar ID (type ikke angivet)"
+  },
+  "hybridField_job_id": {
+    "message": "Sandbox job ID"
+  },
+  "hybridField_submission_id": {
+    "message": "Indsendelse ID"
+  },
+  "hybridField_state": {
+    "message": "Leverandørstaten"
+  },
+  "hybridField_finished": {
+    "message": "afslutter"
+  },
+  "hybridField_verdict": {
+    "message": "Udbyderens dom"
+  },
+  "hybridField_threat_score": {
+    "message": "Hybrid Analysis trusler score"
+  },
+  "hybridField_threat_level": {
+    "message": "Leverandør trussel niveau"
+  },
+  "hybridField_multiscan_result": {
+    "message": "Multiscan resultat (leverandør værdi)"
+  },
+  "hybridField_av_detect": {
+    "message": "AV-detektionsværdi (leverandørværdi)"
+  },
+  "hybridField_whitelisted": {
+    "message": "Udbyder af belysning"
+  },
+  "hybridField_vx_family": {
+    "message": "Udbyder af malware familie"
+  },
+  "hybridField_classification_tags": {
+    "message": "Klassificering tags"
+  },
+  "hybridField_tags": {
+    "message": "Mærkater"
+  },
+  "hybridField_analysis_start_time": {
+    "message": "Analyse starttid"
+  },
+  "hybridField_environment_id": {
+    "message": "Miljø ID"
+  },
+  "hybridField_environment_description": {
+    "message": "Sandbox miljø"
+  },
+  "hybridField_error_type": {
+    "message": "Leverandør fejltype"
+  },
+  "hybridField_error_origin": {
+    "message": "Leverandørfejl oprindelse"
+  },
+  "hybridField_name": {
+    "message": "Navn"
+  },
+  "hybridField_status": {
+    "message": "Status"
+  },
+  "hybridField_progress": {
+    "message": "Fremskridt (leverandør værdi)"
+  },
+  "hybridField_positives": {
+    "message": "Positive opdagelser"
+  },
+  "hybridField_total": {
+    "message": "Total kontrol"
+  },
+  "hybridField_percent": {
+    "message": "Procent (providers værdi)"
+  },
+  "hybridField_scan_time": {
+    "message": "Skanningstiden (leverandørens enhed)"
+  },
+  "hybridField_scan_date": {
+    "message": "Skanning af dato"
+  },
+  "hybridField_product": {
+    "message": "Scanner af produktet"
+  },
+  "hybridField_version": {
+    "message": "Skærm version"
+  },
+  "hybridField_update": {
+    "message": "Skærm opdatering"
+  },
+  "hybridField_total_network_connections": {
+    "message": "Netværksforbindelser"
+  },
+  "hybridField_total_processes": {
+    "message": "Processer"
+  },
+  "hybridField_total_signatures": {
+    "message": "Underskrifter"
+  },
+  "hybridField_category": {
+    "message": "Kategori"
+  },
+  "hybridField_attck_id": {
+    "message": "MITRE ATT&CK teknisk ID"
+  },
+  "hybridField_tactic": {
+    "message": "Mitre ATT&CK taktik"
+  },
+  "hybridField_technique": {
+    "message": "Mitre ATT & CK teknik"
+  },
+  "hybridField_description": {
+    "message": "Beskrivelse"
+  },
+  "hybridField_domains": {
+    "message": "Observeret domæne"
+  },
+  "hybridField_hosts": {
+    "message": "Observerede gæster"
+  },
+  "hybridField_compromised_hosts": {
+    "message": "Kompromitteret host (leverandørens krav)"
+  },
+  "hybridField_domain": {
+    "message": "Domæne"
+  },
+  "hybridField_host": {
+    "message": "Gæster"
+  },
+  "hybridField_ip": {
+    "message": "IP adresse"
+  },
+  "hybridField_port": {
+    "message": "Havn"
+  },
+  "hybridField_protocol": {
+    "message": "Protokollen"
+  },
+  "hybridField_country": {
+    "message": "Landet"
+  },
+  "hybridField_asn": {
+    "message": "Autonom systemnummer"
+  },
+  "hybridField_uid": {
+    "message": "Process UID"
+  },
+  "hybridField_process_id": {
+    "message": "Process ID (PID) er en"
+  },
+  "hybridField_parent_uid": {
+    "message": "Forældremyndighed UID"
+  },
+  "hybridField_file_path": {
+    "message": "Filer vej"
+  },
+  "hybridField_subject": {
+    "message": "Certifikatemæssige emner"
+  },
+  "hybridField_issuer": {
+    "message": "Certificat udstedere"
+  },
+  "hybridField_valid_from": {
+    "message": "Gyldig fra"
+  },
+  "hybridField_valid_until": {
+    "message": "Gyldig indtil"
+  },
+  "hybridField_serial_number": {
+    "message": "Serienummer certificeret"
+  },
+  "hybridField_sha256": {
+    "message": "SHA-256"
+  },
+  "hybridField_sha1": {
+    "message": "SHA-1"
+  },
+  "hybridField_md5": {
+    "message": "MD5"
+  },
+  "hybridField_sha512": {
+    "message": "SHA-512"
+  },
+  "hybridField_imphash": {
+    "message": "Indtastning af hash"
+  },
+  "hybridReportResource_quickScanId": {
+    "message": "Anmeldelse af Quick-Scan ID"
+  },
+  "analysisLocalOnly": {
+    "message": "Kontroller kun lokalt"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "Tjenester med resultater"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Tjenesteophold på vej"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Tjenester med fejl"
+  },
+  "hybridReportSection": {
+    "message": "Sektion"
+  },
+  "hybridReportAllSections": {
+    "message": "Alle sektioner"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "Behandling fuldstændig"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "Behandling af pending"
+  },
+  "hybridReportProcessing_failed": {
+    "message": "Behandling fejlede"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "Behandling status ukendt"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Rapporten er tilbagekaldt"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Snapshot skabt"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Resteret Hybrid Analysis finde for denne ressource"
+  },
+  "hybridReportSaved": {
+    "message": "Beskyttet Hybrid Analysis rapport"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Kopiering af UTC"
+  },
+  "hybridReportWhy": {
+    "message": "Hvorfor denne vurdering?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Andre evalueringssignaler"
+  },
+  "hybridReportCompare": {
+    "message": "Sammenligning af analyser"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Sektioner med data"
+  },
+  "hybridReportAssessment": {
+    "message": "Thundy vurdering fra Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Kilde og timestamper"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Find tilgængelig · fuldbyrdelse uertifiseret"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Ny hybridrapport"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Se Find detaljer"
+  },
+  "attachmentProtectionTitle": {
+    "message": "Tilføjelsesbeskyttelse"
+  },
+  "attachmentProtectionScope": {
+    "message": "Denne regel gælder, når du sparer med Thundy. Thunderbird’s egne tilbehørskommandater forbliver tilgængelige."
+  },
+  "attachmentPolicyMode": {
+    "message": "Når grænsen er nået"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Hybrid Analysis score grænse"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Tilføjelser uden en bekræftet score"
+  },
+  "attachmentModeOff": {
+    "message": "Ud af"
+  },
+  "attachmentModeWarn": {
+    "message": "Varn"
+  },
+  "attachmentModeApproval": {
+    "message": "Kræver godkendelse"
+  },
+  "attachmentModeBlock": {
+    "message": "Blokker"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Gem med Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "Beskyttelse af attachment"
+  },
+  "attachmentCancelSave": {
+    "message": "Annuller"
+  },
+  "attachmentThresholdReached": {
+    "message": "Hybrid score når den konfigurerede grænse."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis klassificerede denne fil som ondsindet."
+  },
+  "attachmentUnknown": {
+    "message": "Der er ingen bekræftede score for dette tilbehør."
+  },
+  "attachmentBlocked": {
+    "message": "Sparing med Thundy er blokeret."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Indtast passordet for at gemme denne fil."
+  },
+  "attachmentFailed": {
+    "message": "Jeg kunne ikke begynde at spare vedhæftningen."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy kunne ikke læse denne vedhæftning."
+  },
+  "attachmentContextChanged": {
+    "message": "meddelelsen eller vedhæftet ændret. Vælg vedhæftet igen."
+  },
+  "attachmentRefresh": {
+    "message": "Tjek de gemte resultater igen"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "Den frelst opdagelse er uændret."
+  },
+  "attachmentDecisionChanged": {
+    "message": "Resultatet eller politikken ændret. se den opdaterede beslutning."
+  },
+  "attachmentSaveRequested": {
+    "message": "Beskyttelsesforespørgslen er begyndt."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Save annulleret"
+  },
+  "auditDecisionScore": {
+    "message": "Beslutning score"
+  },
+  "linkHandoffPending": {
+    "message": "Browser handoff blev anmodet. Thunderbird har ikke bekræftet det endnu. Du kan lukke denne dialog."
+  },
+  "linkPreflightTimeout": {
+    "message": "Tjekken kunne ikke være afsluttet. Slå denne dialog og vælg linket igen."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Historisk Hybrid Analysis fundet"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Aktuelt Hybrid Analysis fundet"
+  },
+  "auditShare": {
+    "message": "Eksportudkast udarbejdet"
+  },
+  "auditFullNotice": {
+    "message": "Den fulde revision indeholder private URLs og detaljer. Del det kun med autoriserede modtagere."
+  },
+  "auditFullSave": {
+    "message": "Eksport fuldstændig revision"
+  },
+  "managedByCompany": {
+    "message": "Styret af din organisation"
+  },
+  "managedLocal": {
+    "message": "Kilde: denne Thunderbird profil"
+  },
+  "managedRevision": {
+    "message": "Politisk version"
+  },
+  "managedThreshold": {
+    "message": "Grænsen"
+  },
+  "managedPolicyInvalid": {
+    "message": "Virksomhedspolitikken er ugyldig. kontakt dit IT-team."
+  },
+  "managedLinkBlocked": {
+    "message": "Din organisation blokerede denne link."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Åbn med Thundy"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Åbent tilslutning"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy kontrollerer denne vedhæftning, før den leveres til Thunderbird."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird accepterede anmodningen om at åbne vedhæftelsen."
+  },
+  "attachmentOpenFailed": {
+    "message": "Tilslutningen kunne ikke åbnes."
+  },
+  "reportingTitle": {
+    "message": "Virksomhedssikkerhedsrapporter"
+  },
+  "reportingOff": {
+    "message": "Automatisk rapportering er udløbet."
+  },
+  "reportingNeedsConsent": {
+    "message": "Rapporten kræver dit samtykke og en sending token."
+  },
+  "reportingNeedsPermission": {
+    "message": "Rapporten er savnet. tillade rapportering igen for at genoprette den."
+  },
+  "reportingReady": {
+    "message": "Din organisation kan modtage automatiske rapporter."
+  },
+  "reportingQueued": {
+    "message": "Gennemgående rapporter:"
+  },
+  "reportingMalicious": {
+    "message": "Dårlige resultater"
+  },
+  "reportingSuspicious": {
+    "message": "Skadelige resultater og grænseoverskridelser"
+  },
+  "reportingConsent": {
+    "message": "Jeg er enig i at sende begivenhed ID, tid, handling, fundet, beslutning og politik version til selskabets adresse angivet ovenfor."
+  },
+  "reportingConsentIndicators": {
+    "message": "Jeg er enig i at sende begivenhed ID, tid, handling, fundet, beslutning, politikversion og link hostname eller vedhæftede SHA-256 til selskabets adresse som angivet ovenfor."
+  },
+  "reportingToken": {
+    "message": "Send token fra dit team"
+  },
+  "reportingActivate": {
+    "message": "Mulighed for at rapportere eller erstatte token"
+  },
+  "reportingRevoke": {
+    "message": "Tilbaketrækning af samtykke og klare ventende rapporter"
+  },
+  "reportingSetupFailed": {
+    "message": "Rapporteringsbestemmelserne kunne ikke anvendes."
+  },
+  "reportingAuthentication": {
+    "message": "Serveren afviste sendet token."
+  },
+  "reportingRejected": {
+    "message": "Serveren afviste en rapport."
+  },
+  "reportingStorage": {
+    "message": "Thundy kunne ikke læse eller skrive rapporteringskiven."
+  },
+  "reportingFull": {
+    "message": "Resten er fuld, rapporterne kan gå tabt."
+  },
+  "reportingExpired": {
+    "message": "Rapporten er udløbet før levering."
+  },
+  "reportingPrivacy": {
+    "message": "Med separat samtykke, Thundy sender detaljer om kvalificerende forsøg på at åbne links eller åbne eller gemme vedhæftninger til den konfigurerede virksomhedsadresse. Rapporter indeholder begivenhed ID, tid, handling, finde, beslutning og politik version, plus et valgfrit hostname eller vedhæftning SHA-256. Thundy kan holde rapporter lokalt i op til 24 timer. Du kan tilbagekalde dit samtykke og slette rækken i Indstillinger."
+  },
+  "reportingConsentDetails": {
+    "message": "Jeg er også enig i at sende beslutningens begrundelse, tilgængelige score, filename for vedhæftning, udbyders domme og tilgængelige rapporteringsreferencer."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Detaljerede rapporter kan omfatte filenamen og links til leverandørrapporter."
+  },
+  "analysisRunningHeading": {
+    "message": "Kontrol i gang"
+  },
+  "analysisLocalNoFinding": {
+    "message": "Den lokale kontrol fandt ingen tegn på en trussel"
+  },
+  "analysisLinksGroup": {
+    "message": "Læger"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Tilføjelser"
+  },
+  "protectionOpenAllowed": {
+    "message": "Åbning tilladt"
+  },
+  "protectionSaveAllowed": {
+    "message": "Lagring tilladt"
+  },
+  "protectionWarn": {
+    "message": "Advarsel"
+  },
+  "protectionApproval": {
+    "message": "Godkendelse påkrævet"
+  },
+  "protectionRequestApproval": {
+    "message": "Anmodning om godkendelse"
+  },
+  "protectionBlocked": {
+    "message": "Blokeret"
+  },
+  "protectionMalicious": {
+    "message": "En udbyder har rapporteret et skadeligt fund."
+  },
+  "protectionThreshold": {
+    "message": "Beskyttelsesgrænsen er nået"
+  },
+  "protectionManagedThreshold": {
+    "message": "Virksomhedens grænse er nået"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "De gældende indstillinger tillader denne handling."
+  },
+  "linkContextChanged": {
+    "message": "Linken eller meddelelsen ændrede sig under checkingen."
+  },
+  "auditPolicyBlocked": {
+    "message": "Blokeret af politik"
+  },
+  "reportingLastReceipt": {
+    "message": "Sidste modtagelse bekræftet af serveren"
+  },
+  "reportingOldestPending": {
+    "message": "Den ældste rapport"
+  },
+  "addonLanguage": {
+    "message": "Tilføjelsens sprog"
+  },
+  "addonLanguageSystem": {
+    "message": "Følg Thunderbirds sprog"
+  },
+  "addonLanguageSaved": {
+    "message": "Sproget er gemt. Åbn Thundys visninger igen for at bruge det."
+  },
+  "addonLanguageFailed": {
+    "message": "Sproget kunne ikke gemmes."
+  },
+  "profilesOpenSource": {
+    "message": "Åben kildekode"
+  },
+  "transferReview": {
+    "message": "Gennemgå afsendelse"
+  },
+  "transferSend": {
+    "message": "Send til udbyder"
+  },
+  "transferVisibility": {
+    "message": "Synlighed: Ikke listet. Alle med rapportlinket kan åbne rapporten."
+  },
+  "transferAccepted": {
+    "message": "Udbyderen har modtaget opgaven. Rapporten kan stadig være under behandling."
+  },
+  "transferFailed": {
+    "message": "Afsendelse til udbyderen kunne ikke gennemføres."
+  },
+  "transferUsePopup": {
+    "message": "Åbn Thundy-panelet for at gennemgå og godkende et bestemt link eller en bestemt vedhæftet fil."
+  },
+  "providerGrantAccess": {
+    "message": "Tillad adgang til denne udbyder"
+  },
+  "sourceSessionOnly": {
+    "message": "Kildearkivet er fuldt. Den aktuelle kildevisning er kun tilgængelig i denne session."
+  },
+  "analysisReason_transfer_approval": {
+    "message": "Fuldstændige links og vedhæftede filer kræver særskilt bekræftelse."
+  },
+  "analysisCompactDetails": {
+    "message": "Kontroldetaljer"
+  },
+  "riskScoreFormula": {
+    "message": "Den lokale score summerer point til højst 100. Udbyderfund vurderes separat."
+  },
+  "riskScoreNoPoints": {
+    "message": "Ingen lokale regler gav point."
+  },
+  "riskScoreTotal": {
+    "message": "Lokal beregning"
+  },
+  "riskLinkBrandRule": {
+    "message": "Mindst ét linkdomæne ligner et kendt mærke. Point tælles én gang."
+  },
+  "reportingConsentDetections": {
+    "message": "Rapporter kan indeholde malwarenavne, kategorier, signaturer og efterlignede mærker."
+  },
+  "detectionKind_family": {
+    "message": "Malwarefamilie"
+  },
+  "detectionKind_category": {
+    "message": "Kategori"
+  },
+  "detectionKind_brand": {
+    "message": "Efterlignet mærke"
+  },
+  "detectionKind_signature": {
+    "message": "Leverandørsignatur"
+  },
+  "detectionCategory_fraudulent_shop": {
+    "message": "Svindelbutik"
+  },
+  "detectionCategory_phishing_shop": {
+    "message": "Phishingbutik"
+  },
+  "analysisDetectionGrouping": {
+    "message": "Gruppér fund"
+  },
+  "detectionCategory_malware": {
+    "message": "Malware"
+  },
+  "detectionCategory_virus": {
+    "message": "Virus"
+  },
+  "detectionCategory_trojan": {
+    "message": "Trojaner"
+  },
+  "detectionCategory_ransomware": {
+    "message": "Ransomware"
+  },
+  "detectionCategory_worm": {
+    "message": "Orm"
+  },
+  "detectionCategory_spyware": {
+    "message": "Spyware"
+  },
+  "detectionCategory_adware": {
+    "message": "Adware"
+  },
+  "detectionCategory_backdoor": {
+    "message": "Bagdør"
+  },
+  "detectionCategory_downloader": {
+    "message": "Downloader"
+  },
+  "detectionCategory_dropper": {
+    "message": "Dropper"
+  },
+  "detectionCategory_infostealer": {
+    "message": "Datatyv"
+  },
+  "detectionCategory_rootkit": {
+    "message": "Rootkit"
+  },
+  "detectionCategory_phishing": {
+    "message": "Phishing"
+  },
+  "detectionCategory_scam": {
+    "message": "Svindel"
+  }
+}

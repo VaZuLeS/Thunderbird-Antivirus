@@ -33,6 +33,9 @@ async function popup(record, lang='de', overrides={}) {
  vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('analysis_status.js','utf8')),context);
  const source=(fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('api.js','utf8')).replace(/^\(async \(\) => \{/m,'async function initializePopup() {').replace(/\}\)\(\);/m,'}');
  vm.runInContext(source,context);
+ if (!overrides.useConfirmation) context.confirmPopupTransfer = request => browser.runtime.sendMessage({
+  ...request,action:request.partName?'uploadAttachment':'scanUrl'
+ });
  await context.initializePopup();
  await new Promise(setImmediate);
  return {dom,context,requests,reads,messages,catalog,notify:async()=>{for(const fn of listeners)fn({action:"analysisStatusChanged",messageId:7});await new Promise(setImmediate);},close:()=>{dom.window.dispatchEvent(new dom.window.Event('pagehide'));dom.window.close();}};
@@ -51,6 +54,38 @@ test('opening the popup tolerates optional Hybrid Analysis field shapes without 
   assert.ok(text.includes('phishing'));assert.equal(f.requests.length,0);
   assert.ok(!text.includes('undefined'));
  }finally{f.close();}
+});
+
+test('the popup discloses the recipient, full URL and visibility before sending, and permits cancellation', async () => {
+ const url = 'https://example.invalid/path?sample=confirmed#section';
+ const calls = [];
+ const f = await popup({},'en',{
+  useConfirmation:true,
+  prepareProviderTransfer:async request=>{calls.push(request.action);return {success:true,id:'ticket',target:url,provider:'urlscan.io',visibility:'unlisted'};},
+  cancelProviderTransfer:async request=>{calls.push(request.action);return {success:true};},
+  submitProviderTransfer:async request=>{calls.push(request);return {status:'success'};}
+ });
+ try {
+  const proto = f.dom.window.HTMLDialogElement.prototype;
+  if (!proto.showModal) proto.showModal = function(){this.setAttribute('open','');};
+  if (!proto.close) proto.close = function(value){this.returnValue=value;this.dispatchEvent(new f.dom.window.Event('close'));};
+  const check = () => f.context.confirmPopupTransfer({provider:'urlscan',url,messageId:7});
+  let result = check();
+  await new Promise(setImmediate);
+  const dialog = () => f.dom.window.document.querySelector('.transfer-confirmation');
+  assert.ok(dialog().textContent.includes(url));
+  assert.ok(dialog().textContent.includes('urlscan.io'));
+  assert.ok(dialog().textContent.includes(f.catalog.transferVisibility.message));
+  assert.deepEqual(calls,['prepareProviderTransfer']);
+  dialog().querySelector('button').click();
+  assert.equal((await result).status,'cancelled');
+  result = check();
+  await new Promise(setImmediate);
+  dialog().querySelectorAll('button')[1].click();
+  assert.equal((await result).status,'success');
+  assert.equal(calls.at(-1).id,'ticket');
+  assert.equal(calls.at(-1).action,'submitProviderTransfer');
+ } finally { f.close(); }
 });
 
 test('malformed neighboring resource entries do not abort a valid stored popup report',async()=>{
@@ -86,7 +121,7 @@ test('stored report actions bind after fragment rendering and remain separate fo
   assert.equal(rescans[1].disabled,false);assert.equal(downloads[0].disabled,false);
   assert.equal(f.dom.window.document.getElementById(rescans[1].getAttribute('aria-describedby')).textContent,'');
   assert.equal(f.dom.window.document.getElementById(downloads[0].getAttribute('aria-describedby')).textContent,'');
-  assert.ok(f.dom.window.document.getElementById(rescans[0].getAttribute('aria-describedby')).textContent.includes('Controlled refusal'));
+  assert.equal(f.dom.window.document.getElementById(rescans[0].getAttribute('aria-describedby')).textContent,f.catalog.transferFailed.message);
   assert.equal(JSON.stringify(record),before);assert.equal(f.requests.length,0);
  }finally{f.close();}
 });

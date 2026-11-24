@@ -377,6 +377,8 @@ test('overview states, bound cached VirusTotal finding and focus survive live up
    render({local:{state:'incomplete'}});assert.equal(title(),labels.analysisSimpleIncomplete);
    const result={provider:'virustotal',source:'cache',scope:'hash',resource:'attachment:2',verdict:'suspicious',state:'checked'};
    const key='overview-resources:open:attachment:2';
+   root.querySelector('[data-key="inline-inspection"]').open=true;
+   root.querySelector('[data-key="overview-resources"]').open=true;
    root.querySelector('[data-focus-key="'+key+'"]').focus();
    const apply=style=>{style.textContent='.card { color-scheme:dark; }';};
    document.__thundyMessageAppearance=apply;
@@ -394,6 +396,36 @@ test('overview states, bound cached VirusTotal finding and focus survive live up
    assert.equal(title(),labels.analysisSimpleCaution);
   } finally { dom.window.close(); }
  }
+});
+
+test('inline cards hide inspection by default and retain the score and detection grouping disclosures',()=>{
+ const a=model(),dom=new JSDOM('<body></body>',{pretendToBeVisual:true});
+ try {
+  const document=dom.window.document;
+  document.documentElement.dataset.thundyAnalysisMessage='7';
+  const c=vm.createContext({document,Date});vm.runInContext('globalThis.render='+a.render.toString(),c);
+  const labels=a.labels(key=>key);
+  const data={messageId:7,rows:[],local:{state:'checked',heuristicScore:100,localRawScore:140,localContributions:[{label:'SPF',points:50},{label:'Other rules',points:90}]},
+   resourceLabels:{'attachment:1':'sample.bin'},resourceDetections:{'attachment:1':[{provider:'virustotal',detections:[
+    {kind:'family',value:'Emotet'},{kind:'category',value:'trojan'}]}]}};
+  const root=c.render(data,labels,'',{surface:'message'}).shadowRoot;
+  const details=key=>root.querySelector('[data-key="'+key+'"]');
+  assert.equal(details('inline-inspection').open,false);
+  assert.equal(details('local-score-breakdown').open,false);
+  assert.ok(details('local-score-breakdown').textContent.includes('min(140, 100) = 100'));
+  details('local-score-breakdown').open=true;
+  details('inline-inspection').open=true;
+  details('overview-resources').open=true;
+  const key='overview-resources:detection-groups';
+  details(key).open=true;
+  const selected=details(key).querySelector('select');
+  assert.match(details(key).querySelector('li').textContent,/Emotet.*sample\.bin/);
+  selected.value='category';selected.dispatchEvent(new dom.window.Event('change'));selected.focus();
+  c.render(data,labels,'',{surface:'message'});
+  assert.ok(details('local-score-breakdown').open && details('inline-inspection').open && details(key).open);
+  assert.equal(root.activeElement.value,'category');
+  assert.match(details(key).querySelector('li').textContent,/detectionCategory_trojan.*sample\.bin/);
+ } finally {dom.window.close();}
 });
 
 test('archived attachment evidence stays visible beside the separate decision score in both views',()=>{

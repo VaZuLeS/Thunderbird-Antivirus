@@ -1,21 +1,21 @@
 ---
-title: Thundy AV documentation
+layout: guide
+lang: en
+title: Documentation / Dokumentation
 permalink: /documentation.html
 ---
 
-# Thundy AV — Documentation
+# Thundy AV documentation
 
-Version **1.26.2**, unsigned GitHub distribution: [release status and download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.2). [Release scope](VEROEFFENTLICHUNG_1_26_2.md).
+| Deutsch | English |
+| --- | --- |
+| [Übersicht und Inhaltsverzeichnis](guide-de.md) | [Overview and contents](guide-en.md) |
+| [Verwalteter Thunderbird und `policies.json`](UNTERNEHMENSRICHTLINIE.md) | [Managed Thunderbird and `policies.json`](enterprise-policy.en.md) |
+| [Python-Empfänger mit TLS, SMTP und Testereignis](python-receiver.md) | [Python receiver with TLS, SMTP and a test event](python-receiver.en.md) |
+| [Datenschutz und Datenflüsse](privacy_policy.md#deutsch) | [Privacy and data flows](privacy_policy.md#english) |
 
-- [Release notes and feature documentation for 1.26.2](releases/1.26.2.md)
-- [Current product status](AKTUELLER_PRODUKTSTAND.md)
-- [Detailed tasks and execution evidence](AUSFUEHRUNG_AUFGABEN_2026-11-02.md)
-- [Languages and downloads](index.html)
-- [Privacy and data-flow matrix](privacy_policy.md)
-- [Data lifecycle and rollback limits](DATENLEBENSZYKLUS.md)
-- [Native Thunderbird and screenreader acceptance](NATIVE_ABNAHME_2026-11.md)
-- [Active CI and release verification](https://github.com/VaZuLeS/Thunderbird-Antivirus/blob/main/docs/ci/README.md)
-- [Reviewer notes](reviewer_notes.md) · [Store listing](store_listing.md)
-- [Support](support_faq.md) · [License](license.md)
+## Downloads und Versionsnachweise / Downloads and release records
 
-The XPI is a Thunderbird MailExtension. React under src/ is a separate simulation. Enterprise profile selection does not activate an enterprise service. Real Linux evidence exists; Windows/macOS, native screenreaders, automatic distribution and actual ATN/enterprise acceptance remain separate requirements.
+- [Veröffentlichte Version / Published version 1.26.2](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.2) · [Versionshinweise / Release notes](releases/1.26.2.md)
+- [Aktueller Produktstand / Published product status](AKTUELLER_PRODUKTSTAND.md) · [Support und FAQ / Support and FAQ](support_faq.md)
+- [Entwicklungsumgebung / Developer setup (DE)](quickstart.md) · [Prüfungen / CI and verification (EN)](https://github.com/VaZuLeS/Thunderbird-Antivirus/blob/main/docs/ci/README.md)

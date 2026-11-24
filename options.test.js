@@ -19,6 +19,7 @@ describe('options.js', () => {
                     <input id="urlhausApikey" value="">
                     <input id="urlscanApikey" value="">
                     <input id="virustotalApikey" value="">
+                    <input type="checkbox" data-provider-enabled="hybridanalysis" checked>
                     <select id="privacyTier"><option value="balanced">Balanced</option><option value="high">High</option></select>
                     <input id="customWhitelist" value="">
                     <input id="customBlacklist" value="">
@@ -27,7 +28,11 @@ describe('options.js', () => {
                     <input type="checkbox" id="timeOfClickProtection">
                     <input type="checkbox" id="externalAnalysisConsent">
                     <select id="ipReputationProvider"><option value="none">none</option><option value="abuseipdb">abuseipdb</option><option value="virustotal">virustotal</option></select>
-                    <input id="ipReputationApiKey" value="">
+                    <input type="checkbox" id="ipReputationEnabled" checked>
+                    <div id="ipReputationCredential" hidden>
+                        <label id="ipReputationKeyLabel" for="ipReputationApiKey"></label>
+                        <input id="ipReputationApiKey" value="">
+                    </div>
 
                     <button id="save">Speichern</button>
                     <span id="saveStatus" style="display: none;">Erfolgreich gespeichert.</span>
@@ -188,7 +193,7 @@ describe('options.js', () => {
         assert.strictEqual(savedData.alwaysManual, false);
         assert.strictEqual(savedData.autoScanLinks, false);
         assert.strictEqual(savedData.timeOfClickProtection, true);
-        assert.strictEqual(savedData.externalAnalysisConsent, true);
+        assert.strictEqual(Object.hasOwn(savedData,'externalAnalysisConsent'), false);
         assert.strictEqual(savedData.ipReputationProvider, 'virustotal');
         assert.strictEqual(savedData.ipReputationApiKey, 'ip-key-new');
 
@@ -199,6 +204,33 @@ describe('options.js', () => {
         // It sets display to 'inline' then after timeout to 'none'.
         // Since we mock setTimeout to fire immediately, it will be 'none' again.
         assert.strictEqual(context.document.getElementById('saveStatus').style.display, 'none');
+    });
+
+    it('pauses configured services without deleting keys and keeps IP keys tied to the chosen provider', async () => {
+        await new Promise(resolve => setImmediate(resolve));
+        const document = context.document;
+        const select = document.getElementById('ipReputationProvider');
+        const key = document.getElementById('ipReputationApiKey');
+        const label = document.getElementById('ipReputationKeyLabel');
+        assert.equal(label.textContent, 'AbuseIPDB API key');
+        select.value = 'virustotal';
+        select.dispatchEvent(new dom.window.Event('change'));
+        assert.equal(key.value, '');
+        assert.equal(label.textContent, 'VirusTotal API key for IP reputation');
+        select.value = 'abuseipdb';
+        select.dispatchEvent(new dom.window.Event('change'));
+        assert.equal(key.value, 'ip-key');
+
+        document.querySelector('[data-provider-enabled="hybridanalysis"]').checked = false;
+        document.getElementById('ipReputationEnabled').checked = false;
+        document.getElementById('save').click();
+        await new Promise(resolve => setImmediate(resolve));
+        const saved = context.browser.storage.local.lastSetData;
+        assert.deepEqual(Array.from(saved.disabledProviders), ['hybridanalysis']);
+        assert.equal(saved.apikey, 'test-api-key');
+        assert.equal(saved.ipReputationEnabled, false);
+        assert.equal(saved.ipReputationProvider, 'abuseipdb');
+        assert.equal(saved.ipReputationApiKey, 'ip-key');
     });
 
     it('should handle save error', async () => {
@@ -327,13 +359,13 @@ describe('atomic consent save', () => {
     it('keeps consent false while the dialog is pending and after rejection', async () => {
         const { JSDOM } = require('jsdom');
         const dom = new JSDOM(fs.readFileSync(path.join(__dirname, 'options.html'), 'utf8'));
-        let finish, saved = {};
+        let finish, saved = {externalAnalysisConsent:false};
         const history = [];
         const permission = new Promise(resolve => { finish = resolve; });
         const context = vm.createContext({
             document: dom.window.document, console, setTimeout, clearTimeout,
             browser: {
-                storage: { local: { get: async () => ({}), set: async data => { history.push(data); Object.assign(saved, data); } } },
+                storage: { local: { get: async () => ({...saved}), set: async data => { history.push(data); Object.assign(saved, data); } } },
                 permissions: { getAll: async () => ({ data_collection: [] }), request: () => permission },
                 runtime: { sendMessage: async () => ({ status: 'success' }) }
             }
@@ -609,21 +641,34 @@ describe('ProviderKeyTester and test buttons', () => {
                 return { status: 401 };
             };
 
+            const grants = [];
+            const allowed = new Set(['https://www.virustotal.com/*','https://urlhaus-api.abuse.ch/*']);
+            const deniedOrigin = 'https://urlscan.io/*';
+            const hybridOrigin = 'https://hybrid-analysis.com/*';
+            const writes = [];
             const mockBrowser = {
                 storage: {
                     local: {
                         get: async () => ({
+                            externalAnalysisConsent: true,
+                            apikey: 'test-ha-key',
+                            urlscanApikey: 'test-us-key',
                             virustotalApikey: 'test-vt-key',
                             urlhausApikey: 'test-uh-key',
                             ipReputationProvider: 'none',
                             ipReputationApiKey: ''
                         }),
-                        set: async () => ({})
+                        set: async value => { writes.push(value); }
                     }
                 },
                 permissions: {
-                    contains: async () => true,
-                    request: async () => true,
+                    contains: async ({origins = []}) => origins.every(origin => allowed.has(origin)),
+                    request: async ({origins}) => {
+                        grants.push(...origins);
+                        if (origins.includes(deniedOrigin)) return false;
+                        for (const origin of origins) allowed.add(origin);
+                        return true;
+                    },
                     getAll: async () => ({})
                 },
                 runtime: {
@@ -654,6 +699,21 @@ describe('ProviderKeyTester and test buttons', () => {
             // Fire DOMContentLoaded
             document.dispatchEvent(new window.Event('DOMContentLoaded'));
             await new Promise(r => setTimeout(r, 20));
+
+            document.getElementById('save').click();
+            await new Promise(setImmediate);
+            assert.ok(writes.length > 0);
+            assert.ok(writes.every(write => !Object.hasOwn(write,'externalAnalysisConsent')));
+            assert.deepEqual(grants,[]);
+            const urlscanGrant = document.getElementById('testUrlscanKeyStatus').nextElementSibling;
+            const hybridGrant = document.getElementById('testHybridKeyStatus').nextElementSibling;
+            urlscanGrant.click();
+            await new Promise(setImmediate);
+            assert.equal(urlscanGrant.hidden,false);
+            hybridGrant.click();
+            await new Promise(setImmediate);
+            assert.equal(hybridGrant.hidden,true);
+            assert.deepEqual(grants,[deniedOrigin,hybridOrigin]);
 
             // 1. VirusTotal button test
             const vtBtn = document.getElementById('testVirustotalKey');

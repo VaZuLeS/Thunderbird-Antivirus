@@ -4,6 +4,14 @@ const path = require('path');
 const { describe, it, before, beforeEach } = require('node:test');
 const assert = require('node:assert');
 
+
+function simulateConfirmedTransfer(context) {
+    context.confirmPopupTransfer = request => context.browser.runtime.sendMessage({
+        ...request, action:request.partName ? 'uploadAttachment' : 'scanUrl'
+    });
+    context.ThundyAnalysis = {transferError: result => result?.message || 'Unknown error'};
+}
+
 describe('escapeHTML', () => {
     let context;
     let escapeHTML;
@@ -1481,6 +1489,7 @@ describe('renderManualUrlScanUI', () => {
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
         vm.runInContext(wrappedCode, context);
+        simulateConfirmedTransfer(context);
 
         context.get_hybrid_report_by_sha256 = function(opts) {
             context.lastReportOpts = opts;
@@ -1994,10 +2003,12 @@ describe('handleUploadClick', () => {
             let browser = context.browser;
             let document = context.document;
             let setTimeout = context.setTimeout;
+            const ThundyAnalysis = context.ThundyAnalysis;
 
             ${code}
 
             context.handleUploadClick = handleUploadClick;
+            confirmPopupTransfer = context.confirmPopupTransfer;
 
             get_hybrid_report_by_sha256 = function() {
                 if (context.get_hybrid_report_by_sha256) {
@@ -2006,6 +2017,7 @@ describe('handleUploadClick', () => {
             };
         })();`;
 
+        simulateConfirmedTransfer(context);
         vm.runInContext(wrappedCode, vm.createContext({context, console}));
         handleUploadClick = context.handleUploadClick;
     });
@@ -2044,8 +2056,7 @@ describe('handleUploadClick', () => {
         // Check intermediate state
         assert.strictEqual(btn.disabled, true);
         assert.strictEqual(btn['aria-busy'], 'true');
-        assert.strictEqual(btn.innerText, 'Lade hoch...');
-        assert.strictEqual(statusEl.textContent, 'Datei wird an Hybrid Analysis übertragen...');
+        assert.strictEqual(statusEl.textContent, '');
 
         // Wait for promise resolution
         await new Promise(process.nextTick);
@@ -2106,7 +2117,7 @@ describe('handleUploadClick', () => {
         // Wait for promise resolution
         await new Promise(process.nextTick);
 
-        assert.strictEqual(statusEl.innerText, 'Fehler beim Upload: Invalid API key');
+        assert.strictEqual(statusEl.innerText, 'Invalid API key');
         assert.strictEqual(btn.disabled, false);
         assert.strictEqual(btn['aria-busy'], undefined);
         assert.strictEqual(btn.innerText, 'Erneut versuchen');
@@ -2949,6 +2960,7 @@ describe('createUploadButton', () => {
         wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
 
         vm.runInContext(wrappedCode, context);
+        simulateConfirmedTransfer(context);
         createUploadButton = context.createUploadButton;
     });
 
@@ -3000,8 +3012,7 @@ describe('createUploadButton', () => {
         // Check intermediate state
         assert.strictEqual(btn.disabled, true);
         assert.strictEqual(btn['aria-busy'], 'true');
-        assert.strictEqual(btn.innerText, 'Lade hoch...');
-        assert.strictEqual(status.textContent || status.innerText, 'Datei wird an Hybrid Analysis übertragen...');
+        assert.strictEqual(status.textContent, '');
 
         // Wait for promise resolution
         await new Promise(process.nextTick);
@@ -3056,7 +3067,7 @@ describe('createUploadButton', () => {
         // Wait for promise resolution
         await new Promise(process.nextTick);
 
-        assert.strictEqual(status.innerText, 'Fehler beim Upload: Invalid API key');
+        assert.strictEqual(status.innerText, 'Invalid API key');
         assert.strictEqual(btn.disabled, false);
         assert.strictEqual(btn['aria-busy'], undefined);
         assert.strictEqual(btn.innerText, 'Erneut versuchen');
@@ -3183,6 +3194,7 @@ describe('handleUrlScanClick', () => {
         wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
 
         vm.runInContext(wrappedCode, context);
+        simulateConfirmedTransfer(context);
         handleUrlScanClick = context.handleUrlScanClick;
     });
 
@@ -3206,8 +3218,7 @@ describe('handleUrlScanClick', () => {
 
         assert.strictEqual(btn.disabled, true);
         assert.strictEqual(btn['aria-busy'], 'true');
-        assert.strictEqual(btn.innerText, 'Sende URL...');
-        assert.strictEqual(status.innerText, 'URL wird an Hybrid Analysis übertragen...');
+        assert.strictEqual(status.textContent, '');
 
         await new Promise(process.nextTick);
 
@@ -3243,7 +3254,7 @@ describe('handleUrlScanClick', () => {
         handleUrlScanClick(btn, 'https://example.com', '124', 'header1');
         await new Promise(process.nextTick);
 
-        assert.strictEqual(status.innerText, 'Fehler beim Upload: API error');
+        assert.strictEqual(status.innerText, 'API error');
         assert.strictEqual(btn.disabled, false);
         assert.strictEqual(btn.innerText, 'Erneut versuchen');
     });
@@ -3457,6 +3468,7 @@ describe('setupRescanButton', () => {
         wrappedCode += '\n; globalThis.setupRescanButton = setupRescanButton;';
 
         vm.runInContext(wrappedCode, context);
+        simulateConfirmedTransfer(context);
         setupRescanButton = context.setupRescanButton;
     });
 
@@ -3496,8 +3508,7 @@ describe('setupRescanButton', () => {
         // Immediate UI updates
         assert.strictEqual(btn.disabled, true);
         assert.strictEqual(btn.attributes['aria-busy'], 'true');
-        assert.strictEqual(btn.textContent, 'Sende Rescan...');
-        assert.strictEqual(status.textContent, 'Datei wird für Rescan hochgeladen...');
+        assert.strictEqual(status.textContent, '');
 
         // Wait for promise resolution (macro task)
         await new Promise(resolve => setTimeout(resolve, 0));
@@ -3525,7 +3536,7 @@ describe('setupRescanButton', () => {
         btn.click();
         await new Promise(resolve => setTimeout(resolve, 0));
 
-        assert.strictEqual(status.textContent, 'Fehler beim Rescan: test err');
+        assert.strictEqual(status.textContent, 'test err');
         assert.strictEqual(btn.disabled, false);
         assert.strictEqual(btn.attributes['aria-busy'], undefined);
         assert.strictEqual(btn.textContent, 'Erneut versuchen');

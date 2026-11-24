@@ -7,6 +7,7 @@ const fs = require("node:fs"),
 const { chromium } = require("playwright"),
   { AxeBuilder } = require("@axe-core/playwright"),
   { languages, createReviews, addonMock } = require("./ui-fixtures.dev.cjs");
+const addonLanguages = Object.keys(require("../scripts/locale-catalogs.js").locales);
 const {
   messageHtml,
   prepareMessage,
@@ -45,7 +46,7 @@ function options(args) {
     o["provided-" + key] = true;
   }
   if (!["smoke", "full"].includes(o.matrix)) throw Error("UI_MATRIX_INVALID");
-  if (o.lang !== undefined && !languages.includes(o.lang))
+  if (o.lang !== undefined && !(addonFiles.includes(o.view) ? addonLanguages : languages).includes(o.lang))
     throw Error("UI_LANGUAGE_INVALID");
   o.zoom = o.zoom === undefined ? 1 : Number(o.zoom);
   if (![1, 2].includes(o.zoom)) throw Error("UI_ZOOM_INVALID");
@@ -87,7 +88,7 @@ function startServer(reviews) {
 }
 function matrix(o, kinds) {
   const cases = [],
-    langs = o.lang ? [o.lang] : o.matrix === "smoke" ? ["en", "de"] : languages;
+    langs = o.lang ? [o.lang] : o.matrix === "smoke" ? ["en", "de"] : addonFiles.includes(o.view) ? addonLanguages : languages;
   for (const kind of kinds)
     for (const lang of langs)
       for (const state of o.matrix === "smoke" ? ["full"] : ["full", "empty"])

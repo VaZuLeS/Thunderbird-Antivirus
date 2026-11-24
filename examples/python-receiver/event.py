@@ -1,4 +1,4 @@
-"""Thundy incident schema v1 and its plain-text / HTML email representation."""
+"""Thundy incident schemas and their plain-text / HTML email representation."""
 
 import calendar
 import ipaddress
@@ -24,6 +24,14 @@ REASONS = {"threshold": "Richtlinienschwelle erreicht", "malicious": "Bösartige
 PROVIDERS = {"hybridanalysis": "Hybrid Analysis", "urlscan": "urlscan.io", "virustotal": "VirusTotal"}
 VERDICTS = {"malicious": "Bösartig", "suspicious": "Verdächtig", "no_detection": "Keine Erkennung"}
 SOURCES = {"live": "Live-Abfrage", "stored": "Gespeicherter Befund", "archive": "Archivbefund"}
+DETECTION_KINDS = {"family": "Schadsoftware-Familie", "category": "Kategorie", "brand": "Nachgeahmte Marke", "signature": "Hersteller-Erkennung"}
+DETECTION_CATEGORIES = {
+    "malware": "Malware", "virus": "Virus", "trojan": "Trojaner", "ransomware": "Ransomware", "worm": "Wurm",
+    "spyware": "Spyware", "adware": "Adware", "backdoor": "Backdoor", "downloader": "Downloader", "dropper": "Dropper",
+    "infostealer": "Infostealer", "rootkit": "Rootkit", "phishing": "Phishing", "scam": "Betrug",
+    "fraudulent_shop": "Betrügerischer Shop", "phishing_shop": "Phishing-Shop",
+}
+DETECTION_LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9 ._+!():/-]{0,79}")
 
 
 class InvalidEvent(ValueError):
@@ -74,7 +82,7 @@ def scores(value, *keys):
             require(type(value[key]) in (int, float) and 0 <= value[key] <= 100, key)
 
 
-def provider_report(row):
+def provider_report(row, schema):
     provider = row.get("provider")
     base = ("provider", "verdict", "source")
     optional = {
@@ -83,7 +91,8 @@ def provider_report(row):
         "virustotal": ("maliciousCount", "suspiciousCount"),
     }
     require(choice(provider, PROVIDERS), "provider")
-    fields(row, base, ("observedAt", *optional[provider]))
+    extra = ("detections",) if schema == 2 else ()
+    fields(row, base, ("observedAt", *optional[provider], *extra))
     require(choice(row["verdict"], VERDICTS) and choice(row["source"], SOURCES), "provider verdict/source")
     if "observedAt" in row:
         require(iso_utc(row["observedAt"]), "provider observedAt")
@@ -104,6 +113,26 @@ def provider_report(row):
     for key in ("maliciousCount", "suspiciousCount"):
         if key in row:
             require(type(row[key]) is int and 0 <= row[key] <= MAX_SAFE_INTEGER, key)
+    if "detections" in row:
+        detections = row["detections"]
+        require(row["verdict"] != "no_detection" and isinstance(detections, list) and 1 <= len(detections) <= 12, "detections")
+        keys = set()
+        for detection in detections:
+            fields(detection, ("kind", "value"))
+            kind, value = detection["kind"], detection["value"]
+            require(choice(kind, DETECTION_KINDS), "detection kind")
+            if kind == "category":
+                require(choice(value, DETECTION_CATEGORIES), "detection category")
+            else:
+                require(matches(DETECTION_LABEL, value) and value == value.strip() and "://" not in value
+                        and not re.search(r"\bwww\.", value, re.I)
+                        and value.lower() not in {"unknown", "generic", "malicious", "suspicious", "clean", "undetected", "none", "n/a"},
+                        "detection label")
+            keys.add((kind, value.casefold()))
+        require(len(keys) == len(detections), "duplicate detection")
+        if any(kind == "brand" for kind, _ in keys):
+            require(provider == "urlscan" and row["verdict"] == "malicious" and
+                    any(("category", value) in keys for value in ("phishing", "phishing_shop")), "phishing brand")
     return provider
 
 
@@ -120,7 +149,8 @@ def parse_event(raw, idempotency_key):
         raise InvalidEvent("JSON") from error
     fields(event, ("schemaVersion", "id", "observedAt", "action", "finding", "decision", "policyRevision"),
            ("hostname", "sha256", "details"))
-    require(type(event["schemaVersion"]) is int and event["schemaVersion"] == 1, "schemaVersion")
+    schema = event["schemaVersion"]
+    require(type(schema) is int and schema in (1, 2), "schemaVersion")
     require(matches(UUID, event["id"]) and event["id"] == idempotency_key, "event ID")
     require(iso_utc(event["observedAt"]), "observedAt")
     require(choice(event["action"], ACTIONS) and choice(event["finding"], FINDINGS)
@@ -142,7 +172,9 @@ def parse_event(raw, idempotency_key):
                     and all(unicodedata.category(char) != "Cs" for char in name), "attachmentName")
         providers = details["providers"]
         require(isinstance(providers, list) and len(providers) <= 3 and all(isinstance(row, dict) for row in providers), "providers")
-        require(len({provider_report(row) for row in providers}) == len(providers), "duplicate provider")
+        require(len({provider_report(row, schema) for row in providers}) == len(providers), "duplicate provider")
+    if schema == 2:
+        require(any(row.get("detections") for row in event.get("details", {}).get("providers", [])), "missing detections")
     return event
 
 
@@ -184,6 +216,11 @@ def build_mail(event, device, sender, recipient):
                               ("reference", "Anbieterreferenz", visible), ("jobId", "Job-ID", visible),
                               ("maliciousCount", "Bösartige Erkennungen", int),
                               ("suspiciousCount", "Verdächtige Erkennungen", int)))
+        for kind, label in DETECTION_KINDS.items():
+            values = [DETECTION_CATEGORIES.get(detection["value"], detection["value"]) if kind == "category" else detection["value"]
+                      for detection in row.get("detections", ()) if detection["kind"] == kind]
+            if values:
+                rows.append((label, " · ".join(values)))
         parts.append((PROVIDERS[row["provider"]], rows, row.get("reportUrl")))
     no_providers = ("Thundy hat zu diesem Ereignis keine Anbieterbefunde übermittelt." if details is not None else
                     "Thundy hat eine Basismeldung ohne den optionalen Detailblock übermittelt.")

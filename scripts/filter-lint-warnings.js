@@ -17,6 +17,9 @@ const fs = require('fs');
 const KNOWN_THUNDERBIRD_FALSE_POSITIVES = [
   'messageDisplay.getDisplayedMessages',
   'messageDisplay.onMessagesDisplayed',
+  // Thunderbird API since TB 71.
+  // https://webextension-api.thunderbird.net/en/mv3/messageDisplayAction.html#settitle-details
+  'messageDisplayAction.setTitle',
   'messages.getFull',
   // Thunderbird messages.get(messageId) retrieves the authoritative MessageHeader.
   'messages.get',

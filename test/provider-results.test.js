@@ -17,6 +17,19 @@ test('urlscan uses all three engines; brands alone never upgrade findings or ide
  for(const data of [{page:{url:'https://fixture.invalid'}},{verdicts:{overall:{}}}])assert.equal(a.evaluate('urlscan',data).verdict,'unknown');
  assert.equal(a.evaluate('urlscan',{verdicts:{overall:{malicious:false,score:0}}}).verdict,'none');assert.equal(a.evaluate('urlscan',{uuid:'receipt'},'url').completion,'pending');
 });
+test('detection metadata distinguishes names, signatures, categories and phishing targets',()=>{
+ const {a}=adapter();
+ const ha=a.hybridDetections({verdict:'malicious',vx_family:'Emotet',classification_tags:['trojan','https://private.invalid/q'],
+  signatures:[{name:'Process injection',threat_level:2},{name:'Unrelated',threat_level:0}]});
+ assert.deepEqual(Array.from(ha,row=>row.value),['trojan','Emotet','Process injection']);
+ const vt=a.virusTotalDetections({last_analysis_stats:{malicious:2},popular_threat_classification:{popular_threat_name:[{value:'LockBit'}],popular_threat_category:[{value:'ransom'}]},
+  last_analysis_results:{engine:{category:'malicious',result:'Trojan:Win32/LockBit!X'},clean:{category:'undetected',result:'Not a result'}}});
+ assert.deepEqual(Array.from(vt,row=>row.value),['ransomware','trojan','LockBit','Trojan:Win32/LockBit!X']);
+ const data={verdicts:{urlscan:{malicious:true,categories:['fake-shop','phishing'],brands:[{name:'PayPal'},{name:'https://private.invalid'}]}}};
+ assert.deepEqual(Array.from(a.urlscanDetections(data,a.evaluate('urlscan',data)),row=>row.value),['phishing','fraudulent_shop','PayPal']);
+ data.verdicts.urlscan.categories=[];
+ assert.equal(a.urlscanDetections(data,a.evaluate('urlscan',data)).length,0);
+});
 test('partial evidence survives final unknown reports, restart projection and source export without raw secrets',()=>{
  const {a,model}=adapter();const first=a.evaluate('hybridanalysis',{finished:false,verdict:'malicious'}),last=a.evaluate('hybridanalysis',{finished:true,verdict:'unknown'}),combined=a.merge(first,last);
  assert.equal(combined.completion,'complete');assert.equal(combined.verdict,'malicious');assert.equal(a.stored('hybridanalysis',{assessment:combined,report:{finished:true,verdict:'unknown'}}).verdict,'malicious');
@@ -30,7 +43,8 @@ test('shared transport serializes urlscan POST submissions while allowing result
  const started=[],pending=[];let posts=0,max=0;
  const c=vm.createContext({URL,Headers,Response,AbortController,setTimeout,clearTimeout,console,fetch:async(url,options)=>{started.push({url,method:options.method});if(options.method==='POST'){max=Math.max(max,++posts);await new Promise(r=>pending.push(r));posts--;}return new Response(JSON.stringify({uuid:'synthetic'}),{status:200});},browser:{storage:{local:{get:async()=>({externalAnalysisConsent:true,privacyTier:'max'})}},permissions:{contains:async()=>true}}});
  vm.runInContext(fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('provider_registry.js','utf8')+'\n'+fs.readFileSync('api_gateway.js','utf8')+'\nglobalThis.gateway=apiGateway;',c);
- const first=c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/',{method:'POST'}),second=c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/',{method:'POST'});await new Promise(setImmediate);assert.equal(pending.length,1);
+ const approved = {method:'POST', authorizeTransfer:async()=>{}};
+ const first=c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/',approved),second=c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/',approved);await new Promise(setImmediate);assert.equal(pending.length,1);
  await c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/result/synthetic/',{method:'GET'});assert.ok(started.some(s=>s.method==='GET'));pending.shift()();await first;await new Promise(setImmediate);assert.equal(pending.length,1);pending.shift()();await second;assert.equal(max,1);
 });
 

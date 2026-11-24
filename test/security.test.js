@@ -6,7 +6,7 @@ function fixture(){
  let now=1000000;const stored={},connect=[];
  const browser={runtime:{id:'addon',getURL:p=>'moz-extension://addon/'+p,onConnect:{addListener:fn=>connect.push(fn)}},storage:{local:{get:async key=>key===null?{...stored}:typeof key==='string'?{[key]:stored[key]}:Object.fromEntries(key.map(k=>[k,stored[k]])),set:async values=>Object.assign(stored,values)}}};
  const c=vm.createContext({browser,crypto:webcrypto,TextEncoder,Date:class extends Date{static now(){return now;}}});
- vm.runInContext(fs.readFileSync('security.js','utf8')+'\n'+fs.readFileSync('api_diagnostics.js','utf8')+'\nglobalThis.security=ThundySecurity;',c);
+ vm.runInContext(['managed_policy.js','security.js','api_diagnostics.js'].map(file=>fs.readFileSync(file,'utf8')).join('\n')+'\nglobalThis.security=ThundySecurity;',c);
  return {s:c.security,c,browser,stored,advance:ms=>now+=ms,sender:{id:'addon',url:browser.runtime.getURL('options.html'),tab:{id:1},documentId:'doc-1'}};
 }
 const policy={enabled:true,threshold:50,unknown:'warn'};

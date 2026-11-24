@@ -29,10 +29,11 @@ def check(m, base, out, report, display, wait, open_page, native_click):
       w.__lateHybridProbe.history=JSON.stringify(snapshots);
       await bg.updateStore(db,'hybridanalysis',key,old=>({...old,links:old.links.map(item=>({...item,state:'KNOWN',report:{finished:true,state:'COMPLETE',verdict:'malicious',threat_score:85},report_fetched_at:'2026-11-10T10:01:00Z'})),analysisSourceSnapshots:snapshots}),bg.messageReportOptions(message));
       await context.flush();const after=await context.snapshot(),again=await context.snapshot(),row=after.rows.find(row=>row.provider==='hybridanalysis'&&row.resource==='link:0');
-      if(row?.verdict!=='malicious'||row.completion!=='complete'||after.sourcePersistenceReason!=='snapshot_count'||!after.sourcePersistenceFailed)throw Error('Stored result or capacity reason not exposed');
+      const sessionOnly=typeof bg.prepareProviderTransfer==='function';
+      if(row?.verdict!=='malicious'||row.completion!=='complete'||after.sourcePersistenceReason!=='snapshot_count'||(sessionOnly?after.sourceSessionOnly!==true||after.sourcePersistenceFailed:!after.sourcePersistenceFailed))throw Error('Stored result or capacity reason not exposed');
       if(JSON.stringify(after.rows)!==JSON.stringify(again.rows))throw Error('Repeated read changed response counts');
       w.__lateHybridProbe.snapshotId=context.snapshotId;
-      return {messageId:message.id,tabId,pendingAdvanced:true,capacityReason:after.sourcePersistenceReason,brand:'Hybrid Analysis',reason:b.i18n.getMessage('analysisPersistence_snapshot_count')};
+      return {messageId:message.id,tabId,pendingAdvanced:true,capacityReason:after.sourcePersistenceReason,brand:'Hybrid Analysis',reason:b.i18n.getMessage(sessionOnly?'sourceSessionOnly':'analysisPersistence_snapshot_count')};
     })();''')
     try:
         m.js('''const tab=window.gTabmail.tabInfo.find(tab=>tab.mode.name==='mailMessageTab'&&tab.browser);window.gTabmail.switchToTab(tab);''')

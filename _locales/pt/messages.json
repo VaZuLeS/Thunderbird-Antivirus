@@ -1,0 +1,3590 @@
+{
+  "protectionSeverity_low": { "message": "Risco baixo" },
+  "protectionSeverity_unknown": { "message": "Risco desconhecido" },
+  "protectionSeverity_caution": { "message": "Risco acrescido" },
+  "protectionSeverity_high": { "message": "Risco alto" },
+  "protectionSeverity_critical": { "message": "Risco crítico" },
+  "linkScanSummary": { "message": "Resultados das análises de URL" },
+  "linkScansPending": { "message": "Ainda há análises de URL em curso." },
+  "linkNoScanResults": { "message": "Não há resultados de análises de URL." },
+  "protectionCategoryUnavailable": { "message": "O fornecedor não indicou a categoria da ameaça." },
+  "linkWaitForResults": { "message": "Aguardar análises de URL em curso" },
+  "linkAutoOpenBelow": { "message": "Abrir diretamente abaixo desta pontuação" },
+  "linkOpeningOptionsHelp": { "message": "Deixe a pontuação em branco para mostrar sempre a caixa de diálogo da ligação." },
+  "linkAuditRetentionTitle": { "message": "Conservação do registo de ligações" },
+  "linkAuditLimit": { "message": "Máximo de entradas (vazio = ilimitado)" },
+  "linkAuditDays": { "message": "Dias de conservação (vazio = ilimitado)" },
+  "protectionManagedColors": { "message": "A organização define as cores dos níveis de risco." },
+  "linkOpenedAutomatically": { "message": "Aberto automaticamente" },
+  "providerSwitchHelp": {
+    "message": "Ative ou desative cada serviço e guarde as definições. As chaves e os resultados guardados são mantidos quando suspende um serviço."
+  },
+  "providerKeyLink": {
+    "message": "Obter uma chave API"
+  },
+  "providerDocsLink": {
+    "message": "API Documentação"
+  },
+  "providerApiKeyLabel": {
+    "message": "Chave da API"
+  },
+  "providerUse": {
+    "message": "Utilizar este serviço"
+  },
+  "providerVirusUse": {
+    "message": "Use VirusTotal para verificação de arquivos"
+  },
+  "providerHybridStrength": {
+    "message": "Procura relatórios existentes para hashes conhecidos de ficheiros. Com carregamentos autorizados, o Falcon Sandbox pode analisar o comportamento de um ficheiro durante a execução."
+  },
+  "providerHybridSetup": {
+    "message": "Crie uma conta e, em segundo lugar, abra o Profile → API Key para criação de uma chave."
+  },
+  "providerUrlhausStrength": {
+    "message": "Verifique os hospedadores de links contra as provenientes de malware."
+  },
+  "providerUrlhausSetup": {
+    "message": "Inscreva-se em abuse.ch e obtém um Auth-Key da sua conta."
+  },
+  "providerUrlscanStrength": {
+    "message": "Examina completamente URLs e redireciona para sinais de phishing. Thundy usa-o no Nível Máximo de Privacidade."
+  },
+  "providerUrlscanSetup": {
+    "message": "Crie uma conta e selecione Setting & API → Nova chave API."
+  },
+  "providerVirusTotalStrength": {
+    "message": "Veja o hash SHA-256 de um arquivo e mostra resultados de motores de escaneamento multiplos."
+  },
+  "providerVirusTotalSetup": {
+    "message": "Inscreva-se no VirusTotal e copie a chave da página de chave API do seu perfilo."
+  },
+  "providerIpTitle": {
+    "message": "Reputação de endereços IP"
+  },
+  "providerIpUse": {
+    "message": "Verifique a reputação IP"
+  },
+  "providerIpChoose": {
+    "message": "IP provedor de reputação"
+  },
+  "providerIpKeyNotice": {
+    "message": "Introduza uma chave do fornecedor selecionado. A suspensão das verificações de IP mantém a escolha do fornecedor e a chave."
+  },
+  "providerIpGuide": {
+    "message": "Selecione e crie um provedor de reputação IP"
+  },
+  "providerVirusIpStrength": {
+    "message": "Verifica IPs públicos contra motores de detecção e notas da comunidade da VirusTotal."
+  },
+  "providerAbuseStrength": {
+    "message": "Usar relatórios da comunidade para identificar IPs públicos associados a spam, escaneamento ou outro abuso."
+  },
+  "providerAbuseSetup": {
+    "message": "Crie uma conta AbuseIPDB e gerar ou copiar uma chave da guia API no painel."
+  },
+  "providerIpVirusKey": {
+    "message": "VirusTotal API chave para IP reputação"
+  },
+  "providerIpAbuseKey": {
+    "message": "AbuseIPDB API chave"
+  },
+  "providerTestDisabled": {
+    "message": "Ative o serviço e guarde as definições antes de testar a chave."
+  },
+  "analysisReason_provider_disabled": {
+    "message": "Este provedor está interrompido em definições."
+  },
+  "extensionName": {
+    "message": "Thundy AV – Analisador de correio eletrónico para Thunderbird"
+  },
+  "extensionDescription": {
+    "message": "Escaneador opcional, opt-in para anexos de e-mail e links. Nada sai do seu PC sem o seu consentir explícito."
+  },
+  "actionTitle": {
+    "message": "Thundy AV – escanear o status para esta mensagem"
+  },
+  "bannerScanOnce": {
+    "message": "Escanear essa mensagem uma vez"
+  },
+  "bannerScanSender": {
+    "message": "sempre escanear esse remetente"
+  },
+  "bannerTitleOptIn": {
+    "message": "Thundy AV : A escaneamento em tempo real não é ativada para esta mensagem."
+  },
+  "bannerNoteOptIn": {
+    "message": "A escaneamento transmite dados para serviços de análises exteriores, mas apenas se você ativá-lo nas definições de add-on e apenas depois de você dar o seu consentir."
+  },
+  "bannerScanRunning": {
+    "message": "Escaneamento…"
+  },
+  "bannerScanDone": {
+    "message": "Avaliação de dados - Veja as origens de análises"
+  },
+  "bannerScanFailed": {
+    "message": "Escaneamento falhou"
+  },
+  "bannerPermissionDenied": {
+    "message": "A autorização de hospedagem foi negada"
+  },
+  "bannerConsentMissing": {
+    "message": "Novas solicitações exteriores estão desativadas. relatórios armazenados previamente ainda podem ser exibidos."
+  },
+  "bannerThreatTitle": {
+    "message": "Thundy AV aviso"
+  },
+  "bannerThreatScore": {
+    "message": "Ponto de Risco: $SCORE$ de 100",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerSenderOptIn": {
+    "message": "O sistema é agora automaticamente analisado."
+  },
+  "notificationScanStarted": {
+    "message": "A escaneamento foi iniciado para: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "Escaneamento apresentado com êxito. ID de trabalho: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanError": {
+    "message": "Erro de escaneamento: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Thundy AV Escaneamento"
+  },
+  "notificationTitleError": {
+    "message": "Erro de escanner Thundy AV"
+  },
+  "bannerAuthPass": {
+    "message": "Relatórios de servidores confiáveis SPF / DKIM/ DMARC passados"
+  },
+  "bannerOpenOptions": {
+    "message": "Opções abertas"
+  },
+  "menuScanLink": {
+    "message": "Escanear o link com Thundy AV"
+  },
+  "menuScanMessageLinks": {
+    "message": "Escanear todos os links desta mensagem"
+  },
+  "notificationNoLinks": {
+    "message": "Não há links encontrados neste texto."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "A permissão de hospedagem para o Serviço de Análise está faltando. por favor, conceda-a nas opções de adição."
+  },
+  "errorHostPermissionMissing": {
+    "message": "A permissão de hospedagem para o Serviço de Análise está faltando. por favor, conceda-a nas opções de adição."
+  },
+  "errorTierUploadBlocked": {
+    "message": "A transferência de anexos é desativada na linha de Privacidade \"Strict\". Switch para \"Balanced\" ou \"Maximum\" nas opções de adição."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "A submissão do URLs é permitida apenas na linha de Privacidade \"Maximum\"."
+  },
+  "notificationInjectionFailed": {
+    "message": "O banner não pode ser inserido na vista de mensagem. por favor, informe isso com a sua versão Thunderbird."
+  },
+  "bannerTierBlocked": {
+    "message": "Esta ação não é permitida pelo actual Nível de Privacidade. ver as opções de adição."
+  },
+  "ui_001": {
+    "message": "Aviso de:"
+  },
+  "ui_002": {
+    "message": "Não há Hybrid Analysis API chave configure. você pode usar verificações locais ou configure um provedor em definições."
+  },
+  "ui_003": {
+    "message": "SITUAÇÃO ABerta"
+  },
+  "ui_004": {
+    "message": "Selecione um e-mail para verificar."
+  },
+  "ui_005": {
+    "message": "Os resultados da análises de carregamento…"
+  },
+  "ui_006": {
+    "message": "A análises exteriores é desativada: não são enviados hashes, arquivos ou links para os serviços de análises."
+  },
+  "ui_007": {
+    "message": "Não há anexos ou resultados de scan de links armazenados disponíveis para esta mensagem."
+  },
+  "ui_008": {
+    "message": "Não há resultados de análises disponíveis para este e-mail."
+  },
+  "ui_009": {
+    "message": "Erro inesperado ao carregar os resultados da análises."
+  },
+  "ui_010": {
+    "message": "O estado:"
+  },
+  "ui_011": {
+    "message": "A analise ainda está em andamento, por favor tente mais uma vez."
+  },
+  "ui_012": {
+    "message": "SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_013": {
+    "message": "Aperfeiçoamento de ameaças:"
+  },
+  "ui_014": {
+    "message": "Verdade do Senhor:"
+  },
+  "ui_015": {
+    "message": "Família de malware:"
+  },
+  "ui_016": {
+    "message": "Resumo da multiescena: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_017": {
+    "message": "Informações adicionais:"
+  },
+  "ui_018": {
+    "message": "Análise iniciada: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_019": {
+    "message": "Título: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_020": {
+    "message": "VirusTotal resultados:"
+  },
+  "ui_021": {
+    "message": "Dificuldades: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_022": {
+    "message": "Não identificado: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_023": {
+    "message": "Suspeito: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_024": {
+    "message": "Imóveis: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_025": {
+    "message": "Escaneamento: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_026": {
+    "message": "Estadão: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_027": {
+    "message": "Os resultados do antivírus:"
+  },
+  "ui_028": {
+    "message": "A A: $P1$ O veredicto: $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_029": {
+    "message": "Não há resultados de scanner disponíveis."
+  },
+  "ui_030": {
+    "message": "SHA-256 hash: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_031": {
+    "message": "Nome do arquivo: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_032": {
+    "message": "Dimensão: $P1$ bytes",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_033": {
+    "message": "Tipo: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_034": {
+    "message": "Escaneamento de novo"
+  },
+  "ui_035": {
+    "message": "Sanitize e download (local)"
+  },
+  "ui_036": {
+    "message": "Produto verificado: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_037": {
+    "message": "Resumo local: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_038": {
+    "message": "SHA-256 : $P1$ – a análises exteriores está desativada.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_039": {
+    "message": "Não há uma busca externa porque a análises externa é desativada."
+  },
+  "ui_040": {
+    "message": "Analise externa-disfunção"
+  },
+  "ui_041": {
+    "message": "Avaliação de escaneamento…"
+  },
+  "ui_042": {
+    "message": "Acompanhe o arquivo para uma nova escane…"
+  },
+  "ui_043": {
+    "message": "Scan de dados.Reload resultados…"
+  },
+  "ui_044": {
+    "message": "Sucesso"
+  },
+  "ui_045": {
+    "message": "Escaneamento não foi feito:"
+  },
+  "ui_046": {
+    "message": "Erro desconhecido"
+  },
+  "ui_047": {
+    "message": "Tente de novo"
+  },
+  "ui_048": {
+    "message": "Erro de comunicação:"
+  },
+  "ui_049": {
+    "message": "Sanitário…"
+  },
+  "ui_050": {
+    "message": "Avaliação do HTML local…"
+  },
+  "ui_051": {
+    "message": "A descida começa."
+  },
+  "ui_052": {
+    "message": "Sanitário"
+  },
+  "ui_053": {
+    "message": "Download falhou:"
+  },
+  "ui_054": {
+    "message": "Erro API: $P1$ para item $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_055": {
+    "message": "(A chave API pode ser inadecuada ou falha.)"
+  },
+  "ui_056": {
+    "message": "Erro de rede: $P1$ para item $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_057": {
+    "message": "Acompanhamento de URL…"
+  },
+  "ui_058": {
+    "message": "Enviar URL para Hybrid Analysis…"
+  },
+  "ui_059": {
+    "message": "Scan enviado. resultados de carregamento…"
+  },
+  "ui_060": {
+    "message": "A transferência falhou:"
+  },
+  "ui_061": {
+    "message": "URL: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_062": {
+    "message": "Este URL foi encontrado no e-mail. para proteger a sua privadeza, foi"
+  },
+  "ui_063": {
+    "message": "Não carregado automaticamente"
+  },
+  "ui_064": {
+    "message": "Escanear URL agora"
+  },
+  "ui_065": {
+    "message": "Acarregar…"
+  },
+  "ui_066": {
+    "message": "Enviar arquivo para Hybrid Analysis…"
+  },
+  "ui_067": {
+    "message": "Acompanhe o download. resultados de carregamento…"
+  },
+  "ui_068": {
+    "message": "Escanear arquivo agora (carregar)"
+  },
+  "ui_069": {
+    "message": "Acessórios: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_070": {
+    "message": "Não há relatórios exteriores disponíveis para este arquivo.Para proteger a sua privadeza, foi"
+  },
+  "ui_071": {
+    "message": "As carregadas automática estão desativadas; o plano de Privacidade ainda se aplica às scans manuais."
+  },
+  "ui_072": {
+    "message": "A proteção de ligação permanece disponível junto com a escaneamento automático."
+  },
+  "ui_073": {
+    "message": "A poupança…"
+  },
+  "ui_074": {
+    "message": "As definições são salvas."
+  },
+  "ui_075": {
+    "message": "Guardar"
+  },
+  "ui_076": {
+    "message": "Não foi permitido o envio de dados; nada será enviado."
+  },
+  "ui_077": {
+    "message": "Não foi concebida a autorização de hospedagem para:"
+  },
+  "ui_078": {
+    "message": "Os cheques para estes provedores não estão disponíveis sem permissão."
+  },
+  "ui_079": {
+    "message": "Não podia guardar as definições."
+  },
+  "ui_080": {
+    "message": "Isso remove todos os resultados de análises localmente armazenados."
+  },
+  "ui_081": {
+    "message": "A limpar…"
+  },
+  "ui_082": {
+    "message": "Cache é limpo."
+  },
+  "ui_083": {
+    "message": "Não existe ainda um sistema de dados ou já está vazio."
+  },
+  "ui_084": {
+    "message": "Não conseguiu esclarecer o cache."
+  },
+  "ui_085": {
+    "message": "Cache claro"
+  },
+  "ui_086": {
+    "message": "API chave falha."
+  },
+  "ui_087": {
+    "message": "SPF verificação falhou (possível espoofing)."
+  },
+  "ui_088": {
+    "message": "A assinatura do DKIM é inadecuada (possível de espuma)."
+  },
+  "ui_089": {
+    "message": "DMARC verificação falhou (possível espoofing)."
+  },
+  "ui_090": {
+    "message": "URLhaus lista o domínio ( $P1$) como malicioso.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_091": {
+    "message": "Responder ao domínio ($P1$e a diferença entre o domínio ($P2$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_092": {
+    "message": "Possível compromisso de e-mail de negócios: primeiro contacto com este remetente e chaves de urgência encontradas ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_093": {
+    "message": "Palavras-chave de urgência encontradas ( $P1$). Verifique esta solicitude cuidadosamente.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_094": {
+    "message": "Esta é a sua primeira comunicação com este remetente."
+  },
+  "ui_095": {
+    "message": "O domínio do vendedor ( $P1$) assemelha-se à marca conhecida $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_096": {
+    "message": "O domínio de ligação ( $P1$) assemelha-se à marca conhecida $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_097": {
+    "message": "Nenhum dos links no texto é o endereço do remetente ($P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_098": {
+    "message": "CULHÃO"
+  },
+  "ui_099": {
+    "message": "A escaneamento URL falhou:"
+  },
+  "ui_100": {
+    "message": "Não pode ser iniciado o scan urlscan.io:"
+  },
+  "ui_101": {
+    "message": "urlscan.io não devolveu um ID de escaneamento."
+  },
+  "ui_102": {
+    "message": "urlscan.io identificou o URL como malicioso."
+  },
+  "ui_103": {
+    "message": "Detecção visual: a página impersonalizará"
+  },
+  "ui_104": {
+    "message": "(Avaliação do suposto phishing)"
+  },
+  "ui_105": {
+    "message": "Não podia retomar os resultados do urlscan.io:"
+  },
+  "ui_106": {
+    "message": "Thundy AV – Escaneador de e-mail"
+  },
+  "ui_107": {
+    "message": "Ver todas as submissões Hybrid Analysis"
+  },
+  "ui_108": {
+    "message": "Ver todas as submissões do Hybrid Analysis (apre uma nova tab)"
+  },
+  "ui_109": {
+    "message": "Subjeto :"
+  },
+  "ui_110": {
+    "message": "De em:"
+  },
+  "ui_111": {
+    "message": "ID de mensagem:"
+  },
+  "ui_112": {
+    "message": "Thundy AV definições"
+  },
+  "ui_113": {
+    "message": "Hybrid Analysis é um Serviço de Análise de Malware. Você pode submeter arquivos para análises estáticas e dinâmicas."
+  },
+  "ui_114": {
+    "message": "A Hybrid Analysis usa o CrowdStrike Falcon Sandbox para investigar ameaças desconhecidas."
+  },
+  "ui_115": {
+    "message": "Contas e termos de serviços do provedor aplicam-se a análises exteriores. verificações locais não exigem uma conta."
+  },
+  "ui_116": {
+    "message": "Thundy AV definições"
+  },
+  "ui_117": {
+    "message": "O que é o Hybrid Analysis?"
+  },
+  "ui_118": {
+    "message": "Para análises de arquivo externa, obtega uma chave API de"
+  },
+  "ui_119": {
+    "message": "Após a inscrição, vá ao seu perfilo e encontre a seção API KEY."
+  },
+  "ui_120": {
+    "message": "Mantenha a chave API aqui. os cheques locais funcionam sem ele."
+  },
+  "ui_121": {
+    "message": "API Cabeça"
+  },
+  "ui_122": {
+    "message": "hybrid-analysis.com"
+  },
+  "ui_123": {
+    "message": "hybrid-analysis.com (apre uma nova tab)"
+  },
+  "ui_124": {
+    "message": "Permitir análise externa (enviar dados a fornecedores terceiros)"
+  },
+  "ui_125": {
+    "message": "Sem esse consentir,"
+  },
+  "ui_126": {
+    "message": "hashes, arquivos, links ou IP endereços são enviados para serviços exteriores. após o consenço, os scans autorizado podem enviar anexos e ligar dados para Hybrid Analysis, VirusTotal, urlscan.io, URLhaus ou AbuseIPDBDependendo do grau de Privacidade, desligue esta opção para retirar o consenço:"
+  },
+  "ui_127": {
+    "message": "Não"
+  },
+  "ui_128": {
+    "message": "Política de Privacidade"
+  },
+  "ui_129": {
+    "message": "Política de Privacidade (apre uma nova tab)"
+  },
+  "ui_130": {
+    "message": "Hybrid Analysis API chave (opcional):"
+  },
+  "ui_131": {
+    "message": "p. ex., abcdef123456…"
+  },
+  "ui_132": {
+    "message": "URLhaus API chave (reumínio de domínio opcional):"
+  },
+  "ui_133": {
+    "message": "Você pode encontrar uma chave API em"
+  },
+  "ui_134": {
+    "message": "."
+  },
+  "ui_135": {
+    "message": "urlhaus.abuse.ch"
+  },
+  "ui_136": {
+    "message": "urlhaus.abuse.ch (apre uma nova tab)"
+  },
+  "ui_137": {
+    "message": "urlscan.io API chave (análise opcional URL):"
+  },
+  "ui_138": {
+    "message": "Você pode encontrar uma chave API em"
+  },
+  "ui_139": {
+    "message": "urlscan.io"
+  },
+  "ui_140": {
+    "message": "urlscan.io (apre uma nova tab)"
+  },
+  "ui_141": {
+    "message": "VirusTotal API chave (reumatismo de arquivo opcional):"
+  },
+  "ui_142": {
+    "message": "virustotal.com"
+  },
+  "ui_143": {
+    "message": "virustotal.com (apre uma nova tab)"
+  },
+  "ui_144": {
+    "message": "Nível de Privacidade:"
+  },
+  "ui_145": {
+    "message": "Estritamente (default: hashes e domínios apenas, não carregados)"
+  },
+  "ui_146": {
+    "message": "Desligado (carregar arquivos desconhecidos, não completo URLs)"
+  },
+  "ui_147": {
+    "message": "Análise Máxima (carregar arquivos desconhecidos e concluir URLs)"
+  },
+  "ui_148": {
+    "message": "Limita os dados enviados aos provedores de análises. aplica-se apenas quando a análises exteriores é ativada."
+  },
+  "ui_149": {
+    "message": "Reputação IP (check Headers recebidos):"
+  },
+  "ui_150": {
+    "message": "Disabilidades"
+  },
+  "ui_151": {
+    "message": "VirusTotal (require uma chave VirusTotal API)"
+  },
+  "ui_152": {
+    "message": "AbuseIPDB (require uma chave AbuseIPDB API)"
+  },
+  "ui_153": {
+    "message": "IP reputação API chave:"
+  },
+  "ui_154": {
+    "message": "Envie endereços públicos do IP dos endereços recebidos do e-mail ao provedor selecionado. exige consentir de análises exteriores e autorização de escaneamento."
+  },
+  "ui_155": {
+    "message": "List of permits (domínios separados ou endereços de e-mail):"
+  },
+  "ui_156": {
+    "message": "e.g. example.com, test@ example.com"
+  },
+  "ui_157": {
+    "message": "As entradas de remetente confiáveis suprimem as alertas de remetentes locais. não autorizam escaneamento externa."
+  },
+  "ui_158": {
+    "message": "Blocklist (doménios separados ou endereços de e-mail):"
+  },
+  "ui_159": {
+    "message": "Entre domínios ou endereços de e-mail."
+  },
+  "ui_160": {
+    "message": "Escanear sempre manualmente (não carregar automaticamente)"
+  },
+  "ui_161": {
+    "message": "Evita escaneamento automático externa. As acções manual explicitas ainda exigem consentir e o seu padrão de Privacidade."
+  },
+  "ui_162": {
+    "message": "Atualizar automaticamente os relatórios de ligações pendentes"
+  },
+  "ui_163": {
+    "message": "Os controlos de ligação exigem consentir, uma autorização de escaneamento e o seu respectivo grau de Privacidade."
+  },
+  "ui_164": {
+    "message": "Verifique os links antes de abri-los"
+  },
+  "ui_165": {
+    "message": "A navigagem é interrompida para mostrar o resultado. links e erros não verificado são claramente identificados. análises completas URL exigem o Nível Máximo. As ligações completas e os anexos exigem confirmação individual."
+  },
+  "ui_166": {
+    "message": "Lembre-se de guardar suas definições."
+  },
+  "ui_167": {
+    "message": "Gestão de dados"
+  },
+  "ui_168": {
+    "message": "Claro resultados armazenados localmente e cache de reputação."
+  },
+  "linkChecking": {
+    "message": "Verificação de link…"
+  },
+  "linkWarning": {
+    "message": "Este link foi informado como suspeito ou malicioso."
+  },
+  "linkUnknown": {
+    "message": "Este link não pode ser verificado. abri-lo pode ser perigoso."
+  },
+  "linkNoDetection": {
+    "message": "Não há ameaça detetada pelo provedor. isto não é uma garantia de Segurança."
+  },
+  "linkProceed": {
+    "message": "Link aberta em qualquer caso"
+  },
+  "linkCancel": {
+    "message": "Cancelar"
+  },
+  "localMode": {
+    "message": "Verificações locais funcionam sem chaves API. Escaneamento externa exige o seu consenço e uma mensagem ou autorização do remetente."
+  },
+  "statusNormal": {
+    "message": "(Não há nenhuma detecção)"
+  },
+  "statusSuspicious": {
+    "message": "(A suspeita de"
+  },
+  "statusCritical": {
+    "message": "( O que é crítico)"
+  },
+  "noSubject": {
+    "message": "(Não há tema)"
+  },
+  "noSender": {
+    "message": "(Envio desconhecido de um"
+  },
+  "noId": {
+    "message": "(Não há ID)"
+  },
+  "unknownAttachment": {
+    "message": "desconhecido"
+  },
+  "statusDangerous": {
+    "message": "( O perigo do"
+  },
+  "sizeLimit": {
+    "message": "O adicionamento excede o tamanho local de 25 MiB e não foi lido ou carregado."
+  },
+  "trustedAuthLabel": {
+    "message": "Servidores de Autenção confiáveis (comma-separados)"
+  },
+  "trustedAuthHelp": {
+    "message": "Somente listar os servidores de e-mail do destinatário que você administra ou explicitamente confia. relatórios de cabeças não configure permanecem inéditos."
+  },
+  "consentHelp": {
+    "message": "Sem consentimento, não são enviados dados para serviços externos. Com consentimento, só são verificadas mensagens ou remetentes expressamente autorizados. No nível rigoroso, podem ser enviados hashes, domínios e endereços IP públicos. O nível equilibrado permite também carregar ficheiros desconhecidos e o nível máximo permite ainda enviar URL completos. Desative esta opção para travar novas transmissões e cancelar pedidos pendentes. Os dados já enviados não podem ser recuperados. As ligações completas e os anexos exigem confirmação individual."
+  },
+  "visualImpersonation": {
+    "message": "Detecção visual: a página impersonou $BRANDS$ (pubetivo de phishing).",
+    "placeholders": {
+      "brands": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedEmail": {
+    "message": "O e-mail enviado ( $P1$) está na lista de blocos.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedDomain": {
+    "message": "Acesso ao domínio ($P1$(a) está na lista de blocos ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedEmail": {
+    "message": "O e-mail enviado ( $P1$) está na lista de permissão.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedDomain": {
+    "message": "Acesso ao domínio ($P1$(a) é a lista de inscrições ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanVisibility": {
+    "message": "Os submissões do urlscan.io não estão listados, não privados. Um URL completo pode conter dados de dados de pessoa ou tokens de aceder. Submeter apenas URLs você está autorizado a partilhar."
+  },
+  "notificationScanCount": {
+    "message": "Scanização: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "gatewayRequestTimeout": {
+    "message": "A solicitude do provedor foi anulada ou desligada."
+  },
+  "gatewayInvalidJson": {
+    "message": "O provedor de serviços devolveu uma resposta inesquecível."
+  },
+  "gatewayNetworkError": {
+    "message": "O provedor não pode ser alcançado."
+  },
+  "noMessageFound": {
+    "message": "Não foi encontrada mensagem exibida."
+  },
+  "providerNoDetection": {
+    "message": "Não há ameaça detetada"
+  },
+  "providerMalicious": {
+    "message": "Malicioso"
+  },
+  "providerSuspicious": {
+    "message": "Suspeito"
+  },
+  "providerPending": {
+    "message": "Análise pendente"
+  },
+  "privacyLocalData": {
+    "message": "Thundy AV lê a mensagem exibida, seu remetente, tópico, cabeças, texto e anexos para realizar verificações locais. verificações local funcionam sem chaves API. Não há telemetria e não há um server de análises de desenvolvedores."
+  },
+  "privacyProviders": {
+    "message": "Os pedidos exteriores autorizado irão diretamente aos provedores configureados: Hybrid Analysis para arquivos hashes e uploads, VirusTotal Para arquivos de hashes ou IP A reputação, URLhaus Para os domínios, urlscan.io Para o completo URLs e AbuseIPDB para IPs públicos. hashes podem identificar arquivos conhecidos. termos e políticas de Privacidade do provedor aplicam-se; os dados enviados podem ser partilhados pelo provedor."
+  },
+  "privacyRetention": {
+    "message": "Configurações, consentir, autorizações de envio e API As chaves estão armazenadas em seu Thunderbird O Profilo API Os registros de escaneamento local podem incluir tópicos, endereços de envio, links completos e metadados de anexo. O cache retém até 1.000 registros de mensagens por 30 dias e é limpo no start-up de base de dados."
+  },
+  "privacyControl": {
+    "message": "Desligue a análises exteriores para interromper novas solicitações e anular solicitações pendentes. Dados já transmissos não podem ser recordados. Use Cache claro para remover resultados de análises armazenados e cache de reputação. Autorizações de envio individuais podem ser removidas em definições."
+  },
+  "privacyDetailed": {
+    "message": "Política de Privacidade Detalhada (Inglês / Alemão)"
+  },
+  "senderAuthorizationsLabel": {
+    "message": "Enviadores autorizado (um endereço de e-mail por linha)"
+  },
+  "senderAuthorizationsHelp": {
+    "message": "Esses envio podem ser automaticamente escaneados quando a análises exteriores é ativada. remova um endereço para interromper os scans automáticos para futuras mensagens. Esta lista não excede o nivel de Privacidade ou o modo manual."
+  },
+  "invalidSenderAddress": {
+    "message": "Entre os endereços de e-mail, um por linha."
+  },
+  "popupSubtitle": {
+    "message": "Mensagem de Seguro Visão Geral"
+  },
+  "popupDetails": {
+    "message": "Detalhes de mensagem Técnica"
+  },
+  "popupLocalAssessment": {
+    "message": "Avaliação de Riscos Locais"
+  },
+  "popupLocalExplanation": {
+    "message": "Esta pontuação não é um antivírus verdict ou uma garantia de segurança."
+  },
+  "linkDialogTitle": {
+    "message": "Verifique antes da abertura"
+  },
+  "linkDestination": {
+    "message": "Site de Destination"
+  },
+  "linkUrlDetails": {
+    "message": "Mostrar o endereço de link completo"
+  },
+  "linkOpenBrowser": {
+    "message": "Abrir no navegador"
+  },
+  "linkOpening": {
+    "message": "Abertura…"
+  },
+  "linkOpenFailed": {
+    "message": "Não foi possível abrir a ligação. Tente novamente ou verifique as definições do navegador predefinido."
+  },
+  "linkCheckLimited": {
+    "message": "Só os resultados de escaneamento disponíveis podem ser exibidos. verificações perdidas não significam que um link é seguro."
+  },
+  "auditTitle": {
+    "message": "Link Decisão Log"
+  },
+  "auditOpen": {
+    "message": "Revisão do link log"
+  },
+  "auditScope": {
+    "message": "Logs HTTP (S) cliques interceptados por proteção de links. OPENED significa Thunderbird aceitou a solicitude de abertura sem reportar um erro. Isso não confirmar que o sistema operacional iniciou um navegador ou que o site foi visitado."
+  },
+  "auditPrivacy": {
+    "message": "Armazena localmente por até 30 dias, 2000 registros ou 2 MiB (os entros mais antigos são removidos). Full URLs pode conter dados de dados de dados ou tokens de aceder. Nada é carregado automaticamente. O log local pode ser modificado ou excluído por usuários de perfis; não é uma pista de revisão central de tamper-proof. O punho local usa o link e o contesto de mensagem clicado, não um punho de provedor. Razões de apreciação podem incluir detalhes de envio ou domínio."
+  },
+  "auditSearch": {
+    "message": "URL, ID de domínio ou evento"
+  },
+  "auditOutcome": {
+    "message": "Decisão"
+  },
+  "auditAll": {
+    "message": "Todos os"
+  },
+  "auditOpened": {
+    "message": "Abertura solicitada"
+  },
+  "auditAborted": {
+    "message": "Aborto"
+  },
+  "auditOpenError": {
+    "message": "Abertura falhou"
+  },
+  "auditPending": {
+    "message": "Não há uma solução concluída"
+  },
+  "auditMinScore": {
+    "message": "Minimo de Decisão"
+  },
+  "auditFrom": {
+    "message": "de"
+  },
+  "auditTo": {
+    "message": "Para"
+  },
+  "auditRefresh": {
+    "message": "Refresco"
+  },
+  "auditJson": {
+    "message": "Exportação JSON"
+  },
+  "auditCsv": {
+    "message": "Exportação CSV"
+  },
+  "auditClear": {
+    "message": "Remover o log local"
+  },
+  "auditExportHelp": {
+    "message": "Exportações incluem todas as linhas filtradas, não apenas a página corrente. JSON inclui um checksum SHA-256 para verificação; não prova autenticidade. CSV neutra fórmulas de folha de folha. Exportações contêm completa URLs : partilhar apenas com revisores autorizado."
+  },
+  "auditTime": {
+    "message": "Clique / tempo de escolha"
+  },
+  "auditLocalScore": {
+    "message": "Local Score (link e mensagem)"
+  },
+  "auditVerdict": {
+    "message": "FUNCIONADOR DE RESULTADO"
+  },
+  "auditAddress": {
+    "message": "URL e detalhes"
+  },
+  "auditPrevious": {
+    "message": "Anteriores"
+  },
+  "auditNext": {
+    "message": "Seguinte"
+  },
+  "auditClearConfirm": {
+    "message": "Elimine todas as entradas do log local de ligação? exporta evidências necessárias primeiro. resultados de escaneamento e definições são mantidas."
+  },
+  "auditFailure": {
+    "message": "O log do link local não pode ser lido ou salvo."
+  },
+  "auditUnavailable": {
+    "message": "Não disponível"
+  },
+  "auditScoreAtDecision": {
+    "message": "O resultado da Decisão"
+  },
+  "auditRecords": {
+    "message": "Recorde"
+  },
+  "auditDetails": {
+    "message": "Mostrar URL e evidências"
+  },
+  "auditEventId": {
+    "message": "ID do evento"
+  },
+  "auditCancelReason": {
+    "message": "razão de cancelação"
+  },
+  "auditFinalResult": {
+    "message": "Último resultado de verificação"
+  },
+  "auditProfile": {
+    "message": "ID de Profilo Local"
+  },
+  "auditExported": {
+    "message": "A exportação foi salvida."
+  },
+  "auditRiskyOpened": {
+    "message": "Acesso solicitado em alto perigo"
+  },
+  "auditExportFailed": {
+    "message": "A exportação falhou ou foi anulada."
+  },
+  "profilesTitle": {
+    "message": "Profissões de Empresa Opcional"
+  },
+  "profilesIntro": {
+    "message": "Selecione sistemas comuns independentemente ou deixe as integrações desativadas. Esses perfis preparam a sua configuração; eles não se ligam a um Serviço da empresa ou ativam o logging central."
+  },
+  "profilesOpen": {
+    "message": "Selecione o Profilo Empresarial"
+  },
+  "profilesBundle": {
+    "message": "Combinação sugestada"
+  },
+  "profilesLocal": {
+    "message": "Preparação local"
+  },
+  "profilesCustom": {
+    "message": "Seleção personalizada"
+  },
+  "profilesHosting": {
+    "message": "Hospedagem"
+  },
+  "profilesSso": {
+    "message": "Apenas uma assinatura (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Gestão de Device"
+  },
+  "profilesSiem": {
+    "message": "Seguro de Seguro (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Sistema de bilhetes"
+  },
+  "profilesRequirements": {
+    "message": "Configuração necessária"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Os endpoint e as definições da conta são entregues durante a definição mais tarde. os nomes a seguir identificam as definições necessárias e as referências secretas; não entre as credenciais aqui."
+  },
+  "profilesPreview": {
+    "message": "Projeto de Configuração"
+  },
+  "profilesPrivacy": {
+    "message": "Os dados de ligação permanecem desativados. o projeto não contém chaves API, tokens, dados de mensagem ou URLs clicados. os dados centrais são planejados com redação de domínio."
+  },
+  "profilesSave": {
+    "message": "Salva seleção local"
+  },
+  "profilesExport": {
+    "message": "Projeto de Configuração de Exportação"
+  },
+  "profilesReset": {
+    "message": "Reset seleção"
+  },
+  "profilesNone": {
+    "message": "Insuficiente / Não selecionado"
+  },
+  "profilesSelfHosted": {
+    "message": "Home / On-Premises / Otimização"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Não há definições de integração externa necessárias para esta seleção."
+  },
+  "profilesSaved": {
+    "message": "A seleção foi salvida localmente. as ligações permanecem desativadas."
+  },
+  "profilesExported": {
+    "message": "A definição foi exposta.Não foi ativado nada."
+  },
+  "profilesFailed": {
+    "message": "A seleção não podia ser carregada, salvida ou exporta, ou a operação foi anulada."
+  },
+  "wizardTitle": {
+    "message": "Configurar o Thundy AV"
+  },
+  "wizardLanguage": {
+    "message": "Idioma do assistente"
+  },
+  "wizardLanguageNote": {
+    "message": "Esta escolha aplica-se apenas ao assistente. Pode alterar o idioma da extensão nas definições."
+  },
+  "wizardWelcome": {
+    "message": "Bem-vindo"
+  },
+  "wizardProtection": {
+    "message": "Link de proteção"
+  },
+  "wizardExternal": {
+    "message": "Análise Opcional"
+  },
+  "wizardIntro": {
+    "message": "Para inspecionar um e-mail, use seu bannere Thundy AV ou ação de escaneamento. Você pode decidir mais tarde se para configure provedor de análises."
+  },
+  "wizardLocalNotice": {
+    "message": "Sem consentir para análises exteriores, nenhuma data é enviada para provedor de análises. este mago nunca concede esse consentir."
+  },
+  "wizardPrivacy": {
+    "message": "Informações de Privacidade"
+  },
+  "wizardLinkChoice": {
+    "message": "Advertindo antes de abri-los e gravar decisões localmente"
+  },
+  "wizardLinkExplanation": {
+    "message": "O diálogo de ligação mostra o alvo e a apreciação de riscos disponíveis. abertura das mãos o link para o seu navegador; não prova uma visita ao site."
+  },
+  "wizardAuditNotice": {
+    "message": "O log de ligação local pode incluir URLs completo e razões de apreciação. mantém até 30 dias, 2000 entradas ou 2 MiB. Usuários de perfis podem ler, mudá-lo ou excluí-lo; não é uma revisão corporativa protege."
+  },
+  "wizardExternalExplanation": {
+    "message": "Fornecedores exteriores são opcionais e podem exigir chaves API. Dependendo do seu grau de Privacidade, hashes, domínios, IPs públicos, arquivos ou URLs completo podem ser enviados. Configure fornecedores e conceda consentir em definições."
+  },
+  "wizardNextAction": {
+    "message": "O que você gostaria de fazer a seguir?"
+  },
+  "wizardKeepLocal": {
+    "message": "Fim com verificações locais"
+  },
+  "wizardKeepExisting": {
+    "message": "Mantenha as definições exteriores existentes"
+  },
+  "wizardExistingExternal": {
+    "message": "Análise externa já está ativada neste perfilo. o mago não muda esse consentir. Use as definições para desativá-lo ou revisar permissões."
+  },
+  "wizardConfigure": {
+    "message": "Configuração de análises exteriores em definições"
+  },
+  "wizardNoConsent": {
+    "message": "Selecionar esta opção só abre as definições. nada é carregado e não é solicitada permissão por este mago."
+  },
+  "wizardBack": {
+    "message": "Anterior"
+  },
+  "wizardNext": {
+    "message": "Seguinte"
+  },
+  "wizardFinish": {
+    "message": "Save a instalação"
+  },
+  "wizardFinishConfigure": {
+    "message": "Salve e abra as definições"
+  },
+  "wizardSkip": {
+    "message": "Não agora"
+  },
+  "wizardDone": {
+    "message": "Atualização Salva"
+  },
+  "wizardDoneText": {
+    "message": "Sua escolha de proteção de ligação foi salvo localmente.Não foi mudado nenhuma chave API, consentir externa ou aprovação do remetente."
+  },
+  "wizardSettings": {
+    "message": "SITUAÇÃO ABerta"
+  },
+  "wizardProfilesNotice": {
+    "message": "Os perfis de negócios são designs de definição opcionais. selecionando-os não ativará uma ligação corporativa."
+  },
+  "wizardDeferred": {
+    "message": "Instalação adiada"
+  },
+  "wizardDeferredText": {
+    "message": "Não foram modificadas as definições. reabre o mago das definições quando você está preparado."
+  },
+  "wizardSettingsOpened": {
+    "message": "Configura os provedores e salve o seu consenço lá."
+  },
+  "wizardSettingsFailed": {
+    "message": "As definições não podem ser abertas. a sua definição é salvida; use as definições abertas para retiro."
+  },
+  "wizardSaveFailed": {
+    "message": "A instalação não pode ser salvida. suas opções permanecem aqui; por favor, retire."
+  },
+  "wizardLoadFailed": {
+    "message": "Nenhuma página foi salvida.Reload esta página para retiro."
+  },
+  "wizardLanguageFailed": {
+    "message": "A língua não pode ser carregada. a língua anterior permanece selecionada."
+  },
+  "wizardReopen": {
+    "message": "Avaliação do Mágico"
+  },
+  "settingsAppearance": {
+    "message": "Aspeto"
+  },
+  "settingsPrivacy": {
+    "message": "Privacidade"
+  },
+  "settingsScanning": {
+    "message": "Proteção"
+  },
+  "settingsProviders": {
+    "message": "Serviços de análise"
+  },
+  "settingsSenders": {
+    "message": "Regras de remetentes"
+  },
+  "settingsData": {
+    "message": "Dados e ferramentas"
+  },
+  "settingsWorkspace": {
+    "message": "Seu Espaço de trabalho"
+  },
+  "settingsEyebrow": {
+    "message": "Faça isso seu"
+  },
+  "settingsSubtitle": {
+    "message": "Personalize o aspeto do Thundy AV e a proteção do seu correio eletrónico."
+  },
+  "settingsLocalBadge": {
+    "message": "Local por default"
+  },
+  "settingsLocalNote": {
+    "message": "Sua preferência. armazenado neste aparelho."
+  },
+  "settingsSkip": {
+    "message": "Escape para as definições"
+  },
+  "settingsProviderGuide": {
+    "message": "Acerca de provedor e chaves API"
+  },
+  "settingsWizardHelp": {
+    "message": "Revise a definição guiada a qualquer momento."
+  },
+  "themeIntro": {
+    "message": "Faça com que Thundy AV sinta como o seu. As variações de aparência são salvas de imediato através do add-on."
+  },
+  "themeMode": {
+    "message": "Aspeto"
+  },
+  "themeSystem": {
+    "message": "Usar o tema do Thunderbird"
+  },
+  "themeLight": {
+    "message": "Claro"
+  },
+  "themeDark": {
+    "message": "Escuro"
+  },
+  "themeAccent": {
+    "message": "A acentuação de cores"
+  },
+  "themeOcean": {
+    "message": "Oceano"
+  },
+  "themeViolet": {
+    "message": "Violeta"
+  },
+  "themeForest": {
+    "message": "Floresta"
+  },
+  "themeAmber": {
+    "message": "Âmbar"
+  },
+  "themeReady": {
+    "message": "A aparença é salvida automaticamente. Outras definições usam o botão Salva."
+  },
+  "themeSaving": {
+    "message": "Acompanhe a aparência…"
+  },
+  "themeSaved": {
+    "message": "A aparência foi salvida."
+  },
+  "themeLoadError": {
+    "message": "A aparência não pode ser carregada. tente reabre as definições."
+  },
+  "themeSaveError": {
+    "message": "A aparência não pode ser salvida. selecione sua escolha de novo para se retirar."
+  },
+  "themeRetry": {
+    "message": "Retiro de aparência de poupança"
+  },
+  "themeDensity": {
+    "message": "Densidade de Informação"
+  },
+  "themeComfortable": {
+    "message": "Comoda"
+  },
+  "themeCompact": {
+    "message": "Compacto"
+  },
+  "themeDensityHelp": {
+    "message": "Ajuste o espaçamento em definições e fermos de administração local."
+  },
+  "profilesChanges": {
+    "message": "Mudanças em relação à seleção salgada"
+  },
+  "profilesDiscard": {
+    "message": "Desconheça as mudança não salvas"
+  },
+  "profilesLoadRetry": {
+    "message": "Reload Salvação"
+  },
+  "profilesNotLoaded": {
+    "message": "Seleção não carregada"
+  },
+  "profilesUnsaved": {
+    "message": "Mudanças inactivas - Projeto de Mudanças Inactivas"
+  },
+  "profilesUnchanged": {
+    "message": "Avaliação de Projetos de Seleção · Inativa"
+  },
+  "profilesSaving": {
+    "message": "Avaliação da seleção local…"
+  },
+  "settingsUnsaved": {
+    "message": "Mudanças inesquecíveis"
+  },
+  "providerUnknown": {
+    "message": "O resultado desconhecido"
+  },
+  "auditVerdictAtDecision": {
+    "message": "O resultado da Decisão"
+  },
+  "ui_169": {
+    "message": "Protetor de Análise: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "ID de trabalho: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "ID de Envio: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protokolo retomado: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": "O resultado é automaticamente recogido a cada $P1$ segundo (atempt $P2$); o protocolo de análises concluídas é aqui apresentado sem uma nova solicitude uma vez que é armazenado.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "Após um reinicialização ou uma perda de processamento, isso permanece pendente; não indique que o link foi aberta ou anulada."
+  },
+  "auditCancelUser": {
+    "message": "Cancelado pelo usuário"
+  },
+  "auditCancelEscape": {
+    "message": "fechado com escapamento"
+  },
+  "auditCancelDestination": {
+    "message": "Destinado mudou"
+  },
+  "auditCancelContext": {
+    "message": "Mensagem de Contexto fechado"
+  },
+  "auditCancelUnknown": {
+    "message": "Razão desconhecida de cancelação"
+  },
+  "reportNotSaved": {
+    "message": "O relato é visível, mas não podia ser salvo localmente. reabrir para retiro."
+  },
+  "checkOrigin_live": {
+    "message": "O resultado do provedor"
+  },
+  "checkOrigin_stored": {
+    "message": "Conservação de resultados"
+  },
+  "checkOrigin_none": {
+    "message": "Não há observância do provedor"
+  },
+  "checkOutcome_success": {
+    "message": "A solicitude foi bem sucedida"
+  },
+  "checkOutcome_failed": {
+    "message": "Pedido falhou"
+  },
+  "checkOutcome_disabled": {
+    "message": "Analise externa desativada"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Permissão de hospedagem falhada"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Falta de chave de entrega"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Não há referência de provedor"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Não há nova solicitude"
+  },
+  "checkOutcome_no_result": {
+    "message": "Não há novo resultado usável"
+  },
+  "checkAttempted": {
+    "message": "Verificar tentativa"
+  },
+  "checkObserved": {
+    "message": "O resultado observado"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Razões para a Decisão"
+  },
+  "auditReasonsLatest": {
+    "message": "Últimas razões disponíveis"
+  },
+  "auditReasonsMissing": {
+    "message": "Não registrado no momento"
+  },
+  "coverageSummary": {
+    "message": "Avaliação – Detetado: $1• Eligível : $2• processado : $3e falharam: $4e escapado: $5Os itens desviados são inavaliados."
+  },
+  "supportTitle": {
+    "message": "Relatórios de apoio local"
+  },
+  "supportHelp": {
+    "message": "Preview um relato de diagnoza mínima, então salve localmente. nada é enviado. checksums não autenticam a sua fonte."
+  },
+  "supportPreview": {
+    "message": "Relatórios Previsão"
+  },
+  "supportConfiguration": {
+    "message": "Incluir definições fortes (sem chaves ou listas de envio)"
+  },
+  "supportSave": {
+    "message": "Salve o relato local"
+  },
+  "coverageAttachments": {
+    "message": "Atacamentos"
+  },
+  "coverageDomains": {
+    "message": "Domínios Únicos"
+  },
+  "coverageBatch": {
+    "message": "Batch Línicas"
+  },
+  "coverageLimits": {
+    "message": "Limites por passagem: 100 adesões, 25 MiB por adesão, 100 domínios únicos, 20 links de pacote."
+  },
+  "localProfileTitle": {
+    "message": "Profis Locais"
+  },
+  "localProfileHelp": {
+    "message": "Exportação de aparência salvo ou definições de proteção local separadamente. Previsão e confirmar as importações. Chaves, consentivos, permissões, enviadores confiáveis e história de revisão são excluídos."
+  },
+  "localProfileExport": {
+    "message": "Aparência de Exportação"
+  },
+  "localProfileFile": {
+    "message": "Selecione um arquivo de perfis (JSON, até 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Profilo JSON (ou colher aqui)"
+  },
+  "localProfilePreview": {
+    "message": "Previsão de mudança"
+  },
+  "localProfileApply": {
+    "message": "Aplique as mudança exibidas"
+  },
+  "localProfileDiscard": {
+    "message": "Desacordo com a Importação"
+  },
+  "localProfileInvalid": {
+    "message": "Profilo invalido, versão não suportada ou campo proibido. nada foi aplicado."
+  },
+  "localProfileChanged": {
+    "message": "A aparência mudou desde a previsão. previsão de novo antes de aplicar."
+  },
+  "localProfileFailed": {
+    "message": "O seu perfis não pode ser salvo. Revise as definições atuais e retire."
+  },
+  "localProfileApplied": {
+    "message": "Aparição do perfis aplicado. proteção e consentir inalterado."
+  },
+  "analysisTitle": {
+    "message": "Análise das Fonte"
+  },
+  "analysisMixed": {
+    "message": "+ Externas e controles"
+  },
+  "analysisExternal": {
+    "message": "Observativos Externos disponíveis"
+  },
+  "analysisLocal": {
+    "message": "Local · Nenhum resultado externa registrado"
+  },
+  "analysisLocalChecked": {
+    "message": "A mensagem local/link heurística completa."
+  },
+  "analysisLocalPending": {
+    "message": "Avaliação local ainda não foi registrada."
+  },
+  "analysisUnknown": {
+    "message": "desconhecido"
+  },
+  "analysisTimeUnknown": {
+    "message": "tempo não registrado"
+  },
+  "analysisObserved": {
+    "message": "Última resposta usável"
+  },
+  "analysisFindingObserved": {
+    "message": "Encontrar registado"
+  },
+  "analysisAttempted": {
+    "message": "Última tentativa de solicitude"
+  },
+  "analysisPartial": {
+    "message": "Algumas solicitações falharam; os resultados disponíveis não cobrem todos os itens."
+  },
+  "analysisOtherServices": {
+    "message": "Outros serviços / não verificado"
+  },
+  "analysisLimit": {
+    "message": "Um resultado local não é um antivírus verdict. pedidos e carregamentos não são análises concluídas. resultados armazenados mantêm sua vida original; registros falhando não provam que nenhuma solicitude anterior ocorreu."
+  },
+  "analysisScope_hash": {
+    "message": "Reputação de arquivo hash"
+  },
+  "analysisScope_file": {
+    "message": "Ficheiro de submissão"
+  },
+  "analysisScope_url": {
+    "message": "Análise URL"
+  },
+  "analysisScope_domain": {
+    "message": "Reputação de Domínio"
+  },
+  "analysisScope_ip": {
+    "message": "Publicidade IP reputação"
+  },
+  "analysisScope_report": {
+    "message": "Relatórios de Análise"
+  },
+  "analysisState_running": {
+    "message": "Solicitado · Não há resultado finito ainda"
+  },
+  "analysisState_checked": {
+    "message": "O resultado recebido"
+  },
+  "analysisState_received": {
+    "message": "Resposta recebida · sentença não disponível"
+  },
+  "analysisState_submitted": {
+    "message": "Acesso aceito · Análise não confirmada completa"
+  },
+  "analysisState_not_found": {
+    "message": "Não encontrados registros de provedor"
+  },
+  "analysisState_failed": {
+    "message": "A petição falhou; não há novo julgamento"
+  },
+  "analysisState_incomplete": {
+    "message": "Não há análises completas registradas"
+  },
+  "analysisSource_remote": {
+    "message": "Serviço Externo Contato"
+  },
+  "analysisSource_cache": {
+    "message": "Cache de memória · Não há nova solicitude de provedor"
+  },
+  "analysisSource_stored": {
+    "message": "Acompanhe a observância externa"
+  },
+  "analysisSource_attempt": {
+    "message": "Request tentativo · resposta não confirmada"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Verdade não disponível"
+  },
+  "analysisVerdict_none": {
+    "message": "Resumo disponível: Não há detecção (não há garantia de segurança)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "Os resultados disponíveis incluem indicadores suspeitos"
+  },
+  "analysisVerdict_malicious": {
+    "message": "Os resultados disponíveis incluem uma detecção de ameaças"
+  },
+  "analysisReason_unconfigured": {
+    "message": "Atualmente não está definido"
+  },
+  "analysisReason_disabled": {
+    "message": "Novas solicitações exteriores são desativadas"
+  },
+  "analysisReason_permission": {
+    "message": "Permissão de hospedagem ausente para novas solicitações"
+  },
+  "analysisReason_authorization": {
+    "message": "Não há autorização automática para esta mensagem / modo manual"
+  },
+  "analysisReason_policy": {
+    "message": "Não permitido pelo padrão de Privacidade"
+  },
+  "analysisReason_on_action": {
+    "message": "Apenas após uma ação de link explícita"
+  },
+  "analysisReason_unrecorded": {
+    "message": "Não há verificação registrada para esta mensagem"
+  },
+  "analysisUnavailable": {
+    "message": "Fontes de análises atualmente não disponíveis"
+  },
+  "analysisModeUnknown": {
+    "message": "Avaliação de dados ainda não registrada"
+  },
+  "analysisModeRunning": {
+    "message": "External solicitude correndo · resultado pendente"
+  },
+  "analysisModeSubmitted": {
+    "message": "Submetido externa · Análise ainda não completa"
+  },
+  "analysisModeIncomplete": {
+    "message": "External check incomplete · completamento não confirmado"
+  },
+  "analysisModePartial": {
+    "message": "Outros resultados disponíveis · Algumas solicitações falharam"
+  },
+  "analysisModeFailed": {
+    "message": "Solicitude externa falhou · não foi registrado resultado usável"
+  },
+  "analysisModeResults": {
+    "message": "Resposta externa disponível · ver verificações por baixo"
+  },
+  "analysisResourceMessage": {
+    "message": "Contexto de mensagem / Reputação de transporte"
+  },
+  "analysisResourceAttachment": {
+    "message": "Atacado"
+  },
+  "analysisResourceLink": {
+    "message": "Ligação"
+  },
+  "analysisResourceUnknown": {
+    "message": "Resumo anterior · Resumo não registrado"
+  },
+  "analysisTruncated": {
+    "message": "Alguns detalhes de recursos foram omitidos porque o limit de exibição local foi alcançado."
+  },
+  "analysisResources": {
+    "message": "Resursos nesta mensagem"
+  },
+  "analysisResourceLocal": {
+    "message": "A ligação armazenada com a mensagem · não prova de uma antivírus escaneamento"
+  },
+  "analysisResourceTarget": {
+    "message": "Arranjo de Conteúdo remoto não é prova de uma análises externa"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Não há verificação externa registrada para esta fonte"
+  },
+  "analysisContextChanged": {
+    "message": "O texto mudou e o post foi fechado e reabri antes de reenviar."
+  },
+  "analysisLocalIncomplete": {
+    "message": "A análises local são incompletas: alguns contidos de mensagem não estão disponíveis."
+  },
+  "analysisLocalUnavailable": {
+    "message": "A análises local não está disponível: a mensagem não pode ser lida."
+  },
+  "analysisHistoryTitle": {
+    "message": "História de armazenamento · associado não confirmado"
+  },
+  "analysisHistoryWarning": {
+    "message": "Esses registros de história podem pertencer a outra mensagem com o mesmo Message-ID. eles não confirmam um check desta mensagem."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Novas notícias de origem não poderiam ser salvas. história existente foi mantida."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "Uma actualização de relatórios não podia ser salvida. os protocolo anterior foram mantidos."
+  },
+  "sourceExportOpen": {
+    "message": "Análise de origem relatórios"
+  },
+  "sourceExportTitle": {
+    "message": "Análise de fonte"
+  },
+  "sourceExportIntro": {
+    "message": "Crie uma foto local dos controles registados. isto não executa uma nova análises. observas atuais e história armazenada com uma associativa não confirmada são mantidas separadas."
+  },
+  "sourceExportPrivacy": {
+    "message": "Inclui serviços, estatutos, verdades e horários de observância exatos. Exclude URLs, filenames, hashes, IPs, chaves, texto de mensagem e identificadores internos. Números de recursos aplicam-se apenas dentro deste relato. Este não é um historial completo ou um registo autenticado. Nada é enviado automaticamente. Revisão antes de partilhar."
+  },
+  "sourceExportCancel": {
+    "message": "Previsão Discard"
+  },
+  "sourceExportContentLabel": {
+    "message": "Previsão do relato ( JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "O contesto de mensagem não está mais disponível. reabre o relato do seu popup de barras de fermento de mensagem."
+  },
+  "sourceExportChanged": {
+    "message": "O estado registado mudou. crie uma nova previsão antes de economizar."
+  },
+  "sourceExportReady": {
+    "message": "Revise a previsão antes de economizar ou partilhar."
+  },
+  "sourceExportRequested": {
+    "message": "Verifique a completão em downloades Thunderbird."
+  },
+  "sourceExportFailed": {
+    "message": "O relato não foi salvo. crie uma nova previsão para tente de novo."
+  },
+  "analysisHistoryPages": {
+    "message": "Páginas Históricas"
+  },
+  "analysisHistoryEntries": {
+    "message": "Entradas"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Detenção Histórica Suspeita ou Maligna · A Assembleia não confirmada"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Mostre primeiro aviso Histórico"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Mostrar a mais forte descoberta"
+  },
+  "reportDisplayFailed": {
+    "message": "Um relato armazenado não pode ser exibido. Outros resultados permanecem disponíveis."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Alguns detalhes de relatórios têm um formato não suportado e não poderiam ser exibidos."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Alguns dados de análises armazenados não poderiam ser lidos; outros resultados permanecem disponíveis."
+  },
+  "analysisModeResponses": {
+    "message": "Resposta recebida · Não há julgamento disponível"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Resposta recebida sem um julgamento avaliável · Algumas solicitações falharam"
+  },
+  "analysisCurrentAvailability": {
+    "message": "Para novas solicitações"
+  },
+  "reasonMaliciousIp": {
+    "message": "Endereço de um server malicioso IP detetado ( $IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "Indicadores de ameaça externa (URLhaus e IP Reputação)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus – Domínios de malware conhecido detetado: $DOMAINS$",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "IP Reputação ( $PROVIDER$) – IPs de servidores suspeitos: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "urlscan.io resultados:"
+  },
+  "urlscanStatus": {
+    "message": "Estadão: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridReportLink": {
+    "message": "Início Notícias Hybrid Analysis"
+  },
+  "hybridProviderMessage": {
+    "message": "Mensagem do Provedor: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "O limit de taxa ou quota Hybrid Analysis foi alcançado. por favor tente mais uma vez mais."
+  },
+  "reasonArchivedMaliciousAttachment": {
+    "message": "Histórico da História ($OBSERVED$). $PROVIDER$ Acessórios classificados »$NAME$“Tão maligno como isso.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonArchivedSuspiciousAttachment": {
+    "message": "Histórico da História ($OBSERVED$). $PROVIDER$ Acessórios classificados »$NAME$“Tão suspeito quanto.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonMaliciousAttachment": {
+    "message": "A ligação \" $NAME$ \" foi classificada como maliciosa por $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "A ligação \" $NAME$ \" foi classificada como suspeita por $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanReportLink": {
+    "message": "Início Notícias urlscan.io"
+  },
+  "hybridLinkVerdictStatus": {
+    "message": "Hybrid Analysis: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonMaliciousLinkVerdict": {
+    "message": "O link \" $URL$ \" foi classificado como malicioso por $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousLinkVerdict": {
+    "message": "O link \" $URL$ \" foi classificado como suspeito por $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanErrorDetails": {
+    "message": "Fonte: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "O limit de taxa ou quota urlscan.io foi alcançado. por favor tente mais uma vez mais."
+  },
+  "urlscanInvalidKey": {
+    "message": "Invalida ou não autorizada urlscan.io API chave."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "O resultado não estava preparado dentro da janela de inquérito. a escaneamento aceite pode ser verificado de novo sem uma nova encomenda."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "O domínio não pode ser resolvido por urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "O item ainda não foi registrado em Hybrid Analysis (não foi encontrado nenhuma análises prévias)."
+  },
+  "virustotalNotFound": {
+    "message": "O item ainda não foi registado na base de dados VirusTotal."
+  },
+  "virustotalRateLimited": {
+    "message": "O limit de taxa ou quota VirusTotal foi alcançado. por favor tente mais uma vez mais."
+  },
+  "virustotalInvalidKey": {
+    "message": "Invalida ou não autorizada VirusTotal API chave."
+  },
+  "abuseipdbRateLimited": {
+    "message": "O limit de taxa ou quota AbuseIPDB foi alcançado. por favor tente mais uma vez mais."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Invalida ou não autorizada AbuseIPDB API chave."
+  },
+  "urlhausRateLimited": {
+    "message": "O limit de taxa ou quota URLhaus foi alcançado. por favor tente mais uma vez mais."
+  },
+  "urlhausInvalidKey": {
+    "message": "Invalida ou não autorizada URLhaus API chave."
+  },
+  "testApiKeyButton": {
+    "message": "Testar ligação"
+  },
+  "testApiKeyTesting": {
+    "message": "Testando a ligação…"
+  },
+  "testApiKeyValid": {
+    "message": "A solicitude foi aceita. isto não confirmará os seus dados de carregamento ou a quota restante."
+  },
+  "testApiKeyInvalid": {
+    "message": "Falta de ligação: Invalida a chave API."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Limite de taxa ou quota alcançado. por favor tente mais tarde."
+  },
+  "testApiKeyError": {
+    "message": "O test de ligação falhou."
+  },
+  "testApiKeyEmpty": {
+    "message": "Por favor, entre uma chave API primeiro."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "A permissão de se ligar ao host de serviços foi negada."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Por favor, selecione um provedor de reputação IP primeiro."
+  },
+  "rateLimitWithWait": {
+    "message": "Limite de taxa ou quota alcançado. por favor tente de novo em $SECONDS$ segundo.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Limite de taxa alcançado"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Invalida API chave"
+  },
+  "auditErrorCode": {
+    "message": "Código de erro"
+  },
+  "auditErrorDetails": {
+    "message": "Erro detalhes"
+  },
+  "auditRetryAfter": {
+    "message": "Espere o tempo"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ segundo",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "securityTitle": {
+    "message": "Gestão e proteção de links"
+  },
+  "securityScope": {
+    "message": "Local para este profil Thunderbird. Não impede as mudança de perfis, desativando o add-on ou abrando links copiados em outro lugar."
+  },
+  "securityAdminPassword": {
+    "message": "Password do administrador (12+ caracteres; deixe branco para guardar)"
+  },
+  "securityApprovalPassword": {
+    "message": "Parábolas de aprovação de ligação separadas (12+ caracteres; deixe branco para guardar)"
+  },
+  "securityThreshold": {
+    "message": "Requer aprovação com pontuação de riscos (0-100 incluído)"
+  },
+  "securityEnablePolicy": {
+    "message": "Aplicando proteção de ligação"
+  },
+  "securityUnknownApproval": {
+    "message": "Exige aprovação para verificações incompletas também"
+  },
+  "securityUnlock": {
+    "message": "Desbloquear as definições"
+  },
+  "securitySave": {
+    "message": "Salvação de proteção"
+  },
+  "securityLock": {
+    "message": "LOCO agora"
+  },
+  "securityDisable": {
+    "message": "Remover a senha de definição"
+  },
+  "securityRecovery": {
+    "message": "Código de Recuperação"
+  },
+  "securityRecover": {
+    "message": "Resetando a senha do admin usando o Código"
+  },
+  "securityStopTransfers": {
+    "message": "- Parar as transferências exteriores"
+  },
+  "securityLocked": {
+    "message": "As definições estão bloqueadas. Introduza a palavra-passe de administrador para as desbloquear."
+  },
+  "securityUnlocked": {
+    "message": "Configurações desbloqueadas; fechando após cinco minutos sem ativação."
+  },
+  "securityOptional": {
+    "message": "A proteção de senhas é opcional e atualmente desligada. sem uma senha de aprovação, links protege-se permanecem bloqueios."
+  },
+  "securityError": {
+    "message": "Verifique sua senha, sessão e entrada."
+  },
+  "securityWait": {
+    "message": "E muito tempo, esperando antes de se aposentar."
+  },
+  "securityLength": {
+    "message": "Use pelo menos 12 caracteres e senhas diferentes."
+  },
+  "securityRecoverySave": {
+    "message": "Salve este único Código de Recuperação separadamente. não será mostrado mais:"
+  },
+  "securitySaved": {
+    "message": "As proteções foram salvas."
+  },
+  "securityDisableConfirm": {
+    "message": "Remover a senha de definições? proteção de links permanece configure."
+  },
+  "securityStopped": {
+    "message": "As transferências exteriores foram interrompidas."
+  },
+  "securityApprovalTitle": {
+    "message": "Aprovação de Conteúdo Potencialmente Perigoso"
+  },
+  "securityConfirmDanger": {
+    "message": "Eu gostaria de abri-lo este potencialmente perigoso, de qualquer forma."
+  },
+  "securityApproveOnce": {
+    "message": "Aproveite e abra uma vez"
+  },
+  "securityExpired": {
+    "message": "A aprovação expirou ou o contesto mudou. reiniciar com a mensagem."
+  },
+  "securityOpened": {
+    "message": "A Thunderbird aceitou a solicitude de abertura."
+  },
+  "securityApprovalFailed": {
+    "message": "A abertura foi recusada. Verifique a palavra-passe ou, se a aprovação tiver expirado, reinicie o pedido na mensagem."
+  },
+  "providerTestDisclosure": {
+    "message": "Isso envia seus dados de testes chave e fixas do API para o provedor selecionado, sem o seu texto. um test de leitura bem sucedido não verifica o download ou a quota disponível."
+  },
+  "analysisSimple": {
+    "message": "Avaliação"
+  },
+  "analysisExpert": {
+    "message": "Detalhes Técnicos"
+  },
+  "analysisSimpleNone": {
+    "message": "Não há sinais suspeitos encontrados"
+  },
+  "analysisSimpleCaution": {
+    "message": "Suspeita"
+  },
+  "analysisSimpleDanger": {
+    "message": "Descoberta maliciosa"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Verificação incompleta"
+  },
+  "analysisScoreExplanation": {
+    "message": "A pontuação de risco baseia-se em regras e não representa uma probabilidade nem uma garantia de segurança."
+  },
+  "analysisSimpleBasis": {
+    "message": "Serviços com resultados / não disponíveis"
+  },
+  "analysisProviderSetup": {
+    "message": "Acesso ao provedor e a disseminação de dados"
+  },
+  "analysisProviderConfigured": {
+    "message": "A chave está configure; armazenando não começa uma escaneamento."
+  },
+  "analysisProviderNoKey": {
+    "message": "Não há chave definida"
+  },
+  "analysisDataHash": {
+    "message": "Impressão de Fingerprint ( SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Acessão completa"
+  },
+  "analysisDataUrl": {
+    "message": "URL completo; pode conter tokens confidentais"
+  },
+  "analysisDataDomain": {
+    "message": "Link Domínio"
+  },
+  "analysisDataIp": {
+    "message": "Public IP de mensagens de texto"
+  },
+  "analysisDataReport": {
+    "message": "Relatórios Identificadores"
+  },
+  "analysisApprovalRequired": {
+    "message": "Exige aprovação adicional; anula ou solicita um administrador."
+  },
+  "analysisContinueWarning": {
+    "message": "Revise as razões antes de continuar. você pode anular."
+  },
+  "analysisConflict": {
+    "message": "Os provedores discordam; as resultados são prioridades."
+  },
+  "analysisExportSensitive": {
+    "message": "Revisão antes da exportação: detalhes de tecnologia podem identificar recursos de mensagem."
+  },
+  "scanActions": {
+    "message": "Verificações Externas"
+  },
+  "scanStart": {
+    "message": "Verificar agora"
+  },
+  "scanRepeat": {
+    "message": "Verificar novamente"
+  },
+  "scanRefresh": {
+    "message": "Atualizar resultados"
+  },
+  "scanRunning": {
+    "message": "External cheque em progresso"
+  },
+  "scanProgress": {
+    "message": "Recursos completos"
+  },
+  "scanMigrationNotice": {
+    "message": "Selecione um modo de escaneamento automático em definições. até então, as regras do remetente anterior e manual se aplicam."
+  },
+  "scanState_idle": {
+    "message": "Não há trabalho de escaneamento ativo neste sentido."
+  },
+  "scanState_queued": {
+    "message": "Verificar aceito; aguardar para o começo"
+  },
+  "scanState_running": {
+    "message": "External cheque em progresso"
+  },
+  "scanState_completed": {
+    "message": "Verificação concluída"
+  },
+  "scanState_pending": {
+    "message": "O operador ainda está a processar; os resultados são atualizados"
+  },
+  "scanState_incomplete": {
+    "message": "Verificar incompletos; alguns resultados estão faltando"
+  },
+  "scanState_failed": {
+    "message": "Verificar falhou; tente de novo"
+  },
+  "scanState_blocked": {
+    "message": "Não há verificação externa iniciada; ver os pedidos a seguir"
+  },
+  "analysisReason_manual": {
+    "message": "Maneiras de modo manual"
+  },
+  "analysisReason_sender": {
+    "message": "Envio não aprovação"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Análise de ligação automática"
+  },
+  "analysisReason_no_resources": {
+    "message": "Não correspondem recursos"
+  },
+  "analysisReason_quota": {
+    "message": "Quota alcançada; espera antes de se retirar"
+  },
+  "analysisReason_running": {
+    "message": "O operador é processado"
+  },
+  "analysisReason_provider_error": {
+    "message": "Pedido de provedor falhou"
+  },
+  "scanModeLabel": {
+    "message": "Scanes Externos Automáticos"
+  },
+  "scanModeKeep": {
+    "message": "Manter a definição anterior (escolha um modo)"
+  },
+  "scanModeAll": {
+    "message": "Todas as mensagens abertas"
+  },
+  "scanModeSenders": {
+    "message": "Apenas remetentes aprovados"
+  },
+  "scanModeManual": {
+    "message": "Apenas manualmente"
+  },
+  "scanModeHelp": {
+    "message": "As verificações automáticas enviam apenas hashes, domínios e endereços IP públicos. As ligações completas e os anexos têm de ser aprovados individualmente. As mensagens por abrir ficam no dispositivo."
+  },
+  "assessmentCompletion": {
+    "message": "- estatuto de processamento"
+  },
+  "assessmentCompletion_pending": {
+    "message": "O operador ainda está processando"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Relato de retorno completo"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "Não há uma apreciação concluída disponível"
+  },
+  "assessmentCompletion_failed": {
+    "message": "A processamento tecnico falhou"
+  },
+  "assessmentConflict": {
+    "message": "Diferentes avalios parciais; a mais forte descoberta determinará a ação."
+  },
+  "assessmentSignals": {
+    "message": "Base de Avaliação"
+  },
+  "assessmentJob": {
+    "message": "ID do Provedor de Emprego"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Provedor de Verdade"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Escaneamento de Descoberta"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "O primeiro punho de ameaça"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "O resultado da multiconcepção"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Nível de ameaça original"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Indicação do Provedor de Fonte Branco"
+  },
+  "assessmentSignal_overall": {
+    "message": "Avaliação Geral do Urlscan"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Avaliação do motor urlscan"
+  },
+  "assessmentSignal_engines": {
+    "message": "Outros resultados de motores"
+  },
+  "assessmentSignal_brand": {
+    "message": "Indicação de marca; não identifica o perigo por si só"
+  },
+  "assessmentSignal_report": {
+    "message": "Relato Estado"
+  },
+  "assessmentOriginal": {
+    "message": "Provedor original de julgamento"
+  },
+  "hybridExpertTitle": {
+    "message": "API v2 detalhes de relatórios"
+  },
+  "hybridExpertScope": {
+    "message": "Somente os campi realmente recebidos são exibidos. Um escaneamento rápido não prova uma execução completa da sandbox. Dados perdidos não são uma descoberta negativa. URLs omite credenciais, linhas de query e fragments; linhas de comando e relatórios crus não são exibidas. Abertura desses detalhes não envia nenhuma solicitude."
+  },
+  "hybridExpertMissing": {
+    "message": "Não incluído neste relato"
+  },
+  "hybridExpertYes": {
+    "message": "Sim"
+  },
+  "hybridExpertNo": {
+    "message": "Não"
+  },
+  "hybridExpert_identity": {
+    "message": "Identificação de arquivo e recursos"
+  },
+  "hybridExpert_assessment": {
+    "message": "Avaliação e processamento originais"
+  },
+  "hybridExpert_scanners": {
+    "message": "Scanner resultados"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Detecção individual de antivírus"
+  },
+  "hybridExpert_reports": {
+    "message": "Relatórios de Sandbox"
+  },
+  "hybridExpert_counts": {
+    "message": "Relatórios totais"
+  },
+  "hybridExpert_signatures": {
+    "message": "Assinatura comportamentais"
+  },
+  "hybridExpert_mitre": {
+    "message": "Avaliação AT&CK"
+  },
+  "hybridExpert_network": {
+    "message": "Indicadores de rede"
+  },
+  "hybridExpert_processes": {
+    "message": "Processo"
+  },
+  "hybridExpert_extracted": {
+    "message": "Arquivos extraídos"
+  },
+  "hybridExpert_certificates": {
+    "message": "Certificação"
+  },
+  "hybridExpertEmpty": {
+    "message": "Fornecido como uma lista vazia; não há entradas reportadas"
+  },
+  "securityPasswordHelp": {
+    "message": "proteção opcional para este perfilo. Use senhas diferentes de pelo menos doze caracteres para administração e aprovação de links. Deixe novos campi de senhas vazos para guardar senhas existentes. Salve o Código de Recuperação de uma vez separadamente."
+  },
+  "securityAdminConfirm": {
+    "message": "Confirmar a nova senha do administrador"
+  },
+  "securityApprovalConfirm": {
+    "message": "Confirmar nova senha de aprovação de link"
+  },
+  "securityRecoveryPassword": {
+    "message": "Novo senhor de contrasinal para a restauração"
+  },
+  "securityApprovalConfigured": {
+    "message": "Uma senha de aprovação de link é configurada; pode ser substitua, mas nunca exibida."
+  },
+  "securityApprovalMissing": {
+    "message": "Não há senha de aprovação de link configure. links que exigem aprovação da senha permanecem bloqueiados."
+  },
+  "securityConfirmMismatch": {
+    "message": "As novas senhas e suas confirmativas não se encaixam."
+  },
+  "securityUnlockPassword": {
+    "message": "Password do administrador"
+  },
+  "displaySettingsTitle": {
+    "message": "Análise de exibição"
+  },
+  "displaySettingsHelp": {
+    "message": "As preferências de exibição não mudam as escaneamento, transferências exteriores, pontuações ou proteção de links. Você ainda pode intervir entre a visão de exibições e a visão especializada ao ler os resultados."
+  },
+  "displayDefaultView": {
+    "message": "Visão padrão para mensagem e popup"
+  },
+  "displayHybridDetails": {
+    "message": "Mostrar as seções adicionais de relatórios do Hybrid API"
+  },
+  "displaySave": {
+    "message": "Salve as preferências de exibição"
+  },
+  "displaySaved": {
+    "message": "Preferências de visualização salvas."
+  },
+  "urlscanDnsError": {
+    "message": "O provedor não conseguiu resolver o domínio alvo."
+  },
+  "urlscanInvalidRequest": {
+    "message": "O provedor rejeitou os parâmetros de submissão inadequados."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "O provedor rejeitou a encomenda; a resposta não constata um fallo DNS."
+  },
+  "analysisQuotaReset": {
+    "message": "Avaliação de quota de resgate"
+  },
+  "analysisRetryAt": {
+    "message": "A primeira retração"
+  },
+  "analysisLocalBackoff": {
+    "message": "Esta tentativa foi desviada localmente; nenhuma nova solicitude de provedor foi enviada."
+  },
+  "scanState_deferred": {
+    "message": "Análise desferida: todas as slotes de fundo são ocupadas. retorno após outro análises terminados."
+  },
+  "scanCoverage": {
+    "message": "Alguns recursos não foram controlados."
+  },
+  "scanCoverageAttachments": {
+    "message": "Acessórios preparados"
+  },
+  "scanCoverageLinks": {
+    "message": "links selecionados"
+  },
+  "scanCoverage_read_failed": {
+    "message": "Um anexo não pode ser lido ou hashed."
+  },
+  "scanCoverage_size_limit": {
+    "message": "Um anexo excede o limit de escaneamento de 25 MiB."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "O limites de recursos de escaneamento foram alcançados."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "O anexo de anexo é incompleto."
+  },
+  "scanFailure_source_capacity": {
+    "message": "A história da fonte está cheia. este check não foi iniciado; registros existentes foram mantidos."
+  },
+  "scanFailure_cancelled": {
+    "message": "A verificação foi anulada.Não há resultado concluído."
+  },
+  "scanFailure_timeout": {
+    "message": "A verificação foi concluída, os resultados permanecem incompletos."
+  },
+  "scanFailure_scan_failed": {
+    "message": "O check não conseguiu ser concluído. registros existentes foram mantidos."
+  },
+  "localProtectionProfileExport": {
+    "message": "Definição de proteção de exportação"
+  },
+  "localProfileYes": {
+    "message": "Sim"
+  },
+  "localProfileNo": {
+    "message": "Não"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Profiles de proteção mais antigos não podem ampliar o alcance de escaneamento automático ou desligar a submissão URL. A previsão mostra o resultado efetivo."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "A história da fonte existente não pode ser lida e foi preservada inalterada."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "Um conflicto de armazenamento impediu que a história da fonte fosse estendida."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "O arquivo fonte para esta mensagem atingiu seu limit de entrada."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "O arquivo fonte para esta mensagem atingiu seu limit de armazenamento."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "O aceder ao armazenamento local falhou."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Informações disponíveis • Documentação incompleta"
+  },
+  "apiDebugTitle": {
+    "message": "API modo de desgaste"
+  },
+  "apiDebugHelp": {
+    "message": "Capture new API tentativas localmente para o seu defeito. Envinde, repeti o fracasso, em vez de antecipar ou expor o relato. o admin desbloqueio é exigido quando uma senha de administrador é definida. chaves, URLs privadas, contidos de mensagem e corpos crus são omitidos; IDs de referência são pseudo-nimados. Até 100 entradas / 1 MiB são mantidos em memória por uma hora e perdidos no reiniciar. Desbloqueio limpa o relato, não se faz pedidos de serviços adicionais."
+  },
+  "apiDebugEnable": {
+    "message": "Aplicar o Diagnóstico API"
+  },
+  "apiDebugSave": {
+    "message": "Save Debug Setting"
+  },
+  "apiDebugPreview": {
+    "message": "Previsão de Debug"
+  },
+  "apiDebugExport": {
+    "message": "Relatórios de exportação"
+  },
+  "apiDebugClear": {
+    "message": "Relatórios de Debug"
+  },
+  "apiDebugSaved": {
+    "message": "Avaliação de dados.Discurso anterior foi resolvido."
+  },
+  "apiDebugCleared": {
+    "message": "O relato de Debug foi esclarecido."
+  },
+  "apiDebugFailed": {
+    "message": "Desbloquear a administração e tente de novo."
+  },
+  "apiDebugFailureHint": {
+    "message": "Para um relato de falhas detalhado, a API permite o modo de desgaste em definições, repete o check e exporta o relato de desgastar."
+  },
+  "urlscanResultGone": {
+    "message": "Este resultado foi excluído por urlscan.io. Atualização não pode restaurá-lo; uma nova encomenda exige uma escaneamento explícito."
+  },
+  "apiDebugOpen": {
+    "message": "Diagnóstico API"
+  },
+  "diagTitle": {
+    "message": "Diagnóstico API"
+  },
+  "diagHelp": {
+    "message": "Verificações filtradas na memória local. chaves, URLs privadas e o material primário permanecem escondidos. o HTTP êxito não é um verdict de segurança concluído. Só passos registados após a ativação estão disponíveis."
+  },
+  "diagOff": {
+    "message": "O modo de desligamento está apagado.Ativa-o em definições."
+  },
+  "diagEmpty": {
+    "message": "Não há registros de correspondência."
+  },
+  "diagPause": {
+    "message": "Visão de Pausa"
+  },
+  "diagResume": {
+    "message": "Resumo de vista"
+  },
+  "diagPaused": {
+    "message": "A visualização é interrompida; a gravação permanece ativa."
+  },
+  "diagActive": {
+    "message": "Ativa ativa; refresca uma vez por segundo."
+  },
+  "diagProvider": {
+    "message": "Provedor"
+  },
+  "diagState": {
+    "message": "Estado"
+  },
+  "diagPurpose": {
+    "message": "Tipo de operação"
+  },
+  "diagFrom": {
+    "message": "de"
+  },
+  "diagTo": {
+    "message": "Para"
+  },
+  "diagAll": {
+    "message": "Todos os"
+  },
+  "diagRuns": {
+    "message": "Verificar fluxos"
+  },
+  "diagDetails": {
+    "message": "Detalhes de fluxo selecionados"
+  },
+  "diagDropped": {
+    "message": "Registros ou passos quebrados"
+  },
+  "diagNoHttp": {
+    "message": "Não há chamadas HTTP registradas para este fluxo."
+  },
+  "diagNotCaptured": {
+    "message": "Não capturado"
+  },
+  "diagTimeline": {
+    "message": "Cronologia"
+  },
+  "diagRequest": {
+    "message": "Pedido filtrado"
+  },
+  "diagResponse": {
+    "message": "Transporte e resposta filtrada"
+  },
+  "diagReset": {
+    "message": "Resetando filtros"
+  },
+  "diagTruncated": {
+    "message": "Este fluxo foi truncado por causa dos limites de gravação."
+  },
+  "diag_phase_precondition": {
+    "message": "Precondições"
+  },
+  "diag_phase_queue": {
+    "message": "Queimão"
+  },
+  "diag_phase_attempt": {
+    "message": "Enviar tentativa"
+  },
+  "diag_phase_response": {
+    "message": "HTTP resposta / transportação completa"
+  },
+  "diag_phase_parse": {
+    "message": "JSON processamento"
+  },
+  "diag_phase_assessment": {
+    "message": "Avaliação"
+  },
+  "diag_phase_persistence": {
+    "message": "Persistência"
+  },
+  "diag_phase_cache": {
+    "message": "Cache em Hits"
+  },
+  "diag_phase_wait": {
+    "message": "Aguardando"
+  },
+  "diag_phase_cancelled": {
+    "message": "Cancelado"
+  },
+  "diag_phase_expired": {
+    "message": "A gravação expirou sem a finalização confirmada"
+  },
+  "diag_purpose_automatic": {
+    "message": "Verificação automática"
+  },
+  "diag_purpose_manual": {
+    "message": "Verificação manual"
+  },
+  "diag_purpose_link": {
+    "message": "Link de verificação"
+  },
+  "diag_purpose_key_test": {
+    "message": "Teste chave"
+  },
+  "diag_purpose_report": {
+    "message": "Requerimento de relatórios"
+  },
+  "diag_purpose_analysis": {
+    "message": "Análise"
+  },
+  "diag_state_running": {
+    "message": "Correndo"
+  },
+  "diag_state_complete": {
+    "message": "Operação concluída"
+  },
+  "diag_state_pending": {
+    "message": "Penteados"
+  },
+  "diag_state_blocked": {
+    "message": "Não iniciado / Bloqueado"
+  },
+  "diag_state_incomplete": {
+    "message": "incompleto"
+  },
+  "diag_state_failed": {
+    "message": "fracassado"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Completão não confirmada"
+  },
+  "localScoreMessage": {
+    "message": "Local de mensagem"
+  },
+  "localScoreLink": {
+    "message": "Local de pontuação para este link na mensagem"
+  },
+  "localScoreNoIndicators": {
+    "message": "Não foram encontrados indicadores de alerta."
+  },
+  "localScoreIndicators": {
+    "message": "Indicadores de alerta local encontrados. Revise as razões antes de abertura."
+  },
+  "uploadSentLabel": {
+    "message": "Acesso enviado"
+  },
+  "uploadSentUnassigned": {
+    "message": "O carregamento foi enviado, mas o resultado não podia ser assinado a este anexo. Cerca e reabre o popup antes de submeter de novo."
+  },
+  "hybridReportTitle": {
+    "message": "Relatórios Hybrid Analysis"
+  },
+  "hybridReportIntro": {
+    "message": "A abertura deste relato não envia solicitações de provedor."
+  },
+  "hybridReportOpen": {
+    "message": "Veja o relato de análises"
+  },
+  "hybridReportUnavailable": {
+    "message": "Relato não disponível. reabre do mensagem actual."
+  },
+  "hybridReportTechnical": {
+    "message": "Fornizador e detalhes de ligação"
+  },
+  "hybridReportExplanation": {
+    "message": "A este valorização"
+  },
+  "hybridReportSummary": {
+    "message": "Avaliação e Origem"
+  },
+  "hybridReportSnapshot": {
+    "message": "Reporte armazenado snapshot; não uma nova escaneamento"
+  },
+  "hybridReportScope": {
+    "message": "Os resultados do provedor e o punho local são separados. os campi perdidos não são resultados negativos. apenas disponíveis, os dados limitados são exibidos."
+  },
+  "hybridReportCopy": {
+    "message": "Copia"
+  },
+  "hybridReportCopied": {
+    "message": "Copiada como texto."
+  },
+  "hybridReportCopyFailed": {
+    "message": "Não pode copiar. selecione e copiar manualmente o texto."
+  },
+  "hybridReportAvailableOnly": {
+    "message": "Roda em dados disponíveis"
+  },
+  "hybridReportNoMatches": {
+    "message": "Não há campo de correspondência em dados disponíveis."
+  },
+  "hybridReportAvailability": {
+    "message": "A disponibilidade e as restrições"
+  },
+  "hybridReportRun": {
+    "message": "Análise de corrida"
+  },
+  "hybridReportSearch": {
+    "message": "Busque os domínios disponíveis"
+  },
+  "hybridReportReady": {
+    "message": "A notícia foi carregada.Não foi iniciada nenhuma nova escaneamento."
+  },
+  "hybridReportResource_name": {
+    "message": "Nome de Atacamento"
+  },
+  "hybridReportResource_url": {
+    "message": "Conexão URL"
+  },
+  "hybridReportResource_sha256": {
+    "message": "Resumo SHA-256"
+  },
+  "hybridField_type": {
+    "message": "Tipo de arquivo"
+  },
+  "hybridField_type_short": {
+    "message": "Tipo de arquivo curto"
+  },
+  "hybridField_size": {
+    "message": "tamanho em bytes"
+  },
+  "hybridField_last_file_name": {
+    "message": "Último nome de arquivo"
+  },
+  "hybridField_submit_name": {
+    "message": "Nome da submissão"
+  },
+  "hybridField_url_analysis": {
+    "message": "Análise URL"
+  },
+  "hybridField_target_url": {
+    "message": "Provedor de ponta URL (podem ser abreviados)"
+  },
+  "hybridField_id": {
+    "message": "ID de resposta (tipo não especificado)"
+  },
+  "hybridField_job_id": {
+    "message": "Sandbox ID de trabalho"
+  },
+  "hybridField_submission_id": {
+    "message": "ID de Submissão"
+  },
+  "hybridField_state": {
+    "message": "Estado do provedor"
+  },
+  "hybridField_finished": {
+    "message": "Finalizados"
+  },
+  "hybridField_verdict": {
+    "message": "Provedor de Verdade"
+  },
+  "hybridField_threat_score": {
+    "message": "Hybrid Analysis pontuação de ameaça"
+  },
+  "hybridField_threat_level": {
+    "message": "Nível de ameaça do provedor"
+  },
+  "hybridField_multiscan_result": {
+    "message": "Valor do provedor (Valor do providor)"
+  },
+  "hybridField_av_detect": {
+    "message": "Valor de detecção (valor de provedor)"
+  },
+  "hybridField_whitelisted": {
+    "message": "Provedor de entrada branca"
+  },
+  "hybridField_vx_family": {
+    "message": "Família de Provedores de Malware"
+  },
+  "hybridField_classification_tags": {
+    "message": "Classificação tags"
+  },
+  "hybridField_tags": {
+    "message": "Etiquetas"
+  },
+  "hybridField_analysis_start_time": {
+    "message": "Análise do tempo de partida"
+  },
+  "hybridField_environment_id": {
+    "message": "ID do meio ambiente"
+  },
+  "hybridField_environment_description": {
+    "message": "Sandbox ambiente"
+  },
+  "hybridField_error_type": {
+    "message": "Tipo de erro do provedor"
+  },
+  "hybridField_error_origin": {
+    "message": "Erro de origem do provedor"
+  },
+  "hybridField_name": {
+    "message": "Nome"
+  },
+  "hybridField_status": {
+    "message": "Estado"
+  },
+  "hybridField_progress": {
+    "message": "O valor do provedor (providor)"
+  },
+  "hybridField_positives": {
+    "message": "Detecções positivas"
+  },
+  "hybridField_total": {
+    "message": "total de verificação"
+  },
+  "hybridField_percent": {
+    "message": "Percentagem (valor do provedor)"
+  },
+  "hybridField_scan_time": {
+    "message": "Duração do Escaneamento (Unitos de Provedores)"
+  },
+  "hybridField_scan_date": {
+    "message": "Data de escaneamento"
+  },
+  "hybridField_product": {
+    "message": "Produto de escaneamento"
+  },
+  "hybridField_version": {
+    "message": "Versão de scanner"
+  },
+  "hybridField_update": {
+    "message": "Atualização do Scanner"
+  },
+  "hybridField_total_network_connections": {
+    "message": "Reteira de ligações"
+  },
+  "hybridField_total_processes": {
+    "message": "Processo"
+  },
+  "hybridField_total_signatures": {
+    "message": "assinatura"
+  },
+  "hybridField_category": {
+    "message": "Categorias"
+  },
+  "hybridField_attck_id": {
+    "message": "MITRE ATT&CK ID Técnico"
+  },
+  "hybridField_tactic": {
+    "message": "Tácticas de MITRE AT&CK"
+  },
+  "hybridField_technique": {
+    "message": "Tecnologias de MITRE AT&CK"
+  },
+  "hybridField_description": {
+    "message": "Descrição"
+  },
+  "hybridField_domains": {
+    "message": "Domínio observado"
+  },
+  "hybridField_hosts": {
+    "message": "O anfitrião observado"
+  },
+  "hybridField_compromised_hosts": {
+    "message": "Compromisso de hospedagem (reclamação do provedor)"
+  },
+  "hybridField_domain": {
+    "message": "Domínio"
+  },
+  "hybridField_host": {
+    "message": "Hospedagem"
+  },
+  "hybridField_ip": {
+    "message": "Endereço IP"
+  },
+  "hybridField_port": {
+    "message": "Portão"
+  },
+  "hybridField_protocol": {
+    "message": "protocolo"
+  },
+  "hybridField_country": {
+    "message": "País"
+  },
+  "hybridField_asn": {
+    "message": "Número de sistema autônomo"
+  },
+  "hybridField_uid": {
+    "message": "Processo UID"
+  },
+  "hybridField_process_id": {
+    "message": "ID de processo (PID)"
+  },
+  "hybridField_parent_uid": {
+    "message": "O processo parental"
+  },
+  "hybridField_file_path": {
+    "message": "Página de arquivo"
+  },
+  "hybridField_subject": {
+    "message": "Certificação Subjetivo"
+  },
+  "hybridField_issuer": {
+    "message": "certificado emitente"
+  },
+  "hybridField_valid_from": {
+    "message": "Valida de"
+  },
+  "hybridField_valid_until": {
+    "message": "Valida até"
+  },
+  "hybridField_serial_number": {
+    "message": "Número de certificação"
+  },
+  "hybridField_sha256": {
+    "message": "SHA-256"
+  },
+  "hybridField_sha1": {
+    "message": "SHA-1"
+  },
+  "hybridField_md5": {
+    "message": "MD5"
+  },
+  "hybridField_sha512": {
+    "message": "SHA-512"
+  },
+  "hybridField_imphash": {
+    "message": "Importação de hash"
+  },
+  "hybridReportResource_quickScanId": {
+    "message": "Identificação de Scan-Quick"
+  },
+  "analysisLocalOnly": {
+    "message": "Verificado localmente"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "Serviços com resultados"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Serviços pendentes"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Serviços com erros"
+  },
+  "hybridReportSection": {
+    "message": "Secção"
+  },
+  "hybridReportAllSections": {
+    "message": "Todos os secções"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "processamento completo"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "processamento pendente"
+  },
+  "hybridReportProcessing_failed": {
+    "message": "O processamento falhou"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "O status de processamento desconhecido"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Relato retomado"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Snapshot criado"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Retenda Hybrid Analysis encontrado para esta fonte"
+  },
+  "hybridReportSaved": {
+    "message": "Relatórios de Hybrid Analysis"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Cópia UTC"
+  },
+  "hybridReportWhy": {
+    "message": "Por que essa apreciação?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Outros sinais de avaliamento"
+  },
+  "hybridReportCompare": {
+    "message": "Compare a corrida de análises"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Secções com dados"
+  },
+  "hybridReportAssessment": {
+    "message": "Avaliação Thundy de Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Fonte e horário"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Encontrar disponível · completamento não confirmado"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Relatórios híbridos abertos"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Mostrar encontrar detalhes"
+  },
+  "attachmentProtectionTitle": {
+    "message": "proteção de adesão"
+  },
+  "attachmentProtectionScope": {
+    "message": "Esta regra aplica-se quando você economiza com Thundy. os comando de adesão do Thunderbird permanecem disponíveis."
+  },
+  "attachmentPolicyMode": {
+    "message": "Quando o limiar é atingido"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Hybrid Analysis Tremite de pontuação"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Acessórios sem um punho confirmado"
+  },
+  "attachmentModeOff": {
+    "message": "Desligado"
+  },
+  "attachmentModeWarn": {
+    "message": "Aviso"
+  },
+  "attachmentModeApproval": {
+    "message": "Requer aprovação"
+  },
+  "attachmentModeBlock": {
+    "message": "Bloco"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Guardar com o Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "Salva o adesivo"
+  },
+  "attachmentCancelSave": {
+    "message": "Cancelar"
+  },
+  "attachmentThresholdReached": {
+    "message": "O resultado híbrido atinge o limiar definido."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis classificou este arquivo como malicioso."
+  },
+  "attachmentUnknown": {
+    "message": "Não há pontos confirmados para este anexo."
+  },
+  "attachmentBlocked": {
+    "message": "A poupança com Thundy é bloqueiada."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Entre a senha de aprovação para salvá-lo."
+  },
+  "attachmentFailed": {
+    "message": "Não podia ser possível poupar o apêndice."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy não podia ler este anexo."
+  },
+  "attachmentContextChanged": {
+    "message": "A mensagem ou anexo foi mudado. selecione o anexo de novo."
+  },
+  "attachmentRefresh": {
+    "message": "Verifique os resultados salvos de novo"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "A descoberta salvida é inalterada."
+  },
+  "attachmentDecisionChanged": {
+    "message": "O resultado ou a política mudou. Revisão da Decisão atualizada."
+  },
+  "attachmentSaveRequested": {
+    "message": "A solicitude de resgate começa."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Salvação Cancelada"
+  },
+  "auditDecisionScore": {
+    "message": "Decisão Score"
+  },
+  "linkHandoffPending": {
+    "message": "O navegador foi pedido para o pagamento. Thunderbird ainda não confirmou."
+  },
+  "linkPreflightTimeout": {
+    "message": "O check não pode ser concluído. feche este diálogo e selecione o link de novo."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Histórico Hybrid Analysis encontrado"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Através do Hybrid Analysis"
+  },
+  "auditShare": {
+    "message": "Exportação Auditoria Redigida"
+  },
+  "auditFullNotice": {
+    "message": "A revisão completa contém URLs e detalhes privados. partilhar apenas com destinatários autorizado."
+  },
+  "auditFullSave": {
+    "message": "Exportação Auditoria Completa"
+  },
+  "managedByCompany": {
+    "message": "Gestão pela sua organização"
+  },
+  "managedLocal": {
+    "message": "Fonte: este Thunderbird perfis"
+  },
+  "managedRevision": {
+    "message": "Versão Política"
+  },
+  "managedThreshold": {
+    "message": "Fronteiras"
+  },
+  "managedPolicyInvalid": {
+    "message": "A política da empresa é inexistente. contate a sua empresa."
+  },
+  "managedLinkBlocked": {
+    "message": "Sua organização bloqueiou este link."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Abrir com o Thundy"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Acesso aberta"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy verifica este anexo antes de entregá-lo para Thunderbird."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird aceitou a solicitude de abertura do anexo."
+  },
+  "attachmentOpenFailed": {
+    "message": "O anexo não podia ser aberta."
+  },
+  "reportingTitle": {
+    "message": "Relatórios de Seguro da Companhia"
+  },
+  "reportingOff": {
+    "message": "A comunicação automática está apagada."
+  },
+  "reportingNeedsConsent": {
+    "message": "A comunicação exige o seu consenço e um token enviado."
+  },
+  "reportingNeedsPermission": {
+    "message": "A autorização de relatórios está faltando. permita relatórios de novo para restaurá-lo."
+  },
+  "reportingReady": {
+    "message": "Sua organização pode receber relatórios automáticos."
+  },
+  "reportingQueued": {
+    "message": "Relatórios em curso:"
+  },
+  "reportingMalicious": {
+    "message": "Descoberta maliciosa"
+  },
+  "reportingSuspicious": {
+    "message": "Detecções nocivas e vias de fronteira"
+  },
+  "reportingConsent": {
+    "message": "Concordo em enviar o ID do evento, tempo, ação, localização, decisão e política para a endereço da empresa mostrada."
+  },
+  "reportingConsentIndicators": {
+    "message": "Concordo em enviar o ID do evento, tempo, ação, localização, decisão, política e link o nome de hospedagem ou anexo SHA-256 para o endereço da empresa mostrado."
+  },
+  "reportingToken": {
+    "message": "Envie tokens da sua Equipe"
+  },
+  "reportingActivate": {
+    "message": "Possibilitar a comunicação ou a troca de tokens"
+  },
+  "reportingRevoke": {
+    "message": "Retirar o consenço e relatórios claros pendentes"
+  },
+  "reportingSetupFailed": {
+    "message": "As definições de relatórios não poderiam ser aplicadas."
+  },
+  "reportingAuthentication": {
+    "message": "O server rejeitou o token enviado."
+  },
+  "reportingRejected": {
+    "message": "O site rejeitou um relato."
+  },
+  "reportingStorage": {
+    "message": "Thundy não podia ler ou escrevê-lo."
+  },
+  "reportingFull": {
+    "message": "A corda está cheia, os relatórios podem ser perdidos."
+  },
+  "reportingExpired": {
+    "message": "Um relato expirado antes da entrega."
+  },
+  "reportingPrivacy": {
+    "message": "Com o consentir separado, Thundy Envia detalhes de tentativas de qualificação para abrirem links ou abrirem ou salvem anexos ao endereço da empresa configure. os relatórios contêm o ID do evento, tempo, ação, localização, decisão e política, além de um anexo ou anexo opcional SHA-256. Thundy relatórios pendentes de covas localmente por até 24 horas. Você pode retirar o consenço e apagar a cova em Configurações."
+  },
+  "reportingConsentDetails": {
+    "message": "Concordo também em enviar a razão da decisão, os pontos disponíveis, o nome do anexo, os verditos do provedor e as referências de relatórios disponíveis."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Relatórios detalhados podem incluir o nome do anexo e links para relatórios do provedor."
+  },
+  "analysisRunningHeading": {
+    "message": "Verificação em curso"
+  },
+  "analysisLocalNoFinding": {
+    "message": "A verificação local não detetou sinais de ameaça"
+  },
+  "analysisLinksGroup": {
+    "message": "Leia a LINHA"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Atacamentos"
+  },
+  "protectionOpenAllowed": {
+    "message": "Abertura permitida"
+  },
+  "protectionSaveAllowed": {
+    "message": "Gravação permitida"
+  },
+  "protectionWarn": {
+    "message": "Aviso"
+  },
+  "protectionApproval": {
+    "message": "Aprovação necessária"
+  },
+  "protectionRequestApproval": {
+    "message": "Pedido de aprovação"
+  },
+  "protectionBlocked": {
+    "message": "Bloqueado"
+  },
+  "protectionMalicious": {
+    "message": "Um fornecedor comunicou uma deteção maliciosa."
+  },
+  "protectionThreshold": {
+    "message": "Limiar de proteção atingido"
+  },
+  "protectionManagedThreshold": {
+    "message": "Limiar da empresa atingido"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "As definições aplicáveis permitem essa ação."
+  },
+  "linkContextChanged": {
+    "message": "O link ou mensagem mudou durante o check."
+  },
+  "auditPolicyBlocked": {
+    "message": "Bloqueado pela política"
+  },
+  "reportingLastReceipt": {
+    "message": "Última receita confirmada pelo server"
+  },
+  "reportingOldestPending": {
+    "message": "O mais antigo relato"
+  },
+  "addonLanguage": {
+    "message": "Idioma da extensão"
+  },
+  "addonLanguageSystem": {
+    "message": "Usar o idioma do Thunderbird"
+  },
+  "addonLanguageSaved": {
+    "message": "O idioma foi guardado. Volte a abrir as vistas do Thundy para o aplicar."
+  },
+  "addonLanguageFailed": {
+    "message": "Não foi possível guardar o idioma."
+  },
+  "profilesOpenSource": {
+    "message": "Código aberto"
+  },
+  "transferReview": {
+    "message": "Rever o envio externo"
+  },
+  "transferSend": {
+    "message": "Enviar ao fornecedor"
+  },
+  "transferVisibility": {
+    "message": "Visibilidade: não listado. Qualquer pessoa com a ligação pode abrir o relatório."
+  },
+  "transferAccepted": {
+    "message": "O fornecedor aceitou o pedido. O relatório pode ainda estar pendente."
+  },
+  "transferFailed": {
+    "message": "Não foi possível concluir o envio ao fornecedor."
+  },
+  "transferUsePopup": {
+    "message": "Abra o painel do Thundy para rever e aprovar uma ligação ou um anexo específico."
+  },
+  "providerGrantAccess": {
+    "message": "Permitir o acesso a este fornecedor"
+  },
+  "sourceSessionOnly": {
+    "message": "O arquivo de fontes está cheio. A vista atual só está disponível nesta sessão."
+  },
+  "analysisReason_transfer_approval": {
+    "message": "As ligações completas e os anexos exigem confirmação individual."
+  },
+  "analysisCompactDetails": {
+    "message": "Detalhes da verificação"
+  },
+  "riskScoreFormula": {
+    "message": "A pontuação local soma os pontos até 100. Os resultados dos serviços são avaliados separadamente."
+  },
+  "riskScoreNoPoints": {
+    "message": "Nenhuma regra local acrescentou pontos."
+  },
+  "riskScoreTotal": {
+    "message": "Cálculo local"
+  },
+  "riskLinkBrandRule": {
+    "message": "Pelo menos um domínio é parecido com uma marca conhecida. Os pontos contam uma vez."
+  },
+  "reportingConsentDetections": {
+    "message": "Os relatórios podem incluir nomes, categorias, assinaturas e marcas imitadas em phishing."
+  },
+  "detectionKind_family": {
+    "message": "Família de malware"
+  },
+  "detectionKind_category": {
+    "message": "Categoria"
+  },
+  "detectionKind_brand": {
+    "message": "Marca imitada"
+  },
+  "detectionKind_signature": {
+    "message": "Deteção do fabricante"
+  },
+  "detectionCategory_fraudulent_shop": {
+    "message": "Loja fraudulenta"
+  },
+  "detectionCategory_phishing_shop": {
+    "message": "Loja de phishing"
+  },
+  "analysisDetectionGrouping": {
+    "message": "Agrupar deteções"
+  },
+  "detectionCategory_malware": {
+    "message": "Malware"
+  },
+  "detectionCategory_virus": {
+    "message": "Vírus"
+  },
+  "detectionCategory_trojan": {
+    "message": "Troiano"
+  },
+  "detectionCategory_ransomware": {
+    "message": "Ransomware"
+  },
+  "detectionCategory_worm": {
+    "message": "Verme"
+  },
+  "detectionCategory_spyware": {
+    "message": "Spyware"
+  },
+  "detectionCategory_adware": {
+    "message": "Adware"
+  },
+  "detectionCategory_backdoor": {
+    "message": "Porta dos fundos"
+  },
+  "detectionCategory_downloader": {
+    "message": "Descarregador"
+  },
+  "detectionCategory_dropper": {
+    "message": "Dropper"
+  },
+  "detectionCategory_infostealer": {
+    "message": "Ladrão de dados"
+  },
+  "detectionCategory_rootkit": {
+    "message": "Rootkit"
+  },
+  "detectionCategory_phishing": {
+    "message": "Phishing"
+  },
+  "detectionCategory_scam": {
+    "message": "Fraude"
+  }
+}

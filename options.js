@@ -98,15 +98,15 @@ const SupportReport = (() => {
 
 const settingsStorage = typeof ThundySettings !== 'undefined' ? ThundySettings.storage : typeof browser !== 'undefined' ? browser.storage.local : null;
 const ProviderKeyTester = (() => {
-    async function testKey(provider,key,permissionsApi=browser.permissions) {
+    async function testKey(provider,key,permissionsApi=browser.permissions,ipReputation=false) {
         const conf=ThundyProviders.registry[provider];
         if(!key||!key.trim())return {status:'empty'};
         if(!conf)return {status:'error'};
         if(!await permissionsApi.contains({origins:[conf.origin]}).catch(()=>false)) {
             if(!await permissionsApi.request({origins:[conf.origin]}).catch(()=>false))return {status:'permission_denied'};
         }
-        if(typeof ThundySettings!=='undefined')return ThundySettings.send({action:'testProviderKey',provider,key:key.trim()});
-        return ThundyProviders.test(provider,key.trim());
+        if(typeof ThundySettings!=='undefined')return ThundySettings.send({action:'testProviderKey',provider,key:key.trim(),ipReputation});
+        return ThundyProviders.test(provider,key.trim(),null,ipReputation);
     }
     return {testKey,get endpoints(){return typeof ThundyProviders !== 'undefined' ? ThundyProviders.registry : {};}};
 })();
@@ -186,7 +186,15 @@ function requestIncidentPermissions(reporting) {
 // Event-Listener für das Laden der Seite
 let _saveTimeoutId = null;
 let _clearTimeoutId = null;
-document.addEventListener('DOMContentLoaded', function() {
+let savedExternalConsent = false;
+const refreshProviderGrants = [];
+document.addEventListener('DOMContentLoaded', async function() {
+    if (typeof ThundyI18n !== 'undefined' && ThundyI18n.ready) await ThundyI18n.ready;
+    const providerSwitches = Array.from(document.querySelectorAll('[data-provider-enabled]'));
+    const ipReputationSwitch = document.getElementById('ipReputationEnabled');
+    const providerIsEnabled = (provider, ipReputation = false) =>
+        ipReputation ? ipReputationSwitch?.checked !== false :
+            providerSwitches.find(input => input.dataset.providerEnabled === provider)?.checked !== false;
     document.body.addEventListener('input', event => {
         if (!event.target.closest('#appearance,#supportReport,#localProfile,.security-controls') && event.target.matches('input,select,textarea')) {
             const dirty = document.getElementById('settingsDirty');
@@ -306,7 +314,8 @@ document.addEventListener('DOMContentLoaded', function() {
         'apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey',
         'alwaysManual', 'scanMode', 'autoScanLinks', 'timeOfClickProtection',
         'privacyTier', 'customWhitelist', 'customBlacklist',
-        'externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey', 'trustedAuthServers', 'scanningEnabledSenders'
+        'externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey', 'trustedAuthServers', 'scanningEnabledSenders',
+        'disabledProviders', 'ipReputationEnabled'
     ]).then((result) => {
       document.getElementById('apikey').value = result.apikey || "";
       const trustedInput = document.getElementById('trustedAuthServers');
@@ -326,9 +335,34 @@ document.addEventListener('DOMContentLoaded', function() {
       // Default für timeOfClickProtection ist true
       document.getElementById('timeOfClickProtection').checked = result.timeOfClickProtection !== undefined ? result.timeOfClickProtection : true;
       // Zustimmung zur externen Analyse ist standardmäßig NICHT erteilt
-      document.getElementById('externalAnalysisConsent').checked = result.externalAnalysisConsent === true;
-      document.getElementById('ipReputationProvider').value = result.ipReputationProvider || "none";
-      document.getElementById('ipReputationApiKey').value = result.ipReputationApiKey || "";
+      const consentBox = document.getElementById('externalAnalysisConsent');
+      savedExternalConsent = consentBox.checked = result.externalAnalysisConsent === true;
+      browser.storage.onChanged?.addListener?.((changes, area) => {
+          if (area !== 'local' || !changes.externalAnalysisConsent) return;
+          const previouslySaved = savedExternalConsent;
+          savedExternalConsent = changes.externalAnalysisConsent.newValue === true;
+          if (consentBox.checked === previouslySaved) consentBox.checked = savedExternalConsent;
+          for (const refresh of refreshProviderGrants) void refresh();
+      });
+      const disabledProviders = Array.isArray(result.disabledProviders) ? result.disabledProviders : [];
+      for (const input of providerSwitches) input.checked = !disabledProviders.includes(input.dataset.providerEnabled);
+      if (ipReputationSwitch) ipReputationSwitch.checked = result.ipReputationEnabled !== false;
+
+      const ipProviderSelect = document.getElementById('ipReputationProvider');
+      const ipKeyInput = document.getElementById('ipReputationApiKey');
+      const ipCredential = document.getElementById('ipReputationCredential');
+      const ipKeyLabel = document.getElementById('ipReputationKeyLabel');
+      let currentIpProvider = result.ipReputationProvider || 'none';
+      const ipKeyDrafts = new Map();
+      const ipKeyLabels = { virustotal: ['providerIpVirusKey', 'VirusTotal API key for IP reputation'], abuseipdb: ['providerIpAbuseKey', 'AbuseIPDB API key'] };
+      function updateIpCredential() {
+          const label = ipKeyLabels[currentIpProvider];
+          if (ipCredential) ipCredential.hidden = !label;
+          if (ipKeyLabel && label) ipKeyLabel.textContent = uiText(...label);
+      }
+      ipProviderSelect.value = currentIpProvider;
+      ipKeyInput.value = result.ipReputationApiKey || '';
+      updateIpCredential();
 
       const alwaysManualCheckbox = document.getElementById('alwaysManual');
       const privacyTierSelect = document.getElementById('privacyTier');
@@ -365,20 +399,71 @@ document.addEventListener('DOMContentLoaded', function() {
           const statusSpan = document.getElementById(statusId);
           if (!button || !input || !statusSpan) return;
 
-          input.addEventListener('input', () => {
+          const ipReputation = inputId === 'ipReputationApiKey';
+          const selectedProvider = () => typeof getProvider === 'function' ? getProvider() : getProvider;
+          const readKey = () => input.value.trim().replace(/\r|\n/g, '');
+          const grant = document.createElement('button');
+          grant.type = 'button';
+          grant.className = 'btn-secondary test-key-btn';
+          grant.hidden = true;
+          grant.textContent = uiText('providerGrantAccess','Allow this provider');
+          const permissionStatus = document.createElement('small');
+          permissionStatus.setAttribute('role','status');
+          statusSpan.after(grant,permissionStatus);
+          let grantRevision = 0;
+          const refreshGrant = async () => {
+              const revision = ++grantRevision;
+              const provider = selectedProvider();
+              const origin = typeof ThundyProviders !== 'undefined' ? ThundyProviders.registry[provider]?.origin : null;
+              const eligible = !!origin && savedExternalConsent && !!readKey() && providerIsEnabled(provider,ipReputation);
+              const granted = eligible && await browser.permissions.contains({origins:[origin]}).catch(() => false);
+              if (revision !== grantRevision) return;
+              grant.hidden = !eligible || granted;
+              permissionStatus.textContent = grant.hidden ? '' : uiText('testApiKeyPermissionDenied','Permission to connect to the service is missing.');
+          };
+          refreshProviderGrants.push(refreshGrant);
+          grant.addEventListener('click', async () => {
+              const provider = selectedProvider();
+              const origin = ThundyProviders.registry[provider]?.origin;
+              if (!origin || !savedExternalConsent || !providerIsEnabled(provider,ipReputation)) return;
+              grant.disabled = true;
+              try { await browser.permissions.request({origins:[origin]}); }
+              catch (_) { /* permission status is read again below */ }
+              finally {
+                  grant.disabled = false;
+                  for (const refresh of refreshProviderGrants) await refresh();
+                  if (grant.hidden && document.activeElement === document.body) button.focus();
+              }
+          });
+          const clearStatus = () => {
               statusSpan.textContent = '';
               statusSpan.className = 'key-test-status';
-          });
+          };
+          const showPaused = () => {
+              statusSpan.className = 'key-test-status text-warning';
+              statusSpan.textContent = uiText('providerTestDisabled', 'Enable the provider and save before testing the key.');
+          };
+          input.addEventListener('input', () => {clearStatus();void refreshGrant();});
+          if (ipReputation) {
+              ipProviderSelect.addEventListener('change', () => {clearStatus();Promise.resolve().then(refreshGrant);});
+              ipReputationSwitch?.addEventListener('change', () => {clearStatus();void refreshGrant();});
+          } else {
+              providerSwitches.find(switchInput => switchInput.dataset.providerEnabled === getProvider)?.addEventListener('change', () => {clearStatus();void refreshGrant();});
+          }
 
           button.addEventListener('click', async () => {
-              const provider = typeof getProvider === 'function' ? getProvider() : getProvider;
+              const provider = selectedProvider();
               if (!provider || provider === 'none') {
                   statusSpan.className = 'key-test-status text-warning';
                   statusSpan.textContent = uiText('testApiKeySelectProvider', 'Please select an IP reputation provider first.');
                   return;
               }
 
-              const rawKey = input.value.trim().replace(/\r|\n/g, '');
+              if (!providerIsEnabled(provider, ipReputation)) {
+                  showPaused();
+                  return;
+              }
+              const rawKey = readKey();
               if (!rawKey) {
                   statusSpan.className = 'key-test-status text-warning';
                   statusSpan.textContent = uiText('testApiKeyEmpty', 'Please enter an API key first.');
@@ -392,8 +477,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
               try {
                   if (!window.confirm(uiText('providerTestDisclosure', 'This sends your key and fixed test data to the provider, without message content. Continue?'))) { button.disabled=false;return; }
-                  const result = await ProviderKeyTester.testKey(provider, rawKey);
-                  if (result.status === 'valid') {
+                  const result = await ProviderKeyTester.testKey(provider, rawKey, browser.permissions, ipReputation);
+                  void refreshGrant();
+                  if (provider !== selectedProvider() || rawKey !== readKey() || !providerIsEnabled(provider, ipReputation)) return;
+                  if (result.status === 'disabled') {
+                      showPaused();
+                  } else if (result.status === 'valid') {
                       statusSpan.className = 'key-test-status text-success';
                       statusSpan.textContent = uiText('testApiKeyValid', 'Connection successful. API key is valid.');
                   } else if (result.status === 'invalid_key') {
@@ -420,6 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   button.removeAttribute('aria-busy');
               }
           });
+          void refreshGrant();
       }
 
       attachKeyTestHandler('testHybridKey', 'apikey', 'testHybridKeyStatus', 'hybridanalysis');
@@ -428,18 +518,17 @@ document.addEventListener('DOMContentLoaded', function() {
       attachKeyTestHandler('testVirustotalKey', 'virustotalApikey', 'testVirustotalKeyStatus', 'virustotal');
       attachKeyTestHandler('testIpReputationKey', 'ipReputationApiKey', 'testIpReputationKeyStatus', () => document.getElementById('ipReputationProvider')?.value);
 
-      const ipProviderSelect = document.getElementById('ipReputationProvider');
-      if (ipProviderSelect) {
-          ipProviderSelect.addEventListener('change', () => {
-              const statusSpan = document.getElementById('testIpReputationKeyStatus');
-              if (statusSpan) {
-                  statusSpan.textContent = '';
-                  statusSpan.className = 'key-test-status';
-              }
-          });
+      ipProviderSelect.addEventListener('change', () => {
+          ipKeyDrafts.set(currentIpProvider, ipKeyInput.value);
+          currentIpProvider = ipProviderSelect.value;
+          ipKeyInput.value = ipKeyDrafts.get(currentIpProvider) || '';
+          updateIpCredential();
+      });
+      for (const event of [browser.permissions?.onAdded,browser.permissions?.onRemoved]) {
+          event?.addListener?.(() => { for (const refresh of refreshProviderGrants) void refresh(); });
       }
     });
-  });
+  }, { once: true });
   
   const saveElement = document.getElementById('save');
   if (saveElement) saveElement.addEventListener('click', async function() {
@@ -492,18 +581,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let externalAnalysisConsentSetting = document.getElementById('externalAnalysisConsent').checked;
     let ipReputationProviderSetting = document.getElementById('ipReputationProvider').value;
     let ipReputationApiKeySetting = document.getElementById('ipReputationApiKey').value.trim().replace(/\r|\n/g, '');
-    // Host-Berechtigungen nur für die tatsächlich konfigurierten Dienste
-    // anfragen (Nutzer-Geste = Klick auf "Speichern").
-    const requestedOrigins = [];
-    if (mySetting) requestedOrigins.push(['hybrid-analysis.com', 'https://hybrid-analysis.com/*']);
-    if (virustotalSetting || (ipReputationProviderSetting === 'virustotal' && ipReputationApiKeySetting)) requestedOrigins.push(['virustotal.com', 'https://www.virustotal.com/*']);
-    if (urlscanSetting && privacyTierSetting === 'max') requestedOrigins.push(['urlscan.io', 'https://urlscan.io/*']);
-    if (urlhausSetting) requestedOrigins.push(['urlhaus.abuse.ch', 'https://urlhaus-api.abuse.ch/*']);
-    if (ipReputationProviderSetting === 'abuseipdb' && ipReputationApiKeySetting) requestedOrigins.push(['abuseipdb.com', 'https://api.abuseipdb.com/*']);
-
-
-    const consentPromise = externalAnalysisConsentSetting ? requestDataCollectionConsent(requestedOrigins.map(([, origin]) => origin)) : Promise.resolve(false);
-    settingsStorage.set({
+    const disabledProviders = Array.from(document.querySelectorAll('[data-provider-enabled]:not(:checked)'), input => input.dataset.providerEnabled);
+    const ipReputationEnabled = document.getElementById('ipReputationEnabled')?.checked !== false;
+    const consentChanged = externalAnalysisConsentSetting !== savedExternalConsent;
+    const grantConsent = consentChanged && externalAnalysisConsentSetting ? requestDataCollectionConsent() : null;
+    const values = {
         scanningEnabledSenders: [...new Set(senderEntries)],
         trustedAuthServers: (document.getElementById('trustedAuthServers')?.value || '').split(',').map(host => host.trim().toLowerCase()).filter(host => /^[a-z0-9.-]+$/.test(host)),
         apikey: mySetting,
@@ -517,55 +599,33 @@ document.addEventListener('DOMContentLoaded', function() {
         ...(['allDisplayed','approvedSenders','manual'].includes(document.getElementById('scanMode')?.value) ? {scanMode: document.getElementById('scanMode').value} : {}),
         autoScanLinks: autoScanLinksSetting,
         timeOfClickProtection: timeOfClickProtectionSetting,
-        externalAnalysisConsent: false,
+        disabledProviders,
+        ipReputationEnabled,
         ipReputationProvider: ipReputationProviderSetting,
         ipReputationApiKey: ipReputationApiKeySetting
-    }).then(async () => {
-        let statusSpan = document.getElementById('saveStatus');
-        statusSpan.className = 'text-success ml-2';
-        statusSpan.textContent = uiText("ui_073", "Wird gespeichert...");
-        statusSpan.style.display = 'inline';
-
-
-        // Daten-Deklaration und Konsent: das Manifest deklariert die Übermittlung
-        // als optional, deshalb wird die Zustimmung hier eingeholt (Thunderbird
-        // zeigt keinen eigenen Prompt). Lehnt der Nutzer den Dialog ab, wird die
-        // Checkbox zurückgesetzt - ohne Zustimmung wird nichts übertragen.
-        if (externalAnalysisConsentSetting) {
-            const consentGranted = await consentPromise;
-            if (!consentGranted) {
-                externalAnalysisConsentSetting = false;
-                await settingsStorage.set({ externalAnalysisConsent: false });
-                const consentBox = document.getElementById('externalAnalysisConsent');
-                if (consentBox) consentBox.checked = false;
-                statusSpan.textContent = uiText("ui_076", "Zustimmung zur Datenübermittlung nicht erteilt – es wird nichts übertragen.");
-            }
-        } else {
+    };
+    const persist = async () => {
+        if (consentChanged && !externalAnalysisConsentSetting) {
+            await settingsStorage.set({externalAnalysisConsent:false});
+            savedExternalConsent = false;
             await removeDataCollectionConsent();
         }
-
-        await settingsStorage.set({ externalAnalysisConsent: externalAnalysisConsentSetting === true });
-
-        if (externalAnalysisConsentSetting && requestedOrigins.length > 0) {
-            const denied = [];
-            for (const [label, origin] of requestedOrigins) {
-                try {
-                    const granted = await browser.permissions.contains({ origins: [origin] });
-                    if (!granted) denied.push(label);
-                } catch (e) {
-                    console.error('Permission request failed', e);
-                    denied.push(label);
-                }
-            }
-            if (denied.length > 0) {
-                alert(uiText("ui_077", "Host‑Berechtigung nicht erteilt für: ") + denied.join(', ') +
-                    uiText("ui_078", ". Ohne diese Berechtigung sind die entsprechenden Prüfungen deaktiviert."));
-            }
+        await settingsStorage.set(values);
+        if (grantConsent) {
+            const granted = await grantConsent;
+            if (granted) await settingsStorage.set({externalAnalysisConsent:true});
+            externalAnalysisConsentSetting = savedExternalConsent = granted;
+            document.getElementById('externalAnalysisConsent').checked = granted;
+            return granted;
         }
-
-        if (externalAnalysisConsentSetting || !document.getElementById('externalAnalysisConsent').checked) {
-            if (statusSpan.textContent === uiText('ui_073', 'Wird gespeichert...')) statusSpan.textContent = uiText('ui_074', 'Erfolgreich gespeichert!');
-        }
+        return true;
+    };
+    persist().then(async accepted => {
+        const statusSpan = document.getElementById('saveStatus');
+        statusSpan.className = accepted ? 'text-success ml-2' : 'text-warning ml-2';
+        statusSpan.textContent = accepted ? uiText('ui_074','Settings saved.') : uiText('ui_076','Consent was declined.');
+        statusSpan.style.display = 'inline';
+        for (const refresh of refreshProviderGrants) await refresh();
         const dirty = document.getElementById('settingsDirty');
         if (dirty) dirty.hidden = true;
         saveBtn.disabled = false;

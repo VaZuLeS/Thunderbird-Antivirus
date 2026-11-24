@@ -1,4 +1,5 @@
-(() => {
+(async () => {
+    if (ThundyI18n.ready) await ThundyI18n.ready;
     const t = key => ThundyI18n.get(key);
     const get = id => document.getElementById(id);
     const challenge = location.hash.slice(1);
@@ -44,6 +45,33 @@
         const title = get('attachmentDecisionTitle');
         title.textContent = t(headings[details.mode]);
         title.className = 'protection-decision '+details.mode;
+        const risk = details.presentation;
+        if (risk && ['low','unknown','caution','high','critical'].includes(risk.severity) && /^#[a-f0-9]{6}$/i.test(risk.color)) {
+            title.dataset.severity = risk.severity;
+            title.style.setProperty('--risk-accent',risk.color);
+            const caption = document.createElement('small');
+            caption.textContent = t('protectionSeverity_'+risk.severity);
+            title.append(' ',caption);
+        }
+        const detections = get('attachmentDetections');
+        detections.replaceChildren();
+        const display = value => {
+            const li = document.createElement('li');li.textContent = value;detections.append(li);
+        };
+        const providers = {hybridanalysis:'Hybrid Analysis',virustotal:'VirusTotal'};
+        const verdicts = {malicious:'providerMalicious',suspicious:'providerSuspicious',no_detection:'providerNoDetection'};
+        let categorized = false;
+        for (const finding of details.findings || []) {
+            display([providers[finding.provider],t(verdicts[finding.verdict] || 'providerUnknown')].join(' · '));
+            for (const kind of ['category','brand','family']) {
+                const entries = (finding.detections || []).filter(value=>value.kind===kind);
+                if (!entries.length) continue;
+                categorized ||= kind==='category';
+                display(t('detectionKind_'+kind)+' · '+entries.map(entry=>kind==='category' ? t('detectionCategory_'+entry.value) : entry.value).join(', '));
+            }
+        }
+        if (!categorized && details.reason === 'malicious') display(t('protectionCategoryUnavailable'));
+        detections.hidden = !detections.childElementCount;
         const reasons = {malicious:'protectionMalicious',unknown:'analysisSimpleIncomplete',policy_invalid:'managedPolicyInvalid'};
         let reason = reasons[details.reason] ? t(reasons[details.reason]) : t('protectionAttachmentAllowedReason');
         if (details.reason === 'malicious') {

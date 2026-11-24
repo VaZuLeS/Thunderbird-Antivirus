@@ -5,7 +5,7 @@ function fixture(){
  const sender={id:'addon',url:'moz-extension://addon/options.html',tab:{id:1},documentId:'options'};
  const browser={runtime:{id:'addon',getURL:p=>'moz-extension://addon/'+p,onConnect:{addListener(){}}},storage:{local:{get:async key=>({[key]:stored[key]}),set:async value=>Object.assign(stored,value)}}};
  const c=vm.createContext({browser,crypto:webcrypto,URL,Headers,Response,FormData,URLSearchParams,AbortController,TextEncoder,setTimeout,clearTimeout,console,Date:class extends Date{static now(){return now;}},fetch:async(url,options)=>{calls.push({url,options});return new Response(JSON.stringify({id:'quick-reference',submission_id:'submission-reference',finished:false,scanners:[{status:'in-progress'}]}),{status:200,headers:{'content-type':'application/json'}});}});
- vm.runInContext(['provider_results.js','provider_registry.js','security.js','api_diagnostics.js','api_gateway.js'].map(file=>fs.readFileSync(file,'utf8')).join('\n')+'\nglobalThis.s=ThundySecurity;globalThis.d=ThundyApiDiagnostics;globalThis.g=apiGateway;',c);
+ vm.runInContext(['managed_policy.js','provider_results.js','provider_registry.js','security.js','api_diagnostics.js','api_gateway.js'].map(file=>fs.readFileSync(file,'utf8')).join('\n')+'\nglobalThis.s=ThundySecurity;globalThis.d=ThundyApiDiagnostics;globalThis.g=apiGateway;',c);
  // Transport policy is verified separately; this suite exercises real gateway instrumentation.
  vm.runInContext('ThundyProviders.enforce=async()=>{};',c);
  return {c,s:c.s,d:c.d,g:c.g,stored,calls,browser,sender,advance:ms=>now+=ms,enable:()=>c.s.command({op:'apiDebugSet',enabled:true},sender)};

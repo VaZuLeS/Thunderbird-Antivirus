@@ -1,0 +1,3590 @@
+{
+  "protectionSeverity_low": { "message": "Låg risk" },
+  "protectionSeverity_unknown": { "message": "Okänd risk" },
+  "protectionSeverity_caution": { "message": "Förhöjd risk" },
+  "protectionSeverity_high": { "message": "Hög risk" },
+  "protectionSeverity_critical": { "message": "Kritisk risk" },
+  "linkScanSummary": { "message": "Resultat från URL-genomsökningar" },
+  "linkScansPending": { "message": "URL-genomsökningar pågår fortfarande." },
+  "linkNoScanResults": { "message": "Inga resultat från URL-genomsökningar är tillgängliga." },
+  "protectionCategoryUnavailable": { "message": "Leverantören angav ingen hotkategori." },
+  "linkWaitForResults": { "message": "Vänta på pågående URL-genomsökningar" },
+  "linkAutoOpenBelow": { "message": "Öppna direkt under detta poängvärde" },
+  "linkOpeningOptionsHelp": { "message": "Lämna fältet tomt för att alltid visa länkdialogen." },
+  "linkAuditRetentionTitle": { "message": "Lagring av länkloggen" },
+  "linkAuditLimit": { "message": "Maximalt antal poster (tomt = obegränsat)" },
+  "linkAuditDays": { "message": "Antal dagar att spara (tomt = obegränsat)" },
+  "protectionManagedColors": { "message": "Din organisation anger färgerna för risknivåerna." },
+  "linkOpenedAutomatically": { "message": "Öppnades automatiskt" },
+  "providerSwitchHelp": {
+    "message": "Slå på eller av varje tjänst och spara inställningarna. Sparade nycklar och fynd finns kvar när du pausar en tjänst."
+  },
+  "providerKeyLink": {
+    "message": "Få en API nyckel"
+  },
+  "providerDocsLink": {
+    "message": "API dokumentation"
+  },
+  "providerApiKeyLabel": {
+    "message": "API-nyckel"
+  },
+  "providerUse": {
+    "message": "Använd den här tjänsten"
+  },
+  "providerVirusUse": {
+    "message": "Använda VirusTotal för filkontroll"
+  },
+  "providerHybridStrength": {
+    "message": "Hittar befintliga rapporter för kända filhashar. Vid tillåtna uppladdningar kan Falcon Sandbox analysera hur en fil beter sig när den körs."
+  },
+  "providerHybridSetup": {
+    "message": "Skapa ett konto och öppna Profile → API Key för att skapa en nyckel."
+  },
+  "providerUrlhausStrength": {
+    "message": "Tecklar länk värdar mot källor av malware."
+  },
+  "providerUrlhausSetup": {
+    "message": "Registrera dig på abuse.ch och få en Auth-Key från ditt konto."
+  },
+  "providerUrlscanStrength": {
+    "message": "Det granskar URLs och omdirigerar för tecken på phishing. Thundy använder den på den maximala sekretessnivån."
+  },
+  "providerUrlscanSetup": {
+    "message": "Skapa ett konto och välj Sättningar & API → Ny API nyckel."
+  },
+  "providerVirusTotalStrength": {
+    "message": "Se upp en fil SHA-256 hash och visar resultat från flera skanningsmotorer."
+  },
+  "providerVirusTotalSetup": {
+    "message": "Registrera dig för VirusTotal och kopiera nyckeln från profilens API nyckelsida."
+  },
+  "providerIpTitle": {
+    "message": "IP-rykte"
+  },
+  "providerIpUse": {
+    "message": "Kolla in IP Reputation"
+  },
+  "providerIpChoose": {
+    "message": "IP Reputation leverantör"
+  },
+  "providerIpKeyNotice": {
+    "message": "Ange en nyckel från den valda leverantören. När du pausar IP-kontrollerna sparas både leverantörsvalet och nyckeln."
+  },
+  "providerIpGuide": {
+    "message": "Välj och installera en IP reputationsleverantör"
+  },
+  "providerVirusIpStrength": {
+    "message": "Tecknar IP-tjänsterna mot VirusTotal upptäcktsmotorer och gemenskapssatser."
+  },
+  "providerAbuseStrength": {
+    "message": "Använder gemenskaprapporter för att identifiera IP-sidor som är förknippade med spam, skanning eller annan missbruk."
+  },
+  "providerAbuseSetup": {
+    "message": "Skapa ett AbuseIPDB-konto och generera eller kopiera en nyckel från fliken API i dashboardet."
+  },
+  "providerIpVirusKey": {
+    "message": "VirusTotal API nyckel för IP rykte"
+  },
+  "providerIpAbuseKey": {
+    "message": "AbuseIPDB API nyckel"
+  },
+  "providerTestDisabled": {
+    "message": "Aktivera tjänsten och spara inställningarna innan du testar nyckeln."
+  },
+  "analysisReason_provider_disabled": {
+    "message": "Den här leverantören är pausad i inställningar."
+  },
+  "extensionName": {
+    "message": "Thundy AV – E-postskanner för Thunderbird"
+  },
+  "extensionDescription": {
+    "message": "Optionell opt-in-skanner för e-postbilagor och länkar. Inget lämnar datorn utan ditt uttryckliga samtycke."
+  },
+  "actionTitle": {
+    "message": "Thundy AV – skanna status för detta budskap"
+  },
+  "bannerScanOnce": {
+    "message": "Skanna detta budskap en gång"
+  },
+  "bannerScanSender": {
+    "message": "Skanna alltid den här sändaren"
+  },
+  "bannerTitleOptIn": {
+    "message": "Thundy AV : Skanning i realtid är inte aktiverad för detta budskap."
+  },
+  "bannerNoteOptIn": {
+    "message": "Scanning överför data till externa analystjänster, men bara om du aktiverar det i tilläggsinställningar och först efter att du gett ditt samtycke."
+  },
+  "bannerScanRunning": {
+    "message": "Skannar…"
+  },
+  "bannerScanDone": {
+    "message": "Ansökningar är slutförda – se analyskällor"
+  },
+  "bannerScanFailed": {
+    "message": "Skanningen misslyckas"
+  },
+  "bannerPermissionDenied": {
+    "message": "Behovet av värdlicens har avvisats"
+  },
+  "bannerConsentMissing": {
+    "message": "Nya externa begäranden är inaktiverade. tidigare lagrade rapporter kan ändå visas."
+  },
+  "bannerThreatTitle": {
+    "message": "Thundy AV varning"
+  },
+  "bannerThreatScore": {
+    "message": "Risk poäng: $SCORE$ av 100",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerSenderOptIn": {
+    "message": "Den här avsändaren skannas nu automatiskt."
+  },
+  "notificationScanStarted": {
+    "message": "Skanningen startade för: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "Skanningen lämnades framgångsrikt. Job ID: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanError": {
+    "message": "Skanningsfel: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Thundy AV Skärm"
+  },
+  "notificationTitleError": {
+    "message": "Thundy AV Skärm fel"
+  },
+  "bannerAuthPass": {
+    "message": "Tillförlitliga serverrapporter SPF / DKIM/ DMARC passerade"
+  },
+  "bannerOpenOptions": {
+    "message": "Öppna alternativ"
+  },
+  "menuScanLink": {
+    "message": "Skanna länken med Thundy AV"
+  },
+  "menuScanMessageLinks": {
+    "message": "Skanna alla länkar till detta inlägg"
+  },
+  "notificationNoLinks": {
+    "message": "Inga länkar hittades i detta budskap."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "Hosting tillstånd för analystjänsten saknas.Vänligen ge det i tilläggs alternativ."
+  },
+  "errorHostPermissionMissing": {
+    "message": "Host tillstånd för analystjänsten saknas.Vänligen ge det i tilläggs alternativ."
+  },
+  "errorTierUploadBlocked": {
+    "message": "Ladda upp bifogade filer är inaktiverat i sekretessnivån \"Strict\". Switch till \"Balanced\" eller \"Maximum\" i tilläggs alternativ."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "Sändning av URLs är bara tillåtet i privatlivslinjen \"Maximum\". ändra nivån i tilläggs alternativ."
+  },
+  "notificationInjectionFailed": {
+    "message": "Banner kan inte läggas in i budskapssyn.Vänligen rapportera detta med din Thunderbird version."
+  },
+  "bannerTierBlocked": {
+    "message": "Detta är inte tillåtet av den aktuella sekretessnivån. se alternativen tillägg."
+  },
+  "ui_001": {
+    "message": "Varning om:"
+  },
+  "ui_002": {
+    "message": "Ingen Hybrid Analysis API nyckel är inställd. Du kan använda lokala checks eller ställa in en leverantör i inställningar."
+  },
+  "ui_003": {
+    "message": "Öppna inställningar"
+  },
+  "ui_004": {
+    "message": "Välj ett e-postmeddelande för att kontrollera det."
+  },
+  "ui_005": {
+    "message": "Laddningsanalysresultat…"
+  },
+  "ui_006": {
+    "message": "Extern analys är inaktiverad: inga hashar, filer eller länkar sänds till analystjänster."
+  },
+  "ui_007": {
+    "message": "Inga lagrade bifogade eller länkskanning resultat finns för detta budskap."
+  },
+  "ui_008": {
+    "message": "Inga analysresultat finns för detta e-postmeddelande."
+  },
+  "ui_009": {
+    "message": "Oväntade fel under laddning analysresultat."
+  },
+  "ui_010": {
+    "message": "status är:"
+  },
+  "ui_011": {
+    "message": "Analysen är på gång, vänligen prova igen."
+  },
+  "ui_012": {
+    "message": "SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_013": {
+    "message": "Hotet för Scor:"
+  },
+  "ui_014": {
+    "message": "Domar om:"
+  },
+  "ui_015": {
+    "message": "Malware familjer:"
+  },
+  "ui_016": {
+    "message": "Multiscan resultat: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_017": {
+    "message": "Ytterligere information :"
+  },
+  "ui_018": {
+    "message": "Analysen startade: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_019": {
+    "message": "Författare: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_020": {
+    "message": "VirusTotal resultat:"
+  },
+  "ui_021": {
+    "message": "Skadlig: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_022": {
+    "message": "Undekänd: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_023": {
+    "message": "Motsjuk: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_024": {
+    "message": "Skadlig: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_025": {
+    "message": "Skärm: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_026": {
+    "message": "Fördelar: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_027": {
+    "message": "Antivirusresultat är:"
+  },
+  "ui_028": {
+    "message": "Av att: $P1$ – Det är dom: $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_029": {
+    "message": "Inga scannerresultat finns."
+  },
+  "ui_030": {
+    "message": "SHA-256 hash: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_031": {
+    "message": "Filernamn: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_032": {
+    "message": "Storlek: $P1$ byter",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_033": {
+    "message": "Typ: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_034": {
+    "message": "Skannar igen"
+  },
+  "ui_035": {
+    "message": "Sanitize och download (lokalt)"
+  },
+  "ui_036": {
+    "message": "Förhandsvisningar: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_037": {
+    "message": "Lokala resultat: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_038": {
+    "message": "SHA-256 : $P1$ – externa analyser är inaktiverade.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_039": {
+    "message": "Ingen externa lookup eftersom externa analyser är inaktiverade."
+  },
+  "ui_040": {
+    "message": "Externanalys-hinder"
+  },
+  "ui_041": {
+    "message": "Skärm överföring…"
+  },
+  "ui_042": {
+    "message": "Ladda upp filer för en ny skanning…"
+  },
+  "ui_043": {
+    "message": "Skannat. ladda ner resultat…"
+  },
+  "ui_044": {
+    "message": "Framgångsrik"
+  },
+  "ui_045": {
+    "message": "Skanningen misslyckades:"
+  },
+  "ui_046": {
+    "message": "okända misstag"
+  },
+  "ui_047": {
+    "message": "Försök igen"
+  },
+  "ui_048": {
+    "message": "Kommunikationsfel är:"
+  },
+  "ui_049": {
+    "message": "Sanitiserar…"
+  },
+  "ui_050": {
+    "message": "Html sanitiserar lokalt…"
+  },
+  "ui_051": {
+    "message": "Ladda ner startade."
+  },
+  "ui_052": {
+    "message": "Sanitiserad"
+  },
+  "ui_053": {
+    "message": "Ladda ner misslyckas:"
+  },
+  "ui_054": {
+    "message": "API fel: $P1$ för objektet $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_055": {
+    "message": "(Knappen API kan vara ogiltig eller saknas.)"
+  },
+  "ui_056": {
+    "message": "Nätverksfel: $P1$ för objekt $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_057": {
+    "message": "För att skicka URL…"
+  },
+  "ui_058": {
+    "message": "Skicka URL till Hybrid Analysis…"
+  },
+  "ui_059": {
+    "message": "Skannat. laddningsresultat…"
+  },
+  "ui_060": {
+    "message": "Upphämtning misslyckas:"
+  },
+  "ui_061": {
+    "message": "URL: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_062": {
+    "message": "Detta URL hittades i e-postmeddelandet. för att skydda din integritet, det var"
+  },
+  "ui_063": {
+    "message": "inte laddas upp automatiskt"
+  },
+  "ui_064": {
+    "message": "Skanna URL nu"
+  },
+  "ui_065": {
+    "message": "Ladda upp…"
+  },
+  "ui_066": {
+    "message": "Skicka filen till Hybrid Analysis…"
+  },
+  "ui_067": {
+    "message": "Ladda upp slut. laddningsresultat…"
+  },
+  "ui_068": {
+    "message": "Skanna filen nu (uppladdning)"
+  },
+  "ui_069": {
+    "message": "Förpackning: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_070": {
+    "message": "Ingen externa rapport finns för den här filen. för att skydda din integritet, det var"
+  },
+  "ui_071": {
+    "message": "Automatiska laddningar är inaktiverade; sekretessnivån gäller för manuella skanningar."
+  },
+  "ui_072": {
+    "message": "Länkskyddet förblir tillhandahållande tillsammans med automatisk skanning."
+  },
+  "ui_073": {
+    "message": "Spara…"
+  },
+  "ui_074": {
+    "message": "Sättningar sparas."
+  },
+  "ui_075": {
+    "message": "Spara"
+  },
+  "ui_076": {
+    "message": "Tillstånd att överföra data har inte beviljats. inget kommer att sändas."
+  },
+  "ui_077": {
+    "message": "Besökarens tillstånd beviljades inte för:"
+  },
+  "ui_078": {
+    "message": "Checker för dessa leverantörer är inte tillgängliga utan tillstånd."
+  },
+  "ui_079": {
+    "message": "Kan inte spara inställningar."
+  },
+  "ui_080": {
+    "message": "Det tar bort alla lokalt lagrade analysresultat."
+  },
+  "ui_081": {
+    "message": "Rensar…"
+  },
+  "ui_082": {
+    "message": "Cache är klar."
+  },
+  "ui_083": {
+    "message": "Det finns ingen databas än, eller den är redan tom."
+  },
+  "ui_084": {
+    "message": "Kan inte klarar cachet."
+  },
+  "ui_085": {
+    "message": "Klar cache"
+  },
+  "ui_086": {
+    "message": "API nyckel saknas."
+  },
+  "ui_087": {
+    "message": "SPF check misslyckas (kan spoofing)."
+  },
+  "ui_088": {
+    "message": "DKIM signatur är ogiltig (möjlig spoofing)."
+  },
+  "ui_089": {
+    "message": "DMARC check misslyckas (kan spoofing)."
+  },
+  "ui_090": {
+    "message": "URLhaus listar domänen ( $P1$) som skadlig.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_091": {
+    "message": "Svar till domän ( $P1$) skiljer sig från avsändardomän ( $P2$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_092": {
+    "message": "Möjlig affärsmeddelande kompromiss: första kontakten med denna avsändare och nödsituationens nyckelord hittades ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_093": {
+    "message": "Nödsökning nyckelord hittade ( $P1$). kontrollera denna begäran noggrant.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_094": {
+    "message": "Detta är din första kommunikation med denna avsändare."
+  },
+  "ui_095": {
+    "message": "Sändardomänen ( $P1$) liknar det kända varumärket $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_096": {
+    "message": "Linkdomänen ( $P1$) liknar det kända varumärket $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_097": {
+    "message": "Ingen av länkarna i textpunkten till avsändardomänen ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_098": {
+    "message": "Klara"
+  },
+  "ui_099": {
+    "message": "URL skanningen misslyckades:"
+  },
+  "ui_100": {
+    "message": "Kan inte starta urlscan.io-skanning:"
+  },
+  "ui_101": {
+    "message": "urlscan.io återställde inte en skannedokument."
+  },
+  "ui_102": {
+    "message": "urlscan.io identifierade URL som skadlig."
+  },
+  "ui_103": {
+    "message": "Visuell upptäckt: sidan impersonaterar"
+  },
+  "ui_104": {
+    "message": "(Det är en förmodad phishing)"
+  },
+  "ui_105": {
+    "message": "Kan inte få urlscan.io resultat:"
+  },
+  "ui_106": {
+    "message": "Thundy AV – E-postskannern"
+  },
+  "ui_107": {
+    "message": "Visa alla Hybrid Analysis-meddelanden"
+  },
+  "ui_108": {
+    "message": "Visa alla inlägg av Hybrid Analysis (öppnar en ny flik)"
+  },
+  "ui_109": {
+    "message": "ämnet :"
+  },
+  "ui_110": {
+    "message": "Från:"
+  },
+  "ui_111": {
+    "message": "Meddelande ID:"
+  },
+  "ui_112": {
+    "message": "Thundy AV inställningar"
+  },
+  "ui_113": {
+    "message": "Hybrid Analysis är en malware analys service. Du kan skicka filer för statisk och dinamisk analys."
+  },
+  "ui_114": {
+    "message": "Hybrid Analysis använder CrowdStrike Falcon Sandbox för att utreda okända hot."
+  },
+  "ui_115": {
+    "message": "Providerkonto och servicevillkor gäller för externa analyser. Lokala checker kräver inte ett konto."
+  },
+  "ui_116": {
+    "message": "Thundy AV inställningar"
+  },
+  "ui_117": {
+    "message": "Vad är Hybrid Analysis?"
+  },
+  "ui_118": {
+    "message": "För en yttre filanalys, få en API-nyckel från"
+  },
+  "ui_119": {
+    "message": "Efter att du har registrerat dig, gå till din profil och hitta avsnittet API KEY."
+  },
+  "ui_120": {
+    "message": "Håll nyckeln API här. Lokala checker funkar utan det."
+  },
+  "ui_121": {
+    "message": "API nyckelinställningar"
+  },
+  "ui_122": {
+    "message": "hybrid-analysis.com"
+  },
+  "ui_123": {
+    "message": "hybrid-analysis.com (öppnar en ny flik)"
+  },
+  "ui_124": {
+    "message": "Tillåt extern analys (skicka data till tredjepartsleverantörer)"
+  },
+  "ui_125": {
+    "message": "Utan detta samtycke,"
+  },
+  "ui_126": {
+    "message": "hashes, filer, länkar eller IP e-postadresser sänds till externa tjänster. Efter samtycke kan auktoriserade skanningar skicka bifogade och länka data till Hybrid Analysis, VirusTotal, urlscan.io, URLhaus eller AbuseIPDB, beroende på din integritet nivå. Stäng av det här alternativet för att återkalla ditt samtycke:"
+  },
+  "ui_127": {
+    "message": "Nej Nej"
+  },
+  "ui_128": {
+    "message": "Integritetspolicy"
+  },
+  "ui_129": {
+    "message": "Integritetspolicy (öppnar en ny flik)"
+  },
+  "ui_130": {
+    "message": "Hybrid Analysis API nyckel (valfritt):"
+  },
+  "ui_131": {
+    "message": "e.g. abcdef123456 och…"
+  },
+  "ui_132": {
+    "message": "URLhaus API nyckel (optionell domännamn):"
+  },
+  "ui_133": {
+    "message": "Du kan få en API nyckel på"
+  },
+  "ui_134": {
+    "message": "."
+  },
+  "ui_135": {
+    "message": "urlhaus.abuse.ch"
+  },
+  "ui_136": {
+    "message": "urlhaus.abuse.ch (öppnar en ny flik)"
+  },
+  "ui_137": {
+    "message": "urlscan.io API nyckel (valfritt URL analys):"
+  },
+  "ui_138": {
+    "message": "Du kan få en API nyckel på"
+  },
+  "ui_139": {
+    "message": "urlscan.io"
+  },
+  "ui_140": {
+    "message": "urlscan.io (öppnar en ny flik)"
+  },
+  "ui_141": {
+    "message": "VirusTotal API nyckel (optionell fil rykte):"
+  },
+  "ui_142": {
+    "message": "virustotal.com"
+  },
+  "ui_143": {
+    "message": "virustotal.com (öppnar en ny flik)"
+  },
+  "ui_144": {
+    "message": "Privatsnivåer är:"
+  },
+  "ui_145": {
+    "message": "Strikt (default: bara hash och domäner, inga laddningar)"
+  },
+  "ui_146": {
+    "message": "Balanserad (ladda upp okända filer, ingen komplett URLs)"
+  },
+  "ui_147": {
+    "message": "Maximal analys (ladda upp okända filer och slutföra URLs)"
+  },
+  "ui_148": {
+    "message": "Begränsar data som sänds till analysleverantörer. gäller bara när externa analyser är aktiverade."
+  },
+  "ui_149": {
+    "message": "IP rykte (check mottagna header):"
+  },
+  "ui_150": {
+    "message": "funktionshinder"
+  },
+  "ui_151": {
+    "message": "VirusTotal (krav på en VirusTotal API nyckel)"
+  },
+  "ui_152": {
+    "message": "AbuseIPDB (krav på en AbuseIPDB API nyckel)"
+  },
+  "ui_153": {
+    "message": "IP rykte API nyckel:"
+  },
+  "ui_154": {
+    "message": "Skicka public IP-adresser från e-postens mottagna headers till den valda leverantören. kräver yttre analysavgivande och en skannemyndigande."
+  },
+  "ui_155": {
+    "message": "Tillåtelse (comma-separerade domäner eller e-postadresser):"
+  },
+  "ui_156": {
+    "message": "e.g. example.com, test@ example.com"
+  },
+  "ui_157": {
+    "message": "Tillförlitliga avsändare inmatningar avbryter lokala avsändare varningar. De tillåter inte externa skanningar."
+  },
+  "ui_158": {
+    "message": "Blocklist (domäner eller e-postadresser som är separerade från kommma):"
+  },
+  "ui_159": {
+    "message": "Skriv in blockerade domäner eller e-postadresser."
+  },
+  "ui_160": {
+    "message": "Skanna alltid manuellt (inte automatiskt ladda upp)"
+  },
+  "ui_161": {
+    "message": "Förhindrar automatiska externa skanningar.Explicit manuella åtgärder kräver ändå samtycke och lämplig integritet."
+  },
+  "ui_162": {
+    "message": "Hämta väntande länkrapporter automatiskt"
+  },
+  "ui_163": {
+    "message": "Länkcheck kräver samtycke, en skanningstillstånd och lämplig integritet."
+  },
+  "ui_164": {
+    "message": "Kolla länkar innan du öppnar dem"
+  },
+  "ui_165": {
+    "message": "Avbryter navigering för att visa resultat.Ochecklade länkar och fel identifieras tydligt.Full URL-analys kräver maximalt nivå. Fullständiga länkar och bilagor måste bekräftas var för sig."
+  },
+  "ui_166": {
+    "message": "Kom ihåg att spara dina inställningar."
+  },
+  "ui_167": {
+    "message": "Datahantering"
+  },
+  "ui_168": {
+    "message": "Klar lokalt lagrade resultat och rykte cachor."
+  },
+  "linkChecking": {
+    "message": "Checking länk…"
+  },
+  "linkWarning": {
+    "message": "Länken har anmälts som mistanke eller skadlig."
+  },
+  "linkUnknown": {
+    "message": "Den här länken kunde inte kontrolleras. öppna den kan vara riskfyllt."
+  },
+  "linkNoDetection": {
+    "message": "Ingen hot upptäckts av leverantören. Detta är inte en säkerhetsgaranti."
+  },
+  "linkProceed": {
+    "message": "Öppna länkar ändå"
+  },
+  "linkCancel": {
+    "message": "Avbryt"
+  },
+  "localMode": {
+    "message": "Lokala checks fungera utan API nycklar. Externa skanningar kräver ditt samtycke och en budskap eller avsändarens auktorisation."
+  },
+  "statusNormal": {
+    "message": "(Ingen upptäckt av"
+  },
+  "statusSuspicious": {
+    "message": "(förstådda är det)"
+  },
+  "statusCritical": {
+    "message": "(och kritiskt)"
+  },
+  "noSubject": {
+    "message": "(Ingen ämne finns)"
+  },
+  "noSender": {
+    "message": "(Okända avsändare)"
+  },
+  "noId": {
+    "message": "(Ingen ID är"
+  },
+  "unknownAttachment": {
+    "message": "okända"
+  },
+  "statusDangerous": {
+    "message": "( Det är farligt)"
+  },
+  "sizeLimit": {
+    "message": "Anslutningen går utöver den lokala storleken på 25 MiB och har inte läst eller laddat upp."
+  },
+  "trustedAuthLabel": {
+    "message": "Tillförlitliga autentiserings servrar (comma-separated)"
+  },
+  "trustedAuthHelp": {
+    "message": "Endast listar mottagarens e-postserver som du administrerar eller uttryckligen litar på. Okonfigurerade headerrapporter förblir oklar."
+  },
+  "consentHelp": {
+    "message": "Inga uppgifter skickas till externa tjänster utan samtycke. Efter samtycke kontrolleras bara uttryckligen godkända meddelanden eller avsändare. På den strikta nivån kan hashvärden, domäner och offentliga IP-adresser skickas. Den balanserade nivån tillåter även uppladdning av okända filer och den högsta även överföring av fullständiga URL:er. Stäng av alternativet för att stoppa nya överföringar och avbryta väntande begäranden. Uppgifter som redan skickats kan inte återkallas. Fullständiga länkar och bilagor måste bekräftas var för sig."
+  },
+  "visualImpersonation": {
+    "message": "Visuell upptäckt: sidan impersonerar $BRANDS$ (förmodad phishing).",
+    "placeholders": {
+      "brands": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedEmail": {
+    "message": "Sändaren e-post ( $P1$) finns på blocklistan.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedDomain": {
+    "message": "Omdöme om domän ($P1$Det finns i den här blocklistan ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedEmail": {
+    "message": "Sändaren e-post ( $P1$) finns på tillåtelseförteckningen.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedDomain": {
+    "message": "Omdöme om domän ($P1$(enligt den här listan finns det$P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanVisibility": {
+    "message": "urlscan.io-ansökningar är inte listade, inte privat. En komplett URL kan innefatta personliga data eller åtkomst tokens. Sänd bara URLs du är berättigad att dela."
+  },
+  "notificationScanCount": {
+    "message": "Skannade data: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "gatewayRequestTimeout": {
+    "message": "Försäkringsgivarens begäran har avbokats eller avbrutits."
+  },
+  "gatewayInvalidJson": {
+    "message": "Företaget gav ett okänt svar."
+  },
+  "gatewayNetworkError": {
+    "message": "Tillhandahållaren kunde inte nås."
+  },
+  "noMessageFound": {
+    "message": "Inga visade budskap hittades."
+  },
+  "providerNoDetection": {
+    "message": "Inga hot upptäckta"
+  },
+  "providerMalicious": {
+    "message": "Skadligt"
+  },
+  "providerSuspicious": {
+    "message": "Misstänkt"
+  },
+  "providerPending": {
+    "message": "Analys pendling"
+  },
+  "privacyLocalData": {
+    "message": "Thundy AV läser det visade budskapet, dess sändare, ämne, rubriker, text och bifogar för att utföra lokala checks. Lokala checks funkar utan API nycklar. Det finns ingen telemetri och ingen utvecklare analys server."
+  },
+  "privacyProviders": {
+    "message": "Tillståndsförfrågningar går direkt till inställda leverantörer: Hybrid Analysis för fil hashes och uppladdningar, VirusTotal för fil hash eller IP och rykte, URLhaus för domäner, urlscan.io För fullständigt URLs och AbuseIPDB för IP:er. hashes kan identifiera kända filer. leverantörens villkor och sekretesspolicy gäller; de inlämnade data kan dela av leverantören."
+  },
+  "privacyRetention": {
+    "message": "Inställningar, samtycke, avsändarbehörighet och API-nycklar lagras i din Thunderbird profil. API nycklar krypteras inte där. Lokala skanningsfiler kan inkludera ämnen, avsändares adreser, kompletta länkar och bifogade metadata. Kashen behåller upp till 1000 budskap för 30 dagar och renas på databasstart. In-memory rykteresultat upphör efter 15 minuters tid."
+  },
+  "privacyControl": {
+    "message": "Stäng av externa analyser för att stoppa nya förfrågningar och avbryta vända förfrågning. redan överförda data kan inte återkallas. använd Klar cache för att ta bort lagrade analysresultat och rykte cache. Individ sändare tillstånd kan tas bort i inställningar."
+  },
+  "privacyDetailed": {
+    "message": "Detaljerad sekretesspolicy (Engelska/Tysk)"
+  },
+  "senderAuthorizationsLabel": {
+    "message": "Tillståndsändare (en e-postadress per linje)"
+  },
+  "senderAuthorizationsHelp": {
+    "message": "Sändare kan skannas automatiskt när externa analyser är aktiverade. ta bort enadress för att stoppa automatiska skanningar för framtida budskap. Den här listan går inte bort från sekretessnivån eller manuell läge."
+  },
+  "invalidSenderAddress": {
+    "message": "Skriv in enkla e-postadresser, en per linje."
+  },
+  "popupSubtitle": {
+    "message": "Säkerhetsöverblick för budskap"
+  },
+  "popupDetails": {
+    "message": "Tekniska budskap detalj"
+  },
+  "popupLocalAssessment": {
+    "message": "Lokala riskbedömningar"
+  },
+  "popupLocalExplanation": {
+    "message": "Detta resultat är inte ett antivirusbeslut eller en säkerhetsgaranti."
+  },
+  "linkDialogTitle": {
+    "message": "Kolla innan öppningen"
+  },
+  "linkDestination": {
+    "message": "Destinationswebbplats"
+  },
+  "linkUrlDetails": {
+    "message": "Visa full länkadress"
+  },
+  "linkOpenBrowser": {
+    "message": "Öppna i webbläsaren"
+  },
+  "linkOpening": {
+    "message": "Öppna…"
+  },
+  "linkOpenFailed": {
+    "message": "Det gick inte att öppna länken. Försök igen eller kontrollera inställningarna för din standardwebbläsare."
+  },
+  "linkCheckLimited": {
+    "message": "Endast de resultat som finns i scan kan visas. saknade checkar betyder inte att en länk är säker."
+  },
+  "auditTitle": {
+    "message": "Länk till beslut log"
+  },
+  "auditOpen": {
+    "message": "Läs länken log"
+  },
+  "auditScope": {
+    "message": "Logs HTTP (S) klick intercepted by link protects. OPENED betyder Thunderbird accepterade öppningsförfrågan utan att rapportera ett fel. Detta bekräftar inte att operativt system startade en webbläsare eller att hemsidan har besökt."
+  },
+  "auditPrivacy": {
+    "message": "Lokalt lagrad i upp till 30 dagar, 2000 arkiv eller 2 MiB (stora inmatningar tas bort). Full URLs kan innefatta personliga data eller åtkomst tokens. Inget laddas upp automatiskt. Lokala logg kan ändras eller raderas av profilanvändare; det är inte en tamper-proof central revision trail. Lokala poäng använder den klickade länken och budskap kontext, inte en leverantör poäng. Utvärderingsskäl kan innefatte avsändare eller domändata."
+  },
+  "auditSearch": {
+    "message": "URL, domän eller händelse ID"
+  },
+  "auditOutcome": {
+    "message": "Beslutet"
+  },
+  "auditAll": {
+    "message": "Alla"
+  },
+  "auditOpened": {
+    "message": "Öppna begäran"
+  },
+  "auditAborted": {
+    "message": "Abort"
+  },
+  "auditOpenError": {
+    "message": "Öppningen misslyckades"
+  },
+  "auditPending": {
+    "message": "Inga slutförda beslut"
+  },
+  "auditMinScore": {
+    "message": "Minimi beslutssatser"
+  },
+  "auditFrom": {
+    "message": "Från"
+  },
+  "auditTo": {
+    "message": "till"
+  },
+  "auditRefresh": {
+    "message": "Frysning"
+  },
+  "auditJson": {
+    "message": "Exportera JSON"
+  },
+  "auditCsv": {
+    "message": "Exportera CSV"
+  },
+  "auditClear": {
+    "message": "Ta bort lokala loggar"
+  },
+  "auditExportHelp": {
+    "message": "Exporter inkluderar alla filtrerade rader, inte bara den aktuella sidan. JSON inkluderar en SHA-256 checkum för verifiering; det visar inte autentitet. CSV nötar spridningsblad formler. Exporterna innefattar komplett URLs : dela bara med auktoriserade granskare."
+  },
+  "auditTime": {
+    "message": "Klick / Beslutet tid"
+  },
+  "auditLocalScore": {
+    "message": "Lokala poäng (link och budskap)"
+  },
+  "auditVerdict": {
+    "message": "Tillhandahållare resultat"
+  },
+  "auditAddress": {
+    "message": "URL och detalj"
+  },
+  "auditPrevious": {
+    "message": "Tidigare"
+  },
+  "auditNext": {
+    "message": "Nästa"
+  },
+  "auditClearConfirm": {
+    "message": "Ta bort alla lokala länklogginsatser? Exportera krav på bevisning först. Skanna resultat och inställningar bevaras."
+  },
+  "auditFailure": {
+    "message": "Lokala länklogg kan inte läsas eller sparas."
+  },
+  "auditUnavailable": {
+    "message": "inte tillgänglig"
+  },
+  "auditScoreAtDecision": {
+    "message": "Score vid beslut"
+  },
+  "auditRecords": {
+    "message": "Rekord"
+  },
+  "auditDetails": {
+    "message": "Visa URL och bevisning"
+  },
+  "auditEventId": {
+    "message": "Evenemang ID"
+  },
+  "auditCancelReason": {
+    "message": "Annulleringens skäl"
+  },
+  "auditFinalResult": {
+    "message": "Senaste checkresultatet"
+  },
+  "auditProfile": {
+    "message": "Lokala profil ID"
+  },
+  "auditExported": {
+    "message": "Exporten är räddad."
+  },
+  "auditRiskyOpened": {
+    "message": "Öppna begäran vid hög risk"
+  },
+  "auditExportFailed": {
+    "message": "Exporten misslyckades eller avbrutits."
+  },
+  "profilesTitle": {
+    "message": "Optionella företagsprofiler"
+  },
+  "profilesIntro": {
+    "message": "Välj vanliga system oberoende eller lämna integrationer inaktiverade. dessa profiler förbereder konfigureringen; de ansluter inte till en företagstjänst eller aktiverar central logging."
+  },
+  "profilesOpen": {
+    "message": "Välj företagsprofiler"
+  },
+  "profilesBundle": {
+    "message": "Föreslagna kombinationer"
+  },
+  "profilesLocal": {
+    "message": "Lokala förberedelser"
+  },
+  "profilesCustom": {
+    "message": "Anpassad urval"
+  },
+  "profilesHosting": {
+    "message": "Värdtjänst"
+  },
+  "profilesSso": {
+    "message": "Enstaka sign-on (SSO) och"
+  },
+  "profilesDevices": {
+    "message": "Enhetsstyrning"
+  },
+  "profilesSiem": {
+    "message": "Säkerhetskontroll (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Biljett system"
+  },
+  "profilesRequirements": {
+    "message": "Behövda Konfiguration"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Slutpunkter och kontonätningar levereras under senare inställningar. Namnen under identifierar de nödvändiga inställningar och hemliga referenser; ange inga autentiseringar här."
+  },
+  "profilesPreview": {
+    "message": "Konfigurationsprojekt"
+  },
+  "profilesPrivacy": {
+    "message": "Anslutningar förblir inaktiverade. utformningen inte har API nycklar, tokens, klickade URLs eller budskap data. Centrala data är planerade med domän-end redigering."
+  },
+  "profilesSave": {
+    "message": "Spara lokalt urval"
+  },
+  "profilesExport": {
+    "message": "Exportkonfigurationsprojekt"
+  },
+  "profilesReset": {
+    "message": "Reset urval"
+  },
+  "profilesNone": {
+    "message": "Behov / inte utvalda"
+  },
+  "profilesSelfHosted": {
+    "message": "Självhostade / på-premiärer"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Inga externa integrationsinställningar krävs för detta urval."
+  },
+  "profilesSaved": {
+    "message": "Välj sparas lokalt. anslutningar förblir inaktiverade."
+  },
+  "profilesExported": {
+    "message": "Konfigurationsprojekt exporteras. inget aktiverats."
+  },
+  "profilesFailed": {
+    "message": "Urvalet kunde inte laddas, sparas eller exporteras, eller operationen avbröts."
+  },
+  "wizardTitle": {
+    "message": "Konfigurera Thundy AV"
+  },
+  "wizardLanguage": {
+    "message": "Guidens språk"
+  },
+  "wizardLanguageNote": {
+    "message": "Valet gäller bara guiden. Tilläggets språk kan ändras i inställningarna."
+  },
+  "wizardWelcome": {
+    "message": "välkomna"
+  },
+  "wizardProtection": {
+    "message": "Linkskydd"
+  },
+  "wizardExternal": {
+    "message": "Optionell analys"
+  },
+  "wizardIntro": {
+    "message": "Börja med lokala checker. För att kontrollera ett e-postmeddelande, använd dess Thundy AV-banner eller skanningsåtgärd. Du kan sedan besluta om du ska ställa in analysleverantörer."
+  },
+  "wizardLocalNotice": {
+    "message": "Utan samtycke till externa analyser, inga data sänds till analysleverantörer. denna trollkarl ger aldrig samtycke."
+  },
+  "wizardPrivacy": {
+    "message": "Personliga information"
+  },
+  "wizardLinkChoice": {
+    "message": "Varning innan du öppnar länkar och registrerar beslut lokalt"
+  },
+  "wizardLinkExplanation": {
+    "message": "Länkdialogen visar destinationen och den tillhandahållna riskbedömningen. Öppna dina armar länken till din webbläsare; det visar inte ett webbsidabesök."
+  },
+  "wizardAuditNotice": {
+    "message": "Den lokala länkloggen kan inkludera fullständiga URLs och bedömningsskäl. Det behåller upp till 30 dagar, 2000 inmatningar eller 2 MiB. Profiler kan läsa, ändra eller ta bort det; det är inte en säker företagskontroll."
+  },
+  "wizardExternalExplanation": {
+    "message": "Externa leverantörer är valfria och kan kräva API-nycklar. Beroende på din integritetslinje, hashar, domäner, IP-sidor, filer eller fullständiga URLs kan överföras. Konfigurera leverantörer och ge samtycke i inställningar."
+  },
+  "wizardNextAction": {
+    "message": "Vad skulle du vilja göra i efterhand?"
+  },
+  "wizardKeepLocal": {
+    "message": "Slut med lokala kontrakter"
+  },
+  "wizardKeepExisting": {
+    "message": "Håll befintliga externa inställningar"
+  },
+  "wizardExistingExternal": {
+    "message": "Extern analys är redan aktiverad i denna profil. den trollkarlen ändrar inte detta samtycke. använd inställningar för att inaktivera det eller granska tillstånd."
+  },
+  "wizardConfigure": {
+    "message": "Konfigurera externa analyser i inställningar"
+  },
+  "wizardNoConsent": {
+    "message": "Välj detta alternativ öppnar bara inställningar. Inget laddas upp och ingen tillåtelse begärs av denna trollkarl."
+  },
+  "wizardBack": {
+    "message": "Tillbaka"
+  },
+  "wizardNext": {
+    "message": "Nästa"
+  },
+  "wizardFinish": {
+    "message": "Spara uppställning"
+  },
+  "wizardFinishConfigure": {
+    "message": "Spara och öppna inställningar"
+  },
+  "wizardSkip": {
+    "message": "inte nu"
+  },
+  "wizardDone": {
+    "message": "Sättas i sparat"
+  },
+  "wizardDoneText": {
+    "message": "Din länkskyddsval sparas lokalt. Inga API nycklar, externa samtycke eller avsändargodkännanden har ändrats. Du kan öppna trollkarlen från inställningar."
+  },
+  "wizardSettings": {
+    "message": "Öppna inställningar"
+  },
+  "wizardProfilesNotice": {
+    "message": "Företagsprofiler är valfria konfigureringsplaner. Välj dem aktiverar inte en företagsanslutning."
+  },
+  "wizardDeferred": {
+    "message": "Inställningar försenade"
+  },
+  "wizardDeferredText": {
+    "message": "Ingen inställningar ändras. Återuppta trollkarlen från inställningar när du är redo."
+  },
+  "wizardSettingsOpened": {
+    "message": "Inställningar öppnas. Konfigurera leverantörer och spara ditt samtycke där."
+  },
+  "wizardSettingsFailed": {
+    "message": "Inställningar kan inte öppnas. din inställning sparas; använd Öppna inställningar för att återta."
+  },
+  "wizardSaveFailed": {
+    "message": "Inställningen kunde inte sparas. dina val kvarstår här; vänligen återvänder."
+  },
+  "wizardLoadFailed": {
+    "message": "Sättningar kunde inte laddas. Inget sparas. Ladda ner den här sidan för att återställa."
+  },
+  "wizardLanguageFailed": {
+    "message": "Språket kan inte laddas. det föregående språket är kvar."
+  },
+  "wizardReopen": {
+    "message": "Öppna inställningar för Wizard"
+  },
+  "settingsAppearance": {
+    "message": "Utseende"
+  },
+  "settingsPrivacy": {
+    "message": "Sekretess"
+  },
+  "settingsScanning": {
+    "message": "Skydd"
+  },
+  "settingsProviders": {
+    "message": "Analystjänster"
+  },
+  "settingsSenders": {
+    "message": "Avsändarregler"
+  },
+  "settingsData": {
+    "message": "Data och verktyg"
+  },
+  "settingsWorkspace": {
+    "message": "Din arbetsplats"
+  },
+  "settingsEyebrow": {
+    "message": "Gör det ditt"
+  },
+  "settingsSubtitle": {
+    "message": "Anpassa utseendet på Thundy AV och skyddet för din e-post."
+  },
+  "settingsLocalBadge": {
+    "message": "Lokala på grund av default"
+  },
+  "settingsLocalNote": {
+    "message": "Dina preferenser. lagras på denna enhet."
+  },
+  "settingsSkip": {
+    "message": "Hoppa till inställningar"
+  },
+  "settingsProviderGuide": {
+    "message": "Om leverantörer och API nycklar"
+  },
+  "settingsWizardHelp": {
+    "message": "Övervaka den guidade inställningen när som helst."
+  },
+  "themeIntro": {
+    "message": "Gör Thundy AV känslan som din. Utseendet ändringarna sparas omedelbart över tillägget."
+  },
+  "themeMode": {
+    "message": "Utseende"
+  },
+  "themeSystem": {
+    "message": "Följ Thunderbirds tema"
+  },
+  "themeLight": {
+    "message": "Ljust"
+  },
+  "themeDark": {
+    "message": "Mörkt"
+  },
+  "themeAccent": {
+    "message": "Accent färg"
+  },
+  "themeOcean": {
+    "message": "Havet"
+  },
+  "themeViolet": {
+    "message": "Violett"
+  },
+  "themeForest": {
+    "message": "Skogar"
+  },
+  "themeAmber": {
+    "message": "Bärnstensfärgad"
+  },
+  "themeReady": {
+    "message": "Utseendet sparas automatiskt. andra inställningar använder knappen Spara."
+  },
+  "themeSaving": {
+    "message": "Spara utseendet…"
+  },
+  "themeSaved": {
+    "message": "Utseendet räddades."
+  },
+  "themeLoadError": {
+    "message": "Utseendet kan inte laddas. Försök att öppna inställningar igen."
+  },
+  "themeSaveError": {
+    "message": "Utseendet kunde inte sparas. Välj ditt val igen för att återvända."
+  },
+  "themeRetry": {
+    "message": "Retry sparande utseendet"
+  },
+  "themeDensity": {
+    "message": "Informationens densitet"
+  },
+  "themeComfortable": {
+    "message": "Bekväm"
+  },
+  "themeCompact": {
+    "message": "Kompakt"
+  },
+  "themeDensityHelp": {
+    "message": "Anpassa spacing i inställningar och lokala administrationsverktyg."
+  },
+  "profilesChanges": {
+    "message": "Förändring i jämställdhet med sparat urval"
+  },
+  "profilesDiscard": {
+    "message": "Undvik oönskade ändringarna"
+  },
+  "profilesLoadRetry": {
+    "message": "Reload spara urval"
+  },
+  "profilesNotLoaded": {
+    "message": "Spara urval inte laddas"
+  },
+  "profilesUnsaved": {
+    "message": "Förändringslösningar · Inaktivt utkast"
+  },
+  "profilesUnchanged": {
+    "message": "Spara utbud · inaktiv utkast"
+  },
+  "profilesSaving": {
+    "message": "Spara lokala val…"
+  },
+  "settingsUnsaved": {
+    "message": "Oförskräckliga ändringarna"
+  },
+  "providerUnknown": {
+    "message": "Obekanta resultat"
+  },
+  "auditVerdictAtDecision": {
+    "message": "resultat vid beslut"
+  },
+  "ui_169": {
+    "message": "Analysprotokoll: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "ArbetsID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "Förfrågan: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protokoll återställd: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": "Analysen är fortsatt på gång (IN_PROGRESS).Resultatet återkallas automatiskt varje $P1$ sekunder (tempt $P2$); den färdiga analysprotokollet visas här utan en ny begäran när den lagras.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "Efter en omstart eller förlust av processen, detta förblir i väntan; inte anse att länken öppnades eller avbröt."
+  },
+  "auditCancelUser": {
+    "message": "Annullerad av användaren"
+  },
+  "auditCancelEscape": {
+    "message": "Stängd med flykt"
+  },
+  "auditCancelDestination": {
+    "message": "Destination ändras"
+  },
+  "auditCancelContext": {
+    "message": "Meddelande kontext stängd"
+  },
+  "auditCancelUnknown": {
+    "message": "Okänd orsak till avbokning"
+  },
+  "reportNotSaved": {
+    "message": "Rapporterna är synliga, men kunde inte sparas lokalt. Återuppta det för att återvända."
+  },
+  "checkOrigin_live": {
+    "message": "Aktuell leverantör resultat"
+  },
+  "checkOrigin_stored": {
+    "message": "Förvarad resultat"
+  },
+  "checkOrigin_none": {
+    "message": "Inga leverantörs observationer"
+  },
+  "checkOutcome_success": {
+    "message": "Förfrågan lyckades"
+  },
+  "checkOutcome_failed": {
+    "message": "Förfrågan misslyckades"
+  },
+  "checkOutcome_disabled": {
+    "message": "Extern analys av funktionshinder"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Besök tillstånd saknas"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Nyckelleverantör saknas"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Ingen leverantörs referens"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Inga nya begäran"
+  },
+  "checkOutcome_no_result": {
+    "message": "Inga nytt användbart resultat"
+  },
+  "checkAttempted": {
+    "message": "Se upp för att prova"
+  },
+  "checkObserved": {
+    "message": "resultat observerade"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Anledningar till beslutet"
+  },
+  "auditReasonsLatest": {
+    "message": "Senaste tillgängliga skäl"
+  },
+  "auditReasonsMissing": {
+    "message": "inte registreras vid den tiden"
+  },
+  "coverageSummary": {
+    "message": "Färg – detekteras av: $1• Tillräckligt för: $2• bearbetas : $3• misslyckas med: $4Skjutas till: $5Skjutna föremål är ovärderliga."
+  },
+  "supportTitle": {
+    "message": "Lokala stödrapporter"
+  },
+  "supportHelp": {
+    "message": "Förhandsgranska en minimal diagnostisk rapport, spara den lokalt. Inget sänds. Checksums autentiserar inte källan."
+  },
+  "supportPreview": {
+    "message": "Förhandsrapporter"
+  },
+  "supportConfiguration": {
+    "message": "Inkludera skarpa inställningar (ingen nycklar eller sändarlistor)"
+  },
+  "supportSave": {
+    "message": "Spara rapporten lokalt"
+  },
+  "coverageAttachments": {
+    "message": "Tillbehör"
+  },
+  "coverageDomains": {
+    "message": "Unika domäner"
+  },
+  "coverageBatch": {
+    "message": "Batch vänster"
+  },
+  "coverageLimits": {
+    "message": "Gränser per pass: 100 tillägg, 25 MiB per tillägg; 100 unika domäner; 20 paket länkar."
+  },
+  "localProfileTitle": {
+    "message": "Lokala profiler"
+  },
+  "localProfileHelp": {
+    "message": "Export sparas utseendet eller lokala säkerhetsinställningar separata. Förhandsvisning och bekräftelse av importen. Nycklar, samtycke, tillstånd, pålitliga avsändare och revisionshistorik är uteslutna."
+  },
+  "localProfileExport": {
+    "message": "Export utseendet"
+  },
+  "localProfileFile": {
+    "message": "Välj en profilfil ( JSON, upp till 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Profiler JSON (eller klistra här)"
+  },
+  "localProfilePreview": {
+    "message": "Förhandsförändring"
+  },
+  "localProfileApply": {
+    "message": "Applicera visade ändringarna"
+  },
+  "localProfileDiscard": {
+    "message": "Försvagade import"
+  },
+  "localProfileInvalid": {
+    "message": "Invalid profil, okänd version eller förbjudna fält. inget tillämpas."
+  },
+  "localProfileChanged": {
+    "message": "Utseendet ändrades sedan förhandsvisning. förhandsvisningen igen innan du applicerar."
+  },
+  "localProfileFailed": {
+    "message": "Profilen kunde inte sparas. granskning av aktuella inställningar och återställning."
+  },
+  "localProfileApplied": {
+    "message": "Utseendet profil tillämpad. Skydd och samtycke oförändrad."
+  },
+  "analysisTitle": {
+    "message": "Analysen källor"
+  },
+  "analysisMixed": {
+    "message": "Lokala + externa kontroll"
+  },
+  "analysisExternal": {
+    "message": "Externa observationer finns"
+  },
+  "analysisLocal": {
+    "message": "Lokala · Inga externa resultat registrerade"
+  },
+  "analysisLocalChecked": {
+    "message": "Lokala budskap/link heuristik är klar."
+  },
+  "analysisLocalPending": {
+    "message": "Lokala utvärderingar har ännu inte registrerats."
+  },
+  "analysisUnknown": {
+    "message": "okända"
+  },
+  "analysisTimeUnknown": {
+    "message": "Tid inte inspelad"
+  },
+  "analysisObserved": {
+    "message": "Sista användbara svar"
+  },
+  "analysisFindingObserved": {
+    "message": "Hitta registrerat"
+  },
+  "analysisAttempted": {
+    "message": "Sista begäran för att"
+  },
+  "analysisPartial": {
+    "message": "Vissa förfrågningar misslyckades; de finns inte för varje objekt."
+  },
+  "analysisOtherServices": {
+    "message": "Övriga Tjänster / inte verifierade"
+  },
+  "analysisLimit": {
+    "message": "En lokal poäng är inte ett antivirusbeslut.Krav och laddningar är inte färdiga analyser.Serverade resultat behåller sin original ålder; saknade rekord visar inte att ingen tidigare begäran inträffade."
+  },
+  "analysisScope_hash": {
+    "message": "Fil hash rykte"
+  },
+  "analysisScope_file": {
+    "message": "filer för att lämna"
+  },
+  "analysisScope_url": {
+    "message": "URL analys"
+  },
+  "analysisScope_domain": {
+    "message": "Domain Reputation"
+  },
+  "analysisScope_ip": {
+    "message": "Public IP rykte"
+  },
+  "analysisScope_report": {
+    "message": "Analysrapporten"
+  },
+  "analysisState_running": {
+    "message": "Begärd · Inga slutliga resultat än"
+  },
+  "analysisState_checked": {
+    "message": "resultat mottagna"
+  },
+  "analysisState_received": {
+    "message": "Svar mottagit · dom inte finns"
+  },
+  "analysisState_submitted": {
+    "message": "Förslag accepterade · analys inte bekräftad fullständigt"
+  },
+  "analysisState_not_found": {
+    "message": "Inga leverantörsregister hittade"
+  },
+  "analysisState_failed": {
+    "message": "Förfrågan misslyckades · Inga nya domar"
+  },
+  "analysisState_incomplete": {
+    "message": "Inga färdiga analyser registrerades"
+  },
+  "analysisSource_remote": {
+    "message": "Extern tjänst kontaktad"
+  },
+  "analysisSource_cache": {
+    "message": "Memory cache · inga nya leverantörsförfrågan"
+  },
+  "analysisSource_stored": {
+    "message": "Förvarad yttre observation"
+  },
+  "analysisSource_attempt": {
+    "message": "Förfrågan för att prova · svar inte bekräftat"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Domstol ej tillgänglig"
+  },
+  "analysisVerdict_none": {
+    "message": "Tillgängliga resultat: ingen upptäckt (ingen säkerhetsgaranti)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "Tillgängliga resultat inkluderar mistankeindikatorer"
+  },
+  "analysisVerdict_malicious": {
+    "message": "Tillgängliga resultat inkluderar en hotdetektion"
+  },
+  "analysisReason_unconfigured": {
+    "message": "För närmaste inte inställd"
+  },
+  "analysisReason_disabled": {
+    "message": "Nya externa begäranden är funktionshinder"
+  },
+  "analysisReason_permission": {
+    "message": "Besökning av missade tillstånd för nya begäranden"
+  },
+  "analysisReason_authorization": {
+    "message": "Ingen automatisk tillstånd för detta budskap / manuell läge"
+  },
+  "analysisReason_policy": {
+    "message": "inte tillåts av den aktuella integritetsnivån"
+  },
+  "analysisReason_on_action": {
+    "message": "Rör bara efter en uttrycklig länk åtgärd"
+  },
+  "analysisReason_unrecorded": {
+    "message": "Inga inspelningar registrerade för detta budskap"
+  },
+  "analysisUnavailable": {
+    "message": "Analyskällor för närtiden inte finns"
+  },
+  "analysisModeUnknown": {
+    "message": "Analysen är ännu inte registrerad"
+  },
+  "analysisModeRunning": {
+    "message": "Extern begäran körs · resultat väntar"
+  },
+  "analysisModeSubmitted": {
+    "message": "Utfört externa · analys inte ännu fullbordad"
+  },
+  "analysisModeIncomplete": {
+    "message": "Extern check ofullständigt · fullbordning inte bekräftat"
+  },
+  "analysisModePartial": {
+    "message": "Externa resultat finns · Några förfrågningar misslyckades"
+  },
+  "analysisModeFailed": {
+    "message": "Extern begäran misslyckades · inga användbara resultat registrerade"
+  },
+  "analysisModeResults": {
+    "message": "Externa svar finns · se checkar under"
+  },
+  "analysisResourceMessage": {
+    "message": "Meddelande / Transport Reputation"
+  },
+  "analysisResourceAttachment": {
+    "message": "tillhörighet"
+  },
+  "analysisResourceLink": {
+    "message": "Länk"
+  },
+  "analysisResourceUnknown": {
+    "message": "Tidigare sammanslagning · resurser inte registrerade"
+  },
+  "analysisTruncated": {
+    "message": "Vissa resursdetaljer har försvunnit eftersom den lokala skärmgränsen nåddes."
+  },
+  "analysisResources": {
+    "message": "Resurser i detta budskap"
+  },
+  "analysisResourceLocal": {
+    "message": "Anslutningar som lagras med budskapet · inga intyg om en antivirusskanning"
+  },
+  "analysisResourceTarget": {
+    "message": "Länkad mål · Ladda bort fjärrinnehåll är inte ett vittnesbörd om en yttre analys"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Inga externa kontroller registrerade för denna resurs"
+  },
+  "analysisContextChanged": {
+    "message": "Budskapet ändras. Stäng och öppna popupen innan du lämnar in igen."
+  },
+  "analysisLocalIncomplete": {
+    "message": "Den lokala analysen är ofullständig: en del textinnehåll är ofullgängligt."
+  },
+  "analysisLocalUnavailable": {
+    "message": "Den lokala analysen är inte tillgänglig: budskapet kunde inte läsas."
+  },
+  "analysisHistoryTitle": {
+    "message": "Föreningshistoria · association unconfirmed"
+  },
+  "analysisHistoryWarning": {
+    "message": "De här historiska rekorden kan tillhöra en annan budskap med samma Message-ID. De bekräftar inte en kontroll av detta budskap."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Nya källobservationer kunde inte sparas. befintlig historia bevarades."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "En rapportuppdatering kunde inte sparas. Tidigare prototyper bevarades."
+  },
+  "sourceExportOpen": {
+    "message": "Förhandsanalys källrapporter"
+  },
+  "sourceExportTitle": {
+    "message": "Analys källrapporter"
+  },
+  "sourceExportIntro": {
+    "message": "Skapa en lokal snapshot av de inspelade checken. Detta kör inte en ny analys. Aktuella observationer och lagrade historia med okonfirmade associationer hålls separata."
+  },
+  "sourceExportPrivacy": {
+    "message": "Inkluderar tjänsten, statusen, domar och exakta observationstider. Undantag URLs, filnamn, hash, IPs, nycklar, textmeddelande och interna identifierare. Resursnummer gäller bara inom denna rapport. Detta är inte en komplett historia eller en autentiserad rekord. Inget sänds automatiskt. Översikt innan delning."
+  },
+  "sourceExportCancel": {
+    "message": "Diskretion förhandsvisning"
+  },
+  "sourceExportContentLabel": {
+    "message": "Förhandsvisning av rapporten ( JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "Meddelandet är inte längre tillgängligt. Återoppa rapporten från dess budskapssidan popup."
+  },
+  "sourceExportChanged": {
+    "message": "Den registrerade tillståndet ändras. Skapa en ny förhandsvisning innan du sparar."
+  },
+  "sourceExportReady": {
+    "message": "Se över förhandsvisningen innan du sparar eller dela."
+  },
+  "sourceExportRequested": {
+    "message": "Spara begärd. kontrollera fullbordet i Thunderbird nedladdningar."
+  },
+  "sourceExportFailed": {
+    "message": "Rapporteringen räddades inte. Skapa en ny förhandsvisning för att prova igen."
+  },
+  "analysisHistoryPages": {
+    "message": "Historiska sidan"
+  },
+  "analysisHistoryEntries": {
+    "message": "ingången"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Misstänkt eller skadligt historiskt fynd · association oklart"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Visa första historiska varningar"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Visa starkaste nutida resultat"
+  },
+  "reportDisplayFailed": {
+    "message": "En lagrad rapport kunde inte visas. andra resultat förblir tillgängliga."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Vissa rapportdata har ett okomplicerat format och kunde inte visas."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Vissa lagrade analysdata kunde inte läsas. andra resultat förblir tillgängliga."
+  },
+  "analysisModeResponses": {
+    "message": "Svar mottagen · Inga bedömbara domar finns"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Svar som mottagits utan bedömbar dom · Några förfrågningar misslyckades"
+  },
+  "analysisCurrentAvailability": {
+    "message": "För nya begäranden"
+  },
+  "reasonMaliciousIp": {
+    "message": "skadlig server IP-adress upptäckt ( $IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "Externa hotindikatorer ( URLhaus & IP Reputation)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus – Kända malware domäner upptäckta: $DOMAINS$",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "IP Reputation ( $PROVIDER$) – Mistående server IP: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "urlscan.io resultat:"
+  },
+  "urlscanStatus": {
+    "message": "Fördelar: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridReportLink": {
+    "message": "Öppna full rapport om Hybrid Analysis"
+  },
+  "hybridProviderMessage": {
+    "message": "Försäljare: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "Hybrid Analysis räntegränsen eller kvoten har nåtts.Vänligen prova igen efteråt."
+  },
+  "reasonArchivedMaliciousAttachment": {
+    "message": "Historisk upptäckt ( $OBSERVED$). $PROVIDER$ klassificerade tillägget “ $NAME$ ” som skadlig.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonArchivedSuspiciousAttachment": {
+    "message": "Historisk upptäckt ( $OBSERVED$). $PROVIDER$ klassificerade tillägget “ $NAME$ ” som mistanke.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonMaliciousAttachment": {
+    "message": "Anslutningen \" $NAME$ \" klassificerades som skadlig av $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "Anslutningen \" $NAME$ \" klassificerades som mistanke av $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanReportLink": {
+    "message": "Öppna full rapport om urlscan.io"
+  },
+  "hybridLinkVerdictStatus": {
+    "message": "Hybrid Analysis: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonMaliciousLinkVerdict": {
+    "message": "Link \" $URL$ \" klassificerades som skadlig av $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousLinkVerdict": {
+    "message": "Link \" $URL$ \" klassificerades som mistanke av $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanErrorDetails": {
+    "message": "Anledningen: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "urlscan.io räntegränsen eller kvoten har nåtts.Vänligen prova igen efteråt."
+  },
+  "urlscanInvalidKey": {
+    "message": "Invalid eller obehörig urlscan.io API nyckel."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Det är inte klart i frågefönstret. den accepterade scannen kan granskas igen utan en ny inlämning."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Domänen kunde inte lösas av urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Det är inte ännu registrerat i Hybrid Analysis (ingen tidigare analys hittad)."
+  },
+  "virustotalNotFound": {
+    "message": "Elemen inte ännu registreras i VirusTotal-databasen."
+  },
+  "virustotalRateLimited": {
+    "message": "VirusTotal räntegränsen eller kvoten har nåtts.Vänligen prova igen efteråt."
+  },
+  "virustotalInvalidKey": {
+    "message": "Invalid eller obehörig VirusTotal API nyckel."
+  },
+  "abuseipdbRateLimited": {
+    "message": "AbuseIPDB räntegränsen eller kvoten har nåtts.Vänligen prova igen efteråt."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Invalid eller obehörig AbuseIPDB API nyckel."
+  },
+  "urlhausRateLimited": {
+    "message": "URLhaus räntegränsen eller kvoten har nåtts.Vänligen prova igen efteråt."
+  },
+  "urlhausInvalidKey": {
+    "message": "Invalid eller obehörig URLhaus API nyckel."
+  },
+  "testApiKeyButton": {
+    "message": "Testa anslutningen"
+  },
+  "testApiKeyTesting": {
+    "message": "Testning av anslutningen…"
+  },
+  "testApiKeyValid": {
+    "message": "Ansökan accepteras. Detta bekräftar inte uppladdningsrättigheterna eller återkommande kvot."
+  },
+  "testApiKeyInvalid": {
+    "message": "Anslutningsfel: Invalid API nyckel."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Räntegränsen eller kvotet nådd.Vänligen prova igen efteråt."
+  },
+  "testApiKeyError": {
+    "message": "Anslutningsprov misslyckades."
+  },
+  "testApiKeyEmpty": {
+    "message": "Vänligen ange en API nyckel först."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "Tillstånd att ansluta till servicehost har avvisats."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Välj en IP reputationsleverantör först."
+  },
+  "rateLimitWithWait": {
+    "message": "Räntegränsen eller kvot uppnås.Vänligen prova igen i $SECONDS$ sekunder.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Räntegränsen uppnås"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Invalid API nyckel"
+  },
+  "auditErrorCode": {
+    "message": "Felkoder"
+  },
+  "auditErrorDetails": {
+    "message": "Fel detalj"
+  },
+  "auditRetryAfter": {
+    "message": "Vänta på tiden"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ sekunder",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "securityTitle": {
+    "message": "Administrering och länkskydd"
+  },
+  "securityScope": {
+    "message": "Lokalt till denna Thunderbird profil. Förhindrar inte profiländring, inaktiverar tillägget eller öppnar kopierade länkar någon annanstans."
+  },
+  "securityAdminPassword": {
+    "message": "administratörens lösenord (12+ tecken; lämna tomt för att behålla)"
+  },
+  "securityApprovalPassword": {
+    "message": "Separerat länk godkännandevis (12+ tecken; lämna tomt för att behålla)"
+  },
+  "securityThreshold": {
+    "message": "Behöver godkännandet vid riskresultat (0–100, inbegripet)"
+  },
+  "securityEnablePolicy": {
+    "message": "Tillåter tvingad länkskydd"
+  },
+  "securityUnknownApproval": {
+    "message": "Behöver godkännandet för ofullständiga checker också"
+  },
+  "securityUnlock": {
+    "message": "Avslöja inställningar"
+  },
+  "securitySave": {
+    "message": "Spara säkerhetsinställningar"
+  },
+  "securityLock": {
+    "message": "Lock nu"
+  },
+  "securityDisable": {
+    "message": "Ta bort inställningar lösenord"
+  },
+  "securityRecovery": {
+    "message": "Återhämtningskoden"
+  },
+  "securityRecover": {
+    "message": "Återställa admin-lösenord med kod"
+  },
+  "securityStopTransfers": {
+    "message": "Stoppa externa överföringar"
+  },
+  "securityLocked": {
+    "message": "Inställningarna är låsta. Ange administratörslösenordet för att låsa upp dem."
+  },
+  "securityUnlocked": {
+    "message": "Inställningar är låst; låser efter fem minuters aktivitet."
+  },
+  "securityOptional": {
+    "message": "Passwordskydd är valfritt och för närtiden avstängd.Utan ett godkännandekod, är de säkra länkarna blockerade."
+  },
+  "securityError": {
+    "message": "Operationen avvisas. kontrollera ditt lösenord, session och inmatning."
+  },
+  "securityWait": {
+    "message": "För många ansträngningar. vänta innan du återvänder."
+  },
+  "securityLength": {
+    "message": "Använda minst 12 tecken och separata lösenord."
+  },
+  "securityRecoverySave": {
+    "message": "Spara denna en gång återställning koden åtskilda. det visas inte igen:"
+  },
+  "securitySaved": {
+    "message": "Skyddsinställningar sparas."
+  },
+  "securityDisableConfirm": {
+    "message": "Ta bort inställnings lösenord? länkskyddet förblir inställd."
+  },
+  "securityStopped": {
+    "message": "Externa överföringar stannade."
+  },
+  "securityApprovalTitle": {
+    "message": "godkänna potentiellt farligt material"
+  },
+  "securityConfirmDanger": {
+    "message": "Jag vill öppna det potentiellt farliga materialet ändå."
+  },
+  "securityApproveOnce": {
+    "message": "Godkänna och öppna en gång"
+  },
+  "securityExpired": {
+    "message": "Godkännandet är upphävd eller kontext ändras. startar igen från budskapet."
+  },
+  "securityOpened": {
+    "message": "Thunderbird accepterade begäran om öppnande."
+  },
+  "securityApprovalFailed": {
+    "message": "Öppningen nekades. Kontrollera lösenordet eller starta om godkännandet från meddelandet om det har löpt ut."
+  },
+  "providerTestDisclosure": {
+    "message": "Detta sänder din API nyckel- och fasta testdata till den valda leverantören, utan budskapinnehåll. Ett framgångsrikt lästest verifierar inte laddningar eller tillhandahållna kvoter."
+  },
+  "analysisSimple": {
+    "message": "Översikt"
+  },
+  "analysisExpert": {
+    "message": "Tekniska detalj"
+  },
+  "analysisSimpleNone": {
+    "message": "Inga mistanke om tecken upptäckts"
+  },
+  "analysisSimpleCaution": {
+    "message": "Mistående"
+  },
+  "analysisSimpleDanger": {
+    "message": "skadliga fynd"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Ofullständig kontroll"
+  },
+  "analysisScoreExplanation": {
+    "message": "Riskpoängen bygger på regler och anger varken en sannolikhet eller en säkerhetsgaranti."
+  },
+  "analysisSimpleBasis": {
+    "message": "Tjänster med resultat / oförutsedda"
+  },
+  "analysisProviderSetup": {
+    "message": "Tillgång till leverantören och datautlåtande"
+  },
+  "analysisProviderConfigured": {
+    "message": "Nyckeln är inställd; att lagra den startar inte en skanning."
+  },
+  "analysisProviderNoKey": {
+    "message": "Ingen nyckel inställd"
+  },
+  "analysisDataHash": {
+    "message": "Fingeravtryck ( SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Fullt anslutande"
+  },
+  "analysisDataUrl": {
+    "message": "Komplett URL; kan innefatta konfidentiella tokens"
+  },
+  "analysisDataDomain": {
+    "message": "Link domän"
+  },
+  "analysisDataIp": {
+    "message": "Public IP från budskapssignaler"
+  },
+  "analysisDataReport": {
+    "message": "Rapporter identifierar"
+  },
+  "analysisApprovalRequired": {
+    "message": "Ytterligere godkännande krävs; avbryta eller begära en administratör."
+  },
+  "analysisContinueWarning": {
+    "message": "Kolla in orsakerna innan du går vidare. du kan avbryta."
+  },
+  "analysisConflict": {
+    "message": "Tillhandahållare är oeniga; vad gäller resultat prioriteras."
+  },
+  "analysisExportSensitive": {
+    "message": "Översikt före export: tekniska data kan identifiera budskap resurser."
+  },
+  "scanActions": {
+    "message": "Externa checker"
+  },
+  "scanStart": {
+    "message": "Kontrollera nu"
+  },
+  "scanRepeat": {
+    "message": "Kontrollera igen"
+  },
+  "scanRefresh": {
+    "message": "Uppdatera resultaten"
+  },
+  "scanRunning": {
+    "message": "Extern kontroll i framsteg"
+  },
+  "scanProgress": {
+    "message": "Fullständiga resurser"
+  },
+  "scanMigrationNotice": {
+    "message": "Välj en automatisk skanningsläge i inställningar. Fram till dess gäller föregående avsändare och manuella regler."
+  },
+  "scanState_idle": {
+    "message": "Ingen skanning jobb är aktiv i detta avseende."
+  },
+  "scanState_queued": {
+    "message": "Se accepterat; vänta på att starta"
+  },
+  "scanState_running": {
+    "message": "Extern kontroll i framsteg"
+  },
+  "scanState_completed": {
+    "message": "Teckning avslutad"
+  },
+  "scanState_pending": {
+    "message": "Providerna är fortsatt i process; uppdatera resultat"
+  },
+  "scanState_incomplete": {
+    "message": "Kolla in ofullständiga; några resultat saknas"
+  },
+  "scanState_failed": {
+    "message": "Falska testet; prova igen"
+  },
+  "scanState_blocked": {
+    "message": "Inga externa checkar startade; se kraven under"
+  },
+  "analysisReason_manual": {
+    "message": "Manuell mode"
+  },
+  "analysisReason_sender": {
+    "message": "Sändare inte godkänts"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Automatiska länkanalys av"
+  },
+  "analysisReason_no_resources": {
+    "message": "Inga matchande resurser"
+  },
+  "analysisReason_quota": {
+    "message": "Kvotet nådd; vänta innan avgång"
+  },
+  "analysisReason_running": {
+    "message": "leverantören behandlar"
+  },
+  "analysisReason_provider_error": {
+    "message": "Försäljaren misslyckades"
+  },
+  "scanModeLabel": {
+    "message": "Automatiska externa skanningar"
+  },
+  "scanModeKeep": {
+    "message": "Håll föregående inställningar (välj ett läge)"
+  },
+  "scanModeAll": {
+    "message": "Alla öppnade meddelanden"
+  },
+  "scanModeSenders": {
+    "message": "Endast godkända avsändare"
+  },
+  "scanModeManual": {
+    "message": "Endast manuellt"
+  },
+  "scanModeHelp": {
+    "message": "Automatiska kontroller skickar bara hashvärden, domäner och offentliga IP-adresser. Fullständiga länkar och bilagor måste godkännas var för sig. Oöppnade meddelanden stannar lokalt."
+  },
+  "assessmentCompletion": {
+    "message": "Förädling status"
+  },
+  "assessmentCompletion_pending": {
+    "message": "leverantören är fortsatt i process"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Rapportering av återhämtning komplett"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "Inga slutgiltiga utvärderingar finns"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Teknisk bearbetning misslyckades"
+  },
+  "assessmentConflict": {
+    "message": "Olika partiella bedömningar; det starkaste fyndet avgör handlingen."
+  },
+  "assessmentSignals": {
+    "message": "Utvärderingsbas"
+  },
+  "assessmentJob": {
+    "message": "Jobbet ID leverantör"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Företagets dom"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Skannersökning hittar"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "original hotet resultat"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "original multiscan resultat"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Ursprungliga hotnivåer"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Provider vitellist indikatorn"
+  },
+  "assessmentSignal_overall": {
+    "message": "urlscan övergripande bedömning"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Urlscan motorbedömning"
+  },
+  "assessmentSignal_engines": {
+    "message": "Övriga motorer"
+  },
+  "assessmentSignal_brand": {
+    "message": "Brandindikation; inte avgör risker av sig själv"
+  },
+  "assessmentSignal_report": {
+    "message": "Rapportering av staten"
+  },
+  "assessmentOriginal": {
+    "message": "Ursprungliga leverantörs dom"
+  },
+  "hybridExpertTitle": {
+    "message": "API v2 rapport detalj"
+  },
+  "hybridExpertScope": {
+    "message": "Endast de fält som de faktiska fått visas. En Snabb skanning visar inte en full sandbox-exektion. Missade data är inte ett negativt fynd. URLs förväxlar bekräftelser, fråge strängar och fragments; kommandor och rårapporter visas inte. Öppna dessa data sänder ingen begäran."
+  },
+  "hybridExpertMissing": {
+    "message": "inte tillhandahålls i denna rapport"
+  },
+  "hybridExpertYes": {
+    "message": "Ja ja"
+  },
+  "hybridExpertNo": {
+    "message": "Nej Nej"
+  },
+  "hybridExpert_identity": {
+    "message": "Fil och resursidentitet"
+  },
+  "hybridExpert_assessment": {
+    "message": "Ursprunglig bedömning och bearbetning"
+  },
+  "hybridExpert_scanners": {
+    "message": "Scanner resultat"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Individua antivirusdetektioner"
+  },
+  "hybridExpert_reports": {
+    "message": "Referens Sandbox-rapporter"
+  },
+  "hybridExpert_counts": {
+    "message": "Rapporterade totals"
+  },
+  "hybridExpert_signatures": {
+    "message": "Behavioral signaturer"
+  },
+  "hybridExpert_mitre": {
+    "message": "Företaget AT&CK"
+  },
+  "hybridExpert_network": {
+    "message": "nätverksindikatorer"
+  },
+  "hybridExpert_processes": {
+    "message": "processer"
+  },
+  "hybridExpert_extracted": {
+    "message": "extraherade filer"
+  },
+  "hybridExpert_certificates": {
+    "message": "certifikater"
+  },
+  "hybridExpertEmpty": {
+    "message": "Tillhandahålls som en tom lista; inga inmatningar"
+  },
+  "securityPasswordHelp": {
+    "message": "Optionellt säkerhet för denna profil. Använda olika lösenord av minst tolv tecken för administrering och länk godkännandet. Lämna nya lösenordfält tomma för att behålla befintliga lösenord. Spara en gång återhämtningskoden åtskilda."
+  },
+  "securityAdminConfirm": {
+    "message": "Bekräfta nytt administratörs lösenord"
+  },
+  "securityApprovalConfirm": {
+    "message": "Bekräfta ny länk godkännandevis"
+  },
+  "securityRecoveryPassword": {
+    "message": "Ny administratörs lösenord för återhämtning"
+  },
+  "securityApprovalConfigured": {
+    "message": "Ett länk godkännandekod är inställd; det kan ersättas men visas aldrig."
+  },
+  "securityApprovalMissing": {
+    "message": "Inga länk godkännandespost inställs. länkar som kräver lösenords godkännandestängd förblir blockerade."
+  },
+  "securityConfirmMismatch": {
+    "message": "Nya lösenord och deras bekräftelser matchar inte."
+  },
+  "securityUnlockPassword": {
+    "message": "Nutidens administratörs lösenord"
+  },
+  "displaySettingsTitle": {
+    "message": "Analys visar"
+  },
+  "displaySettingsHelp": {
+    "message": "Visningsföreträdesfördelar ändrar inte skanningar, externa överföringar, poäng eller länkskydd. Du kan ändå byta mellan överblick och expertervyn när du läser resultat."
+  },
+  "displayDefaultView": {
+    "message": "Standardvisningen för budskap och popup"
+  },
+  "displayHybridDetails": {
+    "message": "Visa de extra hybrid API rapport sektioner"
+  },
+  "displaySave": {
+    "message": "Spara visningsfördelar"
+  },
+  "displaySaved": {
+    "message": "Visningsfördelar sparas."
+  },
+  "urlscanDnsError": {
+    "message": "Providerna kunde inte lösa målet domän."
+  },
+  "urlscanInvalidRequest": {
+    "message": "Företaget avvisade ovillkorliga parametrar för inlämning."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "Provideren avvisade inlämningen; svaret konstaterar inte en DNS-fel."
+  },
+  "analysisQuotaReset": {
+    "message": "Kvota återställs"
+  },
+  "analysisRetryAt": {
+    "message": "Tidigast retry"
+  },
+  "analysisLocalBackoff": {
+    "message": "Detta för att göra detta har avfärdats lokalt; inga nya leverantörsförfrågningar har sändts."
+  },
+  "scanState_deferred": {
+    "message": "Analys avvisad: alla bakgrundsslots är upptagen. återvända efter en annan analys avslutades."
+  },
+  "scanCoverage": {
+    "message": "Vissa resurser har inte granskats."
+  },
+  "scanCoverageAttachments": {
+    "message": "Förberedelserna förberedd"
+  },
+  "scanCoverageLinks": {
+    "message": "Länkar valda"
+  },
+  "scanCoverage_read_failed": {
+    "message": "En bifogad fil kan inte läsas eller hashas."
+  },
+  "scanCoverage_size_limit": {
+    "message": "En anslutning går utöver 25 MiB-skanningslimi."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "Skanningsresursgränsen har nåtts."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "Innehållsrapporten är ofullkomlig."
+  },
+  "scanFailure_source_capacity": {
+    "message": "Källhistorik är full. Den här kontrollen startade inte; befintliga rekord bevarades."
+  },
+  "scanFailure_cancelled": {
+    "message": "Teckningen har avbokats. inget slutfört resultat är implicit."
+  },
+  "scanFailure_timeout": {
+    "message": "Tidsbesök är utförd. resultat är ofullständiga."
+  },
+  "scanFailure_scan_failed": {
+    "message": "Det gick inte att slutföra checkningen. befintliga rekord bevarades."
+  },
+  "localProtectionProfileExport": {
+    "message": "Exportskyddsinställningar"
+  },
+  "localProfileYes": {
+    "message": "Ja ja"
+  },
+  "localProfileNo": {
+    "message": "Nej Nej"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Äldre profilskydd kan inte utöka den automatiska scan-sändningen eller slå på URL-ansökan."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "Den befintliga källhistorien kan inte läsas och har bevarats oförändrad."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "En lagringskonflikt hindrade källhistorien från att förlängas."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "Källarkiv för detta budskap har nått sin inmatningsgräns."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "Källarkiv för detta budskap har nått sin lagringsgräns."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "Tillgång till lokala lagrar misslyckades."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Finns det - dokumentation ofullständigt"
+  },
+  "apiDebugTitle": {
+    "message": "API debug läge"
+  },
+  "apiDebugHelp": {
+    "message": "Fånga nya API för att lokalt diagnostisera misslyckanden. Aktivera, återskapa misslyckandet, sedan förhandsgranska eller exportera rapporten. Administrationsavlåtning krävs när ett administratörs lösenord är inställd. Nycklar, privat URLs, budskapinnehåll och råa organ är bortglömda; referens ID är pseudo-namnade. Upp till 100 inmatningar / 1 MiB hålls i minnet i en timme och förloras vid omstart. Avstängning avlägsnar rapporten. Inga extra serviceförfrågan görs."
+  },
+  "apiDebugEnable": {
+    "message": "Funktionerar API-diagnostik"
+  },
+  "apiDebugSave": {
+    "message": "Spara debug inställningar"
+  },
+  "apiDebugPreview": {
+    "message": "Förhandsrapportering Debug"
+  },
+  "apiDebugExport": {
+    "message": "Export avgas rapport"
+  },
+  "apiDebugClear": {
+    "message": "tydlig debug rapport"
+  },
+  "apiDebugSaved": {
+    "message": "Debug inställningen sparas. tidigare diagnostiska klarar."
+  },
+  "apiDebugCleared": {
+    "message": "Debug-rapporten är klar."
+  },
+  "apiDebugFailed": {
+    "message": "Debug-operationen misslyckades. avstäng administrationen och prova igen."
+  },
+  "apiDebugFailureHint": {
+    "message": "För en detaljrik misslyckande rapport aktiverar du API-drivningsläge i inställningar, återställer checkningen och exporterar drivningsläkaren."
+  },
+  "urlscanResultGone": {
+    "message": "Detta resultat har raderats av urlscan.io. Uppdatering kan inte återställa det; en ny inlämning kräver en explicit skanning."
+  },
+  "apiDebugOpen": {
+    "message": "Öppen API diagnostiska"
+  },
+  "diagTitle": {
+    "message": "API diagnostiska"
+  },
+  "diagHelp": {
+    "message": "Filtrerade kontroller i lokal minnet. Nycklar, privat URLs och råinnehåll förblir dolda. HTTP framgång är inte en fullbordad säkerhetsbeslut. Endast steg som registreras efter aktivering finns."
+  },
+  "diagOff": {
+    "message": "Debug-läge är av. aktivera det i inställningar."
+  },
+  "diagEmpty": {
+    "message": "Inga matchande rekord."
+  },
+  "diagPause": {
+    "message": "Pause syn"
+  },
+  "diagResume": {
+    "message": "Resumera syn"
+  },
+  "diagPaused": {
+    "message": "Visa paus; inspelningen är aktiv."
+  },
+  "diagActive": {
+    "message": "Aktiva inspelningar; uppfriskande en gång per sekund."
+  },
+  "diagProvider": {
+    "message": "leverantör"
+  },
+  "diagState": {
+    "message": "Staten"
+  },
+  "diagPurpose": {
+    "message": "Operationstyp"
+  },
+  "diagFrom": {
+    "message": "Från"
+  },
+  "diagTo": {
+    "message": "till"
+  },
+  "diagAll": {
+    "message": "Alla"
+  },
+  "diagRuns": {
+    "message": "Se flöden"
+  },
+  "diagDetails": {
+    "message": "Välj flödesdetaljer"
+  },
+  "diagDropped": {
+    "message": "Förlorade rekord eller steg"
+  },
+  "diagNoHttp": {
+    "message": "Inga HTTP-samtal registreras för denna ström."
+  },
+  "diagNotCaptured": {
+    "message": "inte fångad"
+  },
+  "diagTimeline": {
+    "message": "Tidslinje"
+  },
+  "diagRequest": {
+    "message": "Filtrerad begäran"
+  },
+  "diagResponse": {
+    "message": "Transport och filtrerad respons"
+  },
+  "diagReset": {
+    "message": "Återställ filter"
+  },
+  "diagTruncated": {
+    "message": "Detta flöde var trunken på grund av inspelningsgränser."
+  },
+  "diag_phase_precondition": {
+    "message": "Förutsättningar"
+  },
+  "diag_phase_queue": {
+    "message": "Queu"
+  },
+  "diag_phase_attempt": {
+    "message": "Skicka ett forsök"
+  },
+  "diag_phase_response": {
+    "message": "HTTP svar / transport avslut"
+  },
+  "diag_phase_parse": {
+    "message": "JSON förädling"
+  },
+  "diag_phase_assessment": {
+    "message": "Utvärdering"
+  },
+  "diag_phase_persistence": {
+    "message": "Persistens"
+  },
+  "diag_phase_cache": {
+    "message": "Cacheträff"
+  },
+  "diag_phase_wait": {
+    "message": "Väntar"
+  },
+  "diag_phase_cancelled": {
+    "message": "Avbruten"
+  },
+  "diag_phase_expired": {
+    "message": "Inspelning upphör utan bekräftad slutföring"
+  },
+  "diag_purpose_automatic": {
+    "message": "Automatisk kontroll"
+  },
+  "diag_purpose_manual": {
+    "message": "Manuell check"
+  },
+  "diag_purpose_link": {
+    "message": "Link checkar"
+  },
+  "diag_purpose_key_test": {
+    "message": "Nyckelprov"
+  },
+  "diag_purpose_report": {
+    "message": "Rapportering förfrågan"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analysen"
+  },
+  "diag_state_running": {
+    "message": "Resa"
+  },
+  "diag_state_complete": {
+    "message": "Operationen är klar"
+  },
+  "diag_state_pending": {
+    "message": "Förlängning"
+  },
+  "diag_state_blocked": {
+    "message": "Inte startat / blockerat"
+  },
+  "diag_state_incomplete": {
+    "message": "Oförlängd"
+  },
+  "diag_state_failed": {
+    "message": "misslyckas"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Komplettering okonfirmerad"
+  },
+  "localScoreMessage": {
+    "message": "Lokala budskapskurser"
+  },
+  "localScoreLink": {
+    "message": "Lokala poäng för denna länk i budskapet"
+  },
+  "localScoreNoIndicators": {
+    "message": "Inga lokala varningsindikatorer hittades."
+  },
+  "localScoreIndicators": {
+    "message": "Lokala varningsindikatorer hittades. granskning av orsakerna innan öppnandet."
+  },
+  "uploadSentLabel": {
+    "message": "Uppladdning Sänd"
+  },
+  "uploadSentUnassigned": {
+    "message": "Ladda uppenbarligen, men dess resultat kunde inte tilldelas till denna bifogning. Nära och öppna popup innan du lämnar in igen."
+  },
+  "hybridReportTitle": {
+    "message": "Hybrid Analysis rapport"
+  },
+  "hybridReportIntro": {
+    "message": "Läs-enbart en titt på de mottagna resultat. Öppna denna rapport sänker ingen leverantörs begäran."
+  },
+  "hybridReportOpen": {
+    "message": "Se analysrapporten"
+  },
+  "hybridReportUnavailable": {
+    "message": "Rapportering inte finns. Återuppta den från det aktuella budskapet."
+  },
+  "hybridReportTechnical": {
+    "message": "Provider och anslutningsdetaljer"
+  },
+  "hybridReportExplanation": {
+    "message": "Om denna bedömning"
+  },
+  "hybridReportSummary": {
+    "message": "Utvärdering och utgång"
+  },
+  "hybridReportSnapshot": {
+    "message": "Spara rapporten snapshot; inte en ny skanning"
+  },
+  "hybridReportScope": {
+    "message": "Providerresultat och lokal poäng är separata. saknade fält är inte negativt resultat. Endast tillgängliga, begränsade data visas."
+  },
+  "hybridReportCopy": {
+    "message": "Kopiera"
+  },
+  "hybridReportCopied": {
+    "message": "Kopierad som text."
+  },
+  "hybridReportCopyFailed": {
+    "message": "Kan inte kopiera. Välj och kopiera texten manuellt."
+  },
+  "hybridReportAvailableOnly": {
+    "message": "Rågar i de tillgängliga data"
+  },
+  "hybridReportNoMatches": {
+    "message": "Inga matchande fält i de tillgängliga data."
+  },
+  "hybridReportAvailability": {
+    "message": "Tillgänglighet och begränsningar"
+  },
+  "hybridReportRun": {
+    "message": "Analysen kör"
+  },
+  "hybridReportSearch": {
+    "message": "Sök efter befintliga fält"
+  },
+  "hybridReportReady": {
+    "message": "Rapporterna laddas. ingen ny skanning startades."
+  },
+  "hybridReportResource_name": {
+    "message": "Anslutningsnamn"
+  },
+  "hybridReportResource_url": {
+    "message": "Riktade mål URL"
+  },
+  "hybridReportResource_sha256": {
+    "message": "Resurser SHA-256"
+  },
+  "hybridField_type": {
+    "message": "filtyp"
+  },
+  "hybridField_type_short": {
+    "message": "Kort filtyp"
+  },
+  "hybridField_size": {
+    "message": "Storlek i byter"
+  },
+  "hybridField_last_file_name": {
+    "message": "Sista filnamn"
+  },
+  "hybridField_submit_name": {
+    "message": "Namn på undertecknande"
+  },
+  "hybridField_url_analysis": {
+    "message": "URL analys"
+  },
+  "hybridField_target_url": {
+    "message": "Provider mål URL (kan förkortas)"
+  },
+  "hybridField_id": {
+    "message": "Svar ID (typ som inte är angiven)"
+  },
+  "hybridField_job_id": {
+    "message": "Sandbox jobb ID"
+  },
+  "hybridField_submission_id": {
+    "message": "Förfrågan ID"
+  },
+  "hybridField_state": {
+    "message": "Tillhandahållare staten"
+  },
+  "hybridField_finished": {
+    "message": "slutfört"
+  },
+  "hybridField_verdict": {
+    "message": "Företagets dom"
+  },
+  "hybridField_threat_score": {
+    "message": "Hybrid Analysis hotet resultat"
+  },
+  "hybridField_threat_level": {
+    "message": "leverantör hot nivå"
+  },
+  "hybridField_multiscan_result": {
+    "message": "Multiscan resultat (leverantör värde)"
+  },
+  "hybridField_av_detect": {
+    "message": "AV-detektionsvärde (leverantörvärde)"
+  },
+  "hybridField_whitelisted": {
+    "message": "Tillhandahållare belysning ingång"
+  },
+  "hybridField_vx_family": {
+    "message": "Företaget Malware"
+  },
+  "hybridField_classification_tags": {
+    "message": "Klassificering Taggar"
+  },
+  "hybridField_tags": {
+    "message": "Taggar"
+  },
+  "hybridField_analysis_start_time": {
+    "message": "Analys starttid"
+  },
+  "hybridField_environment_id": {
+    "message": "Miljö ID"
+  },
+  "hybridField_environment_description": {
+    "message": "Sandbox Miljö"
+  },
+  "hybridField_error_type": {
+    "message": "Försäljare feltyp"
+  },
+  "hybridField_error_origin": {
+    "message": "Provider felkälla"
+  },
+  "hybridField_name": {
+    "message": "Namn"
+  },
+  "hybridField_status": {
+    "message": "status"
+  },
+  "hybridField_progress": {
+    "message": "Försäljning (förvärv av värde)"
+  },
+  "hybridField_positives": {
+    "message": "Positiva upptäckter"
+  },
+  "hybridField_total": {
+    "message": "Totala kontroll"
+  },
+  "hybridField_percent": {
+    "message": "Procent (tillhandahållarens värde)"
+  },
+  "hybridField_scan_time": {
+    "message": "Skanningstid (leverantörsenhet)"
+  },
+  "hybridField_scan_date": {
+    "message": "Skanningsdatum"
+  },
+  "hybridField_product": {
+    "message": "Skannarprodukter"
+  },
+  "hybridField_version": {
+    "message": "Skanners version"
+  },
+  "hybridField_update": {
+    "message": "Skärmuppdatering"
+  },
+  "hybridField_total_network_connections": {
+    "message": "nätverksanslutningar"
+  },
+  "hybridField_total_processes": {
+    "message": "processer"
+  },
+  "hybridField_total_signatures": {
+    "message": "Signaturer"
+  },
+  "hybridField_category": {
+    "message": "Kategorier"
+  },
+  "hybridField_attck_id": {
+    "message": "MITRE ATT&CK teknisk ID"
+  },
+  "hybridField_tactic": {
+    "message": "MITRE ATT & CK taktik"
+  },
+  "hybridField_technique": {
+    "message": "MITRE ATT & CK teknik"
+  },
+  "hybridField_description": {
+    "message": "Beskrivning"
+  },
+  "hybridField_domains": {
+    "message": "Observerad domän"
+  },
+  "hybridField_hosts": {
+    "message": "Observerad värd"
+  },
+  "hybridField_compromised_hosts": {
+    "message": "Kompromisstagare (leverantörens anspråk)"
+  },
+  "hybridField_domain": {
+    "message": "Domän"
+  },
+  "hybridField_host": {
+    "message": "värd"
+  },
+  "hybridField_ip": {
+    "message": "IP förfrågan"
+  },
+  "hybridField_port": {
+    "message": "Porten"
+  },
+  "hybridField_protocol": {
+    "message": "Protokollet"
+  },
+  "hybridField_country": {
+    "message": "Landet"
+  },
+  "hybridField_asn": {
+    "message": "Autonom systemnummer"
+  },
+  "hybridField_uid": {
+    "message": "processen UID"
+  },
+  "hybridField_process_id": {
+    "message": "Förfarandets ID (PID)"
+  },
+  "hybridField_parent_uid": {
+    "message": "Föräldrad process UID"
+  },
+  "hybridField_file_path": {
+    "message": "Filvägen"
+  },
+  "hybridField_subject": {
+    "message": "Certifikatsämne"
+  },
+  "hybridField_issuer": {
+    "message": "Certifikaten utfärdar"
+  },
+  "hybridField_valid_from": {
+    "message": "Gäller från"
+  },
+  "hybridField_valid_until": {
+    "message": "giltigt till"
+  },
+  "hybridField_serial_number": {
+    "message": "Serienummer certifikater"
+  },
+  "hybridField_sha256": {
+    "message": "SHA-256"
+  },
+  "hybridField_sha1": {
+    "message": "SHA-1"
+  },
+  "hybridField_md5": {
+    "message": "MD5"
+  },
+  "hybridField_sha512": {
+    "message": "SHA-512"
+  },
+  "hybridField_imphash": {
+    "message": "Försök hax"
+  },
+  "hybridReportResource_quickScanId": {
+    "message": "Snabbt skannat ID"
+  },
+  "analysisLocalOnly": {
+    "message": "Endast lokalt granskad"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "Tjänster med resultat"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Tjänster som väntar"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Tjänster med fel"
+  },
+  "hybridReportSection": {
+    "message": "Avsnitt"
+  },
+  "hybridReportAllSections": {
+    "message": "Alla sektioner"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "Förädling komplett"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "Förädling pending"
+  },
+  "hybridReportProcessing_failed": {
+    "message": "Förädling misslyckas"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "Förfarandet status okänd"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Rapporter återhämtade"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Snapshot skapade"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Hålls Hybrid Analysis hitta för denna resurs"
+  },
+  "hybridReportSaved": {
+    "message": "Spara Hybrid Analysis rapport"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Kopiera UTC"
+  },
+  "hybridReportWhy": {
+    "message": "Men vad är det med denna bedömning?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Övriga utvärderingssignaler"
+  },
+  "hybridReportCompare": {
+    "message": "Jämför analysrundor"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Avdelningar med data"
+  },
+  "hybridReportAssessment": {
+    "message": "Thundy utvärdering från Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Källa och timestamp"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Hitta Tillgängliga · fullbordning oklart"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Öppen hybridrapportering"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Visa hitta detalj"
+  },
+  "attachmentProtectionTitle": {
+    "message": "Anslutningsskydd"
+  },
+  "attachmentProtectionScope": {
+    "message": "Den här regeln gäller när du sparar med Thundy. Thunderbird egna anslutningskommandon förblir tillgängliga."
+  },
+  "attachmentPolicyMode": {
+    "message": "När gränsen nås"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Hybrid Analysis Score Gränsvärde"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Fördelar utan bekräftat poäng"
+  },
+  "attachmentModeOff": {
+    "message": "Avsluta"
+  },
+  "attachmentModeWarn": {
+    "message": "Varning"
+  },
+  "attachmentModeApproval": {
+    "message": "Behöver godkännandet"
+  },
+  "attachmentModeBlock": {
+    "message": "Blocka"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Spara med Thundy"
+  },
+  "attachmentConfirmSave": {
+    "message": "Spara anslutningen"
+  },
+  "attachmentCancelSave": {
+    "message": "Avbryt"
+  },
+  "attachmentThresholdReached": {
+    "message": "Hybrid poäng når den inställda tröskeln."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis klassificerade denna fil som skadlig."
+  },
+  "attachmentUnknown": {
+    "message": "Inga bekräftade poäng för denna tillägg."
+  },
+  "attachmentBlocked": {
+    "message": "Spara med Thundy är blockerad."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Skriv in godkännandekod för att spara den här filen."
+  },
+  "attachmentFailed": {
+    "message": "Kan inte spara på att spara på tillägget."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy kunde inte läsa den här bifogningen."
+  },
+  "attachmentContextChanged": {
+    "message": "Meddelandet eller bifogandet ändras. Välj bifogandet igen."
+  },
+  "attachmentRefresh": {
+    "message": "Se spara resultat igen"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "Den frälsta upptäckten är oförändrad."
+  },
+  "attachmentDecisionChanged": {
+    "message": "Det ändrade resultatet eller politiken. granskning av det aktuella beslutet."
+  },
+  "attachmentSaveRequested": {
+    "message": "Frälsningsförfrågan startade."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Spara avbokad."
+  },
+  "auditDecisionScore": {
+    "message": "Beslutet är poäng"
+  },
+  "linkHandoffPending": {
+    "message": "Webbläsaren handoff begärdes. Thunderbird har inte bekräftat det ännu. Du kan stänga den här dialogen."
+  },
+  "linkPreflightTimeout": {
+    "message": "Teckningen kunde inte slutföras. Stäng den här dialogen och välj länken igen."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Historiska Hybrid Analysis hittade"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Aktuell Hybrid Analysis hittat"
+  },
+  "auditShare": {
+    "message": "Export redigerad revision"
+  },
+  "auditFullNotice": {
+    "message": "Den fullständiga revisionen innefattar privat URLs och information. Dela den bara med auktoriserade mottagare."
+  },
+  "auditFullSave": {
+    "message": "Export fullständiga revisioner"
+  },
+  "managedByCompany": {
+    "message": "Hanteras av din organisation"
+  },
+  "managedLocal": {
+    "message": "Källa: denna Thunderbird profil"
+  },
+  "managedRevision": {
+    "message": "Politiska versioner"
+  },
+  "managedThreshold": {
+    "message": "Gränser"
+  },
+  "managedPolicyInvalid": {
+    "message": "Företagets politik är ogiltig.Kontakta ditt IT-team."
+  },
+  "managedLinkBlocked": {
+    "message": "Din organisation blockerade den här länken."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Öppna med Thundy"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Öppen anslutning"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy kontrollerar denna bifogning innan du överför den till Thunderbird."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird accepterade begäran om att öppna bifogandet."
+  },
+  "attachmentOpenFailed": {
+    "message": "Anslutningen kunde inte öppnas."
+  },
+  "reportingTitle": {
+    "message": "Företagets säkerhetsrapporter"
+  },
+  "reportingOff": {
+    "message": "Den automatiska rapporten är av."
+  },
+  "reportingNeedsConsent": {
+    "message": "Rapportering kräver ditt samtycke och en sändning av token."
+  },
+  "reportingNeedsPermission": {
+    "message": "Tillståndet för att rapportera saknas. Tillåta att rapporteringen återställer det."
+  },
+  "reportingReady": {
+    "message": "Din organisation kan ta emot automatiska rapporter."
+  },
+  "reportingQueued": {
+    "message": "Fortsatta rapporteringar :"
+  },
+  "reportingMalicious": {
+    "message": "skadliga fynd"
+  },
+  "reportingSuspicious": {
+    "message": "skadliga fynd och gränsvärden"
+  },
+  "reportingConsent": {
+    "message": "Jag samtycker till att skicka händelseID, tid, åtgärd, sökning, beslut och politikversion till företagetsadress som visas ovan."
+  },
+  "reportingConsentIndicators": {
+    "message": "Jag samtycker till att skicka händelseID, tid, åtgärd, sökning, beslut, politikversion och länk värdnamn eller bilaga SHA-256 till företagetsadress som visas ovan."
+  },
+  "reportingToken": {
+    "message": "Skicka token från ditt IT-team"
+  },
+  "reportingActivate": {
+    "message": "Möjlighet att rapportera eller ersätta token"
+  },
+  "reportingRevoke": {
+    "message": "Avdrag av samtycke och tydliga väntande rapport"
+  },
+  "reportingSetupFailed": {
+    "message": "Rapporteringsinställningar kunde inte tillämpas."
+  },
+  "reportingAuthentication": {
+    "message": "Serveren avvisade sända token."
+  },
+  "reportingRejected": {
+    "message": "Servrarna avvisade en rapport."
+  },
+  "reportingStorage": {
+    "message": "Thundy kunde inte läsa eller skrivas rapportersnittet."
+  },
+  "reportingFull": {
+    "message": "Råden är full.Rapporterna kan förlora."
+  },
+  "reportingExpired": {
+    "message": "En rapport som löpt ut före leverans."
+  },
+  "reportingPrivacy": {
+    "message": "Med separata samtycke, Thundy skicka information om kvalificerade ansträngningar att öppna länkar eller öppna eller spara bifogade till den inställda företagetsadress. Rapporterna inkluderar händelseID, tid, åtgärd, sökning, beslut och politikversion, plus ett valfritt värdnamn eller bifogade SHA-256. Thundy sträcker sig efter att rapportera lokalt i upp till 24 timmars tid. Du kan dra tillbaka samtycke och ta bort sträckan i Inställningar."
+  },
+  "reportingConsentDetails": {
+    "message": "Jag samtycker också till att skicka beslutet skäl, tillhandahållna poäng, bifogade filnamn, leverantörsbeslut och tillhandahålla referenser till rapporten."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Detaljerade rapporter kan inkludera filnamnet och länkar till leverantörens rapport."
+  },
+  "analysisRunningHeading": {
+    "message": "Kontroll pågår"
+  },
+  "analysisLocalNoFinding": {
+    "message": "Den lokala kontrollen fann inga tecken på hot"
+  },
+  "analysisLinksGroup": {
+    "message": "vänster"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Tillbehör"
+  },
+  "protectionOpenAllowed": {
+    "message": "Öppning tillåten"
+  },
+  "protectionSaveAllowed": {
+    "message": "Sparande tillåtet"
+  },
+  "protectionWarn": {
+    "message": "Varning"
+  },
+  "protectionApproval": {
+    "message": "Godkännande krävs"
+  },
+  "protectionRequestApproval": {
+    "message": "Begäran om godkännande"
+  },
+  "protectionBlocked": {
+    "message": "Blockerat"
+  },
+  "protectionMalicious": {
+    "message": "En leverantör har rapporterat ett skadligt fynd."
+  },
+  "protectionThreshold": {
+    "message": "Skyddströskeln har uppnåtts"
+  },
+  "protectionManagedThreshold": {
+    "message": "Företagets tröskel har uppnåtts"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "De tillämpliga inställningar tillåter denna åtgärd."
+  },
+  "linkContextChanged": {
+    "message": "Länken eller budskapet ändrades under checkningen."
+  },
+  "auditPolicyBlocked": {
+    "message": "Blockerat av policy"
+  },
+  "reportingLastReceipt": {
+    "message": "Sista mottagningen bekräftad av serveren"
+  },
+  "reportingOldestPending": {
+    "message": "Den äldsta väntande rapporten"
+  },
+  "addonLanguage": {
+    "message": "Tilläggets språk"
+  },
+  "addonLanguageSystem": {
+    "message": "Följ Thunderbirds språk"
+  },
+  "addonLanguageSaved": {
+    "message": "Språket har sparats. Öppna Thundys vyer igen för att använda det."
+  },
+  "addonLanguageFailed": {
+    "message": "Det gick inte att spara språket."
+  },
+  "profilesOpenSource": {
+    "message": "Öppen källkod"
+  },
+  "transferReview": {
+    "message": "Granska extern överföring"
+  },
+  "transferSend": {
+    "message": "Skicka till leverantören"
+  },
+  "transferVisibility": {
+    "message": "Synlighet: olistad. Alla med rapportlänken kan öppna rapporten."
+  },
+  "transferAccepted": {
+    "message": "Leverantören tog emot begäran. Rapporten kan fortfarande vara under behandling."
+  },
+  "transferFailed": {
+    "message": "Överföringen till leverantören kunde inte slutföras."
+  },
+  "transferUsePopup": {
+    "message": "Öppna Thundy-panelen för att granska och godkänna en viss länk eller bilaga."
+  },
+  "providerGrantAccess": {
+    "message": "Tillåt åtkomst till den här leverantören"
+  },
+  "sourceSessionOnly": {
+    "message": "Källarkivet är fullt. Den aktuella källvyn är bara tillgänglig under den här sessionen."
+  },
+  "analysisReason_transfer_approval": {
+    "message": "Fullständiga länkar och bilagor måste bekräftas var för sig."
+  },
+  "analysisCompactDetails": {
+    "message": "Kontrolldetaljer"
+  },
+  "riskScoreFormula": {
+    "message": "Den lokala poängen summerar poäng upp till 100. Leverantörernas fynd bedöms separat."
+  },
+  "riskScoreNoPoints": {
+    "message": "Inga lokala regler gav poäng."
+  },
+  "riskScoreTotal": {
+    "message": "Lokal beräkning"
+  },
+  "riskLinkBrandRule": {
+    "message": "Minst en domän liknar ett känt varumärke. Poängen räknas en gång."
+  },
+  "reportingConsentDetections": {
+    "message": "Rapporter kan innehålla namn, kategorier, signaturer och efterliknade varumärken."
+  },
+  "detectionKind_family": {
+    "message": "Familj av skadlig kod"
+  },
+  "detectionKind_category": {
+    "message": "Kategori"
+  },
+  "detectionKind_brand": {
+    "message": "Efterliknat varumärke"
+  },
+  "detectionKind_signature": {
+    "message": "Leverantörssignatur"
+  },
+  "detectionCategory_fraudulent_shop": {
+    "message": "Bedrägeributik"
+  },
+  "detectionCategory_phishing_shop": {
+    "message": "Nätfiskebutik"
+  },
+  "analysisDetectionGrouping": {
+    "message": "Gruppera fynd"
+  },
+  "detectionCategory_malware": {
+    "message": "Skadlig kod"
+  },
+  "detectionCategory_virus": {
+    "message": "Virus"
+  },
+  "detectionCategory_trojan": {
+    "message": "Trojan"
+  },
+  "detectionCategory_ransomware": {
+    "message": "Utpressningsprogram"
+  },
+  "detectionCategory_worm": {
+    "message": "Mask"
+  },
+  "detectionCategory_spyware": {
+    "message": "Spionprogram"
+  },
+  "detectionCategory_adware": {
+    "message": "Annonsprogram"
+  },
+  "detectionCategory_backdoor": {
+    "message": "Bakdörr"
+  },
+  "detectionCategory_downloader": {
+    "message": "Nedladdare"
+  },
+  "detectionCategory_dropper": {
+    "message": "Dropper"
+  },
+  "detectionCategory_infostealer": {
+    "message": "Datastöld"
+  },
+  "detectionCategory_rootkit": {
+    "message": "Rootkit"
+  },
+  "detectionCategory_phishing": {
+    "message": "Nätfiske"
+  },
+  "detectionCategory_scam": {
+    "message": "Bedrägeri"
+  }
+}

@@ -48,12 +48,12 @@ test('source export context changes after cache loss and does not initiate exter
     const changed = await read();assert.notEqual(changed.contextToken,first.contextToken);assert.equal(changed.messageId,7);assert.equal(state.requests.length,0);
 });
 
-test('authorized senders respect manual mode and full URL tier', async () => {
+test('authorized senders can look up hashes, without automatic full URL or file uploads', async () => {
     for (const manual of [false, true]) for (const tier of ['strict', 'balanced', 'max']) {
         const state = setup({ externalAnalysisConsent: true, alwaysManual: manual, privacyTier: tier, apikey: 'dummy', autoScanLinks: true, scanningEnabledSenders: ['alice@example.com'] });
         await state.context.configure();
         await state.context.handleDisplayedMessage({ id: 1 }, state.message);
-        assert.equal(state.requests.some(x => x.url.endsWith('/quick-scan/url-for-analysis')), !manual && tier === 'max');
+        assert.equal(state.requests.some(x => x.options.method === 'POST'), false);
         if (manual) assert.equal(state.requests.length, 0);
     }
 });
@@ -394,6 +394,95 @@ test('a cancelled check finishing late cannot unlock a second active dialog', as
 const auditRequest = (interactionId = 'event_1') => ({ interactionId, messageId: 7, url: 'https://example.com/private?token=abc', userAction: true });
 const auditSender = { id: 'test', tab: { id: 1 } };
 
+test('automatic opening requires a persisted click strictly below the threshold and rechecks current provider state',async()=>{
+    const state = setup({thundySecurityV1:{schemaVersion:1,policy:{enabled:true,threshold:50,unknown:'warn',autoOpenBelow:20,revision:1}}});
+    vm.runInContext(['managed_policy.js','security.js','security_links.js'].map(file=>fs.readFileSync(file,'utf8')).join('\n'),state.context);
+    await state.context.configure();
+    const clean = {status:'CLEAN',attempted:true,check:{origin:'stored',outcome:'success'}};
+    let result = clean, score = 20, calls = 0;
+    state.context.calculateThreatScore = ()=>({score,heuristicScore:score,reasons:[]});
+    state.context.handleCheckLinkState = (_request,_sender,resolve,click) => {
+        assert.equal(click.waitForResults,false);
+        resolve(result);
+    };
+    state.context.browser.windows.openDefaultBrowser = async()=>{calls++;};
+    const getRequest = key=>({...auditRequest(key),url:'https://example.com/'});
+    const atThreshold = getRequest('at-threshold');
+    assert.equal((await state.context.handleAuditedLinkCheck(atThreshold,auditSender)).autoOpen,false);
+    assert.equal((await state.context.handleOpenAuditedLink({...atThreshold,automatic:true},auditSender)).success,false);
+    score = 19;
+    const request = getRequest('automatic');
+    assert.equal((await state.context.handleAuditedLinkCheck(request,auditSender)).autoOpen,true);
+    result = {status:'UNKNOWN',attempted:true,check:{origin:'stored',outcome:'incomplete'}};
+    assert.equal((await state.context.handleOpenAuditedLink({...request,automatic:true},auditSender)).success,false);
+    assert.equal(calls,0);
+    result = clean;
+    assert.equal((await state.context.handleOpenAuditedLink({...request,automatic:true},auditSender)).success,true);
+    assert.equal(calls,1);
+    assert.equal((await state.context.readLinkAudit()).records.find(record=>record.outcome==='OPENED').automaticOpen,true);
+    await state.context.injectTimeOfClickProtection(1,[],7);
+    const {func,args} = state.injections.find(entry=>entry.func.toString().includes('__thundyAutomaticLinkOpening'));
+    const dom = new JSDOM('<a href="https://example.com/">Visit</a>');
+    try {
+        const route = value => new Promise(resolve=>state.listeners[0](value,auditSender,resolve));
+        const page = vm.createContext({document:dom.window.document,URL,args,browser:{runtime:{sendMessage:route}}});
+        vm.runInContext('('+func.toString()+')(...args)',page);
+        dom.window.document.querySelector('a').click();
+        const panel = dom.window.document.getElementById('thundy-link-dialog');
+        assert.equal(panel.style.display,'none');
+        for(let attempts=0;panel.isConnected && attempts<100;attempts++) await new Promise(resolve=>setTimeout(resolve,5));
+        assert.equal(panel.isConnected,false);
+        assert.equal(calls,2);
+        const opened = (await state.context.readLinkAudit()).records.filter(record=>record.outcome==='OPENED');
+        assert.equal(opened.length,2);
+        assert.ok(opened.every(record=>record.automaticOpen));
+    } finally { dom.window.close(); }
+});
+
+test('the URL scan summary keeps named detections and pending jobs in the correct interaction',async()=>{
+    const state = setup();
+    const url = 'https://example.com/';
+    await state.context.configure();
+    sourceRecords(state,{links:[{url,hybrid_sha256:'a'.repeat(64),urlscan:{uuid:'urlscan-id',status:'MALICIOUS',
+        assessment:{assessmentVersion:1,completion:'complete',signals:[{code:'urlscan',verdict:'malicious',value:100}]},
+        detections:[{kind:'category',value:'phishing'},{kind:'brand',value:'PayPal'}],
+        reportUrl:'https://urlscan.io/result/urlscan-id/'}}]});
+    const response = await state.context.handleAuditedLinkCheck({...auditRequest('mixed'),url},auditSender);
+    assert.equal(response.pending,true);
+    assert.equal(response.status,'MALICIOUS');
+    assert.equal(response.scans.find(row=>row.provider==='hybridanalysis').completion,'pending');
+    assert.equal(response.scans.find(row=>row.provider==='urlscan').detections[1].value,'PayPal');
+    assert.equal(state.requests.length,0);
+});
+
+test('optional waiting only polls accepted result IDs and exits immediately under an existing result cooldown',async()=>{
+    const state = setup({externalAnalysisConsent:true,privacyTier:'max',urlscanApikey:'fixture-key'},true);
+    await state.context.configure();
+    const url = 'https://example.com/';
+    sourceRecords(state,{links:[{url,urlscan:{uuid:'accepted-id',status:'PENDING'}}]});
+    let polls = 0;
+    state.context.pollUrlscanIoResult = async(uuid,_key,context,options)=>{
+        polls++;
+        assert.equal(uuid,'accepted-id');
+        assert.equal(options.requestedUrl,url);
+        assert.equal(context.skipRateLimitWait,true);
+        return {status:'CLEAN',assessment:{assessmentVersion:1,completion:'complete',signals:[{code:'urlscan',verdict:'none'}]}};
+    };
+    const request = {...auditRequest('accepted'),url};
+    const check = waitForResults => new Promise(resolve=>state.context.handleCheckLinkState(request,auditSender,resolve,{
+        waitForResults,deadline:Date.now()+30000,signal:new AbortController().signal
+    }));
+    assert.equal((await check(false)).pending,true);
+    assert.equal(polls,0);
+    vm.runInContext("apiGateway.setBackoff('urlscan.io:result',60)",state.context);
+    assert.equal((await check(true)).check.outcome,'rate_limited');
+    assert.equal(polls,0);
+    vm.runInContext("apiGateway.backoffs.clear()",state.context);
+    assert.equal((await check(true)).status,'CLEAN');
+    assert.equal(polls,1);
+    assert.equal(state.requests.length,0);
+});
+
 test('audited link decisions persist URL, local score and provider verdict independently without network', async () => {
     const state = setup(); await state.context.configure();
     const request = auditRequest(); const result = await state.context.handleAuditedLinkCheck(request, auditSender);
@@ -557,15 +646,16 @@ test('structured link checks retain stored warning and observation time on failu
  assert.equal((await s.context.checkHybridAnalysisResult('hash','CLEAN')).check.outcome,'permission_denied');
  assert.equal((await s.context.checkHybridAnalysisResult('hash','CLEAN',{requested:false})).check.attemptedAt,null);
 });
-test('coverage accounts for 101 attachments and 21 batch links without raising limits', async()=>{
+test('coverage accounts for attachment limits while a bulk link check avoids full-URL uploads', async()=>{
  const s=setup({externalAnalysisConsent:true,privacyTier:'max',apikey:'dummy'});await s.context.configure();const saved={};
  s.context.persistScanCoverage=async(_m,kind,coverage)=>{saved[kind]=coverage};s.context.indexedDB_save_batch_hybrid_data_to_db=async()=>{};
  s.context.process_single_attachment=async(_m,a)=>a.name==='failed'?null:{hybrid_data:{state:a.size>25*1024*1024?'SIZE_LIMIT':'MANUAL_CHECK_PENDING'}};
  const atts=Array.from({length:101},(_,i)=>({name:i===1?'failed':String(i),size:i===2?26*1024*1024:10}));
  await s.context.sent_to_hybrid_by_attachment(s.message,atts,false,false);
  assert.equal(saved.attachments.detected,101);assert.equal(saved.attachments.eligible,100);assert.equal(saved.attachments.processed,98);assert.equal(saved.attachments.failed,1);assert.equal(saved.attachments.skipped,2);
- s.full.parts=[{contentType:'text/plain',body:Array.from({length:21},(_,i)=>'https://example'+i+'.invalid/').join(' ')}];let count=0;s.context.handleUrlScan=async()=>{count++;if(count===1)throw new Error('failed')};
- await s.context.scanLinksOfDisplayedMessage(1);assert.equal(count,20);assert.equal(saved.batchLinks.processed,19);assert.equal(saved.batchLinks.failed,1);assert.equal(saved.batchLinks.skipped,1);
+ s.full.parts=[{contentType:'text/plain',body:Array.from({length:21},(_,i)=>'https://example'+i+'.invalid/').join(' ')}];let count=0;s.context.handleUrlScan=async()=>{throw Error('unexpected submission');};
+ s.context.checkURLhausDomains=async urls=>{count=urls.length;return [];};
+ await s.context.scanLinksOfDisplayedMessage(1);assert.equal(count,21);assert.equal(s.requests.length,0);
 });
 test('domain coverage counts unique domains, failures and the 100-domain limit',async()=>{
  const s=setup({externalAnalysisConsent:true,urlhausApikey:'dummy'});await s.context.configure();s.context.checkURLhaus=async domain=>domain==='d0.invalid'?null:false;
@@ -872,20 +962,47 @@ test('header-only manual submission never attributes an evicted popup request to
  assert.equal(sibling.model.data.rows.length,0);assert.equal(calls,1);
 });
 
-test('manual popup URL submission recreates its explicit message context rather than guessing by shared header',async()=>{
+function providerTransferRPC(s) {
+ const archiveHelpers=fs.readFileSync('db.js','utf8').split('\nclass ')[0];
+ vm.runInContext(archiveHelpers+'\n'+fs.readFileSync('provider_registry.js','utf8'),s.context);
+ s.context.Headers=Headers;
+ s.context.resolveMessageStorageKey=message=>message.headerMessageId;
+ s.context.browser.tabs={query:async()=>[{id:1}]};
+ const sender={id:'test',url:'popup.html',documentId:'popup-1'};
+ return (request,suppliedSender=sender)=>new Promise(resolve=>s.listeners.at(-1)(request,suppliedSender,resolve));
+}
+
+test('URL approval stays bound to the exact displayed message, URL, provider and single use',async()=>{
  const s=setup({externalAnalysisConsent:true,privacyTier:'max',apikey:'ha'},true);await s.context.configure();sourceRecords(s);
- const sibling=await s.context.getMessageAnalysisContext(s.message);
- const other={...s.message,id:8};s.context.browser.messages.get=async id=>id===8?other:s.message;
- s.context.fetch=async()=>({status:201,ok:true,json:async()=>({submission_id:'job',sha256:'hash'})});
- const response=await new Promise(resolve=>s.listeners.at(-1)({action:'scanUrl',url:'https://other.invalid/',headerMessageId:other.headerMessageId,messageId:8},{url:'popup.html'},resolve));
- assert.equal(response.status,'success');assert.equal(sibling.model.data.rows.length,0);
- const target=await s.context.getMessageAnalysisContext(other);assert.equal(target.model.data.rows[0].state,'submitted');await target.flush();
+ const first=s.message, sibling=await s.context.getMessageAnalysisContext(first);
+ const other={...s.message,id:8};
+ const url='https://other.invalid/example?session=synthetic#item';
+ s.full.parts=[{contentType:'text/plain',body:url}];
+ s.context.browser.messageDisplay.getDisplayedMessages=async()=>({messages:[other]});
+ const send=providerTransferRPC(s);
+ s.context.fetch=async(address,options)=>{s.requests.push({address,options});return new Response(JSON.stringify({submission_id:'job',sha256:'hash'}),{status:201});};
+ const prepare=await send({action:'prepareProviderTransfer',url,headerMessageId:other.headerMessageId,messageId:8});
+ assert.equal(prepare.success,true);assert.equal(prepare.target,url);assert.equal(prepare.provider,'Hybrid Analysis');assert.equal(s.requests.length,0);
+ const result=await send({action:'submitProviderTransfer',id:prepare.id});
+ assert.equal(result.status,'success');assert.equal(sibling.model.data.rows.length,0);
+ assert.equal(s.requests.length,1);assert.equal(s.requests[0].options.body.get('url'),url);
+ assert.equal((await send({action:'submitProviderTransfer',id:prepare.id})).status,'error');assert.equal(s.requests.length,1);
 });
 
-test('manual URL submission refuses a mismatched explicit message before contacting a provider',async()=>{
- const s=setup({externalAnalysisConsent:true,privacyTier:'max',apikey:'ha'},true);await s.context.configure();let calls=0;s.context.fetch=async()=>{calls++;throw Error('unexpected')};
- const response=await new Promise(resolve=>s.listeners.at(-1)({action:'scanUrl',url:'https://other.invalid/',headerMessageId:'different-header',messageId:7},{url:'popup.html'},resolve));
- assert.equal(response.status,'error');assert.equal(response.code,'MESSAGE_CONTEXT_CHANGED');assert.equal(calls,0);
+test('URL approval rejects a stale record, untrusted URL and revoked host permission before sending',async()=>{
+ const s=setup({externalAnalysisConsent:true,privacyTier:'max',apikey:'ha'},true);await s.context.configure();sourceRecords(s);
+ const send=providerTransferRPC(s);
+ const request={action:'prepareProviderTransfer',url:'https://example.com/',messageId:7};
+ assert.equal((await send({...request,headerMessageId:'different-header'})).code,'MESSAGE_CONTEXT_CHANGED');
+ assert.equal((await send({...request,url:'https://other.invalid/'})).code,'MESSAGE_CONTEXT_CHANGED');
+ const first=await send(request);
+ s.context.browser.messageDisplay.getDisplayedMessages=async()=>({messages:[{...s.message,id:8}]});
+ assert.equal((await send({action:'submitProviderTransfer',id:first.id})).code,'MESSAGE_CONTEXT_CHANGED');
+ s.context.browser.messageDisplay.getDisplayedMessages=async()=>({messages:[s.message]});
+ const second=await send(request);
+ s.context.browser.permissions.contains=async()=>false;
+ assert.equal((await send({action:'submitProviderTransfer',id:second.id})).code,'HOST_PERMISSION_MISSING');
+ assert.equal(s.requests.length,0);
 });
 
 test('unavailable decryption never inherits checked status and local risk reports partial input',async()=>{
@@ -1029,7 +1146,7 @@ test('snapshot count, byte limits, collisions and write errors preserve history 
   records.set(s.message.headerMessageId,{messageHeader:s.message.headerMessageId,analysisSourceSnapshots:snapshots});
   const original=JSON.stringify(records.get(s.message.headerMessageId));if(problem==='transaction')s.context.updateStore=async()=>{throw new Error('commit failed');};
   ctx.event({provider:'urlhaus',scope:'domain',phase:'start'});await ctx.flush();
-  assert.equal(JSON.stringify(records.get(s.message.headerMessageId)),original,problem);const failed=await ctx.snapshot();assert.equal(failed.sourcePersistenceFailed,true,problem);assert.equal(failed.sourcePersistenceReason,({count:'snapshot_count',bytes:'snapshot_bytes',collision:'snapshot_collision',transaction:'storage_failed'})[problem]);ctx.dispose();
+  assert.equal(JSON.stringify(records.get(s.message.headerMessageId)),original,problem);const failed=await ctx.snapshot();assert.equal(failed.sourcePersistenceFailed,!['count','bytes'].includes(problem),problem);assert.equal(failed.sourceSessionOnly,['count','bytes'].includes(problem),problem);assert.equal(failed.sourcePersistenceReason,({count:'snapshot_count',bytes:'snapshot_bytes',collision:'snapshot_collision',transaction:'storage_failed'})[problem]);ctx.dispose();
  }
 });
 
@@ -1179,6 +1296,16 @@ test('local-only checks return their own complete score and reasons without prov
   assert.equal(result.status,'UNKNOWN');assert.equal(result.score,score);assert.equal(result.local.score,score);assert.equal(result.local.state,'checked');assert.equal(result.local.scope,'link-in-message');assert.equal(s.requests.length,0);
   assert.deepEqual(Array.from(result.local.reasons),Array.from((await s.context.readLinkAudit()).records[0].reasons));
  }
+});
+test('local score shows every counted rule and caps the displayed sum',async()=>{
+ const s=setup();await s.context.configure();
+ const result=s.context.calculateThreatScore('sender@example.invalid',['https://paypa1.com/','https://g00gle.com/'],{
+  replyTo:'second@elsewhere.invalid',subject:'urgent',isFirstCommunication:true,authHeaders:['spf=fail; dkim=fail'],
+  linkFindings:[{url:'https://paypa1.com/',verdict:'malicious',provider:'Fixture'}]
+ });
+ assert.deepEqual(Array.from(result.localContributions,row=>row.points),[50,50,50,50,40,60]);
+ assert.equal(result.localRawScore,300);assert.equal(result.heuristicScore,100);
+ assert.equal(result.providerReasons.length,1);
 });
 test('local score and reasons are visible before switching to the expert link view',async()=>{
  for(const score of [0,40,100]){
@@ -1408,13 +1535,15 @@ test('provider timeout does not invent an admin requirement, while unavailable p
   s.context.ThundyLinkSecurity={evaluate:async()=>{throw Error('must not evaluate a disabled or unreadable policy');}};
   s.context.handleCheckLinkState=(_request,_sender,resolve)=>{provider=resolve;};
   const check=s.context.handleAuditedLinkCheck(auditRequest('policy_'+stalledPolicy),auditSender);
-  while(!provider)await new Promise(setImmediate);await clock.advance(5000);const result=await check;
+  if (!stalledPolicy) while(!provider)await new Promise(setImmediate);
+  await clock.advance(5000);const result=await check;
+  if (stalledPolicy) assert.equal(provider,undefined);
   assert.equal(result.status,'UNKNOWN');assert.equal(result.protection?.required===true,stalledPolicy);
  }
 });
 
 async function manualUploadFixture(){
- const s=setup({apikey:'synthetic-key',externalAnalysisConsent:true,privacyTier:'balanced'});await s.context.configure();
+ const s=setup({apikey:'synthetic-key',externalAnalysisConsent:true,privacyTier:'balanced'},true);await s.context.configure();
  const digest=await s.context.get_sha256_hash(await new File(['test'],'actual.txt').arrayBuffer());
  const records=sourceRecords(s,{messageHeader:s.message.headerMessageId,attachments:[{partName:'1',attachment_name:'actual.txt',hybrid_sha256:digest,hybrid_job_id:'old-job',report:{verdict:'malicious'},report_fetched_at:'2026-10-01T00:00:00Z'}]});
  s.context.browser.messages.getAttachmentFile=async()=>new File(['test'],'actual.txt');
@@ -1472,8 +1601,22 @@ test('consent withdrawal during manual file hashing prevents the POST',async()=>
 
 test('the upload RPC preserves the sent-but-unassigned distinction for the popup',async()=>{
  const s=await manualUploadFixture();s.context.fetch=async()=>({status:201,ok:true,json:async()=>({id:'foreign',sha256:'b'.repeat(64)})});
- const result=await new Promise(resolve=>s.listeners.at(-1)({action:'uploadAttachment',messageId:7,partName:'1',attachmentName:'untrusted-name.txt',hash:s.digest,headerMessageId:s.message.headerMessageId},{id:'test',url:'popup.html'},resolve));
+ const send=providerTransferRPC(s);
+ const prepare=await send({action:'prepareProviderTransfer',messageId:7,partName:'1',hash:s.digest,headerMessageId:s.message.headerMessageId});
+ assert.equal(prepare.target,'actual.txt',JSON.stringify(prepare));
+ const result=await send({action:'submitProviderTransfer',id:prepare.id});
  assert.equal(result.status,'error');assert.equal(result.code,'RESOURCE_MISMATCH');assert.equal(result.uploadSent,true);
+});
+
+test('file bytes changed after the popup review are rejected before dispatch or creating a placeholder',async()=>{
+ const s=await manualUploadFixture();s.records.clear();
+ const send=providerTransferRPC(s);
+ const reviewed=await send({action:'prepareProviderTransfer',messageId:7,partName:'1'});
+ assert.equal(reviewed.success,true,JSON.stringify(reviewed));
+ s.context.browser.messages.getAttachmentFile=async()=>new File(['changed'],'actual.txt');
+ assert.equal((await send({action:'submitProviderTransfer',id:reviewed.id})).code,'MESSAGE_CONTEXT_CHANGED');
+ assert.equal(s.posts.length,0);
+ assert.ok(!s.records.get(s.message.headerMessageId)?.attachments?.length);
 });
 
 test('oversized manual attachments are rejected before allocating their bytes',async()=>{

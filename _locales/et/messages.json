@@ -1,0 +1,3590 @@
+{
+  "protectionSeverity_low": { "message": "Madal risk" },
+  "protectionSeverity_unknown": { "message": "Teadmata risk" },
+  "protectionSeverity_caution": { "message": "Suurenenud risk" },
+  "protectionSeverity_high": { "message": "Kõrge risk" },
+  "protectionSeverity_critical": { "message": "Kriitiline risk" },
+  "linkScanSummary": { "message": "URL-i kontrollide tulemused" },
+  "linkScansPending": { "message": "URL-i kontrollid veel kestavad." },
+  "linkNoScanResults": { "message": "URL-i kontrollide tulemused puuduvad." },
+  "protectionCategoryUnavailable": { "message": "Teenusepakkuja ei määranud ohukategooriat." },
+  "linkWaitForResults": { "message": "Oota käimasoleva URL-i kontrolli tulemusi" },
+  "linkAutoOpenBelow": { "message": "Ava kohe sellest skoorist väiksema korral" },
+  "linkOpeningOptionsHelp": { "message": "Lingidialoogi alati kuvamiseks jäta skoor tühjaks." },
+  "linkAuditRetentionTitle": { "message": "Lingilogi säilitamine" },
+  "linkAuditLimit": { "message": "Kirjete ülempiir (tühi = piiramatu)" },
+  "linkAuditDays": { "message": "Säilitusaeg päevades (tühi = piiramatu)" },
+  "protectionManagedColors": { "message": "Riskitasemete värvid määrab sinu organisatsioon." },
+  "linkOpenedAutomatically": { "message": "Automaatselt avatud" },
+  "providerSwitchHelp": {
+    "message": "Lülita teenused eraldi sisse või välja ja salvesta sätted. Teenuse peatamisel jäävad võtmed ja leiud alles."
+  },
+  "providerKeyLink": {
+    "message": "Saada API võti"
+  },
+  "providerDocsLink": {
+    "message": "API dokumentatsioon"
+  },
+  "providerApiKeyLabel": {
+    "message": "API võti"
+  },
+  "providerUse": {
+    "message": "Kasuta seda teenust"
+  },
+  "providerVirusUse": {
+    "message": "Kasutage VirusTotal faili kontrollimiseks"
+  },
+  "providerHybridStrength": {
+    "message": "Leiame olemasolevad aruanded teadaolevate failiräside järgi. Lubatud üleslaadimisel saab Falcon Sandbox uurida faili käitumist selle käivitamisel."
+  },
+  "providerHybridSetup": {
+    "message": "Looge konto ja avage profiil → API võtmed, et luua võti."
+  },
+  "providerUrlhausStrength": {
+    "message": "Kontrolli link hosts vastu teatatud allikad malware."
+  },
+  "providerUrlhausSetup": {
+    "message": "Registreeruge abuse.ch-i ja saad oma kontolt Auth-Key."
+  },
+  "providerUrlscanStrength": {
+    "message": "Uurib täielikult URLs ja suunab uuesti phishing märke. Thundy kasutab seda maksimaalse privaatsuse tasemel."
+  },
+  "providerUrlscanSetup": {
+    "message": "Looge konto ja valige Settings & API → Uus API võti."
+  },
+  "providerVirusTotalStrength": {
+    "message": "Vaadake faili SHA-256 hash ja näitab tulemusi mitmetest skaneerimismootoritest."
+  },
+  "providerVirusTotalSetup": {
+    "message": "Registreeruge VirusTotal-le ja kopeerige võtmed oma profiili API-i võtme leheküljelt."
+  },
+  "providerIpTitle": {
+    "message": "IP-aadressi maine"
+  },
+  "providerIpUse": {
+    "message": "Kontrolli IP maine"
+  },
+  "providerIpChoose": {
+    "message": "IP maine pakkuja"
+  },
+  "providerIpKeyNotice": {
+    "message": "Sisesta valitud teenusepakkuja võti. IP-aadresside kontrolli peatamisel jäävad pakkuja valik ja võti alles."
+  },
+  "providerIpGuide": {
+    "message": "Valige ja luua IP maine pakkuja"
+  },
+  "providerVirusIpStrength": {
+    "message": "Kontrollib avalikke IP-d VirusTotal’i tuvastamismootorite ja kogukonna hinnangute vastu."
+  },
+  "providerAbuseStrength": {
+    "message": "Kasutab kogukonna aruandeid, et tuvastada avaliku IP-d, mis on seotud spami, skaneerimise või muude kuritarvitustega."
+  },
+  "providerAbuseSetup": {
+    "message": "Luua konto AbuseIPDB ja genereerida või kopeerida võtme tab API dashboard."
+  },
+  "providerIpVirusKey": {
+    "message": "VirusTotal API võti IP maine"
+  },
+  "providerIpAbuseKey": {
+    "message": "AbuseIPDB API võti"
+  },
+  "providerTestDisabled": {
+    "message": "Enne võtme testimist lülita teenus sisse ja salvesta sätted."
+  },
+  "analysisReason_provider_disabled": {
+    "message": "See pakkuja on pausi sätetes."
+  },
+  "extensionName": {
+    "message": "Thundy AV – Thunderbirdi e-posti kontrollija"
+  },
+  "extensionDescription": {
+    "message": "Valikuline opt-in skanner e-posti lisade ja lingide jaoks. miski ei jäta teie arvuti ilma teie sõnaselgeta nõusolekuta."
+  },
+  "actionTitle": {
+    "message": "Thundy AV – selle sõnumi staatuse skaneerimine"
+  },
+  "bannerScanOnce": {
+    "message": "Skanne see sõnum üks kord"
+  },
+  "bannerScanSender": {
+    "message": "Alati skaneerige see saatja"
+  },
+  "bannerTitleOptIn": {
+    "message": "Thundy AV : reaalajas skaneerimine ei ole selle sõnumi jaoks lubatud."
+  },
+  "bannerNoteOptIn": {
+    "message": "Skaneerimine edastab andmeid välistele analüüsiteenustele, kuid ainult siis, kui te seda lisasüsteemides aktiveerite ja alles pärast teie nõusoleku andmist."
+  },
+  "bannerScanRunning": {
+    "message": "Skannimine…"
+  },
+  "bannerScanDone": {
+    "message": "Küsimused on lõppenud - vaadake analüüsi allikat"
+  },
+  "bannerScanFailed": {
+    "message": "Skaneerimise ebaõnnestumine"
+  },
+  "bannerPermissionDenied": {
+    "message": "Nõutav majutusloa keeldutakse"
+  },
+  "bannerConsentMissing": {
+    "message": "Uued välised taotlused on välja lülitatud. varasemalt salvestatud aruanded võivad endiselt näidata."
+  },
+  "bannerThreatTitle": {
+    "message": "Thundy AV hoiatus"
+  },
+  "bannerThreatScore": {
+    "message": "Riskitunnus: $SCORE$ 100",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerSenderOptIn": {
+    "message": "See saatja skaneeritakse nüüd automaatselt."
+  },
+  "notificationScanStarted": {
+    "message": "Skanne algas: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "Töö ID: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanError": {
+    "message": "Skanne viga: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Thundy AV skanner"
+  },
+  "notificationTitleError": {
+    "message": "Thundy AV skanneri viga"
+  },
+  "bannerAuthPass": {
+    "message": "Usaldusväärsed serverite aruanded SPF / DKIM / DMARC möödunud"
+  },
+  "bannerOpenOptions": {
+    "message": "Avatud võimalused"
+  },
+  "menuScanLink": {
+    "message": "Skanne link koos Thundy AV"
+  },
+  "menuScanMessageLinks": {
+    "message": "Skanne kõik selle sõnumi lingid"
+  },
+  "notificationNoLinks": {
+    "message": "Selles sõnumis ei leitud ühtegi linki."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "Analüüsiteenuse külastaja luba puudub. palun andke see lisamisvõimalustes."
+  },
+  "errorHostPermissionMissing": {
+    "message": "Analüüsi teenuse külastaja loa puudub. palun andke see lisanduvõimalustes."
+  },
+  "errorTierUploadBlocked": {
+    "message": "Lisatud lisad on privaatsuse tasandil \"Stiilsed\" välja lülitatud.Lülitakse \"Balanced\" või \"Maximum\" lisamisvõimalustes."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "URLs edastamine on lubatud ainult privaatsuse tasandil \"Maximum\"."
+  },
+  "notificationInjectionFailed": {
+    "message": "Banner ei saa sõnumi vaadetesse lisada. palun teatage sellest oma Thunderbird versiooniga."
+  },
+  "bannerTierBlocked": {
+    "message": "See tegevus ei ole lubatud praeguse privaatsuse taseme poolt. vaadake Add-on võimalusi."
+  },
+  "ui_001": {
+    "message": "hoiatused :"
+  },
+  "ui_002": {
+    "message": "Hybrid Analysis API võtmed ei ole konfigureeritud. saate kasutada kohalikke kontrollimisi või konfigureerida pakkuja seadeid."
+  },
+  "ui_003": {
+    "message": "Avatud seaded"
+  },
+  "ui_004": {
+    "message": "Valige e-kirja, et seda kontrollida."
+  },
+  "ui_005": {
+    "message": "Loodete analüüsi tulemused…"
+  },
+  "ui_006": {
+    "message": "Väline analüüs on välja lülitatud: analüüsiteenustele ei saadetud hashid, faile ega lingid."
+  },
+  "ui_007": {
+    "message": "Sellele sõnumile ei ole salvestatud lisa või linkide skaneerimise tulemused saadaval."
+  },
+  "ui_008": {
+    "message": "Selle e-posti jaoks ei ole analüüsi tulemusi saadaval."
+  },
+  "ui_009": {
+    "message": "Ebasoovitav viga laadimise analüüsi tulemuste ajal."
+  },
+  "ui_010": {
+    "message": "staatuse järgi:"
+  },
+  "ui_011": {
+    "message": "Analüüs on veel käimas, palun proovige hiljem uuesti."
+  },
+  "ui_012": {
+    "message": "SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_013": {
+    "message": "Hirmutõmmetest tulenev:"
+  },
+  "ui_014": {
+    "message": "Kohtuotsus on:"
+  },
+  "ui_015": {
+    "message": "Malware perekond:"
+  },
+  "ui_016": {
+    "message": "Multidiskani tulemused: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_017": {
+    "message": "Lisateavet täiendav:"
+  },
+  "ui_018": {
+    "message": "Analüüs algas: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_019": {
+    "message": "Märksõnad: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_020": {
+    "message": "VirusTotal tulemused:"
+  },
+  "ui_021": {
+    "message": "Kahjulik: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_022": {
+    "message": "Märksõnad: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_023": {
+    "message": "Kahtlustatav: $P1$ $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_024": {
+    "message": "Kahjutu: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_025": {
+    "message": "Skanner: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_026": {
+    "message": "staatuse: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_027": {
+    "message": "Viirusevastased tulemused:"
+  },
+  "ui_028": {
+    "message": "AV: $P1$ – kohtuotsus: $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_029": {
+    "message": "Scaneri tulemusi ei ole saadaval."
+  },
+  "ui_030": {
+    "message": "SHA-256 hash: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_031": {
+    "message": "Viimane faili nimi: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_032": {
+    "message": "Suurus: $P1$ byte",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_033": {
+    "message": "Tüüp: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_034": {
+    "message": "Skanna uuesti"
+  },
+  "ui_035": {
+    "message": "Sanitiseerimine ja allalaadimine (kohaline)"
+  },
+  "ui_036": {
+    "message": "Kontrollitud toode: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_037": {
+    "message": "Kohalik tulemus: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_038": {
+    "message": "SHA-256 : $P1$ – väline analüüs on keelatud.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_039": {
+    "message": "Ei ole välist otsingut, sest väline analüüs on puudulik."
+  },
+  "ui_040": {
+    "message": "Välised analüüsid puuduvad"
+  },
+  "ui_041": {
+    "message": "Saadavad skannid…"
+  },
+  "ui_042": {
+    "message": "Laadige fail uueks skannimiseks…"
+  },
+  "ui_043": {
+    "message": "Skanne esitatud. üleslaadimine tulemused…"
+  },
+  "ui_044": {
+    "message": "Edukad"
+  },
+  "ui_045": {
+    "message": "Skanne on ebaõnnestunud:"
+  },
+  "ui_046": {
+    "message": "Tuntud viga"
+  },
+  "ui_047": {
+    "message": "Proovige uuesti"
+  },
+  "ui_048": {
+    "message": "Kommunikatsiooni viga :"
+  },
+  "ui_049": {
+    "message": "Saniteerimise…"
+  },
+  "ui_050": {
+    "message": "Html kohalikuks sanitatsiooniks…"
+  },
+  "ui_051": {
+    "message": "Laadimine algas."
+  },
+  "ui_052": {
+    "message": "Saniteeritud"
+  },
+  "ui_053": {
+    "message": "Laadimised on ebaõnnestunud:"
+  },
+  "ui_054": {
+    "message": "API viga: $P1$ toote jaoks $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_055": {
+    "message": "(API võtmed võivad olla puudulikud või puuduvad.)"
+  },
+  "ui_056": {
+    "message": "Võrgu viga: $P1$ toote jaoks $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_057": {
+    "message": "Saadetud URL…"
+  },
+  "ui_058": {
+    "message": "Saada URL Hybrid Analysis…"
+  },
+  "ui_059": {
+    "message": "Skanne esitatud. laadimise tulemused…"
+  },
+  "ui_060": {
+    "message": "Ülekanded on ebaõnnestunud:"
+  },
+  "ui_061": {
+    "message": "URL: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_062": {
+    "message": "See URL leiti e-posti. teie privaatsuse kaitsmiseks, see oli"
+  },
+  "ui_063": {
+    "message": "ei ole automaatselt üles laaditud"
+  },
+  "ui_064": {
+    "message": "Skanne URL nüüd"
+  },
+  "ui_065": {
+    "message": "Laadimine…"
+  },
+  "ui_066": {
+    "message": "Saada fail Hybrid Analysis…"
+  },
+  "ui_067": {
+    "message": "Laadimine on lõpetatud. laadi tulemused…"
+  },
+  "ui_068": {
+    "message": "Skanna faili nüüd (ülekandmine)"
+  },
+  "ui_069": {
+    "message": "Ühendus: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_070": {
+    "message": "Selle faili jaoks ei ole välist aruannet saadaval. teie privaatsuse kaitsmiseks oli"
+  },
+  "ui_071": {
+    "message": "Automaatsed üleslaadimised on keelatud; privaatsuse tase kehtib ikka veel käsitsi skaneerimise suhtes."
+  },
+  "ui_072": {
+    "message": "Link kaitse jääb automaatse skaneerimise kõrval kättesaadavaks."
+  },
+  "ui_073": {
+    "message": "Säästmine…"
+  },
+  "ui_074": {
+    "message": "Seadmed on säästetud."
+  },
+  "ui_075": {
+    "message": "Salvesta"
+  },
+  "ui_076": {
+    "message": "Andmete edastamise loa ei ole antud. mitte midagi saadetakse."
+  },
+  "ui_077": {
+    "message": "Külalislahkus ei ole antud:"
+  },
+  "ui_078": {
+    "message": "Nende pakkujate kontrollid ei ole ilma loata kättesaadavad."
+  },
+  "ui_079": {
+    "message": "Ma ei suutnud seadistusi salvestada."
+  },
+  "ui_080": {
+    "message": "See eemaldab kõik kohalikult salvestatud analüüsi tulemused."
+  },
+  "ui_081": {
+    "message": "Puhastamine…"
+  },
+  "ui_082": {
+    "message": "Kaitsekäik on puhastatud."
+  },
+  "ui_083": {
+    "message": "Andmebaasi ei ole veel olemas või see on juba tühja."
+  },
+  "ui_084": {
+    "message": "Ma ei suutnud kaasi välja selgitada."
+  },
+  "ui_085": {
+    "message": "Selge kätes"
+  },
+  "ui_086": {
+    "message": "API võti puudub."
+  },
+  "ui_087": {
+    "message": "SPF kontrolli ebaõnnestus (võimalik spoofing)."
+  },
+  "ui_088": {
+    "message": "DKIM allkirja on puudulik (võimalik spoofing)."
+  },
+  "ui_089": {
+    "message": "DMARC kontrolli ebaõnnestus (võimalik spoofing)."
+  },
+  "ui_090": {
+    "message": "URLhaus loetleb domeeni ( $P1$) kui kahjuliku.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_091": {
+    "message": "Reply-To domeeni ( $P1$) erineb saadetise domeenist ( $P2$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_092": {
+    "message": "Võimalik äri e-posti kompromiss: esimene kontakt selle saatja ja kiireloomulised märksõnad leitud ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_093": {
+    "message": "Urgency keywords found ( $P1$). Kontrollige seda taotlust hoolikalt.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_094": {
+    "message": "See on teie esimene suhtlus selle saatjaga."
+  },
+  "ui_095": {
+    "message": "Saaja domeen ( $P1$) sarnaneb tuntud kaubamärgiga $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_096": {
+    "message": "Link domeen ( $P1$) sarnaneb tuntud kaubamärgiga $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_097": {
+    "message": "Ükski tekstis olev link ei ole saadetise domeenile ( $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_098": {
+    "message": "Puhas"
+  },
+  "ui_099": {
+    "message": "URL skaneerimine ebaõnnestus:"
+  },
+  "ui_100": {
+    "message": "Sa ei suutnud alustada urlscan.io skaneerimist:"
+  },
+  "ui_101": {
+    "message": "urlscan.io ei tagastanud skaneerimise ID-d."
+  },
+  "ui_102": {
+    "message": "urlscan.io tuvastas URL kahjulike."
+  },
+  "ui_103": {
+    "message": "Visuaalne avastamine: lehekülg impersonates"
+  },
+  "ui_104": {
+    "message": "(Võistlusalune filtreerimise eelnõu)"
+  },
+  "ui_105": {
+    "message": "Sa ei saa saada urlscan.io tulemusi:"
+  },
+  "ui_106": {
+    "message": "Thundy AV – e-posti skanner"
+  },
+  "ui_107": {
+    "message": "Vaata kõiki Hybrid Analysis esitused"
+  },
+  "ui_108": {
+    "message": "Näe kõik Hybrid Analysis esitused (avab uus tab)"
+  },
+  "ui_109": {
+    "message": "Teema on:"
+  },
+  "ui_110": {
+    "message": "Ja sellest:"
+  },
+  "ui_111": {
+    "message": "Sõnum ID:"
+  },
+  "ui_112": {
+    "message": "Thundy AV seaded"
+  },
+  "ui_113": {
+    "message": "Hybrid Analysis on halva tarkvara analüüsi teenus. saate esitada statilise ja dünaamilise analüüsi faile."
+  },
+  "ui_114": {
+    "message": "Hybrid Analysis kasutab CrowdStrike Falcon Sandbox teadmata ohtude uurimiseks."
+  },
+  "ui_115": {
+    "message": "Pakkuja kontod ja teenuse tingimused kehtivad välise analüüsi suhtes. kohalikud kontrollid ei nõua konto."
+  },
+  "ui_116": {
+    "message": "Thundy AV seaded"
+  },
+  "ui_117": {
+    "message": "Mis on Hybrid Analysis?"
+  },
+  "ui_118": {
+    "message": "Välise faili analüüsimiseks saad API võtme"
+  },
+  "ui_119": {
+    "message": "Pärast registreerimist mine oma profiili juurde ja leidke API KEY sektsiooni."
+  },
+  "ui_120": {
+    "message": "Pange API võtmed siin. kohalikud kontrollid töötavad ilma selle."
+  },
+  "ui_121": {
+    "message": "API võti seadistamine"
+  },
+  "ui_122": {
+    "message": "hybrid-analysis.com"
+  },
+  "ui_123": {
+    "message": "hybrid-analysis.com (avab uus tab)"
+  },
+  "ui_124": {
+    "message": "Luba väline analüüs (andmete saatmine teistele teenusepakkujatele)"
+  },
+  "ui_125": {
+    "message": "Ilma selleta nõusolekuta,"
+  },
+  "ui_126": {
+    "message": "hashid, faile, lingid või IP aadressid saadetakse välistele teenustele. Pärast nõusolekut võivad autoriseeritud skannid saata lisandite ja link andmeid Hybrid Analysis, VirusTotal, urlscan.io, URLhaus või AbuseIPDB, sõltuvalt privaatsuse tasemest:"
+  },
+  "ui_127": {
+    "message": "Ei"
+  },
+  "ui_128": {
+    "message": "privaatsuspoliitika"
+  },
+  "ui_129": {
+    "message": "Privaatsuspoliitika (avab uus tab)"
+  },
+  "ui_130": {
+    "message": "Hybrid Analysis API võtmed (valikult):"
+  },
+  "ui_131": {
+    "message": "nt abcdef123456…"
+  },
+  "ui_132": {
+    "message": "URLhaus API võtmed (valikuv domeeni maine):"
+  },
+  "ui_133": {
+    "message": "Saate saada API võtme"
+  },
+  "ui_134": {
+    "message": "."
+  },
+  "ui_135": {
+    "message": "urlhaus.abuse.ch"
+  },
+  "ui_136": {
+    "message": "urlhaus.abuse.ch (avab uus tab)"
+  },
+  "ui_137": {
+    "message": "urlscan.io API võtmed (valikult URL analüüs):"
+  },
+  "ui_138": {
+    "message": "Saate saada API võtme"
+  },
+  "ui_139": {
+    "message": "urlscan.io"
+  },
+  "ui_140": {
+    "message": "urlscan.io (avab uus tab)"
+  },
+  "ui_141": {
+    "message": "VirusTotal API võtmed (valikuline faili maine):"
+  },
+  "ui_142": {
+    "message": "virustotal.com"
+  },
+  "ui_143": {
+    "message": "virustotal.com (avab uus tab)"
+  },
+  "ui_144": {
+    "message": "Privaatsuse tasandil:"
+  },
+  "ui_145": {
+    "message": "Strict (default: ainult hashid ja domeenid, ülekanded puuduvad)"
+  },
+  "ui_146": {
+    "message": "Tasakaalustatud (ülekandmine tundmatuid faile, täielik URLs)"
+  },
+  "ui_147": {
+    "message": "Maksimaalne analüüs (loata tundmatuid faile ja täiendada URLs)"
+  },
+  "ui_148": {
+    "message": "Piirab analüüsi pakkujatele saadetud andmeid. kehtib ainult siis, kui väline analüüs on kättesaadav."
+  },
+  "ui_149": {
+    "message": "IP maine (kontrolli saanud pealkiri):"
+  },
+  "ui_150": {
+    "message": "puuetega"
+  },
+  "ui_151": {
+    "message": "VirusTotal (vajadab VirusTotal API võti)"
+  },
+  "ui_152": {
+    "message": "AbuseIPDB (vajadab AbuseIPDB API võti)"
+  },
+  "ui_153": {
+    "message": "IP maine API võti:"
+  },
+  "ui_154": {
+    "message": "Saada avalikkuse IP aadressid e-posti vastuvõtud pealkirjad valitud pakkuja. nõuab välist analüüsi nõusolekut ja skaneerimise volitused."
+  },
+  "ui_155": {
+    "message": "Lubatud nimekiri (comma eraldatud domeenid või e-posti aadressid):"
+  },
+  "ui_156": {
+    "message": "e.g. example.com, test@ example.com"
+  },
+  "ui_157": {
+    "message": "Usaldusväärsed saadetised pärsivad kohalikke saadetiste hoiatusi. nad ei luba väliseid skaneerimisi."
+  },
+  "ui_158": {
+    "message": "Blokklist (comma eraldatud domeenid või e-posti aadressid):"
+  },
+  "ui_159": {
+    "message": "Sisestage blokeeritud domeenid või e-posti aadressid."
+  },
+  "ui_160": {
+    "message": "Alati skaneerige manuaalselt (ei automaatseid laadimisi)"
+  },
+  "ui_161": {
+    "message": "Ennetab automaatseid väliseid skaneerimisi. selged manuaalmeetmed nõuavad endiselt nõusolekut ja asjakohast privaatsuse taset."
+  },
+  "ui_162": {
+    "message": "Värskenda ootel lingiaruandeid automaatselt"
+  },
+  "ui_163": {
+    "message": "Link kontrolli nõuab nõusolekut, skaneerimise volitust ja asjakohast privaatsuse taset."
+  },
+  "ui_164": {
+    "message": "Kontrollige linke enne nende avamist"
+  },
+  "ui_165": {
+    "message": "Pausi navigatsioon, et näidata tulemust. kontrollimata lingid ja vead on selgelt kindlaks määratud. täielik URL analüüs nõuab maksimaalset taset. Täielikud lingid ja manused vajavad eraldi kinnitust."
+  },
+  "ui_166": {
+    "message": "Pidage meeles, et salvestada oma seaded."
+  },
+  "ui_167": {
+    "message": "Andmete haldamine"
+  },
+  "ui_168": {
+    "message": "Selge kohalikult salvestatud tulemused ja mainekahju."
+  },
+  "linkChecking": {
+    "message": "Kontrolli linki…"
+  },
+  "linkWarning": {
+    "message": "See link oli teatatud kahtlusaluse või pahaloomulise."
+  },
+  "linkUnknown": {
+    "message": "See link ei saa kontrollida. avamine see võib olla riskantne."
+  },
+  "linkNoDetection": {
+    "message": "Ei ole ohtu tuvastanud tarnija. see ei ole turvalisuse tagatis."
+  },
+  "linkProceed": {
+    "message": "Avatud link igal juhul"
+  },
+  "linkCancel": {
+    "message": "Loobu"
+  },
+  "localMode": {
+    "message": "Kohalikud kontrollid töötavad ilma API võtmeteta. välised skannimised nõuavad teie nõusolekut ja sõnumit või saadetise loa."
+  },
+  "statusNormal": {
+    "message": "(Meil puudub avastamine)"
+  },
+  "statusSuspicious": {
+    "message": "(Üks kahtlustatav)"
+  },
+  "statusCritical": {
+    "message": "(Kriitiline mõte)"
+  },
+  "noSubject": {
+    "message": "(Ühtegi teemat ei ole)"
+  },
+  "noSender": {
+    "message": "(Üks tundmatu saatja)"
+  },
+  "noId": {
+    "message": "(Ükskõik milline ID)"
+  },
+  "unknownAttachment": {
+    "message": "tundmatu"
+  },
+  "statusDangerous": {
+    "message": "ohtlikest"
+  },
+  "sizeLimit": {
+    "message": "Liikumine ületab 25 MiB kohaliku suuruse piiri ja seda ei lugenud ega üles laaditud."
+  },
+  "trustedAuthLabel": {
+    "message": "Usaldusväärsed autentimisserverid (comma eraldatud)"
+  },
+  "trustedAuthHelp": {
+    "message": "Ainult loetletud adressaadi e-posti serverid, mida te haldate või selgelt usaldate. konfigureerimata pealkiri aruanded jäävad kontrollimatuks."
+  },
+  "consentHelp": {
+    "message": "Ilma nõusolekuta ei saadeta midagi välistele teenustele. Pärast nõusolekut kontrollitakse ainult sõnaselgelt heaks kiidetud kirju või saatjaid. Rangel tasemel võidakse saata räsisid, domeene ja avalikke IP-aadresse. Tasakaalustatud tase lubab üles laadida ka tundmatuid faile ja kõrgeim tase lisaks täielikke URL-e. Lülita valik välja, et peatada uued edastused ja tühistada ootel päringud. Juba saadetud andmeid ei saa tagasi võtta. Täielikud lingid ja manused vajavad eraldi kinnitust."
+  },
+  "visualImpersonation": {
+    "message": "Visuaalne avastamine: lehekülg iseloomustab $BRANDS$ (tõenäoline phishing).",
+    "placeholders": {
+      "brands": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedEmail": {
+    "message": "Saatja e-posti ( $P1$) on bloki nimekirjas.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedDomain": {
+    "message": "Saatja domeen ( $P1$) on bloki loendil ( $P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedEmail": {
+    "message": "Saadetud e-posti ( $P1$) on lubamisloendis.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedDomain": {
+    "message": "Saadetise domeen ( $P1$) on lubamisloendis ( $P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanVisibility": {
+    "message": "urlscan.io esitused ei ole loetletud, mitte eraõiguslikud. täielik URL võib sisaldada isikuandmeid või juurdepääsu tokenid. Esita ainult URLs saate jagada."
+  },
+  "notificationScanCount": {
+    "message": "Saadetud skaneerimine: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "gatewayRequestTimeout": {
+    "message": "Pakkuja taotlus tühistati või ajakohastati."
+  },
+  "gatewayInvalidJson": {
+    "message": "Teenuseosutaja tagastas lugematu vastus."
+  },
+  "gatewayNetworkError": {
+    "message": "Pakkuja ei saanud jõuda."
+  },
+  "noMessageFound": {
+    "message": "Näidatud sõnumit ei leitud."
+  },
+  "providerNoDetection": {
+    "message": "Ei tuvastatud ohtu"
+  },
+  "providerMalicious": {
+    "message": "Pahatahtlik"
+  },
+  "providerSuspicious": {
+    "message": "Kahtlane"
+  },
+  "providerPending": {
+    "message": "Analüüsid püüavad"
+  },
+  "privacyLocalData": {
+    "message": "Thundy AV loeb näidatud sõnumi, selle saatja, teema, pealkiri, teksti ja lisad kohalike kontrollide tegemiseks. kohalikud kontrollid töötavad ilma API võtmeteta. puudub telemetria ega arendaja analüüsi server."
+  },
+  "privacyProviders": {
+    "message": "Autoriseeritud välised taotlused lähevad otse konfigureeritud pakkujatele: Hybrid Analysis faili hashes ja üleslaadimiseks, VirusTotal faili hashes või IP maine, URLhaus domeenide jaoks, urlscan.io täielikuks URLs ja AbuseIPDB avalikuks IP-ks."
+  },
+  "privacyRetention": {
+    "message": "Seadmed, nõusolek, saatja volitused ja API võtmed on salvestatud teie Thunderbird profiili. API võtmed ei ole seal krüpteeritud. kohalikud skaneerimiskirjad võivad sisaldada teemasid, saatja aadressid, täielikud lingid ja lisa metadata. Kaasik säilitab kuni 1000 sõnumi rekordit 30 päeva ja puhastatakse andmebaasi alustamisel. In-memory maine tulemused lõpevad pärast 15 minutit."
+  },
+  "privacyControl": {
+    "message": "Väliste analüüside katkestamine, et peatada uued taotlused ja tühistada jätkuvad taotlused. juba edastatud andmeid ei saa mäletada. Kasutage Clear cache salvestatud analüüsi tulemuste ja mainekahjude kustutamiseks. Individuaalsed saatja volitused saab eemaldada seadetes."
+  },
+  "privacyDetailed": {
+    "message": "Täpne privaatsuspoliitika (inglise / saksa keeles)"
+  },
+  "senderAuthorizationsLabel": {
+    "message": "Autoriseeritud saatjad (üks e-posti aadress rida kohta)"
+  },
+  "senderAuthorizationsHelp": {
+    "message": "Need saadetised võivad automaatselt skaneerida, kui väline analüüs on aktiveeritud. eemaldage aadress tulevaste sõnumite automaatse skaneerimise peatamiseks. See nimekiri ei ületa privaatsuse taset või käsitsi režiimi."
+  },
+  "invalidSenderAddress": {
+    "message": "Sisestage e-posti aadressid, üks rida."
+  },
+  "popupSubtitle": {
+    "message": "Sõnumi turvalisuse ülevaade"
+  },
+  "popupDetails": {
+    "message": "Tehnilised sõnumite üksikasjad"
+  },
+  "popupLocalAssessment": {
+    "message": "Kohalik riskihindamine"
+  },
+  "popupLocalExplanation": {
+    "message": "See punkt ei ole viirusevastane otsus või ohutuse tagatis."
+  },
+  "linkDialogTitle": {
+    "message": "Kontrolli enne avamist"
+  },
+  "linkDestination": {
+    "message": "sihtkoha veebileht"
+  },
+  "linkUrlDetails": {
+    "message": "Näita täielik link aadress"
+  },
+  "linkOpenBrowser": {
+    "message": "Ava brauseris"
+  },
+  "linkOpening": {
+    "message": "Avatud…"
+  },
+  "linkOpenFailed": {
+    "message": "Linki ei õnnestunud avada. Proovi uuesti või kontrolli vaikebrauseri seadeid."
+  },
+  "linkCheckLimited": {
+    "message": "Ainult kättesaadavad skaneerimise tulemused on näidatud. puuduvad kontrollid ei tähenda, et link on turvaline."
+  },
+  "auditTitle": {
+    "message": "Link otsuse log"
+  },
+  "auditOpen": {
+    "message": "Ülevaade link log"
+  },
+  "auditScope": {
+    "message": "Logs HTTP (S) klõpsud vahetatakse lingide kaitse. OPENED tähendab, et Thunderbird aktsepteeris avamise taotluse ilma vea teatamata. See ei kinnita, et operatsioonisüsteem alustas brauseri või et veebisait külastati."
+  },
+  "auditPrivacy": {
+    "message": "Kohalikult salvestatud kuni 30 päeva, 2000 rekordit või 2 MiB (vanimate sissetulekute eemaldamine). Täis URLs võib sisaldada isikuandmeid või juurdepääsu tokenid. Miski ei laadita automaatselt. Kohalik log saab muuta või kustutada profiili kasutajad; see ei ole tamper-proof keskset auditi trail. Kohalik score kasutab klikitud link ja sõnumi konteksti, mitte pakkuja score. hindamise põhjused võivad hõlmata saadetise või domeeni andmed."
+  },
+  "auditSearch": {
+    "message": "URL, domeeni või sündmuse ID"
+  },
+  "auditOutcome": {
+    "message": "Otsus"
+  },
+  "auditAll": {
+    "message": "Kõik"
+  },
+  "auditOpened": {
+    "message": "Avamine taotletud"
+  },
+  "auditAborted": {
+    "message": "Abortist"
+  },
+  "auditOpenError": {
+    "message": "Avamine ebaõnnestus"
+  },
+  "auditPending": {
+    "message": "Ei ole lõplikku otsust"
+  },
+  "auditMinScore": {
+    "message": "Minimaalne otsuste tulemused"
+  },
+  "auditFrom": {
+    "message": "alates"
+  },
+  "auditTo": {
+    "message": "Teda"
+  },
+  "auditRefresh": {
+    "message": "Värskendav"
+  },
+  "auditJson": {
+    "message": "Eksport JSON"
+  },
+  "auditCsv": {
+    "message": "Ekspordi CSV"
+  },
+  "auditClear": {
+    "message": "Lokaalne log eemaldamine"
+  },
+  "auditExportHelp": {
+    "message": "Eksport hõlmab kõiki filtreeritud rida, mitte ainult praegust lehte. JSON sisaldab kontrollimiseks SHA-256 kontrolli; see ei tõenda autentsust. CSV neutraliseerib laadi valemid. Eksport sisaldab täielikku URLs : jagada ainult volitatud vaatlejatega."
+  },
+  "auditTime": {
+    "message": "Klõpsake / otsuse aeg"
+  },
+  "auditLocalScore": {
+    "message": "Kohaliku tulemuse (link ja sõnum)"
+  },
+  "auditVerdict": {
+    "message": "Pakkuja tulemused"
+  },
+  "auditAddress": {
+    "message": "URL ja üksikasjad"
+  },
+  "auditPrevious": {
+    "message": "Eelmine"
+  },
+  "auditNext": {
+    "message": "Edasi"
+  },
+  "auditClearConfirm": {
+    "message": "Kas kustutada kõik kohalikud lingid log sissejuhatused? eksportida vajalikku tõendit kõigepealt. skaneerimise tulemusi ja seadeid hoitakse."
+  },
+  "auditFailure": {
+    "message": "Kohalikku lingilogu ei saanud lugeda ega salvestada."
+  },
+  "auditUnavailable": {
+    "message": "Ei ole kättesaadav"
+  },
+  "auditScoreAtDecision": {
+    "message": "Otsuse tulemused"
+  },
+  "auditRecords": {
+    "message": "Rekordid"
+  },
+  "auditDetails": {
+    "message": "Näita URL ja tõendid"
+  },
+  "auditEventId": {
+    "message": "sündmuse ID"
+  },
+  "auditCancelReason": {
+    "message": "Tühistamise põhjus"
+  },
+  "auditFinalResult": {
+    "message": "Viimane kontrolli tulemused"
+  },
+  "auditProfile": {
+    "message": "Kohalik profiil ID"
+  },
+  "auditExported": {
+    "message": "Eksport on säästetud."
+  },
+  "auditRiskyOpened": {
+    "message": "Avamine taotletud kõrge riskiga"
+  },
+  "auditExportFailed": {
+    "message": "Eksport on ebaõnnestunud või tühistatud."
+  },
+  "profilesTitle": {
+    "message": "Valikuvõimalikud ettevõtte profiilid"
+  },
+  "profilesIntro": {
+    "message": "Valige ühised süsteemid iseseisvalt või jäta integreerimised välja. Need profiilid valmistavad konfigureerimist; nad ei liitu ettevõtte teenusega ega aktiveerivad keskset logimist."
+  },
+  "profilesOpen": {
+    "message": "Valige ettevõtte profiil"
+  },
+  "profilesBundle": {
+    "message": "Soovitatav kombinatsioon"
+  },
+  "profilesLocal": {
+    "message": "Kohalik ettevalmistus"
+  },
+  "profilesCustom": {
+    "message": "Kogematud valik"
+  },
+  "profilesHosting": {
+    "message": "Majutus"
+  },
+  "profilesSso": {
+    "message": "Ühe allkirja (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Seadmete juhtimine"
+  },
+  "profilesSiem": {
+    "message": "Turvalisuse jälgimine (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Piletite süsteem"
+  },
+  "profilesRequirements": {
+    "message": "Vajalik konfigureerimine"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Lõpppunkti ja konto seadeid pakutakse hilisema seadistamise ajal. allpool olevad nimed tuvastavad nõutavaid seadeid ja saladuslikke viiteid; siin ei sisesta tunnustusi."
+  },
+  "profilesPreview": {
+    "message": "Konfiguratsiooniprogramm"
+  },
+  "profilesPrivacy": {
+    "message": "Ühendused jäävad keelatud. projekt ei sisalda API võtmeid, tokenid, klõpsatud URLs või sõnumite andmeid. Keskmised andmed on planeeritud domeeni-ainult redigeerimine."
+  },
+  "profilesSave": {
+    "message": "Säästa valiku kohalikult"
+  },
+  "profilesExport": {
+    "message": "Ekspordi konfigureerimise kava"
+  },
+  "profilesReset": {
+    "message": "Reset valik"
+  },
+  "profilesNone": {
+    "message": "Puudega / valimata"
+  },
+  "profilesSelfHosted": {
+    "message": "Enesehostatud / on-premises"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Sel valikul ei ole väliseid integreerimisseadmeid vaja."
+  },
+  "profilesSaved": {
+    "message": "Valik salvestatud kohalikul tasandil. ühendused jäävad puudulikuks."
+  },
+  "profilesExported": {
+    "message": "Konfiguratsioonide eelnõu eksporditi. midagi ei aktiveeritud."
+  },
+  "profilesFailed": {
+    "message": "Valik ei saanud laadida, salvestada ega eksportida või tehing tühistati."
+  },
+  "wizardTitle": {
+    "message": "Thundy AV seadistamine"
+  },
+  "wizardLanguage": {
+    "message": "Seadistusviisardi keel"
+  },
+  "wizardLanguageNote": {
+    "message": "Valik kehtib ainult seadistusviisardis. Lisamooduli keelt saab muuta seadetes."
+  },
+  "wizardWelcome": {
+    "message": "Tere tulemast"
+  },
+  "wizardProtection": {
+    "message": "Link kaitse"
+  },
+  "wizardExternal": {
+    "message": "Valikuline analüüs"
+  },
+  "wizardIntro": {
+    "message": "Alusta kohalike kontrollidega.E-posti inspekteerimiseks kasutage selle Thundy AV bannerit või skaneerimistoimetust.Saate hiljem otsustada, kas analüüsi pakkujaid konfigureerida."
+  },
+  "wizardLocalNotice": {
+    "message": "Ilma välise analüüsi nõusolekuta ei saata andmeid analüüsiteenuse pakkujatele. see võlur ei anna seda nõusolekut kunagi."
+  },
+  "wizardPrivacy": {
+    "message": "Privaatsuse teave"
+  },
+  "wizardLinkChoice": {
+    "message": "Hoiatage enne linke avamist ja otsuste registreerimist kohalikul tasandil"
+  },
+  "wizardLinkExplanation": {
+    "message": "Linki dialoog näitab sihtkoha ja kättesaadava riskihindamise. avades oma brauseri linki; see ei tõenda veebisaidi külastust."
+  },
+  "wizardAuditNotice": {
+    "message": "Kohalik link log võib sisaldada täielikku URLs ja hindamise põhjusi. see säilitab kuni 30 päeva, 2000 sisu või 2 MiB. Profili kasutajad saavad seda lugeda, muuta või kustutada; see ei ole kaitstud äri auditi."
+  },
+  "wizardExternalExplanation": {
+    "message": "Välised pakkujad on vabatahtlikud ja võivad nõuda API võtmeid. sõltuvalt teie privaatsuse tasemest, hashidest, domeenidest, avalikest IP-dest, failidest või täielikust URLs saab edastada."
+  },
+  "wizardNextAction": {
+    "message": "Mida sooviksite teha järgmiselt?"
+  },
+  "wizardKeepLocal": {
+    "message": "Lõpetage kohalike kontrollidega"
+  },
+  "wizardKeepExisting": {
+    "message": "Hoidke olemasolevad välised seaded"
+  },
+  "wizardExistingExternal": {
+    "message": "Väline analüüs on selles profiilis juba kättesaadav. võlur ei muuda seda nõusolekut. kasutage seaded selle keelamiseks või loa läbivaatamiseks."
+  },
+  "wizardConfigure": {
+    "message": "Välise analüüsi seadistamine"
+  },
+  "wizardNoConsent": {
+    "message": "Selle võimaluse valimine avab ainult seadeid. midagi ei laadita ja selle võlur ei nõua luba."
+  },
+  "wizardBack": {
+    "message": "Tagasi"
+  },
+  "wizardNext": {
+    "message": "Edasi"
+  },
+  "wizardFinish": {
+    "message": "Säästke setup"
+  },
+  "wizardFinishConfigure": {
+    "message": "Säästa ja avada seadeid"
+  },
+  "wizardSkip": {
+    "message": "Mitte nüüd"
+  },
+  "wizardDone": {
+    "message": "Sissejuhatus päästetud"
+  },
+  "wizardDoneText": {
+    "message": "Teie link-kaitse valik on salvestatud kohalikul tasandil. ei ole muudetud API võtme, välise nõusoleku või saatja heakskiidu."
+  },
+  "wizardSettings": {
+    "message": "Avatud seaded"
+  },
+  "wizardProfilesNotice": {
+    "message": "Ettevõtte profiilid on valikulised konfigureerimiskavad. nende valimine ei aktiveeri ettevõtte ühendust."
+  },
+  "wizardDeferred": {
+    "message": "Sissejuhatus edasi lükatud"
+  },
+  "wizardDeferredText": {
+    "message": "Seadmed ei muudetud. avage seade uuesti, kui olete valmis."
+  },
+  "wizardSettingsOpened": {
+    "message": "Sätted avatud. konfigureerige pakkujad ja salvestage oma nõusolek seal."
+  },
+  "wizardSettingsFailed": {
+    "message": "Settings ei saaks avada. teie seade on salvestatud; kasutage Open settings retry."
+  },
+  "wizardSaveFailed": {
+    "message": "Ehitust ei saa salvestada. teie valikud jäävad siin; palun tagasi lükake."
+  },
+  "wizardLoadFailed": {
+    "message": "Settings couldn't be loaded. midagi ei salvestatud. Reload this page to retry."
+  },
+  "wizardLanguageFailed": {
+    "message": "Keel ei saa laadida. eelmine keel jääb valitud."
+  },
+  "wizardReopen": {
+    "message": "Avatud seade võlur"
+  },
+  "settingsAppearance": {
+    "message": "Välimus"
+  },
+  "settingsPrivacy": {
+    "message": "Privaatsus"
+  },
+  "settingsScanning": {
+    "message": "Kaitse"
+  },
+  "settingsProviders": {
+    "message": "Analüüsiteenused"
+  },
+  "settingsSenders": {
+    "message": "Saatjate reeglid"
+  },
+  "settingsData": {
+    "message": "Andmed ja tööriistad"
+  },
+  "settingsWorkspace": {
+    "message": "Teie tööruum"
+  },
+  "settingsEyebrow": {
+    "message": "Tee see oma"
+  },
+  "settingsSubtitle": {
+    "message": "Kohanda Thundy AV välimust ja oma e-posti kaitset."
+  },
+  "settingsLocalBadge": {
+    "message": "Kohaliku default"
+  },
+  "settingsLocalNote": {
+    "message": "Teie eelistused. salvestatud selles seadmes."
+  },
+  "settingsSkip": {
+    "message": "Jääb sihtkohtadesse"
+  },
+  "settingsProviderGuide": {
+    "message": "Pakkujate ja API võtmed"
+  },
+  "settingsWizardHelp": {
+    "message": "Kontrollige juhitud seadet igal ajal."
+  },
+  "themeIntro": {
+    "message": "Tee Thundy AV tundub nagu sinu. ilmumise muudatused salvestatakse kohe üle lisand."
+  },
+  "themeMode": {
+    "message": "Välimus"
+  },
+  "themeSystem": {
+    "message": "Kasuta Thunderbirdi teemat"
+  },
+  "themeLight": {
+    "message": "Hele"
+  },
+  "themeDark": {
+    "message": "Tume"
+  },
+  "themeAccent": {
+    "message": "Aktsent värv"
+  },
+  "themeOcean": {
+    "message": "ookeanid"
+  },
+  "themeViolet": {
+    "message": "Violetne"
+  },
+  "themeForest": {
+    "message": "Metsad"
+  },
+  "themeAmber": {
+    "message": "Merevaigukollane"
+  },
+  "themeReady": {
+    "message": "Väljanägemine salvestatakse automaatselt. teised seaded kasutavad Save nuppu."
+  },
+  "themeSaving": {
+    "message": "Välimusega säästmine…"
+  },
+  "themeSaved": {
+    "message": "Välimus on päästetud."
+  },
+  "themeLoadError": {
+    "message": "Väljanägemine ei saa laadida. proovige uuesti avada seadeid."
+  },
+  "themeSaveError": {
+    "message": "Nägemine ei saa salvestada. valige oma valik uuesti tagasi astuda."
+  },
+  "themeRetry": {
+    "message": "Retry säästmine välimus"
+  },
+  "themeDensity": {
+    "message": "Teabe tihedus"
+  },
+  "themeComfortable": {
+    "message": "mugav"
+  },
+  "themeCompact": {
+    "message": "Kompaktne"
+  },
+  "themeDensityHelp": {
+    "message": "Kohandage ruumi seaded ja kohalikud haldusvahendid."
+  },
+  "profilesChanges": {
+    "message": "Muutused võrreldes säästetud valikuga"
+  },
+  "profilesDiscard": {
+    "message": "Vältida ebaõnnestunud muutusi"
+  },
+  "profilesLoadRetry": {
+    "message": "Reload salvestatud valik"
+  },
+  "profilesNotLoaded": {
+    "message": "Saadud valik ei ole laaditud"
+  },
+  "profilesUnsaved": {
+    "message": "Muudatusettepanek - ebaaktiivne projekt"
+  },
+  "profilesUnchanged": {
+    "message": "Tasutud valik · mitteaktiivne eelnõu"
+  },
+  "profilesSaving": {
+    "message": "Kohaliku valiku säästmine…"
+  },
+  "settingsUnsaved": {
+    "message": "Ebaõnnestunud muutused"
+  },
+  "providerUnknown": {
+    "message": "Tulemus tundmatu"
+  },
+  "auditVerdictAtDecision": {
+    "message": "Otsuse tulemused"
+  },
+  "ui_169": {
+    "message": "Analüüsiprotokoll: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "Töö ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "Esitatud ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protokoll võetud: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": "Analüüs on ikka veel käimas (IN_PROGRESS). tulemus võetakse automaatselt tagasi iga $P1$ sekundi järel (tüüpi $P2$); lõppenud analüüsiprotokoll ilmub siin ilma uue taotluseta, kui see on salvestatud.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "Pärast taaskäivitamist või töötlemise kaotust jääb see ootama; ärge arvake, et link on avatud või tühistatud."
+  },
+  "auditCancelUser": {
+    "message": "Kasutaja poolt tühistatud"
+  },
+  "auditCancelEscape": {
+    "message": "Lõpetatud põgenemisega"
+  },
+  "auditCancelDestination": {
+    "message": "sihtkoht muutub"
+  },
+  "auditCancelContext": {
+    "message": "Sõnumite konteksti suletud"
+  },
+  "auditCancelUnknown": {
+    "message": "Tuntud tühistamise põhjus"
+  },
+  "reportNotSaved": {
+    "message": "Aruanne on nähtav, kuid seda ei saanud paiknevalt päästa."
+  },
+  "checkOrigin_live": {
+    "message": "Praeguse teenusepakkuja tulemused"
+  },
+  "checkOrigin_stored": {
+    "message": "salvestatud tulemus"
+  },
+  "checkOrigin_none": {
+    "message": "Teenuseosutaja vaatlus puudub"
+  },
+  "checkOutcome_success": {
+    "message": "Taotlus õnnestus"
+  },
+  "checkOutcome_failed": {
+    "message": "Taotlus ebaõnnestus"
+  },
+  "checkOutcome_disabled": {
+    "message": "Välise analüüsi puudumine"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Külalislahkuse puudumine"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Pakkuja võtmed puuduvad"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Ei pakkuja viite"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Uue taotluse puudumine"
+  },
+  "checkOutcome_no_result": {
+    "message": "Kasutatav uus tulemus"
+  },
+  "checkAttempted": {
+    "message": "Kontrolli katsetatud"
+  },
+  "checkObserved": {
+    "message": "Tulemused täheldatud"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Otsuse põhjused"
+  },
+  "auditReasonsLatest": {
+    "message": "Viimased kättesaadavad põhjused"
+  },
+  "auditReasonsMissing": {
+    "message": "Ei ole sel ajal registreeritud"
+  },
+  "coverageSummary": {
+    "message": "Katvus — tuvastatud: $1; kvalifitseeruv: $2; töödeldud: $3; ebaõnnestunud: $4; läbikukkumine: $5."
+  },
+  "supportTitle": {
+    "message": "Kohalik toetusaruanded"
+  },
+  "supportHelp": {
+    "message": "Ettepanek minimaalne diagnostiline aruanne, seejärel salvestage see kohalikult. Miski ei saata. kontrolliametid ei kinnita selle allikat."
+  },
+  "supportPreview": {
+    "message": "Ettevalmistav raport"
+  },
+  "supportConfiguration": {
+    "message": "Sisaldab tihedat seadistust (ei ole võtmeid ega saadetiste loendeid)"
+  },
+  "supportSave": {
+    "message": "Saada aruande kohalikult"
+  },
+  "coverageAttachments": {
+    "message": "Liidud"
+  },
+  "coverageDomains": {
+    "message": "Unikaalsed domeenid"
+  },
+  "coverageBatch": {
+    "message": "Batch vasak"
+  },
+  "coverageLimits": {
+    "message": "Piirangud passis: 100 liidet, 25 MiB liidese kohta, 100 unikaalset domeeni, 20 rühma lingid. töödeldud ei tähenda väliselt skaneeritud ega turvaline."
+  },
+  "localProfileTitle": {
+    "message": "Kohalikud profiilid"
+  },
+  "localProfileHelp": {
+    "message": "Eksport salvestatud välimus või kohalikud kaitse seaded eraldi. eelvaade ja kinnitamine impordi. võti, nõusolek, loa, usaldusväärne saatjad ja auditi ajalugu on välistatud."
+  },
+  "localProfileExport": {
+    "message": "Ekspordi välimus"
+  },
+  "localProfileFile": {
+    "message": "Valige profiili faili ( JSON, kuni 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Profiil JSON (või kinnitage siin)"
+  },
+  "localProfilePreview": {
+    "message": "Eesmärk muutus"
+  },
+  "localProfileApply": {
+    "message": "Näidatud muudatuste rakendamine"
+  },
+  "localProfileDiscard": {
+    "message": "Impordi vähenemine"
+  },
+  "localProfileInvalid": {
+    "message": "Puuduvad profiilid, toetamata versioon või keelatud väljad."
+  },
+  "localProfileChanged": {
+    "message": "Väljanägemine muutub alates eelvaadetest. eelvaade uuesti enne taotlemist."
+  },
+  "localProfileFailed": {
+    "message": "Profiili ei saa salvestada. ülevaade praegustest seadistustest ja taganemisest."
+  },
+  "localProfileApplied": {
+    "message": "Väljanägemine profiil rakendatud. kaitse ja nõusolek muutumatult."
+  },
+  "analysisTitle": {
+    "message": "Analüüsi allikad"
+  },
+  "analysisMixed": {
+    "message": "Kohalik + väline kontroll"
+  },
+  "analysisExternal": {
+    "message": "Välised vaatlused kättesaadavad"
+  },
+  "analysisLocal": {
+    "message": "Kohalik · välised tulemused ei ole registreeritud"
+  },
+  "analysisLocalChecked": {
+    "message": "Kohalik sõnum / link heuristid on lõppenud."
+  },
+  "analysisLocalPending": {
+    "message": "Kohalik hindamine ei ole veel registreeritud."
+  },
+  "analysisUnknown": {
+    "message": "tundmatu"
+  },
+  "analysisTimeUnknown": {
+    "message": "Aeg ei ole registreeritud"
+  },
+  "analysisObserved": {
+    "message": "Viimane kasulik vastus"
+  },
+  "analysisFindingObserved": {
+    "message": "Leidud registreeritud"
+  },
+  "analysisAttempted": {
+    "message": "Viimane taotlus"
+  },
+  "analysisPartial": {
+    "message": "Mõned taotlused ei õnnestunud; kättesaadavad tulemused ei hõlma kõiki elemente."
+  },
+  "analysisOtherServices": {
+    "message": "Muud teenused / ei ole kontrollitud"
+  },
+  "analysisLimit": {
+    "message": "Kohaliku punkti ei ole viirusevastane kohtuotsus. taotlused ja üleslaadimised ei ole lõppenud analüüsid. salvestatud tulemused säilitavad oma esialgse vanuse; puuduvad andmed ei tõenda, et eelnevat taotlust ei esinenud."
+  },
+  "analysisScope_hash": {
+    "message": "Faili hash maine"
+  },
+  "analysisScope_file": {
+    "message": "faili esitamine"
+  },
+  "analysisScope_url": {
+    "message": "URL analüüs"
+  },
+  "analysisScope_domain": {
+    "message": "Domain maine"
+  },
+  "analysisScope_ip": {
+    "message": "Avalik IP maine"
+  },
+  "analysisScope_report": {
+    "message": "Analüüsi aruanded"
+  },
+  "analysisState_running": {
+    "message": "Nõutud · Ei ole veel lõppenud tulemust"
+  },
+  "analysisState_checked": {
+    "message": "Tulemused saadud"
+  },
+  "analysisState_received": {
+    "message": "Vastuse saamine · kohtuotsus puudub"
+  },
+  "analysisState_submitted": {
+    "message": "Esitatud vastuvõetav · analüüs ei ole kinnitatud täielik"
+  },
+  "analysisState_not_found": {
+    "message": "Ei leitud tarnijate rekordit"
+  },
+  "analysisState_failed": {
+    "message": "Ebaõnnestunud taotlus; uut kohtuotsust ei ole"
+  },
+  "analysisState_incomplete": {
+    "message": "Ei ole täidetud analüüs"
+  },
+  "analysisSource_remote": {
+    "message": "Välised teenused ühendust"
+  },
+  "analysisSource_cache": {
+    "message": "Memory cache · ei ole uut tarnija taotlust"
+  },
+  "analysisSource_stored": {
+    "message": "Hoiatud välised vaatlused"
+  },
+  "analysisSource_attempt": {
+    "message": "Küsimuse katse · vastus ei ole kinnitatud"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Kohtuotsus puudub"
+  },
+  "analysisVerdict_none": {
+    "message": "Saadavad tulemused: puudub tuvastamine (turvalisuse tagatis)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "Saadavad tulemused hõlmavad kahtlustatavaid näitajad"
+  },
+  "analysisVerdict_malicious": {
+    "message": "Saadavad tulemused hõlmavad ohu tuvastamist"
+  },
+  "analysisReason_unconfigured": {
+    "message": "Hetkel konfigureerimata"
+  },
+  "analysisReason_disabled": {
+    "message": "Uute väliste taotluste puudumine"
+  },
+  "analysisReason_permission": {
+    "message": "Uute taotluste jaoks puuduvad külalislahkused"
+  },
+  "analysisReason_authorization": {
+    "message": "Selle sõnumi / manuaalse režiimi automaatne loa puudumine"
+  },
+  "analysisReason_policy": {
+    "message": "Praeguse privaatsuse taseme poolt lubamata"
+  },
+  "analysisReason_on_action": {
+    "message": "Kasutatakse ainult pärast selget linki tegevust"
+  },
+  "analysisReason_unrecorded": {
+    "message": "Selle sõnumi jaoks ei ole registreeritud kontrolli"
+  },
+  "analysisUnavailable": {
+    "message": "Analüüsi allikad praegu puuduvad"
+  },
+  "analysisModeUnknown": {
+    "message": "Analüüsi seisund ei ole veel registreeritud"
+  },
+  "analysisModeRunning": {
+    "message": "Väline taotlus käib · tulemus ootab"
+  },
+  "analysisModeSubmitted": {
+    "message": "Esitatud väliselt · analüüs ei ole veel lõppenud"
+  },
+  "analysisModeIncomplete": {
+    "message": "Väline kontroll on ebaõnnestunud · lõpetamine ei ole kinnitatud"
+  },
+  "analysisModePartial": {
+    "message": "Välised tulemused kättesaadavad · Mõned taotlused ebaõnnestusid"
+  },
+  "analysisModeFailed": {
+    "message": "Väline taotlus ebaõnnestus · ei ole kasulikku tulemust registreeritud"
+  },
+  "analysisModeResults": {
+    "message": "Välised vastused kättesaadavad · vaadake allpool olevaid kontrolle"
+  },
+  "analysisResourceMessage": {
+    "message": "Sõnumite konteksti / transpordi maine"
+  },
+  "analysisResourceAttachment": {
+    "message": "Liitumine"
+  },
+  "analysisResourceLink": {
+    "message": "Link"
+  },
+  "analysisResourceUnknown": {
+    "message": "Varasem kokkuvõte · ressurss ei ole registreeritud"
+  },
+  "analysisTruncated": {
+    "message": "Mõned ressursside üksikasjad jäeti tähelepanuta, sest kohalik näidispiir on saavutatud."
+  },
+  "analysisResources": {
+    "message": "Selle sõnumi ressursid"
+  },
+  "analysisResourceLocal": {
+    "message": "Ühendus, mis on salvestatud sõnumiga · ei tõenda viirusevastast skaneerimist"
+  },
+  "analysisResourceTarget": {
+    "message": "Seotud sihtkoht · eemaldatud sisu laadimine ei ole välise analüüsi tõend"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Sellele ressurssile ei ole registreeritud välist kontrollimist"
+  },
+  "analysisContextChanged": {
+    "message": "Sõnumi kontekst muutub. sulgege ja avage popup enne uuesti esitamist."
+  },
+  "analysisLocalIncomplete": {
+    "message": "Kohalik analüüs on ebatäielik: mõned sõnumite sisu ei ole saadaval."
+  },
+  "analysisLocalUnavailable": {
+    "message": "Kohalik analüüs ei ole kättesaadav: sõnumit ei saanud lugeda."
+  },
+  "analysisHistoryTitle": {
+    "message": "Salvestatud ajalugu · assotsiatsioon kinnitamata"
+  },
+  "analysisHistoryWarning": {
+    "message": "Need ajaloolised andmed võivad kuuluda teise sõnumi, millel on sama Message-ID. Nad ei kinnita selle sõnumi kontrollimist."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Uute allikate vaatlusi ei saa päästa. olemasolev ajalugu säilitatakse."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "Raporti värskendust ei saanud salvestada. varasemad protokollid säilitatakse."
+  },
+  "sourceExportOpen": {
+    "message": "Analüüsi allikate aruanded"
+  },
+  "sourceExportTitle": {
+    "message": "Analüüsi allikate aruanded"
+  },
+  "sourceExportIntro": {
+    "message": "Looge registreeritud kontrollide kohalik pilt. See ei teosta uut analüüsi. praegused vaatlused ja salvestatud ajalugu kinnitamata assotsieerimisega hoitakse eraldi."
+  },
+  "sourceExportPrivacy": {
+    "message": "Sisaldab teenuseid, seisukohti, kohtuotsusi ja täpseid vaatlusteaegu. Välja arvatud URLs, filename, hashes, IPs, võtit, sõnumite teksti ja sisemised identifitseerijad. Ressursside numbrid kehtivad ainult selles aruandes. See ei ole täielik ajalugu või autentseeritud rekord. Miski ei saata automaatselt. ülevaade enne jagamist."
+  },
+  "sourceExportCancel": {
+    "message": "Discard eelvaade"
+  },
+  "sourceExportContentLabel": {
+    "message": "Aruande eelvaade ( JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "Sõnumi konteksti ei ole enam kättesaadav. avage raport oma sõnumite tööriista popupist."
+  },
+  "sourceExportChanged": {
+    "message": "Registreeritud seisund muutub. looge uus eelvaade enne säästmist."
+  },
+  "sourceExportReady": {
+    "message": "Vaadake eelvaadet enne säästmist või jagamist."
+  },
+  "sourceExportRequested": {
+    "message": "Säästa soovitud. kontrollida täiendamist allalaadimised Thunderbird."
+  },
+  "sourceExportFailed": {
+    "message": "Aruanne ei ole salvestatud. luua uus eelvaade proovida uuesti."
+  },
+  "analysisHistoryPages": {
+    "message": "Ajaloolised leheküljed"
+  },
+  "analysisHistoryEntries": {
+    "message": "Sissepääs"
+  },
+  "analysisHistoryFlagged": {
+    "message": "kahtlusalune või pahaloomuline ajalooline avastus · assotsiatsioon kinnitamata"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Esimesed ajaloolised hoiatused"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Näita kõige tugevamat praegust leidmist"
+  },
+  "reportDisplayFailed": {
+    "message": "Salvestatud aruannet ei saa näidata. teised tulemused jäävad kättesaadavaks."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Mõned aruande andmed on toetamata vormingus ja neid ei saa kuvada."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Mõned salvestatud analüüsi andmed ei saa lugeda. teised tulemused jäävad kättesaadavaks."
+  },
+  "analysisModeResponses": {
+    "message": "Saadud vastused · puudub hinnatav kohtuotsus"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Vastused saadud ilma hinnatava kohtuotsuseta · mõned taotlused ei õnnestunud"
+  },
+  "analysisCurrentAvailability": {
+    "message": "Uute taotluste puhul"
+  },
+  "reasonMaliciousIp": {
+    "message": "Kahjuliku serveri IP aadress avastati ( $IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "Välised ohu näitajad ( URLhaus ja IP maine)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus – Tuntud malware domeenid tuvastatud: $DOMAINS$",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "IP Maine ( $PROVIDER$) – kahtlane server IPs: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "urlscan.io tulemused:"
+  },
+  "urlscanStatus": {
+    "message": "staatuse: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridReportLink": {
+    "message": "Avatud täielik raport Hybrid Analysis kohta"
+  },
+  "hybridProviderMessage": {
+    "message": "Pakkuja sõnum: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "Hybrid Analysis tasu piir või kvood on saavutatud. palun proovige hiljem uuesti."
+  },
+  "reasonArchivedMaliciousAttachment": {
+    "message": "Ajalooline avastus ( $OBSERVED$). $PROVIDER$ klassifitseeritud lisand “ $NAME$ ” kui kahjulik.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonArchivedSuspiciousAttachment": {
+    "message": "Ajalooline avastus ( $OBSERVED$). $PROVIDER$ klassifitseerib lisand “ $NAME$ ” kahtlusaluse.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      },
+      "observed": {
+        "content": "$3"
+      }
+    }
+  },
+  "reasonMaliciousAttachment": {
+    "message": "Liikumine \" $NAME$ \" on klassifitseeritud kahjulike $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "Liikumine \" $NAME$ \" oli klassifitseeritud kahtlusaluse $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanReportLink": {
+    "message": "Avatud täielik raport urlscan.io kohta"
+  },
+  "hybridLinkVerdictStatus": {
+    "message": "Hybrid Analysis: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonMaliciousLinkVerdict": {
+    "message": "Link \" $URL$ \" on klassifitseeritud kahjulike $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousLinkVerdict": {
+    "message": "Link \" $URL$ \" on klassifitseeritud kahtlusaluse $PROVIDER$.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanErrorDetails": {
+    "message": "Põhjus: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "urlscan.io taseme piir või kvood on saavutatud. palun proovige uuesti hiljem."
+  },
+  "urlscanInvalidKey": {
+    "message": "Võltsitud või volitamata urlscan.io API võtmed."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Tulemused ei olnud uurimisruumis valmis. vastuvõetud skaneerimist saab uuesti kontrollida ilma uue esitamiseta."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Domain ei saa lahendada urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Element ei ole veel registreeritud Hybrid Analysis (ei avastatud eelnevat analüüsi)."
+  },
+  "virustotalNotFound": {
+    "message": "Element ei ole veel registreeritud VirusTotal andmebaasis."
+  },
+  "virustotalRateLimited": {
+    "message": "VirusTotal taseme piir või kvood on saavutatud. palun proovige uuesti hiljem."
+  },
+  "virustotalInvalidKey": {
+    "message": "Võltsitud või volitamata VirusTotal API võtmed."
+  },
+  "abuseipdbRateLimited": {
+    "message": "AbuseIPDB taseme piir või kvood on saavutatud. palun proovige uuesti hiljem."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Võltsitud või volitamata AbuseIPDB API võtmed."
+  },
+  "urlhausRateLimited": {
+    "message": "URLhaus taseme piir või kvood on saavutatud. palun proovige uuesti hiljem."
+  },
+  "urlhausInvalidKey": {
+    "message": "Võltsitud või volitamata URLhaus API võtmed."
+  },
+  "testApiKeyButton": {
+    "message": "Testi ühendust"
+  },
+  "testApiKeyTesting": {
+    "message": "Testitud ühendus…"
+  },
+  "testApiKeyValid": {
+    "message": "Taotlus on vastu võetud. See ei kinnita ülekandevate õiguste ega jääva kvoodi."
+  },
+  "testApiKeyInvalid": {
+    "message": "Ühendus puudub: võltsitud API võtmed."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Kiiruse või kvoodi piir on saavutatud. palun proovige hiljem uuesti."
+  },
+  "testApiKeyError": {
+    "message": "Ühendustesti ebaõnnestus."
+  },
+  "testApiKeyEmpty": {
+    "message": "Palun sisestage API võtmed kõigepealt."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "Teenusepakkuja juurde ühenduse andmisest keeldutakse."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Palun valige kõigepealt IP maine pakkuja."
+  },
+  "rateLimitWithWait": {
+    "message": "Kiiruspiirang või kvood on saavutatud. palun proovige uuesti $SECONDS$ sekundites.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Kiiruse piir saavutatakse"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Võltsitud API võti"
+  },
+  "auditErrorCode": {
+    "message": "Viga kood"
+  },
+  "auditErrorDetails": {
+    "message": "Viga üksikasjad"
+  },
+  "auditRetryAfter": {
+    "message": "Oodake aega"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ sekundid",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "securityTitle": {
+    "message": "Juhtimine ja linkide kaitse"
+  },
+  "securityScope": {
+    "message": "Kohalikud selle Thunderbird ei takista profiili muutusi, keelates lisand või avades kopeeritud lingid mujal."
+  },
+  "securityAdminPassword": {
+    "message": "Administratori salasõna (12+ tähemärki; jätke valge hoidmiseks)"
+  },
+  "securityApprovalPassword": {
+    "message": "Eraldi link kinnituse parool (12+ tähemärki; jäta valge hoidmiseks)"
+  },
+  "securityThreshold": {
+    "message": "Nõutav heakskiit riskipunktis (0–100, sealhulgas)"
+  },
+  "securityEnablePolicy": {
+    "message": "Võimaldab sidekaitset"
+  },
+  "securityUnknownApproval": {
+    "message": "Nõuda ka ebatäielikke kontrolle"
+  },
+  "securityUnlock": {
+    "message": "Unlock seaded"
+  },
+  "securitySave": {
+    "message": "Säilitage kaitse seaded"
+  },
+  "securityLock": {
+    "message": "Lock nüüd"
+  },
+  "securityDisable": {
+    "message": "eemaldage parool"
+  },
+  "securityRecovery": {
+    "message": "Taastumise kood"
+  },
+  "securityRecover": {
+    "message": "Admin parooli uuesti seadistamine koodi abil"
+  },
+  "securityStopTransfers": {
+    "message": "Väliste ülekandete lõpetamine"
+  },
+  "securityLocked": {
+    "message": "Seaded on lukus. Avamiseks sisesta administraatori salasõna."
+  },
+  "securityUnlocked": {
+    "message": "Settings unlocked; Lock pärast 5 minutit ilma tegevuseta."
+  },
+  "securityOptional": {
+    "message": "salasõna kaitse on valikuline ja hetkel välja. ilma parooli kinnitamata jäävad kaitstud lingid blokeeritud."
+  },
+  "securityError": {
+    "message": "Operatsioon keeldus. kontrollige oma parooli, seanssi ja sissepääsu."
+  },
+  "securityWait": {
+    "message": "Liiga palju üritusi. oodake enne pensionile jäämist."
+  },
+  "securityLength": {
+    "message": "Kasutage vähemalt 12 tähte ja eraldi paroole."
+  },
+  "securityRecoverySave": {
+    "message": "Salvestage see ühe korra taastamise kood eraldi. seda ei näita uuesti:"
+  },
+  "securitySaved": {
+    "message": "Kaitsevahendid on päästetud."
+  },
+  "securityDisableConfirm": {
+    "message": "Seadmete parooli eemaldamine? Link kaitse jääb konfigureeritud."
+  },
+  "securityStopped": {
+    "message": "Välised ülekanded on peatatud."
+  },
+  "securityApprovalTitle": {
+    "message": "Võimalikult ohtlik sisu"
+  },
+  "securityConfirmDanger": {
+    "message": "Ma tahan avada seda potentsiaalselt ohtlikku sisu igal juhul."
+  },
+  "securityApproveOnce": {
+    "message": "Avatud ja kinnitatud üks kord"
+  },
+  "securityExpired": {
+    "message": "Nõusoleku aegumine või kontekst muutunud. alustada uuesti sõnumist."
+  },
+  "securityOpened": {
+    "message": "Thunderbird võttis avamise taotluse vastu."
+  },
+  "securityApprovalFailed": {
+    "message": "Avamine keelati. Kontrolli salasõna või alusta aegunud heakskiitu uuesti kirjast."
+  },
+  "providerTestDisclosure": {
+    "message": "See saadab teie API võtme- ja fikseeritud testiandmed valitud pakkujale, ilma sõnumisisu. edukas lugemise test ei tõenda üleslaadimised või kättesaadavad kvoodid."
+  },
+  "analysisSimple": {
+    "message": "Ülevaade"
+  },
+  "analysisExpert": {
+    "message": "Tehnilised üksikasjad"
+  },
+  "analysisSimpleNone": {
+    "message": "Ei tuvastatud kahtlustatavaid märke"
+  },
+  "analysisSimpleCaution": {
+    "message": "kahtlused"
+  },
+  "analysisSimpleDanger": {
+    "message": "Kahjulik avastamine"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Kontroll on puudulik"
+  },
+  "analysisScoreExplanation": {
+    "message": "Riskiskoor arvutatakse reeglite põhjal ja see ei näita tõenäosust ega taga ohutust."
+  },
+  "analysisSimpleBasis": {
+    "message": "Teenused, millel on tulemused / puuduvad"
+  },
+  "analysisProviderSetup": {
+    "message": "Pakkuja juurdepääs ja andmete avalikustamine"
+  },
+  "analysisProviderConfigured": {
+    "message": "Võti konfigureeritud; salvestamine ei alusta skaneerimist."
+  },
+  "analysisProviderNoKey": {
+    "message": "Keel ei ole konfigureeritud"
+  },
+  "analysisDataHash": {
+    "message": "Filiali sõrmejäljed ( SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Täielik liitumine"
+  },
+  "analysisDataUrl": {
+    "message": "Täielik URL; võib sisaldada konfidentsiaalset tokenid"
+  },
+  "analysisDataDomain": {
+    "message": "Link domeenid"
+  },
+  "analysisDataIp": {
+    "message": "Avalik IP sõnumite pealkiri"
+  },
+  "analysisDataReport": {
+    "message": "Aruanne identifitseerib"
+  },
+  "analysisApprovalRequired": {
+    "message": "Täiendav heakskiit on nõutav; tühistada või taotleda halduri."
+  },
+  "analysisContinueWarning": {
+    "message": "Vaadake põhjuseid enne jätkamist. võite tühistada."
+  },
+  "analysisConflict": {
+    "message": "Pakkujad ei nõustu; tulemuste osas on prioriteet."
+  },
+  "analysisExportSensitive": {
+    "message": "Ekspordi eelneva ülevaate: tehnilised andmed võivad tuvastada sõnumivahendeid."
+  },
+  "scanActions": {
+    "message": "Välised kontrollid"
+  },
+  "scanStart": {
+    "message": "Kontrolli kohe"
+  },
+  "scanRepeat": {
+    "message": "Kontrolli uuesti"
+  },
+  "scanRefresh": {
+    "message": "Värskenda tulemusi"
+  },
+  "scanRunning": {
+    "message": "Välised kontrollid edendavad"
+  },
+  "scanProgress": {
+    "message": "Täiustatud ressursid"
+  },
+  "scanMigrationNotice": {
+    "message": "Valige automaatse skaneerimise režiim seadetes. seni, eelmine saatja ja käsitsi reeglid kehtivad."
+  },
+  "scanState_idle": {
+    "message": "Selles mõttes ei ole skaneerimistegevus aktiivne."
+  },
+  "scanState_queued": {
+    "message": "Kontrolli aktsepteeritud; oodake alustamist"
+  },
+  "scanState_running": {
+    "message": "Välised kontrollid edendavad"
+  },
+  "scanState_completed": {
+    "message": "Kontrolli lõpetamine"
+  },
+  "scanState_pending": {
+    "message": "Pakkuja töötleb endiselt; tulemused värskendatakse"
+  },
+  "scanState_incomplete": {
+    "message": "Kontrolli ebaõnnestunud; mõned tulemused puuduvad"
+  },
+  "scanState_failed": {
+    "message": "Kontrolli ebaõnnestunud; proovige uuesti"
+  },
+  "scanState_blocked": {
+    "message": "Välise kontrolli ei alustata; vaadake allpool nõudeid"
+  },
+  "analysisReason_manual": {
+    "message": "Manuaalne režiim"
+  },
+  "analysisReason_sender": {
+    "message": "Saadetis ei ole heaks kiidetud"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Automaatne link analüüs"
+  },
+  "analysisReason_no_resources": {
+    "message": "Ei sobi ressursse"
+  },
+  "analysisReason_quota": {
+    "message": "Kvoot saavutatud; oodake enne tagasiastumist"
+  },
+  "analysisReason_running": {
+    "message": "Teenuse osutaja töötleb"
+  },
+  "analysisReason_provider_error": {
+    "message": "Pakkuja taotlus ebaõnnestus"
+  },
+  "scanModeLabel": {
+    "message": "Automaatne väline skaneerimine"
+  },
+  "scanModeKeep": {
+    "message": "Hoidke eelnevat seadet (valige režiim)"
+  },
+  "scanModeAll": {
+    "message": "Kõik avatud kirjad"
+  },
+  "scanModeSenders": {
+    "message": "Ainult heakskiidetud saatjad"
+  },
+  "scanModeManual": {
+    "message": "Ainult käsitsi"
+  },
+  "scanModeHelp": {
+    "message": "Automaatsed kontrollid saadavad ainult räsisid, domeene ja avalikke IP-aadresse. Täielikud lingid ja manused vajavad eraldi kinnitust. Avamata kirjad jäävad kohalikuks."
+  },
+  "assessmentCompletion": {
+    "message": "Töötlemise staatuse"
+  },
+  "assessmentCompletion_pending": {
+    "message": "Pakkuja töötleb endiselt"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Raport tagasivõtmine täielik"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "Lõplik hindamine puudub"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Tehniline töötlemine ebaõnnestus"
+  },
+  "assessmentConflict": {
+    "message": "Erinevad osalised hinnangud; kõige tugevam leidmine määrab tegevuse."
+  },
+  "assessmentSignals": {
+    "message": "Hindamise alus"
+  },
+  "assessmentJob": {
+    "message": "Tööandja ID"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Teenuseosutaja kohtuotsus"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Scanner leidmine"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Originaalne ähvardus"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Originaalne multidiskani tulemused"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Originaalne ohu tase"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Pakkuja valge märgistus"
+  },
+  "assessmentSignal_overall": {
+    "message": "Urlscan üldine hindamine"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Urlscan mootori hindamine"
+  },
+  "assessmentSignal_engines": {
+    "message": "Muud mootorid"
+  },
+  "assessmentSignal_brand": {
+    "message": "Brändi märgistus; ei määra riski iseenesest"
+  },
+  "assessmentSignal_report": {
+    "message": "Aruanne riik"
+  },
+  "assessmentOriginal": {
+    "message": "Originaalne kohtuotsus"
+  },
+  "hybridExpertTitle": {
+    "message": "API v2 aruande üksikasjad"
+  },
+  "hybridExpertScope": {
+    "message": "Vaid tegelikult saadud väljad on näidatud. Kiire skaneerimine ei tõenda täieliku sandbox täitmist. kadunud andmed ei ole negatiivne leidmine. URLs eirab loendite, küsimusjoonide ja fragmente; juhendi jooned ja toores aruanded ei ilmu. Nende üksikasjade avamine ei saata taotlust."
+  },
+  "hybridExpertMissing": {
+    "message": "Ei ole käesolevas aruandes esitatud"
+  },
+  "hybridExpertYes": {
+    "message": "Jah"
+  },
+  "hybridExpertNo": {
+    "message": "Ei"
+  },
+  "hybridExpert_identity": {
+    "message": "Faili ja ressursside identiteet"
+  },
+  "hybridExpert_assessment": {
+    "message": "Originaalne hindamine ja töötlemine"
+  },
+  "hybridExpert_scanners": {
+    "message": "Scanner tulemused"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Individuaalsed viirusevastased tuvastused"
+  },
+  "hybridExpert_reports": {
+    "message": "Viidatud Sandbox aruanded"
+  },
+  "hybridExpert_counts": {
+    "message": "Raportitud kogumised"
+  },
+  "hybridExpert_signatures": {
+    "message": "käitumisalane allkirja"
+  },
+  "hybridExpert_mitre": {
+    "message": "Ülevaade ATT&CK"
+  },
+  "hybridExpert_network": {
+    "message": "Võrgu näitajad"
+  },
+  "hybridExpert_processes": {
+    "message": "Protsessid"
+  },
+  "hybridExpert_extracted": {
+    "message": "Välja võetud failid"
+  },
+  "hybridExpert_certificates": {
+    "message": "sertifikaadid"
+  },
+  "hybridExpertEmpty": {
+    "message": "Saadetud tühja nimekirja kujul; ei ole märgitud"
+  },
+  "securityPasswordHelp": {
+    "message": "Selle profiili valikuväline kaitse. kasutage halduse ja linkide heakskiitmiseks erinevaid paroolid vähemalt kaheteistkümnest tähemärgist. jäta uued paroolide väljad tühjaks, et säilitada olemasolevad paroolid. salvestage ühe korra taastamise kood eraldi."
+  },
+  "securityAdminConfirm": {
+    "message": "Uue administraatori parooli kinnitamine"
+  },
+  "securityApprovalConfirm": {
+    "message": "Kinnita uus link kinnituse parool"
+  },
+  "securityRecoveryPassword": {
+    "message": "Uus administratori parool taastamiseks"
+  },
+  "securityApprovalConfigured": {
+    "message": "Link kinnituse parool on konfigureeritud; seda saab asendada, kuid mitte kunagi näidata."
+  },
+  "securityApprovalMissing": {
+    "message": "Link kinnituse parool ei ole konfigureeritud.Links, mis nõuavad parool kinnitust, jäävad blokeeritud."
+  },
+  "securityConfirmMismatch": {
+    "message": "Uued paroolid ja nende kinnitused ei vasta."
+  },
+  "securityUnlockPassword": {
+    "message": "Praegune administraatori parool"
+  },
+  "displaySettingsTitle": {
+    "message": "Analüüs näitab"
+  },
+  "displaySettingsHelp": {
+    "message": "Näita eelistused ei muuda skanninguid, väliseid ülekanneid, punkte või linkide kaitset. saate tulemuste lugemise ajal ületada ülevaate ja eksperdi vaade vahel."
+  },
+  "displayDefaultView": {
+    "message": "Eesmärgipärane nägemus sõnumile ja popup-le"
+  },
+  "displayHybridDetails": {
+    "message": "Näita täiendavaid hübriidseid API aruandekontakte"
+  },
+  "displaySave": {
+    "message": "Salvestada näituspreferentsid"
+  },
+  "displaySaved": {
+    "message": "Näita eelistusi salvestatud."
+  },
+  "urlscanDnsError": {
+    "message": "Pakkuja ei suutnud sihtrühma lahendada."
+  },
+  "urlscanInvalidRequest": {
+    "message": "Pakkuja keeldus ebaõiglaste esitusparameetritest."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "Pakkuja keeldus esitamisest; vastus ei näita DNS-i ebaõnnestumist."
+  },
+  "analysisQuotaReset": {
+    "message": "Kvooti uuendamine"
+  },
+  "analysisRetryAt": {
+    "message": "Varasem retriit"
+  },
+  "analysisLocalBackoff": {
+    "message": "See üritus tehti kohapeal; uut tarnija taotlust ei saadetud."
+  },
+  "scanState_deferred": {
+    "message": "Analüüsist lahti: kõik taustalõiked on hõivatud. tagasipöördumine pärast teist analüüsi lõppu."
+  },
+  "scanCoverage": {
+    "message": "Mõned vahendid ei ole kontrollitud."
+  },
+  "scanCoverageAttachments": {
+    "message": "Valmistatud liidud"
+  },
+  "scanCoverageLinks": {
+    "message": "Valitud linkid"
+  },
+  "scanCoverage_read_failed": {
+    "message": "Ühte lisa ei saa lugeda ega hashida."
+  },
+  "scanCoverage_size_limit": {
+    "message": "Üks lisa ületab 25 MiB skaneerimise piir."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "Skanni ressursside piir on saavutatud."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "Liigese inventuur on ebatäielik."
+  },
+  "scanFailure_source_capacity": {
+    "message": "See kontroll ei alustanud; olemasolevad andmed säilinud."
+  },
+  "scanFailure_cancelled": {
+    "message": "Kontrolli tühistati. ei ole täidetud tulemust."
+  },
+  "scanFailure_timeout": {
+    "message": "Kontrolli ajakava möödub. tulemused jäävad ebatäielikuks."
+  },
+  "scanFailure_scan_failed": {
+    "message": "Kontrolli ei saanud lõpule viia. olemasolevad andmed säilitatakse."
+  },
+  "localProtectionProfileExport": {
+    "message": "Ekspordi kaitse seadmed"
+  },
+  "localProfileYes": {
+    "message": "Jah"
+  },
+  "localProfileNo": {
+    "message": "Ei"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Vanemad kaitseprofiilid ei saa automaatse skaneerimise ulatust laiendada või URL esitusele pöörata."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "Praegust allikate ajalugu ei saa lugeda ja see on muutumatult säilinud."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "Varude konflikti tõttu ei ole allikate ajalugu pikendatud."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "Selle sõnumi lähtearhiiv on jõudnud selle sissepääsupiiri."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "Selle sõnumi allikarhiiv on jõudnud selle salvestuspiirini."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "Kohaliku ladustamise juurdepääs ebaõnnestus."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Avaleht / Dokumendid puuduvad"
+  },
+  "apiDebugTitle": {
+    "message": "API debugimodus"
+  },
+  "apiDebugHelp": {
+    "message": "Uue API püüdlusi lokaalselt diagnoosida ebaõnnestumisi. võimaldada, reprodutseerida ebaõnnestumist, seejärel ennustada või eksportida aruande. Admin unlock on vajalik, kui administratori parool on sätestatud. võtmed, privaatne URLs, sõnumisisu ja toorained on välistatud; viide IDs on pseudonüümitud. kuni 100 sissetulekut / 1 MiB hoitakse mälu ühe tunni jooksul ja kaotanud uuesti käivitamisel."
+  },
+  "apiDebugEnable": {
+    "message": "API diagnoosi võimaldamine"
+  },
+  "apiDebugSave": {
+    "message": "Säästa debug seade"
+  },
+  "apiDebugPreview": {
+    "message": "Eelmine debug raport"
+  },
+  "apiDebugExport": {
+    "message": "Ekspordipõletiku aruanne"
+  },
+  "apiDebugClear": {
+    "message": "Selge debug raport"
+  },
+  "apiDebugSaved": {
+    "message": "Eelmine diagnoos selgitati."
+  },
+  "apiDebugCleared": {
+    "message": "Debug raporti selgitati."
+  },
+  "apiDebugFailed": {
+    "message": "Debug operatsioon ebaõnnestus. avada halduse ja proovige uuesti."
+  },
+  "apiDebugFailureHint": {
+    "message": "Täpsema ebaõnnestumiskorralduse saamiseks võimaldab API nõudmisrežiimi seadetes, kontrolli reprodutseerib ja nõudmisaruande ekspordib."
+  },
+  "urlscanResultGone": {
+    "message": "See tulemus kustutati urlscan.io. ajakohastamine ei saa seda taastada; uus esitamine nõuab selget skaneerimist."
+  },
+  "apiDebugOpen": {
+    "message": "Avatud API diagnoosimine"
+  },
+  "diagTitle": {
+    "message": "API diagnoosimine"
+  },
+  "diagHelp": {
+    "message": "Filtreeritud kontrollid kohalikus mälu. võtmed, privaatne URLs ja tooraine sisu jäävad varjatuks. HTTP edu ei ole täielik turvalisuse otsus. ainult aktiveerimise järel registreeritud sammud on saadaval."
+  },
+  "diagOff": {
+    "message": "Debug mode on välja lülitatud. aktiveerige see seadetes."
+  },
+  "diagEmpty": {
+    "message": "Ei sobi rekordid."
+  },
+  "diagPause": {
+    "message": "Pause nägemus"
+  },
+  "diagResume": {
+    "message": "Resumeerige nägemust"
+  },
+  "diagPaused": {
+    "message": "Vaadake pausi; salvestamine jääb aktiivseks."
+  },
+  "diagActive": {
+    "message": "Rekordimine aktiivne; värskendamine üks kord sekundis."
+  },
+  "diagProvider": {
+    "message": "Pakkuja"
+  },
+  "diagState": {
+    "message": "Riik"
+  },
+  "diagPurpose": {
+    "message": "Operatsioonitüüp"
+  },
+  "diagFrom": {
+    "message": "alates"
+  },
+  "diagTo": {
+    "message": "Teda"
+  },
+  "diagAll": {
+    "message": "Kõik"
+  },
+  "diagRuns": {
+    "message": "Kontrollige voolu"
+  },
+  "diagDetails": {
+    "message": "Valitud voolu üksikasjad"
+  },
+  "diagDropped": {
+    "message": "Kaotatud rekordid või sammud"
+  },
+  "diagNoHttp": {
+    "message": "Selle voolu jaoks ei ole HTTP helistamist registreeritud."
+  },
+  "diagNotCaptured": {
+    "message": "ei võetud"
+  },
+  "diagTimeline": {
+    "message": "ajakava"
+  },
+  "diagRequest": {
+    "message": "Filtreeritud taotlus"
+  },
+  "diagResponse": {
+    "message": "Transpord ja filtreeritud vastus"
+  },
+  "diagReset": {
+    "message": "Filtrid uuesti"
+  },
+  "diagTruncated": {
+    "message": "See vool oli salvestamise piirmäärade tõttu murdunud."
+  },
+  "diag_phase_precondition": {
+    "message": "eeltingimused"
+  },
+  "diag_phase_queue": {
+    "message": "Küsimus"
+  },
+  "diag_phase_attempt": {
+    "message": "Saadaval üritus"
+  },
+  "diag_phase_response": {
+    "message": "HTTP vastus / transpordi lõpetamine"
+  },
+  "diag_phase_parse": {
+    "message": "JSON töötlemine"
+  },
+  "diag_phase_assessment": {
+    "message": "hindamine"
+  },
+  "diag_phase_persistence": {
+    "message": "püsivus"
+  },
+  "diag_phase_cache": {
+    "message": "Cache mõõdetud"
+  },
+  "diag_phase_wait": {
+    "message": "Ootades"
+  },
+  "diag_phase_cancelled": {
+    "message": "tühistatud"
+  },
+  "diag_phase_expired": {
+    "message": "Raamatupidamine lõpeb ilma kinnitatud lõpetamata"
+  },
+  "diag_purpose_automatic": {
+    "message": "Automaatne kontroll"
+  },
+  "diag_purpose_manual": {
+    "message": "Manuaalne kontroll"
+  },
+  "diag_purpose_link": {
+    "message": "Link kontrolli"
+  },
+  "diag_purpose_key_test": {
+    "message": "Põhiline test"
+  },
+  "diag_purpose_report": {
+    "message": "Raport taotlus"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analüüs"
+  },
+  "diag_state_running": {
+    "message": "jooksmine"
+  },
+  "diag_state_complete": {
+    "message": "Operatsioon lõppenud"
+  },
+  "diag_state_pending": {
+    "message": "Püsiv"
+  },
+  "diag_state_blocked": {
+    "message": "Ei alustanud / blokeeritud"
+  },
+  "diag_state_incomplete": {
+    "message": "ebapiisav"
+  },
+  "diag_state_failed": {
+    "message": "ebaõnnestunud"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Täidetud kinnitamata"
+  },
+  "localScoreMessage": {
+    "message": "Kohaliku sõnumite arvutamine"
+  },
+  "localScoreLink": {
+    "message": "Kohaliku punkti selle lingi kohta sõnumis"
+  },
+  "localScoreNoIndicators": {
+    "message": "Kohalikke hoiatusi ei leitud."
+  },
+  "localScoreIndicators": {
+    "message": "Kohalikud hoiatuste näitajad leitud. ülevaade põhjustest enne avamist."
+  },
+  "uploadSentLabel": {
+    "message": "Ülekanded saadetud"
+  },
+  "uploadSentUnassigned": {
+    "message": "Ülekanded saadetakse, kuid selle tulemus ei saa sellele lisale määrata. Lähendada ja uuesti avada popup enne uuesti esitamist."
+  },
+  "hybridReportTitle": {
+    "message": "Hybrid Analysis raport"
+  },
+  "hybridReportIntro": {
+    "message": "Loetav ainult tulemuste ülevaade. selle aruande avamine ei saata tarnija taotlust."
+  },
+  "hybridReportOpen": {
+    "message": "Vaata analüüsi aruannet"
+  },
+  "hybridReportUnavailable": {
+    "message": "Raport ei ole kättesaadav. avage see uuesti praegusest sõnumist."
+  },
+  "hybridReportTechnical": {
+    "message": "Pakkuja ja ühenduse andmed"
+  },
+  "hybridReportExplanation": {
+    "message": "Selle hindamise kohta"
+  },
+  "hybridReportSummary": {
+    "message": "Hindamine ja päritolu"
+  },
+  "hybridReportSnapshot": {
+    "message": "Salvestatud aruande snapshot; mitte uus skaneerimine"
+  },
+  "hybridReportScope": {
+    "message": "Pakkuja tulemused ja kohalik punkt on eraldatud. puuduvad väljad ei ole negatiivsed leiud. ainult kättesaadavad, piiratud andmed on näidatud."
+  },
+  "hybridReportCopy": {
+    "message": "Kopeerimine"
+  },
+  "hybridReportCopied": {
+    "message": "Kopeeritud kui tekst."
+  },
+  "hybridReportCopyFailed": {
+    "message": "Ei saa kopeerida. valige ja kopeerige tekst manuaalselt."
+  },
+  "hybridReportAvailableOnly": {
+    "message": "Rõhk saadaolevates andmetes"
+  },
+  "hybridReportNoMatches": {
+    "message": "Käesolevates andmetes ei ole vastavaid väljad."
+  },
+  "hybridReportAvailability": {
+    "message": "kättesaadavus ja piirangud"
+  },
+  "hybridReportRun": {
+    "message": "Analüüsi käivitamine"
+  },
+  "hybridReportSearch": {
+    "message": "Otsige kättesaadavaid valdkondi"
+  },
+  "hybridReportReady": {
+    "message": "Raport laaditud. uut skaneerimist ei alustata."
+  },
+  "hybridReportResource_name": {
+    "message": "Liitvuse nimi"
+  },
+  "hybridReportResource_url": {
+    "message": "Ühine sihtmärk URL"
+  },
+  "hybridReportResource_sha256": {
+    "message": "Resurss SHA-256"
+  },
+  "hybridField_type": {
+    "message": "Faili tüüp"
+  },
+  "hybridField_type_short": {
+    "message": "Lühike faili tüüp"
+  },
+  "hybridField_size": {
+    "message": "Suurus byte"
+  },
+  "hybridField_last_file_name": {
+    "message": "Viimane faili nimi"
+  },
+  "hybridField_submit_name": {
+    "message": "Esitatud nimi"
+  },
+  "hybridField_url_analysis": {
+    "message": "URL analüüs"
+  },
+  "hybridField_target_url": {
+    "message": "Pakkuja sihtmärk URL (võib lühendada)"
+  },
+  "hybridField_id": {
+    "message": "vastus ID (tüüp ei ole määratletud)"
+  },
+  "hybridField_job_id": {
+    "message": "Sandbox töö ID"
+  },
+  "hybridField_submission_id": {
+    "message": "Esitatud ID"
+  },
+  "hybridField_state": {
+    "message": "Pakkuja riik"
+  },
+  "hybridField_finished": {
+    "message": "Lõpetatud"
+  },
+  "hybridField_verdict": {
+    "message": "Teenuseosutaja kohtuotsus"
+  },
+  "hybridField_threat_score": {
+    "message": "Hybrid Analysis ohtlikkus"
+  },
+  "hybridField_threat_level": {
+    "message": "Pakkuja ohu tase"
+  },
+  "hybridField_multiscan_result": {
+    "message": "Multiscan tulemused (teenuse pakkuja väärtus)"
+  },
+  "hybridField_av_detect": {
+    "message": "AV tuvastamise väärtus (teenuse pakkuja väärtus)"
+  },
+  "hybridField_whitelisted": {
+    "message": "Valge sissepääsu pakkuja"
+  },
+  "hybridField_vx_family": {
+    "message": "Malware perekond"
+  },
+  "hybridField_classification_tags": {
+    "message": "Klassifitseerimismärgid"
+  },
+  "hybridField_tags": {
+    "message": "Tagad"
+  },
+  "hybridField_analysis_start_time": {
+    "message": "Analüüsi algusaeg"
+  },
+  "hybridField_environment_id": {
+    "message": "Keskkonna ID"
+  },
+  "hybridField_environment_description": {
+    "message": "Sandbox keskkonna"
+  },
+  "hybridField_error_type": {
+    "message": "Pakkuja vea tüüp"
+  },
+  "hybridField_error_origin": {
+    "message": "Pakkuja vea päritolu"
+  },
+  "hybridField_name": {
+    "message": "Nimi"
+  },
+  "hybridField_status": {
+    "message": "staatuse"
+  },
+  "hybridField_progress": {
+    "message": "edusammud (teenuse pakkuja väärtus)"
+  },
+  "hybridField_positives": {
+    "message": "Positiivsed avastused"
+  },
+  "hybridField_total": {
+    "message": "Täielik kontrolli"
+  },
+  "hybridField_percent": {
+    "message": "Protsent (teenuse pakkuja väärtus)"
+  },
+  "hybridField_scan_time": {
+    "message": "Skanni kestus (teenuse pakkuja üksus)"
+  },
+  "hybridField_scan_date": {
+    "message": "Skanne kuupäev"
+  },
+  "hybridField_product": {
+    "message": "Scaneri toode"
+  },
+  "hybridField_version": {
+    "message": "Skanner versioon"
+  },
+  "hybridField_update": {
+    "message": "Skanni värskendamine"
+  },
+  "hybridField_total_network_connections": {
+    "message": "Võrguühendused"
+  },
+  "hybridField_total_processes": {
+    "message": "Protsessid"
+  },
+  "hybridField_total_signatures": {
+    "message": "allkirjad"
+  },
+  "hybridField_category": {
+    "message": "Kategooria"
+  },
+  "hybridField_attck_id": {
+    "message": "MITRE ATT&CK tehniline ID"
+  },
+  "hybridField_tactic": {
+    "message": "MITRE ATT & CK taktika"
+  },
+  "hybridField_technique": {
+    "message": "MITRE ATT & CK tehnika"
+  },
+  "hybridField_description": {
+    "message": "kirjeldus"
+  },
+  "hybridField_domains": {
+    "message": "Vaadatud domeenid"
+  },
+  "hybridField_hosts": {
+    "message": "Vaadatud külaline"
+  },
+  "hybridField_compromised_hosts": {
+    "message": "Kompromisseeritud host (teenuse pakkuja nõue)"
+  },
+  "hybridField_domain": {
+    "message": "domeenid"
+  },
+  "hybridField_host": {
+    "message": "Külalislahk"
+  },
+  "hybridField_ip": {
+    "message": "IP aadress"
+  },
+  "hybridField_port": {
+    "message": "sadam"
+  },
+  "hybridField_protocol": {
+    "message": "Protokoll"
+  },
+  "hybridField_country": {
+    "message": "Riik"
+  },
+  "hybridField_asn": {
+    "message": "Autonoomse süsteemi number"
+  },
+  "hybridField_uid": {
+    "message": "Protsess UID"
+  },
+  "hybridField_process_id": {
+    "message": "Protsessi ID (PID)"
+  },
+  "hybridField_parent_uid": {
+    "message": "Vanemlik protsess UID"
+  },
+  "hybridField_file_path": {
+    "message": "Faili tee"
+  },
+  "hybridField_subject": {
+    "message": "Sertifikaatide teema"
+  },
+  "hybridField_issuer": {
+    "message": "Sertifikaatide väljastamine"
+  },
+  "hybridField_valid_from": {
+    "message": "Võrdselt alates"
+  },
+  "hybridField_valid_until": {
+    "message": "kehtiv kuni"
+  },
+  "hybridField_serial_number": {
+    "message": "Seriaalne number"
+  },
+  "hybridField_sha256": {
+    "message": "SHA-256"
+  },
+  "hybridField_sha1": {
+    "message": "SHA-1"
+  },
+  "hybridField_md5": {
+    "message": "MD5"
+  },
+  "hybridField_sha512": {
+    "message": "SHA-512"
+  },
+  "hybridField_imphash": {
+    "message": "Sissejuhatus hash"
+  },
+  "hybridReportResource_quickScanId": {
+    "message": "Rekorditud Quick-Scan ID"
+  },
+  "analysisLocalOnly": {
+    "message": "Vaadatud ainult kohalikult"
+  },
+  "analysisProviderFindingsCount": {
+    "message": "Teenused tulemustega"
+  },
+  "analysisProviderPendingCount": {
+    "message": "Teenused ootavad"
+  },
+  "analysisProviderErrorsCount": {
+    "message": "Teenused veadega"
+  },
+  "hybridReportSection": {
+    "message": "Osakond"
+  },
+  "hybridReportAllSections": {
+    "message": "Kõik osad"
+  },
+  "hybridReportProcessing_complete": {
+    "message": "Töötlemine täielik"
+  },
+  "hybridReportProcessing_pending": {
+    "message": "Töötlemine pending"
+  },
+  "hybridReportProcessing_failed": {
+    "message": "Töötlemine ebaõnnestus"
+  },
+  "hybridReportProcessing_unknown": {
+    "message": "Töötlemise staatuse tundmatu"
+  },
+  "hybridReportRetrievedAt": {
+    "message": "Raport võeti tagasi"
+  },
+  "hybridReportCapturedAt": {
+    "message": "Snapshot loodud"
+  },
+  "hybridReportRetainedFinding": {
+    "message": "Jätkati Hybrid Analysis leida selle ressursi"
+  },
+  "hybridReportSaved": {
+    "message": "Säästetud Hybrid Analysis raport"
+  },
+  "hybridReportCopyUtc": {
+    "message": "Koopiad UTC"
+  },
+  "hybridReportWhy": {
+    "message": "Miks see hindamine?"
+  },
+  "hybridReportMoreSignals": {
+    "message": "Muud hinnangulised tunnused"
+  },
+  "hybridReportCompare": {
+    "message": "Võrdle analüüsi rünnakut"
+  },
+  "hybridReportSectionsWithData": {
+    "message": "Osad andmetega"
+  },
+  "hybridReportAssessment": {
+    "message": "Thundy hinnang Hybrid Analysis"
+  },
+  "hybridReportProvenance": {
+    "message": "Allikad ja ajastused"
+  },
+  "hybridReportProcessing_unconfirmed": {
+    "message": "Leida saadaval · täiendamine kinnitamata"
+  },
+  "analysisOverviewOpenReport": {
+    "message": "Avatud hübriidne aruanne"
+  },
+  "analysisOverviewOpenFinding": {
+    "message": "Näita üksikasju leida"
+  },
+  "attachmentProtectionTitle": {
+    "message": "Liigutamise kaitse"
+  },
+  "attachmentProtectionScope": {
+    "message": "See reegel kehtib, kui säästa Thundy. Thunderbird’i enda lisakomandid jäävad kättesaadavaks."
+  },
+  "attachmentPolicyMode": {
+    "message": "Kui piirmäär on saavutatud"
+  },
+  "attachmentScoreThreshold": {
+    "message": "Hybrid Analysis võrdluspiir"
+  },
+  "attachmentUnknownSetting": {
+    "message": "Ülevaade ilma kinnitatud punktiga"
+  },
+  "attachmentModeOff": {
+    "message": "Lõpetage"
+  },
+  "attachmentModeWarn": {
+    "message": "hoiatused"
+  },
+  "attachmentModeApproval": {
+    "message": "Nõuda heakskiitu"
+  },
+  "attachmentModeBlock": {
+    "message": "Blokaadid"
+  },
+  "attachmentSaveWithThundy": {
+    "message": "Salvesta Thundyga"
+  },
+  "attachmentConfirmSave": {
+    "message": "Säästke liitumine"
+  },
+  "attachmentCancelSave": {
+    "message": "Loobu"
+  },
+  "attachmentThresholdReached": {
+    "message": "Hübriidne skoor jõuab konfigureeritud piiri."
+  },
+  "attachmentMalicious": {
+    "message": "Hybrid Analysis klassifitseeris seda faili kahjulikeks."
+  },
+  "attachmentUnknown": {
+    "message": "Ei ole kinnitatud tulemusi selle lisamise kohta."
+  },
+  "attachmentBlocked": {
+    "message": "Säästmine koos Thundy on blokeeritud."
+  },
+  "attachmentNeedsApproval": {
+    "message": "Sisestage selle faili salvestamiseks kinnituse parool."
+  },
+  "attachmentFailed": {
+    "message": "Sa ei suutnud salvestada liitumist."
+  },
+  "attachmentReadFailed": {
+    "message": "Thundy ei suutnud seda lisat lugeda."
+  },
+  "attachmentContextChanged": {
+    "message": "Sõnum või lisa on muutunud. valige lisa uuesti."
+  },
+  "attachmentRefresh": {
+    "message": "Kontrollige uuesti salvestatud tulemusi"
+  },
+  "attachmentFindingUnchanged": {
+    "message": "Päästetud leidmine on muutumatu."
+  },
+  "attachmentDecisionChanged": {
+    "message": "Tulemus või poliitika muutunud. ajakohastatud otsuse ülevaade."
+  },
+  "attachmentSaveRequested": {
+    "message": "Salvestamise taotlus algas."
+  },
+  "attachmentSaveCancelled": {
+    "message": "Salvestamine tühistatud."
+  },
+  "auditDecisionScore": {
+    "message": "Otsuse tulemused"
+  },
+  "linkHandoffPending": {
+    "message": "Veebisaari handoff on taotletud. Thunderbird ei ole seda veel kinnitanud."
+  },
+  "linkPreflightTimeout": {
+    "message": "Kontrolli ei saanud lõpetada.Selle dialoogi sulgege ja valige link uuesti."
+  },
+  "attachmentArchivedFinding": {
+    "message": "Ajalooline Hybrid Analysis leidmine"
+  },
+  "attachmentCurrentFinding": {
+    "message": "Praegune Hybrid Analysis leidmine"
+  },
+  "auditShare": {
+    "message": "Ekspordi läbiviidud auditi"
+  },
+  "auditFullNotice": {
+    "message": "Täielik auditi sisaldab era- ja üksikasju URLs. jagage seda ainult volitused saajad."
+  },
+  "auditFullSave": {
+    "message": "Ekspordi täieliku auditi"
+  },
+  "managedByCompany": {
+    "message": "Juhindub teie organisatsioon"
+  },
+  "managedLocal": {
+    "message": "Allikas: see Thunderbird profiil"
+  },
+  "managedRevision": {
+    "message": "Poliitiline versioon"
+  },
+  "managedThreshold": {
+    "message": "Piirangud"
+  },
+  "managedPolicyInvalid": {
+    "message": "Ettevõtte poliitika on kehtiv. võtke oma IT meeskond."
+  },
+  "managedLinkBlocked": {
+    "message": "Teie organisatsioon blokeeris selle linki."
+  },
+  "attachmentOpenWithThundy": {
+    "message": "Ava Thundyga"
+  },
+  "attachmentConfirmOpen": {
+    "message": "Avatud lisand"
+  },
+  "attachmentOpenScope": {
+    "message": "Thundy kontrollib seda lisat enne selle edastamist Thunderbird-le."
+  },
+  "attachmentOpenRequested": {
+    "message": "Thunderbird võttis vastu taotluse lisa avamiseks."
+  },
+  "attachmentOpenFailed": {
+    "message": "Seega ei saa liite avada."
+  },
+  "reportingTitle": {
+    "message": "Ettevõtte turvalisuse aruanded"
+  },
+  "reportingOff": {
+    "message": "Automaatne aruandlus on välja lülitud."
+  },
+  "reportingNeedsConsent": {
+    "message": "Raportatsioon nõuab teie nõusolekut ja tokenit."
+  },
+  "reportingNeedsPermission": {
+    "message": "Raportimisloa puudub. lubage uuesti aruandlust taastada."
+  },
+  "reportingReady": {
+    "message": "Teie organisatsioon saab automaatselt aruandeid."
+  },
+  "reportingQueued": {
+    "message": "Kestva aruandeid:"
+  },
+  "reportingMalicious": {
+    "message": "Kahjulikud leiud"
+  },
+  "reportingSuspicious": {
+    "message": "Kahjulike avastuste ja piirmäärade rikkumiste kohta"
+  },
+  "reportingConsent": {
+    "message": "Nõustun saama sündmuse ID, aeg, tegevus, leidmine, otsus ja poliitika versioon eespool esile toodud äri aadressile."
+  },
+  "reportingConsentIndicators": {
+    "message": "Nõustun saama sündmuse ID, aeg, tegevus, leidmine, otsus, poliitika versioon ja link hostname või lisa SHA-256 eespool esile toodud äri aadressile."
+  },
+  "reportingToken": {
+    "message": "Saada tokenid oma IT meeskond"
+  },
+  "reportingActivate": {
+    "message": "Võimalus aruandluseks või tokenide asendamiseks"
+  },
+  "reportingRevoke": {
+    "message": "Nõusoleku tagasivõtmine ja selged ootamatud aruanded"
+  },
+  "reportingSetupFailed": {
+    "message": "Raportisüsteemi ei saa kohaldada."
+  },
+  "reportingAuthentication": {
+    "message": "Server lükkas tagasi saadetud token."
+  },
+  "reportingRejected": {
+    "message": "Serveri andmed on aruande tagasi lükanud."
+  },
+  "reportingStorage": {
+    "message": "Thundy ei suutnud aruandekohta lugeda ega kirjutada."
+  },
+  "reportingFull": {
+    "message": "Kogu on täis, aruanded kaovad."
+  },
+  "reportingExpired": {
+    "message": "Aruanne on enne tarnimist lõppenud."
+  },
+  "reportingPrivacy": {
+    "message": "Eraldi nõusolekul saadab Thundy andmed kvalifitseeruvate püüdluste kohta avada lingid või avada või salvestada lisad konfigureeritud äri aadressile. aruanded sisaldavad sündmuse ID, aeg, tegevus, leidmine, otsus ja poliitika versiooni, pluss valikuline hostname või lisand SHA-256. Thundy kiud ootavad aruandeid lokaalselt kuni 24 tundi. saate nõusoleku tagasi ja eemaldada kiud Sätetes."
+  },
+  "reportingConsentDetails": {
+    "message": "Ma nõustun ka otsuse põhjenduse, kättesaadavate punktide, lisateabe, teenuseosutaja otsuste ja kättesaadavate aruandlusreferentide saamiseks."
+  },
+  "reportingDetailsPrivacy": {
+    "message": "Täpsemad aruanded võib sisaldada lisade filanime ja lingid pakkuja aruannetele."
+  },
+  "analysisRunningHeading": {
+    "message": "Kontroll on pooleli"
+  },
+  "analysisLocalNoFinding": {
+    "message": "Kohalik kontroll ei tuvastanud ohu märke"
+  },
+  "analysisLinksGroup": {
+    "message": "Vasak"
+  },
+  "analysisAttachmentsGroup": {
+    "message": "Liidud"
+  },
+  "protectionOpenAllowed": {
+    "message": "Avamine on lubatud"
+  },
+  "protectionSaveAllowed": {
+    "message": "Salvestamine on lubatud"
+  },
+  "protectionWarn": {
+    "message": "Hoiatus"
+  },
+  "protectionApproval": {
+    "message": "Vajab heakskiitu"
+  },
+  "protectionRequestApproval": {
+    "message": "Nõudlus heakskiitmise kohta"
+  },
+  "protectionBlocked": {
+    "message": "Blokeeritud"
+  },
+  "protectionMalicious": {
+    "message": "Teenusepakkuja teatas pahatahtlikust leiust."
+  },
+  "protectionThreshold": {
+    "message": "Kaitse lävi on saavutatud"
+  },
+  "protectionManagedThreshold": {
+    "message": "Ettevõtte lävi on saavutatud"
+  },
+  "protectionAttachmentAllowedReason": {
+    "message": "Kohaldatavate seadete abil on võimalik seda tegevust teha."
+  },
+  "linkContextChanged": {
+    "message": "Link või sõnum muutub kontrollimise ajal."
+  },
+  "auditPolicyBlocked": {
+    "message": "Reegliga blokeeritud"
+  },
+  "reportingLastReceipt": {
+    "message": "Viimane vastuvõtja, mille server kinnitab"
+  },
+  "reportingOldestPending": {
+    "message": "Vanim ootamatu aruandlus"
+  },
+  "addonLanguage": {
+    "message": "Lisamooduli keel"
+  },
+  "addonLanguageSystem": {
+    "message": "Kasuta Thunderbirdi keelt"
+  },
+  "addonLanguageSaved": {
+    "message": "Keel on salvestatud. Selle rakendamiseks ava Thundy vaated uuesti."
+  },
+  "addonLanguageFailed": {
+    "message": "Keelt ei õnnestunud salvestada."
+  },
+  "profilesOpenSource": {
+    "message": "Avatud lähtekood"
+  },
+  "transferReview": {
+    "message": "Vaata välise saatmise andmed üle"
+  },
+  "transferSend": {
+    "message": "Saada teenusepakkujale"
+  },
+  "transferVisibility": {
+    "message": "Nähtavus: loendist väljas. Aruande saab avada igaüks, kellel on selle link."
+  },
+  "transferAccepted": {
+    "message": "Teenusepakkuja võttis päringu vastu. Aruanne võib veel valmida."
+  },
+  "transferFailed": {
+    "message": "Teenusepakkujale saatmist ei õnnestunud lõpule viia."
+  },
+  "transferUsePopup": {
+    "message": "Ava Thundy paneel, et valida ja kinnitada kindel link või manus."
+  },
+  "providerGrantAccess": {
+    "message": "Luba juurdepääs sellele teenusepakkujale"
+  },
+  "sourceSessionOnly": {
+    "message": "Allikaarhiiv on täis. Praegune allikavaade on saadaval ainult selle seansi jooksul."
+  },
+  "analysisReason_transfer_approval": {
+    "message": "Täielikud lingid ja manused vajavad eraldi kinnitust."
+  },
+  "analysisCompactDetails": {
+    "message": "Kontrolli üksikasjad"
+  },
+  "riskScoreFormula": {
+    "message": "Kohalik skoor liidab punktid kuni 100-ni. Teenusepakkujate leide hinnatakse eraldi."
+  },
+  "riskScoreNoPoints": {
+    "message": "Ükski kohalik reegel ei andnud punkte."
+  },
+  "riskScoreTotal": {
+    "message": "Kohalik arvutus"
+  },
+  "riskLinkBrandRule": {
+    "message": "Vähemalt üks domeen meenutab tuntud kaubamärki. Punkte arvestatakse üks kord."
+  },
+  "reportingConsentDetections": {
+    "message": "Raportid võivad sisaldada pahavara nimesid, kategooriaid, signatuure ja õngitsuses jäljendatud kaubamärke."
+  },
+  "detectionKind_family": {
+    "message": "Pahavaraperekond"
+  },
+  "detectionKind_category": {
+    "message": "Kategooria"
+  },
+  "detectionKind_brand": {
+    "message": "Jäljendatud kaubamärk"
+  },
+  "detectionKind_signature": {
+    "message": "Tootja signatuur"
+  },
+  "detectionCategory_fraudulent_shop": {
+    "message": "Petupood"
+  },
+  "detectionCategory_phishing_shop": {
+    "message": "Õngitsuspood"
+  },
+  "analysisDetectionGrouping": {
+    "message": "Rühmita leiud"
+  },
+  "detectionCategory_malware": {
+    "message": "Pahavara"
+  },
+  "detectionCategory_virus": {
+    "message": "Viirus"
+  },
+  "detectionCategory_trojan": {
+    "message": "Trooja hobune"
+  },
+  "detectionCategory_ransomware": {
+    "message": "Lunavara"
+  },
+  "detectionCategory_worm": {
+    "message": "Uss"
+  },
+  "detectionCategory_spyware": {
+    "message": "Nuhkvara"
+  },
+  "detectionCategory_adware": {
+    "message": "Reklaamvara"
+  },
+  "detectionCategory_backdoor": {
+    "message": "Tagauks"
+  },
+  "detectionCategory_downloader": {
+    "message": "Allalaadija"
+  },
+  "detectionCategory_dropper": {
+    "message": "Dropper"
+  },
+  "detectionCategory_infostealer": {
+    "message": "Andmevaras"
+  },
+  "detectionCategory_rootkit": {
+    "message": "Rootkit"
+  },
+  "detectionCategory_phishing": {
+    "message": "Õngitsus"
+  },
+  "detectionCategory_scam": {
+    "message": "Pettus"
+  }
+}

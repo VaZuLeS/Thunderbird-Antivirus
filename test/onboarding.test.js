@@ -3,7 +3,7 @@ const { test } = require("node:test"),
   fs = require("node:fs");
 const { JSDOM } = require("jsdom");
 const locales = Object.fromEntries(
-  ["en", "de", "fr", "es", "it", "pl"].map((lang) => [
+  Object.keys(require("../scripts/locale-catalogs.js").locales).map((lang) => [
     lang,
     JSON.parse(fs.readFileSync("_locales/" + lang + "/messages.json", "utf8")),
   ]),
@@ -75,9 +75,9 @@ async function fixture(
   dom.window.fetch = async (url) => {
     state.fetches.push(url);
     const lang = url.match(
-      /^moz-extension:\/\/test\/_locales\/(en|de|fr|es|it|pl)\/messages.json$/,
+      /^moz-extension:\/\/test\/_locales\/([a-z]{2})\/messages.json$/,
     )?.[1];
-    assert.ok(lang, "only bundled catalogs");
+    assert.ok(locales[lang], "only bundled catalogs");
     return { ok: true, json: async () => locales[lang] };
   };
   dom.window.eval(fs.readFileSync("i18n.js", "utf8")+"\n"+fs.readFileSync("onboarding.js", "utf8"));
@@ -202,7 +202,7 @@ test("storage load failure prevents overwriting defaults", async (t) => {
   assert.equal(f.state.writes.length, 0);
 });
 test("unsupported locale falls back to bundled English and navigation saves only on finish", async (t) => {
-  const f = await fixture(t, { language: "nl-NL" });
+  const f = await fixture(t, { language: "ja-JP" });
   assert.equal(f.dom.window.document.documentElement.lang, "en");
   f.$("next").click();
   f.$("back").click();

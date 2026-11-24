@@ -113,7 +113,11 @@ async function checkVirusTotal(hash, apikey, analysisContext = null) {
             if (response.status === 200) {
                 const data = await response.json();
                 if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
-                    return data.data.attributes.last_analysis_stats;
+                    const {id,attributes} = data.data;
+                    const detections = typeof ThundyProviderResults !== 'undefined' &&
+                        (id == null || typeof id === 'string' && id.toLowerCase() === hash.toLowerCase()) ?
+                        ThundyProviderResults.virusTotalDetections(attributes) : [];
+                    return detections.length ? {...attributes.last_analysis_stats,detections} : attributes.last_analysis_stats;
                 }
             } else if (response.status === 404) {
                 Logger.info("VirusTotal: " + uiText('virustotalNotFound', 'Element not yet recorded in VirusTotal database.'));
@@ -196,7 +200,7 @@ function extractUrlscanBrandNames(verdicts) {
     return names;
 }
 
-async function checkUrlscanIo(url, apikey, analysisContext = null) {
+async function checkUrlscanIo(url, apikey, analysisContext = null, authorize = null) {
     analysisContext=await providerDiagnosticContext(analysisContext,'urlscan','link',!!apikey);
     let submittedUuid=null;
     if (!apikey) return null;
@@ -206,13 +210,14 @@ async function checkUrlscanIo(url, apikey, analysisContext = null) {
         await requireHostPermission('https://urlscan.io/api/v1/scan/').catch(error=>{if(typeof ThundyApiDiagnostics!=='undefined'&&analysisContext?.diagnosticRun){ThundyApiDiagnostics.event(analysisContext.diagnosticRun,'precondition',{state:'blocked',reason:'permission'});ThundyApiDiagnostics.endRun(analysisContext.diagnosticRun,'blocked');}throw error;});
         // Start Scan
         // 🛡️ Sentinel: Prevent sensitive URL leakage by defaulting to 'unlisted' instead of 'public' visibility
+        const body = JSON.stringify({ url, visibility: 'unlisted' });
         const scanRes = await apiGateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/', {
             method: 'POST', analysisContext,
             headers: {
                 'API-Key': apikey,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ url: url, visibility: 'unlisted' })
+            body, authorizeTransfer:authorize?.(body)
         });
 
         let errData = null;
@@ -242,26 +247,35 @@ async function checkUrlscanIo(url, apikey, analysisContext = null) {
 
         if (!scanRes.ok) throw new Error(uiText("ui_100", "Fehler beim Starten des Scans (urlscan.io): ") + scanRes.status);
 
-        const scanData = await scanRes.json();
-        const uuid = scanData.uuid;submittedUuid=uuid;
-
-        if (!uuid) throw new Error(uiText("ui_101", "Keine UUID von urlscan.io erhalten."));
+        const scanData = await scanRes.json().catch(error => {
+            if (authorize) error.uploadSent = true;
+            throw error;
+        });
+        const uuid = scanData?.uuid;
+        if (typeof uuid !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(uuid)) {
+            throw Object.assign(new Error(uiText("ui_101", "Keine UUID von urlscan.io erhalten.")), {uploadSent:!!authorize});
+        }
+        submittedUuid = uuid;
 
         if(analysisContext?.submitted)await analysisContext.submitted(uuid);
+        if (authorize) return {status:'SUBMITTED',uuid};
         const result=await pollUrlscanIoResult(uuid, apikey, analysisContext, {fresh:true,requestedUrl:url});
         return {...result,uuid};
     } catch (e) {
+        if (authorize && (submittedUuid || e?.uploadSent || e?.code)) {
+            if (submittedUuid) e.uploadSent = true;
+            throw e;
+        }
         Logger.warn('urlscan.io request failed');
         return { status: 'ERROR', errorCode: 'fetch_failed', details: uiText('checkOutcome_failed','Provider request failed.'),...(submittedUuid?{uuid:submittedUuid}:{}) };
     }
 }
 
-async function pollUrlscanIoResult(uuid, apikey, analysisContext = null, {fresh=false,requestedUrl=null} = {}) {
+async function pollUrlscanIoResult(uuid, apikey, analysisContext = null, {fresh=false,requestedUrl=null,maxTime=90000,preflight} = {}) {
     analysisContext=await providerDiagnosticContext(analysisContext,'urlscan','report',!!apikey);
     // Fresh scans need at least 30 seconds; refreshing an existing UUID can start sooner.
     let waitTime = fresh ? 30000 : 2000;
     let elapsed = 0;
-    const maxTime = 90000;
     let retainedAssessment = null;
     const failure=(errorCode,details,extra={})=>({status:'ERROR',errorCode,details,...extra,...(retainedAssessment?{assessment:ThundyProviderResults.merge(retainedAssessment,{assessmentVersion:1,completion:'failed',signals:[],state:'failed'})}:{})});
     const deadline = Date.now() + maxTime;
@@ -293,6 +307,7 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null, {fresh=
         waitTime = Math.min(waitTime * 1.5, 10000); // 1.5x backoff, max 10s
 
         if (Date.now() >= deadline) break;
+        if (preflight) await preflight();
         let resultRes;
         try { resultRes = await apiGateway.fetchWithTimeout(`https://urlscan.io/api/v1/result/${encodeURIComponent(uuid)}/`, {
             method: 'GET', analysisContext: pollContext,
@@ -323,13 +338,16 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null, {fresh=
             analysisContext?.event?.({...assessment,provider:'urlscan',scope:'url',phase:'assessment',observedAt:Date.now()});
             if(assessment.completion==='pending')continue;
             const visual=assessment.verdict==='malicious'&&resultData.verdicts?.urlscan?.malicious===true&&brandNames.length>0;
-            return {status:ThundyProviderResults.urlscanStatus(assessment,visual),assessment,reasons,reportUrl:rawReportUrl,...(assessment.errorCode?{errorCode:assessment.errorCode}:{})};
+            const detections=ThundyProviderResults.urlscanDetections(resultData,assessment);
+            return {status:ThundyProviderResults.urlscanStatus(assessment,visual),assessment,reasons,reportUrl:rawReportUrl,
+                ...(detections.length ? {detections} : {}),...(assessment.errorCode?{errorCode:assessment.errorCode}:{})};
         } else if (resultRes.status === 404) {
             // Not ready yet, continue polling
         } else if (resultRes.status === 410) {
             return failure('result_gone',uiText('urlscanResultGone','This result was deleted by urlscan.io. Updating cannot restore it; a new submission requires an explicit scan.'),{terminal:true,httpStatus:410});
         } else if (resultRes.status === 429) {
-            return failure('rate_limited',uiText('urlscanRateLimited', 'The urlscan.io rate limit or quota was reached. Please try again later.'),{httpStatus:429});
+            const retryAfter = Number(resultRes.headers?.get?.('retry-after'));
+            return failure('rate_limited',uiText('urlscanRateLimited', 'The urlscan.io rate limit or quota was reached. Please try again later.'),{httpStatus:429,...(retryAfter > 0 ? {retryAfter} : {})});
         } else if (resultRes.status === 401 || resultRes.status === 403) {
             return failure('invalid_key',uiText('urlscanInvalidKey', 'Invalid or unauthorized urlscan.io API key.'),{httpStatus:resultRes.status});
         } else {

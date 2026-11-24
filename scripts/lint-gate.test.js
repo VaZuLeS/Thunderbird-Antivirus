@@ -47,7 +47,7 @@ test('lint schema rejects missing, mistyped or inconsistent reports instead of t
  assert.equal(assessReport(report([],[],[{_type:'notice',code:'EMPTY_FILE',message:'Empty file'}])).accepted,true);
 });
 test('only exact documented Thunderbird exceptions are accepted, including correct diagnostic categories',()=>{
- for(const api of ['messages.get','messages.getFull','messages.query','messages.listAttachments','messages.getAttachmentFile','messageDisplay.getDisplayedMessages','messageDisplay.onMessagesDisplayed','windows.openDefaultBrowser','scripting.messageDisplay','scripting.messageDisplay.register','scripting.messageDisplay.unregister'])assert.equal(isKnownFalsePositive({code:'UNSUPPORTED_API',message:api+' is not supported'}),true,api);
+ for(const api of ['messages.get','messages.getFull','messages.query','messages.listAttachments','messages.getAttachmentFile','messageDisplay.getDisplayedMessages','messageDisplay.onMessagesDisplayed','messageDisplayAction.setTitle','windows.openDefaultBrowser','scripting.messageDisplay','scripting.messageDisplay.register','scripting.messageDisplay.unregister'])assert.equal(isKnownFalsePositive({code:'UNSUPPORTED_API',message:api+' is not supported'}),true,api);
  assert.equal(isKnownFalsePositive({code:'MANIFEST_PERMISSIONS',message:'/permissions: Invalid permissions "messagesRead" at 0.'}),true);
  assert.equal(isKnownFalsePositive({code:'MANIFEST_OPTIONAL_PERMISSIONS',message:'/optional_permissions: Invalid optional_permissions "sensitiveDataUpload" at 0.'}),true);
  for(const warning of [

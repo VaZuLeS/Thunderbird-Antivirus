@@ -6,3 +6,15 @@
 .protection-decision { padding: .5rem .75rem; border-inline-start: 4px solid var(--link-color); }
 .protection-decision.block { border-color: var(--color-danger); color: var(--color-danger); background: var(--alert-error-bg); }
 .protection-decision.warn, .protection-decision.approval { border-color: var(--color-warning); color: var(--color-warning); background: var(--warning-bg); }
+.protection-decision[data-severity] { color:var(--text-color); border-color:var(--risk-accent); background:color-mix(in srgb,var(--risk-accent) var(--risk-tint,12%),var(--card-bg)); }
+.protection-decision[data-severity="low"] { --risk-tint:8%; }
+.protection-decision[data-severity="high"] { --risk-tint:17%; }
+.protection-decision[data-severity="critical"] { --risk-tint:22%; }
+.protection-decision small { display:block; margin-block-start:4px; font-size:.8rem; }
+@media (forced-colors:active) {
+    .protection-decision[data-severity] { border-color:CanvasText; }
+    .security-controls :is(button, input, select, textarea, summary, a):focus {
+        outline:3px solid CanvasText;
+        outline-offset:3px;
+    }
+}

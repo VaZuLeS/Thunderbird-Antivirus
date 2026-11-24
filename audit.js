@@ -1,6 +1,6 @@
 /* The review/export UI does not navigate to logged URLs or contact providers. */
 const AuditExport = (() => {
-    const fields = ['id', 'clickedAt', 'decidedAt', 'outcome', 'url', 'score', 'scoreSource', 'scoreAtDecision', 'verdict', 'verdictAtDecision', 'providerAtDecision', 'provider', 'messageId', 'cancelReason', 'openAttempts', 'extensionVersion', 'scoredAt', 'checkedAt', 'reasons', 'providerReasons', 'reasonDetails', 'reasonsAtDecision', 'reasonDetailsAtDecision', 'providerReasonsAtDecision', 'check', 'checkAtDecision', 'errorCode', 'errorDetails', 'retryAfter'];
+    const fields = ['id', 'clickedAt', 'decidedAt', 'outcome', 'url', 'score', 'scoreSource', 'scoreAtDecision', 'verdict', 'verdictAtDecision', 'providerAtDecision', 'provider', 'messageId', 'cancelReason', 'openAttempts', 'extensionVersion', 'scoredAt', 'checkedAt', 'reasons', 'providerReasons', 'reasonDetails', 'reasonsAtDecision', 'reasonDetailsAtDecision', 'providerReasonsAtDecision', 'check', 'checkAtDecision', 'errorCode', 'errorDetails', 'retryAfter', 'automaticOpen'];
     function csvCell(value) {
         let text = value == null ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value);
         // Spreadsheet formula injection includes leading spaces/control characters.
@@ -55,7 +55,8 @@ const AuditExport = (() => {
     return { csv, json, redacted, filter, outcome, riskyOpened };
 })();
 
-if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', () => {
+if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', async () => {
+    if (ThundyI18n.ready) await ThundyI18n.ready;
     const t = key => ThundyI18n.get(key);
     const $ = id => document.getElementById(id);
     let records = [], snapshot = null, page = 0, refreshGeneration = 0, fullFormat = null;
@@ -88,6 +89,7 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
             const time = document.createElement('td'); time.append(node('div', date(record.clickedAt)), node('small', date(record.decidedAt)));
             const outcome = AuditExport.outcome(record);
             const decision = node('td', t(decisionKeys[outcome] || 'auditPending'), 'audit-' + outcome.toLowerCase());
+            if (record.automaticOpen && outcome === 'OPENED') decision.append(node('small',t('linkOpenedAutomatically')));
             const score = document.createElement('td'); score.append(node('div', record.score == null ? t('auditUnavailable') : record.score + ' / 100'), node('small', t('auditScoreAtDecision') + ': ' + (record.scoreAtDecision == null ? t('auditUnavailable') : record.scoreAtDecision)));
             if (record.riskModelVersion === 2) {
                 const decisionHeuristic = record.heuristicScoreAtDecision;

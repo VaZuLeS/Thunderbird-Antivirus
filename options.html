@@ -77,6 +77,13 @@
             Make Thundy AV feel like yours. Appearance changes are saved
             immediately across the add-on.
           </p>
+          <div class="mb-3">
+            <label for="addonLanguage" data-i18n="addonLanguage">Add-on language</label>
+            <select id="addonLanguage" aria-describedby="addonLanguageStatus" disabled>
+              <option value="system" data-i18n="addonLanguageSystem">Follow Thunderbird</option>
+            </select>
+            <small id="addonLanguageStatus" role="status"></small>
+          </div>
           <fieldset class="theme-fieldset">
             <legend data-i18n="themeMode">Appearance</legend>
             <div class="theme-modes">
@@ -267,7 +274,7 @@
               <option value="approvedSenders" data-i18n="scanModeSenders">Approved senders only</option>
               <option value="manual" data-i18n="scanModeManual">Manual only</option>
             </select>
-            <small id="scanModeHelp" data-i18n="scanModeHelp">All opened messages removes individual sender approval. Configured services may receive hashes and, at Maximum with automatic link analysis, full URLs. Consent and provider permissions are still required. This does not scan unread messages.</small>
+            <small id="scanModeHelp" data-i18n="scanModeHelp">Automatic checks can look up hashes, domains and public IP addresses, subject to consent and provider permissions. Sending a full link or file requires individual confirmation. Only opened messages are checked.</small>
             <input type="checkbox" id="alwaysManual" hidden />
           </div>
           <div class="mb-3">
@@ -278,7 +285,7 @@
             />
             <label for="autoScanLinks"
               ><span data-i18n="ui_162"
-                >Scan email links when opening an authorized message</span
+                >Automatically check link domains and retrieve reports for existing scans</span
               ></label
             >
             <small id="autoScanHelp"
@@ -303,280 +310,142 @@
             </div>
           </div>
           <p class="section-intro" data-i18n="ui_115"></p>
+          <p class="provider-switch-help" data-i18n="providerSwitchHelp"></p>
           <div class="provider-fields">
-            <div class="mb-3 mt-3">
-              <label for="apikey"
-                ><span data-i18n="ui_130"
-                  >Hybrid Analysis API key (optional):</span
-                ></label
-              >
-              <!-- Security: type="password", autocomplete="off", maxlength="255", spellcheck="false" enforce confidential masking, disable autofill caching, limit input length, and disable spellcheck data leakage -->
+            <fieldset class="provider-card">
+              <legend>Hybrid Analysis</legend>
+              <label class="provider-toggle">
+                <input type="checkbox" data-provider-enabled="hybridanalysis" checked aria-describedby="apiKeyInstructions" />
+                <span data-i18n="providerUse">Use this provider</span>
+              </label>
+              <label for="apikey" data-i18n="providerApiKeyLabel">API key</label>
               <div class="api-key-input-row">
-                <input
-                  type="password"
-                  id="apikey"
-                  aria-describedby="apiKeyInstructions testHybridKeyStatus"
-                  maxlength="255"
-                  autocomplete="off"
-                  spellcheck="false"
-                  placeholder="e.g. abcdef123456…"
-                  data-i18n-placeholder="ui_131"
-                />
-                <button
-                  type="button"
-                  id="testHybridKey"
-                  class="btn-secondary test-key-btn"
-                  aria-describedby="testHybridKeyStatus"
-                  data-i18n="testApiKeyButton"
-                  >Test connection</button
-                >
+                <input type="password" id="apikey" aria-describedby="apiKeyInstructions testHybridKeyStatus"
+                  maxlength="255" autocomplete="off" spellcheck="false" />
+                <button type="button" id="testHybridKey" class="btn-secondary test-key-btn"
+                  aria-describedby="testHybridKeyStatus" data-i18n="testApiKeyButton">Test connection</button>
               </div>
-              <span
-                id="testHybridKeyStatus"
-                class="key-test-status"
-                role="status"
-                aria-live="polite"
-              ></span>
-            </div>
-            <div class="mb-3">
-              <label for="urlhausApikey"
-                ><span data-i18n="ui_132"
-                  >URLhaus API key (optional domain reputation):</span
-                ></label
-              >
+              <span id="testHybridKeyStatus" class="key-test-status" role="status" aria-live="polite"></span>
+              <small id="apiKeyInstructions" data-i18n="providerHybridStrength"></small>
+              <small data-i18n="providerHybridSetup"></small>
+              <div class="provider-links">
+                  <a href="https://hybrid-analysis.com/knowledge-base/issuing-self-signed-api-key" target="_blank" rel="noopener noreferrer"><span class="provider-link-context">Hybrid Analysis: </span><span data-i18n="providerKeyLink">API key setup</span></a>
+                  <a href="https://hybrid-analysis.com/docs/api/v2" target="_blank" rel="noopener noreferrer"><span class="provider-link-context">Hybrid Analysis: </span><span data-i18n="providerDocsLink">API documentation</span></a>
+                </div>
+            </fieldset>
+            <fieldset class="provider-card">
+              <legend>URLhaus</legend>
+              <label class="provider-toggle">
+                <input type="checkbox" data-provider-enabled="urlhaus" checked aria-describedby="urlhausHelp" />
+                <span data-i18n="providerUse">Use this provider</span>
+              </label>
+              <label for="urlhausApikey" data-i18n="providerApiKeyLabel">API key</label>
               <div class="api-key-input-row">
-                <input
-                  type="password"
-                  id="urlhausApikey"
-                  aria-describedby="urlhausHelp testUrlhausKeyStatus"
-                  maxlength="255"
-                  autocomplete="off"
-                  spellcheck="false"
-                  placeholder="e.g. abcdef123456…"
-                  data-i18n-placeholder="ui_131"
-                />
-                <button
-                  type="button"
-                  id="testUrlhausKey"
-                  class="btn-secondary test-key-btn"
-                  aria-describedby="testUrlhausKeyStatus"
-                  data-i18n="testApiKeyButton"
-                  >Test connection</button
-                >
+                <input type="password" id="urlhausApikey" aria-describedby="urlhausHelp testUrlhausKeyStatus"
+                  maxlength="255" autocomplete="off" spellcheck="false" />
+                <button type="button" id="testUrlhausKey" class="btn-secondary test-key-btn"
+                  aria-describedby="testUrlhausKeyStatus" data-i18n="testApiKeyButton">Test connection</button>
               </div>
-              <span
-                id="testUrlhausKeyStatus"
-                class="key-test-status"
-                role="status"
-                aria-live="polite"
-              ></span>
-              <small id="urlhausHelp"
-                ><span data-i18n="ui_133">You can obtain an API key at</span>
-                <a
-                  href="https://urlhaus.abuse.ch/api/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="urlhaus.abuse.ch (opens a new tab)"
-                  data-i18n-aria-label="ui_136"
-                  ><span data-i18n="ui_135">urlhaus.abuse.ch</span>
-                  <span aria-hidden="true" style="margin-left: 4px">↗</span></a
-                >
-                <span data-i18n="ui_134">.</span></small
-              >
-            </div>
-            <div class="mb-3">
-              <label for="urlscanApikey"
-                ><span data-i18n="ui_137"
-                  >urlscan.io API key (optional URL analysis):</span
-                ></label
-              >
+              <span id="testUrlhausKeyStatus" class="key-test-status" role="status" aria-live="polite"></span>
+              <small id="urlhausHelp" data-i18n="providerUrlhausStrength"></small>
+              <small data-i18n="providerUrlhausSetup"></small>
+              <div class="provider-links">
+                  <a href="https://auth.abuse.ch/" target="_blank" rel="noopener noreferrer"><span class="provider-link-context">URLhaus: </span><span data-i18n="providerKeyLink">API key setup</span></a>
+                  <a href="https://urlhaus.abuse.ch/api/" target="_blank" rel="noopener noreferrer"><span class="provider-link-context">URLhaus: </span><span data-i18n="providerDocsLink">API documentation</span></a>
+                </div>
+            </fieldset>
+            <fieldset class="provider-card">
+              <legend>urlscan.io</legend>
+              <label class="provider-toggle">
+                <input type="checkbox" data-provider-enabled="urlscan" checked aria-describedby="urlscanHelp" />
+                <span data-i18n="providerUse">Use this provider</span>
+              </label>
+              <label for="urlscanApikey" data-i18n="providerApiKeyLabel">API key</label>
               <div class="api-key-input-row">
-                <input
-                  type="password"
-                  id="urlscanApikey"
-                  aria-describedby="urlscanHelp testUrlscanKeyStatus"
-                  maxlength="255"
-                  autocomplete="off"
-                  spellcheck="false"
-                  placeholder="e.g. abcdef123456…"
-                  data-i18n-placeholder="ui_131"
-                />
-                <button
-                  type="button"
-                  id="testUrlscanKey"
-                  class="btn-secondary test-key-btn"
-                  aria-describedby="testUrlscanKeyStatus"
-                  data-i18n="testApiKeyButton"
-                  >Test connection</button
-                >
+                <input type="password" id="urlscanApikey" aria-describedby="urlscanHelp testUrlscanKeyStatus"
+                  maxlength="255" autocomplete="off" spellcheck="false" />
+                <button type="button" id="testUrlscanKey" class="btn-secondary test-key-btn"
+                  aria-describedby="testUrlscanKeyStatus" data-i18n="testApiKeyButton">Test connection</button>
               </div>
-              <span
-                id="testUrlscanKeyStatus"
-                class="key-test-status"
-                role="status"
-                aria-live="polite"
-              ></span>
-              <p data-i18n="urlscanVisibility"></p>
-              <small id="urlscanHelp"
-                ><span data-i18n="ui_138">You can obtain an API key at</span>
-                <a
-                  href="https://urlscan.io/about/api/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="urlscan.io (opens a new tab)"
-                  data-i18n-aria-label="ui_140"
-                  ><span data-i18n="ui_139">urlscan.io</span>
-                  <span aria-hidden="true" style="margin-left: 4px">↗</span></a
-                >.</small
-              >
-            </div>
-            <div class="mb-3">
-              <label for="virustotalApikey"
-                ><span data-i18n="ui_141"
-                  >VirusTotal API key (optional file reputation):</span
-                ></label
-              >
+              <span id="testUrlscanKeyStatus" class="key-test-status" role="status" aria-live="polite"></span>
+              <small id="urlscanHelp" data-i18n="providerUrlscanStrength"></small>
+              <small data-i18n="providerUrlscanSetup"></small>
+              <div class="provider-links">
+                  <a href="https://urlscan.io/user/" target="_blank" rel="noopener noreferrer"><span class="provider-link-context">urlscan.io: </span><span data-i18n="providerKeyLink">API key setup</span></a>
+                  <a href="https://docs.urlscan.io/guides/quickstart" target="_blank" rel="noopener noreferrer"><span class="provider-link-context">urlscan.io: </span><span data-i18n="providerDocsLink">API documentation</span></a>
+                </div>
+              <small data-i18n="urlscanVisibility"></small>
+            </fieldset>
+            <fieldset class="provider-card">
+              <legend>VirusTotal</legend>
+              <label class="provider-toggle">
+                <input type="checkbox" data-provider-enabled="virustotal" checked aria-describedby="virustotalHelp" />
+                <span data-i18n="providerVirusUse">Use VirusTotal for file checks</span>
+              </label>
+              <label for="virustotalApikey" data-i18n="providerApiKeyLabel">API key</label>
               <div class="api-key-input-row">
-                <input
-                  type="password"
-                  id="virustotalApikey"
-                  aria-describedby="virustotalHelp testVirustotalKeyStatus"
-                  maxlength="255"
-                  autocomplete="off"
-                  spellcheck="false"
-                  placeholder="e.g. abcdef123456…"
-                  data-i18n-placeholder="ui_131"
-                />
-                <button
-                  type="button"
-                  id="testVirustotalKey"
-                  class="btn-secondary test-key-btn"
-                  aria-describedby="testVirustotalKeyStatus"
-                  data-i18n="testApiKeyButton"
-                  >Test connection</button
-                >
+                <input type="password" id="virustotalApikey" aria-describedby="virustotalHelp testVirustotalKeyStatus"
+                  maxlength="255" autocomplete="off" spellcheck="false" />
+                <button type="button" id="testVirustotalKey" class="btn-secondary test-key-btn"
+                  aria-describedby="testVirustotalKeyStatus" data-i18n="testApiKeyButton">Test connection</button>
               </div>
-              <span
-                id="testVirustotalKeyStatus"
-                class="key-test-status"
-                role="status"
-                aria-live="polite"
-              ></span>
-              <small id="virustotalHelp"
-                ><span data-i18n="ui_133">You can obtain an API key at</span>
-                <a
-                  href="https://www.virustotal.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="virustotal.com (opens a new tab)"
-                  data-i18n-aria-label="ui_143"
-                  ><span data-i18n="ui_142">virustotal.com</span>
-                  <span aria-hidden="true" style="margin-left: 4px">↗</span></a
-                >
-                <span data-i18n="ui_134">.</span></small
-              >
-            </div>
+              <span id="testVirustotalKeyStatus" class="key-test-status" role="status" aria-live="polite"></span>
+              <small id="virustotalHelp" data-i18n="providerVirusTotalStrength"></small>
+              <small data-i18n="providerVirusTotalSetup"></small>
+              <div class="provider-links">
+                  <a href="https://www.virustotal.com/gui/my-apikey" target="_blank" rel="noopener noreferrer"><span class="provider-link-context">VirusTotal: </span><span data-i18n="providerKeyLink">API key setup</span></a>
+                  <a href="https://docs.virustotal.com/reference/authentication" target="_blank" rel="noopener noreferrer"><span class="provider-link-context">VirusTotal: </span><span data-i18n="providerDocsLink">API documentation</span></a>
+                </div>
+            </fieldset>
           </div>
-          <div class="mb-3">
-            <label for="ipReputationProvider"
-              ><span data-i18n="ui_149"
-                >IP reputation (check Received headers):</span
-              ></label
-            >
-            <select
-              id="ipReputationProvider"
-              aria-describedby="ipReputationHelp"
-            >
+          <fieldset class="provider-card">
+            <legend data-i18n="providerIpTitle">IP reputation</legend>
+            <label class="provider-toggle">
+              <input type="checkbox" id="ipReputationEnabled" checked aria-describedby="ipReputationHelp" />
+              <span data-i18n="providerIpUse">Check IP reputation</span>
+            </label>
+            <label for="ipReputationProvider" data-i18n="providerIpChoose">IP reputation provider</label>
+            <select id="ipReputationProvider" aria-describedby="ipReputationHelp">
               <option value="none" data-i18n="ui_150">Disabled</option>
-              <option value="virustotal" data-i18n="ui_151">
-                VirusTotal (requires a VirusTotal API key)
-              </option>
-              <option value="abuseipdb" data-i18n="ui_152">
-                AbuseIPDB (requires an AbuseIPDB API key)
-              </option>
+              <option value="virustotal" data-i18n="ui_151">VirusTotal (requires a VirusTotal API key)</option>
+              <option value="abuseipdb" data-i18n="ui_152">AbuseIPDB (requires an AbuseIPDB API key)</option>
             </select>
-            <label for="ipReputationApiKey"
-              ><span data-i18n="ui_153">IP reputation API key:</span></label
-            >
-            <div class="api-key-input-row">
-              <input
-                type="password"
-                id="ipReputationApiKey"
-                aria-describedby="ipReputationHelp testIpReputationKeyStatus"
-                maxlength="255"
-                autocomplete="off"
-                spellcheck="false"
-                placeholder="e.g. abcdef123456…"
-                data-i18n-placeholder="ui_131"
-              />
-              <button
-                type="button"
-                id="testIpReputationKey"
-                class="btn-secondary test-key-btn"
-                aria-describedby="testIpReputationKeyStatus"
-                data-i18n="testApiKeyButton"
-                >Test connection</button
-              >
+            <div id="ipReputationCredential" hidden>
+              <label for="ipReputationApiKey" id="ipReputationKeyLabel">IP reputation API key</label>
+              <div class="api-key-input-row">
+                <input type="password" id="ipReputationApiKey" aria-describedby="ipReputationHelp testIpReputationKeyStatus"
+                  maxlength="255" autocomplete="off" spellcheck="false" />
+                <button type="button" id="testIpReputationKey" class="btn-secondary test-key-btn"
+                  aria-describedby="testIpReputationKeyStatus" data-i18n="testApiKeyButton">Test connection</button>
+              </div>
+              <span id="testIpReputationKeyStatus" class="key-test-status" role="status" aria-live="polite"></span>
             </div>
-            <span
-              id="testIpReputationKeyStatus"
-              class="key-test-status"
-              role="status"
-              aria-live="polite"
-            ></span>
-            <small id="ipReputationHelp"
-              ><span data-i18n="ui_154"
-                >Sends public IP addresses from the email's Received headers to
-                the selected provider. Requires external analysis consent and a
-                scan authorization.</span
-              ></small
-            >
-          </div>
-          <details class="provider-guide">
-            <summary data-i18n="settingsProviderGuide">
-              About providers and API keys
-            </summary>
-            <p>
-              <span data-i18n="ui_113"
-                >Hybrid Analysis is a malware analysis service. You can submit
-                files for static and dynamic analysis.</span
-              >
-            </p>
-            <p>
-              <span data-i18n="ui_114"
-                >Hybrid Analysis uses CrowdStrike Falcon Sandbox to investigate
-                unknown threats.</span
-              >
-            </p>
-            <p>
-              <span data-i18n="ui_115"
-                >Provider accounts and service terms apply to external analysis.
-                Local checks do not require an account.</span
-              >
-            </p>
-            <div id="apiKeyInstructions">
-              <h3><span data-i18n="ui_121">API key setup</span></h3>
-              <span data-i18n="ui_118"
-                >For external file analysis, obtain an API key from</span
-              >
-              <a
-                href="https://www.hybrid-analysis.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="hybrid-analysis.com (opens a new tab)"
-                data-i18n-aria-label="ui_123"
-                ><span data-i18n="ui_122">hybrid-analysis.com</span>
-                <span aria-hidden="true" style="margin-left: 4px">↗</span></a
-              ><br />
-              <span data-i18n="ui_119"
-                >After signing in, go to your profile and find the API KEY
-                section.</span
-              ><br />
-              <span data-i18n="ui_120"
-                >Paste the API key here. Local checks work without it.</span
-              ><br />
-            </div>
-          </details>
+            <small id="ipReputationHelp" data-i18n="ui_154"></small>
+            <small data-i18n="providerIpKeyNotice"></small>
+            <details class="provider-guide">
+              <summary data-i18n="providerIpGuide">Choose and set up an IP reputation provider</summary>
+              <div class="ip-provider-guides">
+                <div>
+                  <strong>VirusTotal</strong>
+                  <small data-i18n="providerVirusIpStrength"></small>
+                  <small data-i18n="providerVirusTotalSetup"></small>
+                  <div class="provider-links">
+                    <a href="https://www.virustotal.com/gui/my-apikey" target="_blank" rel="noopener noreferrer"><span class="provider-link-context">VirusTotal: </span><span data-i18n="providerKeyLink">API key setup</span></a>
+                    <a href="https://docs.virustotal.com/reference/authentication" target="_blank" rel="noopener noreferrer"><span class="provider-link-context">VirusTotal: </span><span data-i18n="providerDocsLink">API documentation</span></a>
+                  </div>
+                </div>
+                <div>
+                  <strong>AbuseIPDB</strong>
+                  <small data-i18n="providerAbuseStrength"></small>
+                  <small data-i18n="providerAbuseSetup"></small>
+                  <div class="provider-links">
+                    <a href="https://www.abuseipdb.com/account" target="_blank" rel="noopener noreferrer"><span class="provider-link-context">AbuseIPDB: </span><span data-i18n="providerKeyLink">API key setup</span></a>
+                    <a href="https://docs.abuseipdb.com/" target="_blank" rel="noopener noreferrer"><span class="provider-link-context">AbuseIPDB: </span><span data-i18n="providerDocsLink">API documentation</span></a>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </fieldset>
         </section>
         <section
           id="senders"
