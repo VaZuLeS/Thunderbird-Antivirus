@@ -195,7 +195,20 @@ if (typeof ThundyAnalysis !== 'undefined') {
             if (!hybridReportDisposed && own === sourceGeneration && result?.success && result.messageId === message.id) {
                 renderSourceState(result);
                 const signature=JSON.stringify([result.scanJob?.id,result.scanJob?.state,result.scanJob?.completed,result.rows?.map(r=>[r.provider,r.scope,r.resource,r.verdict,r.completion,r.observedAt])]);
-                if(signature!==lastJobState){lastJobState=signature;if(refreshTimer)clearTimeout(refreshTimer);refreshTimer=setTimeout(async()=>{if(hybridReportDisposed)return;void refreshStoredResults?.();void refreshLocalAssessment?.();},150);}
+                if (signature !== lastJobState) {
+                    const havePreviousSnapshot = lastJobState !== null;
+                    lastJobState = signature;
+                    // Startup loads the same stored reports separately. Rebuilding
+                    // them on the first snapshot discards controls just opened.
+                    if (havePreviousSnapshot) {
+                        if (refreshTimer) clearTimeout(refreshTimer);
+                        refreshTimer = setTimeout(()=>{
+                            if (hybridReportDisposed) return;
+                            void refreshStoredResults?.();
+                            void refreshLocalAssessment?.();
+                        },150);
+                    }
+                }
             }
             else if (!hybridReportDisposed && own === sourceGeneration) renderSourceState({ ...noSources, unavailable: true });
         } catch (_) { if (!hybridReportDisposed && own === sourceGeneration) { document.getElementById('sourceExportOpen')?.setAttribute('hidden','');renderSourceState({ ...noSources, unavailable: true }); } }

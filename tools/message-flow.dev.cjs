@@ -95,6 +95,9 @@ async function prepareMessage(page, c, catalog) {
 }
 async function checkMessage(page, c, tags) {
   assert.equal(await page.locator('body').getAttribute('data-thundy-analysis-view'),'simple');
+  const inspection = page.locator('#thundy-analysis-status [data-key="inline-inspection"]');
+  assert.equal(await inspection.evaluate(el=>el.open),false);
+  await inspection.locator(':scope > summary').press('Enter');
   await page.locator('#thundy-analysis-status [data-focus-key="view-switch"]').click();
   const sources = page.locator("#thundy-analysis-status .card:not(.finding-card):visible");
   assert.equal(await sources.evaluate(el=>getComputedStyle(el).fontSize),"14px");

@@ -692,7 +692,10 @@ def open_page(m, url):
 def expert_view(m, browser='window.gTabmail.currentTabInfo.browser'):
     """Select the public technical view before testing its disclosed controls."""
     wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector("[data-focus-key=view-switch]");',browser=browser))
-    m.page('if(document.body.dataset.thundyAnalysisView!=="expert")document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=view-switch]").click();',browser=browser)
+    m.page('''const root=document.getElementById("thundy-analysis-status").shadowRoot;
+        const details=root.querySelector('[data-key="inline-inspection"]');
+        if(details&&!details.open)details.querySelector('summary').click();
+        if(document.body.dataset.thundyAnalysisView!=="expert")root.querySelector("[data-focus-key=view-switch]").click();''',browser=browser)
 
 
 def storage_snapshot(m):
@@ -1448,7 +1451,11 @@ def check_hybrid_popup(m, base, out, report, display, baseline=False, actions=Fa
             observed=wait_for(lambda:(lambda rows:rows if rows else None)(json.loads(m.page('return JSON.stringify(window.wrappedJSObject.__reportActionRows);',browser=options))))
             expected_request={'action':'prepareProviderTransfer' if individual_approval else 'uploadAttachment','messageId':target,'partName':'1.2'}
             assert observed==[expected_request],observed
-            wait_for(lambda:m.page('const b=document.getElementById(arguments[0]),s=document.getElementById(b.getAttribute("aria-describedby"));return !b.disabled&&s.textContent.startsWith(window.wrappedJSObject.browser.i18n.getMessage(arguments[1]));',[controls['firstRescan'],'transferFailed' if individual_approval else 'ui_045'],browser=popup))
+            wait_for(lambda:m.page('''const b=document.getElementById(arguments[0]);
+                const status=b&&document.getElementById(b.getAttribute("aria-describedby"));
+                return !!status && !b.disabled && arguments[1].some(key=>
+                    status.textContent.startsWith(window.wrappedJSObject.browser.i18n.getMessage(key)));''',
+                [controls['firstRescan'],['errorHostPermissionMissing','transferFailed'] if individual_approval else ['ui_045']],browser=popup))
             assert controls['unique']
             assert m.page('const b=document.getElementById(arguments[0]);return !b.disabled&&document.getElementById(b.getAttribute("aria-describedby")).textContent==="";',[controls['secondRescan']],browser=popup)
             actual=native_download(m,display,out,{'labelKey':'ui_035','index':1},'local-cdr-report.html',browser=options,button_browser=popup,save_button=True)

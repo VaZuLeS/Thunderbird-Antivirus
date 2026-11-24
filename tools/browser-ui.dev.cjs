@@ -600,7 +600,7 @@ async function interaction(page, c) {
     assert.equal(await page.locator("#thundy-analysis-status").evaluate(el=>el.shadowRoot.activeElement?.dataset.focusKey),sourceFocusKey);
     assert.equal(await sourceSummary.evaluate(el=>el.parentElement.open),true);
     await page.keyboard.press("Tab");
-    assert.equal(await page.locator("#thundy-analysis-status").evaluate(el=>el.shadowRoot.activeElement?.tagName),"SUMMARY");
+    assert.equal(await page.locator("#thundy-analysis-status").evaluate(el=>el.shadowRoot.activeElement?.dataset.focusKey),"view-switch");
 
     const hybridPanel=page.locator("#thundy-analysis-status .hybrid-expert");
     await hybridPanel.locator(":scope > summary").focus();

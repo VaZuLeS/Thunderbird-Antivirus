@@ -56,6 +56,32 @@ test('opening the popup tolerates optional Hybrid Analysis field shapes without 
  }finally{f.close();}
 });
 
+test('the first source snapshot leaves freshly rendered report controls in place',async()=>{
+ const scheduled=[];
+ let state='idle';
+ const record={attachments:[{partName:'1.2',attachment_name:'report.pdf',hybrid_sha256:'fixture-hash',
+  state:'KNOWN',report:{state:'COMPLETE',verdict:'clean'}}]};
+ const f=await popup(record,'en',{
+  getMessageAnalysis:async()=>({success:true,messageId:7,local:{state:'checked'},rows:[],scanJob:{id:'job',state}}),
+  setTimeout:(callback,delay)=>{if(delay===150)scheduled.push(callback);return scheduled.length;},
+  clearTimeout(){}
+ });
+ try {
+  const report=()=>f.dom.window.document.querySelector('#hybrid_analysis_api_content button');
+  const initial=report();
+  assert.ok(initial);
+  assert.equal(scheduled.length,0);
+  assert.equal(f.reads.filter(action=>action==='getMessageAnalysisRecord').length,1);
+  state='completed';
+  await f.notify();
+  assert.equal(scheduled.length,1);
+  scheduled[0]();
+  await new Promise(setImmediate);
+  assert.notEqual(report(),initial);
+  assert.equal(f.reads.filter(action=>action==='getMessageAnalysisRecord').length,2);
+ } finally {f.close();}
+});
+
 test('the popup discloses the recipient, full URL and visibility before sending, and permits cancellation', async () => {
  const url = 'https://example.invalid/path?sample=confirmed#section';
  const calls = [];
