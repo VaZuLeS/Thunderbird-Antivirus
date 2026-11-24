@@ -2287,6 +2287,7 @@ def check_inline_scan(m, base, out, report, display, fresh=False):
         throw Error('Unexpected synthetic route');
       };
       await b.storage.local.set({scanMode:'manual',alwaysManual:true,externalAnalysisConsent:true,privacyTier:'max',autoScanLinks:false,apikey:'',virustotalApikey:'',urlhausApikey:'',urlscanApikey:'inline-synthetic-key',ipReputationProvider:'none'});
+      await bg.loadSettings();
       const message=(await b.messages.query({subject:'Thundy AV synthetic live test'})).messages.find(item=>item.subject==='Thundy AV synthetic live test');
       const individualApproval=typeof bg.prepareProviderTransfer==='function';
       if(individualApproval)await ('''+NATIVE_ACCEPTED_REPORT_FIXTURE+''')(bg,message,null,'inline-context-job');
@@ -2295,7 +2296,6 @@ def check_inline_scan(m, base, out, report, display, fresh=False):
     options='window.gTabmail.tabInfo.filter(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).at(-1).browser'
     def snapshot():
         return m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[setup['messageId']],browser=options)
-    wait_for(lambda:snapshot().get('scanJob',{}).get('state')=='blocked')
     # An accepted pending report can offer a refresh instead of a fresh scan.
     # The transport assertions below distinguish those paths.
     def scan_action_ready():
@@ -2319,6 +2319,7 @@ def check_inline_scan(m, base, out, report, display, fresh=False):
     assert invalidated
     assert (before['contextToken']==renewed['contextToken']) if fresh else (before['contextToken']!=renewed['contextToken'])
     wait_for(scan_action_ready)
+    assert m.page('return window.wrappedJSObject.inlineScanCalls.length;',browser=options)==0
     m.page('''const root=document.getElementById("thundy-analysis-status").shadowRoot;
       const details=root.querySelector('[data-key="inline-inspection"]');
       if(details&&!details.open)details.querySelector('summary').click();

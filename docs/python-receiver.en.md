@@ -17,7 +17,7 @@ The standalone receiver accepts `POST /thundy/events`, stores each event in SQLi
 
 **Download** Open the assets under [GitHub Releases](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/latest) and download `thundy-python-receiver-<version>.zip`. Extract `receiver.py`, `requirements.txt` and `receiver.example.toml` into the same directory. The [TOML template in the repository](https://github.com/VaZuLeS/Thunderbird-Antivirus/blob/main/examples/python-receiver/receiver.example.toml) lists each configuration group.
 
-Manual retry and the separate store for failed deliveries are available in the development receiver after the original 1.26.2 ZIP. The installation steps and HTTPS contract apply to both builds.
+The Python package includes manual retry and a separate failed-delivery store beginning with 1.26.3. The installation steps and HTTPS contract also apply to the previous version.
 
 ## Installation
 

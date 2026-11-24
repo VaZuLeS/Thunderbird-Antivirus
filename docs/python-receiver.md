@@ -17,7 +17,7 @@ Ein Python-Prozess nimmt Thundy-Ereignisse unter **`POST /thundy/events`** entge
 
 **Download** Öffnen Sie unter [GitHub Releases](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/latest) die Assets und laden Sie `thundy-python-receiver-<Version>.zip` herunter. Das entpackte ZIP enthält `receiver.py`, `requirements.txt` und `receiver.example.toml`. Die [TOML-Vorlage im Repository](https://github.com/VaZuLeS/Thunderbird-Antivirus/blob/main/examples/python-receiver/receiver.example.toml) zeigt alle Einstellungsgruppen.
 
-Die Befehle für die manuelle Wiederholung und das getrennte Aufbewahren endgültiger Fehler gehören zum neueren Entwicklungsstand nach dem veröffentlichten ZIP 1.26.2. Die Grundinstallation und der HTTPS-Vertrag gelten für beide Stände.
+Das Python-Paket ab 1.26.3 enthält die manuelle Wiederholung und den getrennten Speicher für endgültige Zustellfehler. Die Grundinstallation und der HTTPS-Vertrag gelten auch für die vorige Version.
 
 ## Installation
 

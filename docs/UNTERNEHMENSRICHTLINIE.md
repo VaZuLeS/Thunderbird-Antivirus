@@ -117,7 +117,7 @@ Weitere Aktionen sind attachment_open und attachment_save. Befunde sind maliciou
 
 Die beiden Zusatzoptionen sind standardmäßig aus. Beim Ändern ist eine erneute Zustimmung im Profil nötig. Ereignisse enthalten keine Mailtexte, Anhänge, ursprünglichen vollständigen URLs oder Anbieter-API-Schlüssel. Für einen Link lässt sich die Ereignis-ID im lokalen Thundy-Linkprotokoll zum konkreten Ziel zurückverfolgen. Bei einem Anhang helfen Dateiname und Datei-SHA-256. Die Gerätebezeichnung in der E-Mail stammt aus der Token-Zuordnung am Server.
 
-Mit `details: true` enthält `details.providers` die Anbieterurteile. Für den neuen Detailumfang setzen Sie im Entwicklungsstand zusätzlich `reporting.detections: true` und stimmen dem erweiterten Umfang erneut zu. Aktualisieren Sie zuerst den Empfänger. Ereignisse mit Erkennungen tragen `schemaVersion: 2`. Ereignisse ohne Erkennungen bleiben bei Version 1. Der Entscheidungsscore steht unter `details.score`. [Lokale Formel und Einzelpunkte](LOCAL_SCORE.md#deutsch)
+Mit `details: true` enthält `details.providers` die Anbieterurteile. Für den neuen Detailumfang setzen Sie ab 1.26.3 zusätzlich `reporting.detections: true` und stimmen dem erweiterten Umfang erneut zu. Aktualisieren Sie zuerst den Empfänger. Ereignisse mit Erkennungen tragen `schemaVersion: 2`. Ereignisse ohne Erkennungen bleiben bei Version 1. Der Entscheidungsscore steht unter `details.score`. [Lokale Formel und Einzelpunkte](LOCAL_SCORE.md#deutsch)
 
 Das folgende Anhangsbeispiel zeigt, wie derselbe Befund eine Familie, eine Kategorie und eine Hersteller-Erkennung enthalten kann. Bei einem rein lokalen Schwellenereignis bleibt die Anbieterliste leer.
 
