@@ -2,7 +2,7 @@
 
 Thundy AV provides local message-risk heuristics, HTML attachment disarming and a link-decision log for Thunderbird. External analysis is optional and disabled until the user grants consent and configures the relevant provider. Local heuristics do not replace a full antivirus engine or guarantee that a message or website is safe.
 
-**Version 1.26.2:** [GitHub release status and download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.2), unsigned distribution. [Release scope and remaining prerequisites](docs/VEROEFFENTLICHUNG_1_26_2.md). An XPI checksum is not a store signature. ATN listing/signing is a separate maintainer step.
+**Version 1.26.3:** [GitHub release status and download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.3), unsigned distribution. [Release scope and remaining prerequisites](docs/VEROEFFENTLICHUNG_1_26_3.md). An XPI checksum is not a store signature. ATN listing/signing is a separate maintainer step.
 
 [Documentation and contents](docs/guide-en.md) · [Deutsch](docs/guide-de.md) · [Managed Thunderbird setup](docs/enterprise-policy.en.md) · [Python receiver setup](docs/python-receiver.en.md)
 
@@ -10,12 +10,12 @@ Thundy AV provides local message-risk heuristics, HTML attachment disarming and 
 
 Download the published XPI from GitHub, verify its accompanying `SHA256SUMS.txt`, and use Thunderbird's Add-ons Manager → Install Add-on From File in a test profile first. Follow the permission prompts supported by your Thunderbird version. Do not install a development ZIP as though it were the published release.
 
-The manifest requires Thunderbird 140.0 or later. The published acceptance covers Thunderbird 140.12.0 and 153.7.0 on Linux, including upgrade and profile recovery. [Release verification](docs/VEROEFFENTLICHUNG_1_26_2.md)
+The manifest requires Thunderbird 140.0 or later. The published acceptance covers Thunderbird 140.12.0 and 153.7.0 on Linux, including upgrade and profile recovery. [Release verification](docs/VEROEFFENTLICHUNG_1_26_3.md)
 
-- Local checks work without API keys. The published 1.26.2 package includes six languages. The development tree includes 24 EU language catalogs.
-- External analysis requires global consent, a configured and enabled provider, the relevant optional permissions and a suitable privacy tier. The scan mode controls which opened messages are checked. In the development tree, full links and files also require individual approval. [Privacy and transfer matrix](docs/privacy_policy.md#english)
+- Local checks work without API keys. The package includes all 24 official EU language catalogs.
+- External analysis requires global consent, a configured and enabled provider, the relevant optional permissions and a suitable privacy tier. The scan mode controls which opened messages are checked. Full links and files require individual approval. [Privacy and transfer matrix](docs/privacy_policy.md#english)
 - `OPENED` means Thunderbird accepted an opening request. It proves neither browser startup nor a website visit. `PENDING` remains an incomplete decision after a process loss.
-- The local audit stores complete URLs and decision snapshots. It is bounded and separately deletable; profile users can modify it. It is not an authenticated central audit.
+- The local audit stores complete URLs and decision snapshots. Administrators can configure the age and count limits or disable automatic removal. Profile users can modify the local audit. [Retention and storage](docs/enterprise-policy.en.md#severity-waiting-and-retention)
 - Enterprise profile selection creates disabled configuration drafts. Local Node tools are separate from the extension; no enterprise service, SSO or cloud integration is activated by choosing a profile.
 
 Read the [documentation overview](docs/guide-en.md) for installation, day-to-day use, company reporting and troubleshooting.

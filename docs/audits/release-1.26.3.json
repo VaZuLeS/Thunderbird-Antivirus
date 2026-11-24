@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "kind": "thundy-published-release-verification",
+  "verified": true,
+  "releaseTag": "v1.26.3",
+  "releaseId": 456517682,
+  "releaseUrl": "https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.3",
+  "githubImmutableRelease": false,
+  "publishedAt": "2026-11-24T09:06:31Z",
+  "verifiedAt": "2026-11-24T09:06:46.2789433Z",
+  "releaseRun": 45360253207,
+  "tagCommit": "6824fdcbb6b554101d161a76c361424cb656101f",
+  "xpiSha256": "57ecec4d21789c5459022dc751b5e9249953d2bbe645dba1182628b69b796f55",
+  "sourceFingerprint": "4aa4c89347cbef037acbbf12441a748f44289593943d2cea3dca84f9ce63fd77",
+  "assets": [
+    {
+      "name": "acceptance-1.26.3.json",
+      "bytes": 818783,
+      "sha256": "8657e4e60e20c313c4824f1c64f40271a7387f3d800be1f5dadb21e0e6df7d48",
+      "githubAssetId": 786444298
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "bytes": 87,
+      "sha256": "6954928184c06192e163f95afd40a958efc1a8f6df7bb38674148f9a4c5c8ddc",
+      "githubAssetId": 786444288
+    },
+    {
+      "name": "thundy-av-1.26.3.xpi",
+      "bytes": 961877,
+      "sha256": "57ecec4d21789c5459022dc751b5e9249953d2bbe645dba1182628b69b796f55",
+      "githubAssetId": 786444289
+    },
+    {
+      "name": "thundy-python-receiver-1.26.3.zip",
+      "bytes": 47741,
+      "sha256": "fcaddd67d999a6c29cb7a27eccb5b2993cc2bedbfe66947c9af8c53e986907ae",
+      "githubAssetId": 786444290
+    }
+  ],
+  "previousRelease": {
+    "version": "1.26.2",
+    "sha256": "abe2a8d2f766ab7ab88ccb64f6cf5d7223dea68181fec22fff0d23fb549cc30c"
+  },
+  "upgradeAndRestoreCases": 12,
+  "clientTargets": [
+    {
+      "target": "current",
+      "version": "153.7.0",
+      "platform": "Linux CI"
+    },
+    {
+      "target": "minimum",
+      "version": "140.12.0",
+      "platform": "Linux CI"
+    }
+  ],
+  "browserLanguages": [
+    "de",
+    "en",
+    "es",
+    "fr",
+    "it",
+    "pl"
+  ],
+  "limits": {
+    "unsignedEvidence": true,
+    "syntheticProviderResponses": true,
+    "realProviderAccountsVerified": false,
+    "windowsVerified": false,
+    "macosVerified": false,
+    "screenReadersVerified": false,
+    "automaticUpdateChannelVerified": false
+  },
+  "verificationScope": "Independent GitHub download verified all asset hashes, package manifest, locale count, receiver entry points, release tag and package-bound acceptance evidence."
+}

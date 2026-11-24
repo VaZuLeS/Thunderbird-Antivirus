@@ -16,6 +16,6 @@ permalink: /documentation.html
 
 ## Downloads und Versionsnachweise / Downloads and release records
 
-- [Veröffentlichte Version / Published version 1.26.2](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.2) · [Versionshinweise / Release notes](releases/1.26.2.md)
+- [Veröffentlichte Version / Published version 1.26.3](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.3) · [Versionshinweise / Release notes](releases/1.26.3.md)
 - [Aktueller Produktstand / Published product status](AKTUELLER_PRODUKTSTAND.md) · [Support und FAQ / Support and FAQ](support_faq.md)
 - [Entwicklungsumgebung / Developer setup (DE)](quickstart.md) · [Prüfungen / CI and verification (EN)](https://github.com/VaZuLeS/Thunderbird-Antivirus/blob/main/docs/ci/README.md)

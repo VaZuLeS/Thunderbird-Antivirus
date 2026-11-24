@@ -12,9 +12,9 @@
 | C08 | Firmenmeldungen können zugeordnete Erkennungen und Berichtsreferenzen enthalten | OK | Native Öffnungsdialoge, Vertragstests und lokaler HTTPS-/SMTP-Empfänger |
 | C09 | Der Empfänger unterscheidet SMTP-Fehler und erlaubt manuelle Wiederholung | OK | Integrationstests mit SQLite und lokalem SMTP-Relay |
 | C10 | Die 24 EU-Sprachkataloge enthalten den vollständigen Schlüsselsatz | OK | Lokale Prüfung der Kataloge und des englischen Fallbacks |
-| C11 | Release-CI bindet die Browser- und Thunderbird-Abnahme an das veröffentlichte XPI | OFFEN | Kandidat 1.26.3 wartet auf den GitHub-Workflow und den unabhängigen Downloadabgleich |
+| C11 | Release-CI bindet die Browser- und Thunderbird-Abnahme an das veröffentlichte XPI | OK | [GitHub-CI](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/45360253207) und [unabhängiger Downloadabgleich](audits/release-1.26.3.json) |
 | C12 | Nutzung mit einem nativen Windows-Kontrastdesign und Screenreader | OFFEN | Separater Test auf Windows mit aktivierter Bedienungshilfe |
 
-**Summe:** 10 OK / 0 FAIL / 0 N/A / 2 OFFEN
+**Summe:** 11 OK / 0 FAIL / 0 N/A / 1 OFFEN
 
 Die Vorabnahme verwendet harmlose Nachrichten, synthetische Anbieterbefunde und einen lokalen Testempfänger. Die Release-CI bindet die plattformbezogenen Installations-, Upgrade- und Rücksicherungstests an das exakte GitHub-Paket.

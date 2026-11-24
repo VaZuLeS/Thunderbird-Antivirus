@@ -30,7 +30,7 @@ Der Einrichtungsassistent führt durch die Sprache, den Linkschutz und die optio
 
 Anbieter werden einzeln in den Einstellungen eingerichtet und können mit gespeichertem Schlüssel pausiert werden. Die dort verlinkten Anleitungen erklären die Schlüsselvergabe. Hybrid Analysis und VirusTotal prüfen Dateihashes, URLhaus bewertet Domains und AbuseIPDB oder VirusTotal prüfen öffentliche IP-Adressen. Hybrid Analysis und urlscan.io können zusätzlich vollständige Links untersuchen.
 
-Im **Entwicklungsstand** können automatische Prüfungen abhängig vom Modus, von der Einwilligung und von der Hostfreigabe Hashes, Domains und öffentliche IPs abfragen. Vollständige Links und Dateien benötigen eine Einzelfreigabe im Popup. Bereits angenommene Anbieteraufträge lassen sich anhand ihrer Kennung weiter abfragen. Die [Datenmatrix](privacy_policy.md#deutsch) beschreibt die übertragenen Daten und die lokale Aufbewahrung. Die [Scanmodi im Detail](AUTOMATISCHE_PRUEFUNGEN.md) erklären außerdem, was bei vollem Quellenarchiv angezeigt wird.
+Ab Version **1.26.3** können automatische Prüfungen abhängig vom Modus, von der Einwilligung und von der Hostfreigabe Hashes, Domains und öffentliche IPs abfragen. Vollständige Links und Dateien benötigen eine Einzelfreigabe im Popup. Bereits angenommene Anbieteraufträge lassen sich anhand ihrer Kennung weiter abfragen. Die [Datenmatrix](privacy_policy.md#deutsch) beschreibt die übertragenen Daten und die lokale Aufbewahrung. Die [Scanmodi im Detail](AUTOMATISCHE_PRUEFUNGEN.md) erklären außerdem, was bei vollem Quellenarchiv angezeigt wird.
 
 ## Unternehmen
 

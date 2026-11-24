@@ -14,7 +14,7 @@ Ansprechpartner / Contact: Jan Bludau, bludau.it.services@gmail.com. [Quellcode 
 
 Die Erweiterung liest angezeigte Nachrichten einschließlich Absender, Betreff, Kopfzeilen, Text, Links und Anhangmetadaten lokal. Die lokale Heuristik, HTML-Entschärfung und das lokale Linkaudit funktionieren ohne API-Schlüssel. Es gibt keine Telemetrie oder Entwickler-Analyseserver. Ein niedriger Score ist keine Sicherheitsgarantie.
 
-Die Datenmatrix beschreibt die Thunderbird-Erweiterung im Entwicklungsstand nach [Release 1.26.2](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.2). In der veröffentlichten 1.26.2 können passende automatische Scaneinstellungen ganze Dateien ab „Ausgewogen“ und ganze URLs bei „Maximal“ übertragen. Die Stufe „Strikt“ beschränkt Anbieterabfragen dort auf Reputationsdaten und zulässige Berichtsabfragen.
+Die Datenmatrix beschreibt die Thunderbird-Erweiterung ab Version 1.26.3. In [Release 1.26.2](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.2) können passende automatische Scaneinstellungen ganze Dateien ab „Ausgewogen“ und ganze URLs bei „Maximal“ übertragen. Die Stufe „Strikt“ beschränkt Anbieterabfragen dort auf Reputationsdaten und zulässige Berichtsabfragen.
 
 Externe Analyse ist standardmäßig ausgeschaltet. Sie benötigt eine globale Einwilligung, die erforderlichen optionalen Rechte, einen aktiven Anbieter und eine passende Datenschutzstufe. Der Scanmodus legt fest, ob Thundy alle geöffneten Nachrichten, nur freigegebene Absender oder Nachrichten auf Anforderung prüft. „Nur diese Nachricht“ erteilt keine dauerhafte Absenderfreigabe. Ein Verbindungstest sendet den Schlüssel und feste Testdaten an den gewählten Anbieter. Gewöhnliches Speichern der Einstellungen lässt die bestehende Einwilligung bestehen.
 
@@ -55,7 +55,7 @@ Das Audit enthält vollständige URL, Nachrichtenkennung, Zeitpunkt, Score/Prüf
 
 ## English
 
-The matrix describes the Thunderbird extension in development after [release 1.26.2](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.2). In the published 1.26.2 build, automatic scans can transmit whole files in Balanced or Maximum and whole URLs in Maximum when the matching settings are enabled. Strict limits traffic to reputation data and permitted report lookup in that build.
+The matrix describes the Thunderbird extension from version 1.26.3. In [release 1.26.2](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.26.2), automatic scans can transmit whole files in Balanced or Maximum and whole URLs in Maximum when the matching settings are enabled. Strict limits traffic to reputation data and permitted report lookup in that build.
 
 Company incident reporting is off by default and has a separate consent control. Under managed protection rules, reports can include the event ID, time, action, finding, decision and policy version, with an optional link hostname or attachment SHA-256. Pending reports are queued locally for up to 24 hours. Withdrawing reporting consent clears the pending queue. [Configuration and event fields](enterprise-policy.en.md)
 

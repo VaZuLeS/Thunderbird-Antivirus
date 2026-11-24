@@ -1,4 +1,4 @@
-> Aktueller GitHub-Release-Stand **1.26.2** (unsignierte Distribution). ATN-Signierung und Review bleiben separat offen: [aktueller Stand](AKTUELLER_PRODUKTSTAND.md), [versionsgebundene Prüfung](live_test_1_26_2.md), [Datenmatrix](privacy_policy.md).
+> Aktueller GitHub-Release-Stand **1.26.3** (unsignierte Distribution). ATN-Signierung und Review bleiben separat offen: [aktueller Stand](AKTUELLER_PRODUKTSTAND.md), [versionsgebundene Prüfung](live_test_1_26_3.md), [Datenmatrix](privacy_policy.md).
 
 # Store-Listing — Thundy AV (final copy package)
 

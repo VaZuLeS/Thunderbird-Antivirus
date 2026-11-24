@@ -26,7 +26,7 @@ In den Einstellungen können Darstellung, Akzent und Dichte als JSON exportiert 
 
 **Funktioniert die Erweiterung ohne Schlüssel?** Ja, lokale Heuristik, HTML-Entschärfung und Linkaudit funktionieren ohne externe Analyse. Das ist kein vollständiger Virenscanner und ein niedriger Score keine Sicherheitsgarantie.
 
-**Was wird extern übertragen?** Der Scanmodus steuert die Anbieterabfragen mit Einwilligung. Im Entwicklungsstand verlangen vollständige Dateien und URLs eine Einzelfreigabe im Popup. Die [Datenmatrix](privacy_policy.md#deutsch) nennt die Bedingungen und den Unterschied zur veröffentlichten 1.26.2.
+**Was wird extern übertragen?** Der Scanmodus steuert die Anbieterabfragen mit Einwilligung. Ab 1.26.3 verlangen vollständige Dateien und URLs eine Einzelfreigabe im Popup. Die [Datenmatrix](privacy_policy.md#deutsch) nennt die Bedingungen und den Unterschied zur veröffentlichten 1.26.2.
 
 **Wo ist der Python-Empfänger und warum fehlt eine E-Mail?** Der Download liegt als eigenes ZIP im GitHub-Release. Die [Empfängeranleitung](python-receiver.md) erklärt SMTP, das Testereignis und die Statusabfrage. HTTP 204 bestätigt die Aufnahme in SQLite. Bei einer fehlenden E-Mail `status`, das Relay-Protokoll und den Posteingang prüfen.
 

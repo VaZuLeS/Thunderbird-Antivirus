@@ -30,7 +30,7 @@ The setup wizard covers language selection, link protection and optional provide
 
 Configure each provider in Settings. Use the API key instructions next to each provider and pause it without removing its key. Hybrid Analysis and VirusTotal check attachment hashes, URLhaus checks domains, and AbuseIPDB or VirusTotal check public IP reputation. Hybrid Analysis and urlscan.io can also analyze full links.
 
-In the **development build**, automatic scans may use hashes, domains and public IPs according to the scan mode, consent and host permission. Full links and files require individual approval in the popup. Previously accepted jobs can be retrieved by reference. If the source archive fills, scans continue and mark the new source view as available for the current session. See the [data-flow and privacy policy](privacy_policy.md#english) for the transfer matrix and local retention.
+Starting with **1.26.3**, automatic scans may use hashes, domains and public IPs according to the scan mode, consent and host permission. Full links and files require individual approval in the popup. Previously accepted jobs can be retrieved by reference. If the source archive fills, scans continue and mark the new source view as available for the current session. See the [data-flow and privacy policy](privacy_policy.md#english) for the transfer matrix and local retention.
 
 ## Managed deployment
 
